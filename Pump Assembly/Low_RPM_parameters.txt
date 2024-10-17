@@ -1,0 +1,7 @@
+﻿"O_Ring_ID"= 2.375in
+"O_Ring_CS"= 1 / 16in'cross section
+"Flange_Dia"= 3.8in
+"Screw_Dia"= 6mm
+"Shaft_OD"= 17mm'outer diameter of shaft
+"Seal_Area_Dia"= 37mm
+"Screw_offset"= .5in'offset of screws from flange OD.
