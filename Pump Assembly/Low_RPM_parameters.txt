@@ -1,0 +1,10 @@
+﻿"Shaft_OD"= 17mm'outer diameter of shaft
+"O_Ring_ID"= 2.864in
+"O_Ring_CS"= .070in'cross section
+"Flange_Dia"= 4in
+"Screw_Dia"= 6mm
+"Seal_Space"= .3in
+"Seal_Area_Dia"= 37mm
+"Screw_offset"= .5in'offset of screws from flange OD.
+"Seal_space_Dia"= "Stationary_Face_Seal_OD" + .07'diameter of the space for the face seal
+"Groove_width"=0.107
