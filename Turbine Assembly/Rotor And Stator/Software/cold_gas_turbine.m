@@ -210,6 +210,8 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     h1 = plot(x1, curve_DC_1, 'k-', 'LineWidth', 2);
     h2 = plot(x2, curve_CC, 'k-', 'LineWidth', 2);
     h3 = plot(x3, curve_DC_2, 'k-', 'LineWidth', 2);
+    x_lower = [x1, x2, x3];
+    y_lower = [curve_DC_1, curve_CC, curve_DC_2];
     
     % Upper Surface Guide Curves
     % Area Normals
@@ -269,8 +271,14 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     u_a_2 = m * (c - u_x_2);
     h6 = plot(u_x_1, u_a_1, 'k-', 'LineWidth', 2);
     h7 = plot(u_x_2, u_a_2, 'k-', 'LineWidth', 2);
+
+    B1_post = flip(c - B1);
+    B2_post = flip(B2);
+    x_upper = [u_x_1, B1, B1_post, u_x_2];
+    y_upper = [u_a_1 - B_spacing, B2, B2_post, u_x_2 - B_spacing];
     
     handles = [h1, h2, h3, h4, h5, h6, h7];
+    
     % shifted_handles = gobjects(size(handles));
     for i = 1:length(handles)
         x_data = get(handles(i), 'XData');
@@ -300,6 +308,71 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     set(new_ax, 'Box', 'off');
     % exportgraphics(new_ax, 'blade.svg', 'ContentType', 'vector');
     saveas(new_fig, 'cgrotor.svg');
+
+    % calculate minimum spacing
+    calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet);
+end
+
+function calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet) 
+    figure;
+    subplot(2, 1, 1);
+    hold on;
+
+    plot(x_lower, y_lower, 'k-', 'LineWidth', 2, 'DisplayName', 'Lower Surface');
+    plot(x_upper, y_upper, 'b-', 'LineWidth', 2, 'DisplayName', 'Upper Surface');
+
+    min_distances = zeros(1, length(x_lower));
+    min_dist_x = zeros(1, length(x_lower));
+
+    for i = 1:length(x_lower)
+        x0 = x_lower(i);
+        y0 = y_lower(i);
+
+        % approx tangent w/ finite differences
+        if i < length(x_lower)
+            dx = x_lower(i + 1) - x0;
+            dy = y_lower(i + 1) - y0;
+        else
+            dx = x0 - x_lower(i - 1);
+            dy = y0 - y_lower(i - 1);
+        end
+
+        % calc normal (inwards/right)
+        normal_dx = -dy;
+        normal_dy = dx;
+
+        % normalize
+        normal_length = sqrt(normal_dx^2 + normal_dy^2);
+        normal_dx = normal_dx / normal_length;
+        normal_dy = normal_dy / normal_length;
+
+        % project
+        projection_length = A_inlet; 
+        x_normal = x0 + normal_dx * projection_length;
+        y_normal = y0 + normal_dy * projection_length;
+
+        % approx intersection with min dist from curr point to curve
+        distances = sqrt((x_upper - x_normal).^2 + (y_upper - y_normal).^2);
+        [min_distances(i), idx] = min(distances);
+        min_dist_x(i) = x_upper(idx);
+
+        plot([x0, x_upper(idx)], [y0, y_upper(idx)], 'r--');
+    end
+
+    xlabel('X Coordinate');
+    ylabel('Y Coordinate');
+    title('Lower and Upper Surfaces with Normals');
+    legend;
+
+    % Subplot 2: plot the minimum distance at each iteration
+    subplot(2, 1, 2);
+    plot(min_dist_x, min_distances, 'g-o', 'LineWidth', 1.5);
+    xlabel('Upper Curve X');
+    ylabel('Minimum Distance to Lower Surface');
+    title('Minimum Distance from Upper Surface to Lower Surface');
+    grid on;
+
+    fprintf('Overall minimum distance is %.5f\n', min(min_distances));
 end
 
 function k = curvature_function(y2, m, x1, x2, y1)
