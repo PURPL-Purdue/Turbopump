@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CFturboFile Version="2024.1" Info="Purdue University">
+  <CFturboProject Type="Object">
+    <Version>2024.1.2.106</Version>
+    <ProjectType Type="Enum">Pump</ProjectType>
+    <Title></Title>
+    <Classification></Classification>
+    <MyName></MyName>
+    <Comment></Comment>
+    <Creation Type="DateTime">2024-10-24T18:33:55.347-04:00</Creation>
+    <LastChange Type="DateTime">2024-10-24T18:44:41.894-04:00</LastChange>
+    <AskDeactAutoCalc Type="Boolean">False</AskDeactAutoCalc>
+    <CurrentDesignIndex Type="Integer">-1</CurrentDesignIndex>
+    <DesignPoint_Pump Type="Object">
+      <nRot Type="Float">833.333333333333</nRot>
+      <PressureDiff Type="Float">6894759.08677537</PressureDiff>
+      <mFlow Type="Float">6.9857395898869</mFlow>
+      <EnergyMode Type="Enum">Total pressure difference</EnergyMode>
+      <FlowMode Type="Enum">Mass flow</FlowMode>
+      <ptInlet Type="Float">344737.954338768</ptInlet>
+      <TtInlet Type="Float">90</TtInlet>
+      <EtaC Type="Float">1</EtaC>
+      <RotDir Type="Enum">Right</RotDir>
+      <SwirlMode Type="Enum">Swirlangle</SwirlMode>
+      <Alphahub Type="Float">1.5707963267949</Alphahub>
+      <Alphashroud Type="Float">1.5707963267949</Alphashroud>
+      <FluidLiquidModel Type="Enum">Constant</FluidLiquidModel>
+      <FluidLiquid Type="Object" Name="Oxygen">
+        <FluidDescription>props derived @ T = -150°C/ p = 22.216bar</FluidDescription>
+        <FluidSymbol>O2</FluidSymbol>
+        <FluidCp Type="Float">1695.52065217346</FluidCp>
+        <FluidRho Type="Float">1143.49285651068</FluidRho>
+        <FluidVapPressure Type="Float">1221597.79453859</FluidVapPressure>
+        <FluidVisc Type="Float">9.66560496004132E-8</FluidVisc>
+        <FluidLambda Type="Float">0.15151</FluidLambda>
+      </FluidLiquid>
+    </DesignPoint_Pump>
+    <Export_Interfaces Type="Object">
+      <TTetraVolMeshExportInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <Format Type="Enum">OpenFOAM</Format>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0006</MinSize>
+          <MaxSize Type="Float">0.01</MaxSize>
+          <STL_granularity Type="Enum">Moderate</STL_granularity>
+        </STLData>
+      </TTetraVolMeshExportInterface>
+      <TSimericsInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <RefZoneIndex Type="Integer">-1</RefZoneIndex>
+        <UseLocalRotSym Type="Boolean">False</UseLocalRotSym>
+        <UseLocalVolutes Type="Boolean">False</UseLocalVolutes>
+        <SplitNearSurfaces Type="Boolean">True</SplitNearSurfaces>
+        <SizeSpecification Type="Enum">cssRelToSelCAD</SizeSpecification>
+        <CellSizeOnSurf Type="Float">0.006</CellSizeOnSurf>
+        <MinCellSize Type="Float">0.0001</MinCellSize>
+        <MaxCellSize Type="Float">0.012</MaxCellSize>
+        <HubCellSize Type="Float">0.006</HubCellSize>
+        <ShroudCellSize Type="Float">0.006</ShroudCellSize>
+        <BladesCellSize Type="Float">0.006</BladesCellSize>
+        <BladeLECellSize Type="Float">0.006</BladeLECellSize>
+        <BladeTECellSize Type="Float">0.006</BladeTECellSize>
+        <BladeTipCellSize Type="Float">0.006</BladeTipCellSize>
+        <InletRSCellSize Type="Float">0.006</InletRSCellSize>
+        <OutletRSCellSize Type="Float">0.006</OutletRSCellSize>
+        <SolidHubCellSize Type="Float">0.006</SolidHubCellSize>
+        <SolidShrCellSize Type="Float">0.006</SolidShrCellSize>
+        <SpiralCellSize Type="Float">0.006</SpiralCellSize>
+        <DiffuserCellSize Type="Float">0.006</DiffuserCellSize>
+        <CutWaterCellSize Type="Float">0.006</CutWaterCellSize>
+        <SplitterCellSize Type="Float">0.006</SplitterCellSize>
+        <InletSPCellSize Type="Float">0.006</InletSPCellSize>
+        <OutletSPCellSize Type="Float">0.006</OutletSPCellSize>
+        <RefineCasing Type="Boolean">False</RefineCasing>
+        <Solver Type="Enum">SimericsMP</Solver>
+        <SimulationType Type="Enum">Steady</SimulationType>
+        <ActivateCavitation Type="Boolean">True</ActivateCavitation>
+        <ActivateReverseFlow Type="Boolean">False</ActivateReverseFlow>
+        <WriteTurboExpressions Type="Boolean">True</WriteTurboExpressions>
+        <Iterations Type="Integer">500</Iterations>
+        <SavingFrecPerRotation Type="Integer">500</SavingFrecPerRotation>
+        <ConvergeCrierion Type="Float">0.001</ConvergeCrierion>
+        <NumberOfRotations Type="Integer">3</NumberOfRotations>
+        <TimeStepType Type="Enum">tstRotAnglePerStep</TimeStepType>
+        <DregreesPerStep Type="Float">0.0523598775598299</DregreesPerStep>
+        <StepsPerPocket Type="Integer">100</StepsPerPocket>
+        <NumericSchemeVelocity Type="Enum">nsUpwind</NumericSchemeVelocity>
+        <NumericSchemePressure Type="Enum">nsUpwind</NumericSchemePressure>
+        <RelaxationVel Type="Float">0</RelaxationVel>
+        <DiagRelaxationPress Type="Float">0</DiagRelaxationPress>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+        </STLData>
+      </TSimericsInterface>
+      <TTCFDInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <Reduction_factor Type="Integer">75</Reduction_factor>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+        </STLData>
+      </TTCFDInterface>
+      <TOpenFOAMInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcSTLOnly</FileConfig>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+        </STLData>
+      </TOpenFOAMInterface>
+      <TGridProInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <ExportFormat Type="Enum">STL</ExportFormat>
+        <File_write_mode Type="Enum">ASCII</File_write_mode>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+        </STLData>
+      </TGridProInterface>
+      <TNeutral3DInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <ExportFormat Type="Enum">STEP</ExportFormat>
+        <File_write_mode Type="Enum">ASCII</File_write_mode>
+        <Face_mode Type="Enum">Surface</Face_mode>
+        <Neutral3DExport Type="Enum">Finished solid</Neutral3DExport>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TNeutral3DInterface>
+      <TSimScaleInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0006</MinSize>
+          <MaxSize Type="Float">0.01</MaxSize>
+          <STL_granularity Type="Enum">Moderate</STL_granularity>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+        </STLData>
+        <MeshData Type="Object">
+          <Fineness Type="Integer">5</Fineness>
+        </MeshData>
+        <SolverData Type="Object">
+          <TimeDependency Type="Enum">Steady</TimeDependency>
+          <Iterations Type="Integer">500</Iterations>
+          <SavingFrequency Type="Integer">500</SavingFrequency>
+          <ConvergenceCriterion Type="Float">0.001</ConvergenceCriterion>
+        </SolverData>
+      </TSimScaleInterface>
+      <THelyxInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0003</MinSize>
+          <MaxSize Type="Float">0.007</MaxSize>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+        </STLData>
+        <MeshData Type="Object">
+          <ScaleFactor Type="Float">1</ScaleFactor>
+        </MeshData>
+      </THelyxInterface>
+    </Export_Interfaces>
+    <SimpleReport>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</SimpleReport>
+    <MeridianContourImage Height="400" Width="600">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</MeridianContourImage>
+  </CFturboProject>
+</CFturboFile>
