@@ -10,7 +10,7 @@ clc;
 %% Cold Gas Testing Constants:
 rotor_radius = 0.04; % [m]
 hub_radius = 0.02; % [m]
-mass_flow_n2 = 0.17; % [kg/s]
+mass_flow_n2 = 0.05; % [kg/s]
 shaft_power = 10; % [kW]
 gamma_n2 = 1.4; % specific heat ratio
 
@@ -24,13 +24,13 @@ kw_to_hp = 1.34102209; % [hp/kw]
 
 % Input parameters
 radius = (rotor_radius + hub_radius) / 2; % meters
-horse_power = shaft_power * kw_to_hp; % HP
-torque = horse_power/(turbine_rpm/5252); % N*m
+horse_power = shaft_power * kw_to_hp % HP
+torque = 746 * horse_power/(2 * pi * turbine_rpm/60) % N*m
 degree_of_reaction = 0;
 num_blades = 10;
-chord = 0.04; % [m]
+chord = 0.02; % [m]
 blade_spacing = 2 * pi * hub_radius / num_blades; % [m]
-V_in = 110; % [m/2]
+V_in = 564; % [m/2]
 beta = 60; % deg
 stagger_angle = 0; % [deg]
 
@@ -42,8 +42,8 @@ fprintf("isentropic efficiency: %.4f\n", efficiency)
 
 % v_i = prendtl_meyer()
 
-% generate_blade_geom(chord, rad2deg(b), 0.01, blade_spacing)
-generate_blade_geom(0.04, 58, 0.01, 0.0126)
+generate_blade_geom(chord, rad2deg(b), 0.005, blade_spacing)
+% generate_blade_geom(0.04, 60, 0.01, 0.0126)
 
 function U = calc_blade_speed(radius, rpm)
     % rpm to angular velocity (rad/s)
@@ -237,9 +237,14 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     % Solve for y2 such that k = 1
     y2_initial_guess = r - B_spacing;
     % y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - 1, y2_initial_guess);
-    y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess);
-
-    
+    % c_gap = 
+    % k = NaN;
+    % while isnan(k)
+    %     y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess);
+    %     k = abs((2*x2 - 2*x_m)*(2*y1 - 2*y2))/(8*((x2 - x_m)^2)^(3/2));
+    % end
+    y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess); 
+    y2 = r - B_spacing + 0.005
 
     x_m = (y2 - y1) / m + x1;
     k = abs((2*x2 - 2*x_m)*(2*y1 - 2*y2))/(8*((x2 - x_m)^2)^(3/2));
