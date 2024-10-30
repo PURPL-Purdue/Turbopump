@@ -10,7 +10,7 @@ clc;
 %% Cold Gas Testing Constants:
 rotor_radius = 0.04; % [m]
 hub_radius = 0.02; % [m]
-mass_flow_n2 = 0.17; % [kg/s]
+mass_flow_n2 = 0.05; % [kg/s]
 shaft_power = 10; % [kW]
 gamma_n2 = 1.4; % specific heat ratio
 
@@ -24,13 +24,13 @@ kw_to_hp = 1.34102209; % [hp/kw]
 
 % Input parameters
 radius = (rotor_radius + hub_radius) / 2; % meters
-horse_power = shaft_power * kw_to_hp; % HP
-torque = horse_power/(turbine_rpm/5252); % N*m
+horse_power = shaft_power * kw_to_hp % HP
+torque = 746 * horse_power/(2 * pi * turbine_rpm/60) % N*m
 degree_of_reaction = 0;
 num_blades = 10;
-chord = 0.04; % [m]
+chord = 0.02; % [m]
 blade_spacing = 2 * pi * hub_radius / num_blades; % [m]
-V_in = 110; % [m/2]
+V_in = 564; % [m/2]
 beta = 60; % deg
 stagger_angle = 0; % [deg]
 
@@ -42,8 +42,8 @@ fprintf("isentropic efficiency: %.4f\n", efficiency)
 
 % v_i = prendtl_meyer()
 
-% generate_blade_geom(chord, rad2deg(b), 0.01, blade_spacing)
-generate_blade_geom(0.04, 58, 0.01, 0.0126)
+generate_blade_geom(chord, rad2deg(b), 0.005, blade_spacing)
+% generate_blade_geom(0.04, 60, 0.01, 0.0126)
 
 function U = calc_blade_speed(radius, rpm)
     % rpm to angular velocity (rad/s)
@@ -210,6 +210,8 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     h1 = plot(x1, curve_DC_1, 'k-', 'LineWidth', 2);
     h2 = plot(x2, curve_CC, 'k-', 'LineWidth', 2);
     h3 = plot(x3, curve_DC_2, 'k-', 'LineWidth', 2);
+    x_lower = [x1, x2, x3];
+    y_lower = [curve_DC_1, curve_CC, curve_DC_2];
     
     % Upper Surface Guide Curves
     % Area Normals
@@ -237,9 +239,14 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     % Solve for y2 such that k = 1
     y2_initial_guess = r - B_spacing;
     % y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - 1, y2_initial_guess);
-    y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess);
-
-    
+    % c_gap = 
+    % k = NaN;
+    % while isnan(k)
+    %     y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess);
+    %     k = abs((2*x2 - 2*x_m)*(2*y1 - 2*y2))/(8*((x2 - x_m)^2)^(3/2));
+    % end
+    y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess); 
+    y2 = r - B_spacing + 0.005
 
     x_m = (y2 - y1) / m + x1;
     k = abs((2*x2 - 2*x_m)*(2*y1 - 2*y2))/(8*((x2 - x_m)^2)^(3/2));
@@ -264,8 +271,14 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     u_a_2 = m * (c - u_x_2);
     h6 = plot(u_x_1, u_a_1, 'k-', 'LineWidth', 2);
     h7 = plot(u_x_2, u_a_2, 'k-', 'LineWidth', 2);
+
+    B1_post = flip(c - B1);
+    B2_post = flip(B2);
+    x_upper = [u_x_1, B1, B1_post, u_x_2];
+    y_upper = [u_a_1 - B_spacing, B2, B2_post, u_x_2 - B_spacing];
     
     handles = [h1, h2, h3, h4, h5, h6, h7];
+    
     % shifted_handles = gobjects(size(handles));
     for i = 1:length(handles)
         x_data = get(handles(i), 'XData');
@@ -295,6 +308,71 @@ function generate_blade_geom(c, beta, A_inlet, B_spacing)
     set(new_ax, 'Box', 'off');
     % exportgraphics(new_ax, 'blade.svg', 'ContentType', 'vector');
     saveas(new_fig, 'cgrotor.svg');
+
+    % calculate minimum spacing
+    calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet);
+end
+
+function calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet) 
+    figure;
+    subplot(2, 1, 1);
+    hold on;
+
+    plot(x_lower, y_lower, 'k-', 'LineWidth', 2, 'DisplayName', 'Lower Surface');
+    plot(x_upper, y_upper, 'b-', 'LineWidth', 2, 'DisplayName', 'Upper Surface');
+
+    min_distances = zeros(1, length(x_lower));
+    min_dist_x = zeros(1, length(x_lower));
+
+    for i = 1:length(x_lower)
+        x0 = x_lower(i);
+        y0 = y_lower(i);
+
+        % approx tangent w/ finite differences
+        if i < length(x_lower)
+            dx = x_lower(i + 1) - x0;
+            dy = y_lower(i + 1) - y0;
+        else
+            dx = x0 - x_lower(i - 1);
+            dy = y0 - y_lower(i - 1);
+        end
+
+        % calc normal (inwards/right)
+        normal_dx = -dy;
+        normal_dy = dx;
+
+        % normalize
+        normal_length = sqrt(normal_dx^2 + normal_dy^2);
+        normal_dx = normal_dx / normal_length;
+        normal_dy = normal_dy / normal_length;
+
+        % project
+        projection_length = A_inlet; 
+        x_normal = x0 + normal_dx * projection_length;
+        y_normal = y0 + normal_dy * projection_length;
+
+        % approx intersection with min dist from curr point to curve
+        distances = sqrt((x_upper - x_normal).^2 + (y_upper - y_normal).^2);
+        [min_distances(i), idx] = min(distances);
+        min_dist_x(i) = x_upper(idx);
+
+        plot([x0, x_upper(idx)], [y0, y_upper(idx)], 'r--');
+    end
+
+    xlabel('X Coordinate');
+    ylabel('Y Coordinate');
+    title('Lower and Upper Surfaces with Normals');
+    legend;
+
+    % Subplot 2: plot the minimum distance at each iteration
+    subplot(2, 1, 2);
+    plot(min_dist_x, min_distances, 'g-o', 'LineWidth', 1.5);
+    xlabel('Upper Curve X');
+    ylabel('Minimum Distance to Lower Surface');
+    title('Minimum Distance from Upper Surface to Lower Surface');
+    grid on;
+
+    fprintf('Overall minimum distance is %.5f\n', min(min_distances));
 end
 
 function k = curvature_function(y2, m, x1, x2, y1)
