@@ -1,1 +1,1 @@
-﻿"impeller_back_vane_thickness"= 2mm
+﻿"impeller_back_vane_thickness"= 1mm
