@@ -1,0 +1,1 @@
+﻿"impeller_back_vane_thickness"= 2mm
