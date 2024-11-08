@@ -17,7 +17,7 @@ n = 2; % (number of nozzles)
 %% TURBINE CONSTANTS
 
 rotor_radius = 0.04; % [m]
-hub_radius = 0.02; % [m]
+hub_radius = 0.03; % [m] % 0.02
 mass_flow_n2 = m_dot; % [kg/s]
 shaft_power = 10; % [kW]
 gamma_n2 = 1.4; % specific heat ratio
@@ -32,11 +32,13 @@ radius = (rotor_radius + hub_radius) / 2; % [m]
 horse_power = shaft_power * kw_to_hp; % [HP]
 torque = 746 * horse_power/(2 * pi * turbine_rpm/60); % N*m
 degree_of_reaction = 0;
-num_blades = 10;
+num_blades = 12; % 10
 chord = 0.02; % [m]
 blade_spacing = 2 * pi * hub_radius / num_blades; % [m]
 beta = 60; % initial estimate [deg] - refined in vtriangle
 % V_in = 564; % [m/2]
+min_blade_thickness = 0.005; % [m] % 0.01
+inlet_area = 0.005; % [m]
 
 %% COLD GAS NOZZLE CALCULATIONS
 
@@ -79,16 +81,18 @@ dist_n = calc_dist_n(r_throat_n, r_e_n) % [m]
 
 %% TURBINE CALCULATONS
 
-min_blade_thickness = 0.005; % [m]
-inlet_area = 0.005; % [m]
-
 [v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow_n2, deg2rad(beta), radius, v_e);
 plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1, -a2);
 
 efficiency = calculate_blade_efficiency(mass_flow_n2, v1, v2, w, w, b, b, a1);
 fprintf("isentropic efficiency: %.4f\n", efficiency)
 
-[max_blade_thickness, cross_sectional_area] = generate_blade_geom(chord, rad2deg(b), inlet_area, blade_spacing, min_blade_thickness)
+[max_blade_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_upper, areas] = generate_blade_geom(chord, rad2deg(b), inlet_area, blade_spacing, min_blade_thickness)
+plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, max_blade_thickness / 2)
+areas = areas * (rotor_radius - hub_radius);
+[Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
+plotMachPressureDistributions(Mach_vec, P_vec);
+
 
 %% STRUCTURE CALCULATIONS
 
@@ -252,7 +256,7 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
     C = X;
     surf(X,Y,Z,C)
     shading interp
-    axis square
+    axis equal
     colorbar
 end
 
@@ -403,7 +407,7 @@ function efficiency = calculate_blade_efficiency(mass_flow_rate, C1, C2, W1, W2,
 end
 
 
-function [max_thickness, cross_sectional_area] = generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness)
+function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_upper, areas] = generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness)
     theta_l = beta * pi / 180;
 
     num_points = 100;
@@ -526,6 +530,7 @@ function [max_thickness, cross_sectional_area] = generate_blade_geom(c, beta, A_
     % Save Blade to SVG
     new_fig = figure;
     new_ax = axes(new_fig);
+    axis(new_ax, 'equal');
     copyobj([h1, h2, h3, h4, h5, h6, h7], new_ax);
     set(new_ax, 'Visible', 'off'); 
     set(new_ax, 'XTick', []); 
@@ -535,13 +540,14 @@ function [max_thickness, cross_sectional_area] = generate_blade_geom(c, beta, A_
     saveas(new_fig, 'cgrotor.svg');
 
     % calculate minimum spacing
-    calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet);
+    areas = calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet);
 
     % calculate cross sectional area
-    cross_sectional_area = calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper + B_spacing);
+    y_upper = y_upper + B_spacing
+    cross_sectional_area = calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper);
 end
 
-function calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet) 
+function [min_distances] = calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet) 
     sample_size = round(0.3 * length(x_lower));
     sample_indices = sort(randperm(length(x_lower), sample_size));
     x_lower = x_lower(sample_indices);
@@ -681,6 +687,57 @@ function [cross_sectional_area] = calc_cross_sectional_area(x_lower, y_lower, x_
     fprintf('Cross Sectional Area %.5f\n', cross_sectional_area);
 end
 
+function plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, blade_radius, offset)
+    figure;
+    hold on;
+
+    r1 = hub_radius; 
+    r2 = blade_radius; 
+
+    [theta, Z] = meshgrid(linspace(0, 2*pi, 100), linspace(0, chord, 100)); % Adjust height range for cylinder
+    X_cyl = r1 * cos(theta);
+    Y_cyl = r1 * sin(theta);
+
+    surf(X_cyl, Y_cyl, Z, 'FaceAlpha', 0.3, 'EdgeColor', 'none');
+
+    theta_cap = linspace(0, 2*pi, 100);
+    X_cap = r1 * cos(theta_cap);
+    Y_cap = r1 * sin(theta_cap);
+
+    fill3(X_cap, Y_cap, zeros(size(X_cap)), 'b', 'EdgeColor', 'none');
+    % 'FaceAlpha', 0.5
+    fill3(X_cap, Y_cap, chord * ones(size(X_cap)), 'b', 'EdgeColor', 'none');
+
+    x = [x_lower, fliplr(x_upper)];
+    y = [y_lower, fliplr(y_upper)] - offset;
+    z = linspace(r1 - r2/4, r1 + r2, 100);
+
+    [X, Z] = meshgrid(x, z);
+    [Y, Z] = meshgrid(y, z);
+
+    % surf(Y, Z, X, 'FaceColor', 'interp', 'EdgeColor', 'none');
+
+    for k = 1:num_blades
+        theta = 2 * pi * k / num_blades;
+
+        X_rotated = Y * cos(theta) - Z * sin(theta);
+        Y_rotated = Y * sin(theta) + Z * cos(theta);
+        
+        surf(X_rotated, Y_rotated, X, 'FaceColor', 'interp', 'EdgeColor', 'none');
+
+        % x_rot = y * cos(theta) - z * sin(theta);
+        % y_rot = y * sin(theta) + z * cos(theta);
+        % fill3(x_rot, y_rot, x)
+        % surf(X_rotated, Y_rotated, X - r2 / 2, 'FaceColor', 'interp', 'EdgeColor', 'none'); 
+    end
+
+    hold off;
+    axis equal;
+    xlabel('X'); ylabel('Y'); zlabel('Z');
+    title('Plot of turbine');
+
+end
+
 function k = curvature_function(y2, m, x1, x2, y1)
     x_m = (y2 - y1) / m + x1;
 
@@ -692,4 +749,59 @@ function nu=prendtl_meyer(M, gamma)
     god_knows = atan(sqrt(gamma * (M^2 - 1) / (2 + gamma * (M^2 - 1))));
     literally_just_ref = atan(sqrt(M^2 - 1));
     nu = the_frac * god_knows - literally_just_ref;
+end
+
+%% Further Analysis 
+
+function [Mach_vec, P_vec] = calculateMachPressureDistribution(area_vec, gamma, R, T_inlet, P_inlet, M_inlet, M_outlet)
+    Mach_vec = zeros(size(area_vec));
+    P_vec = zeros(size(area_vec));
+    
+    % total temperature and pressure at inlet
+    Tt_inlet = T_inlet * (1 + ((gamma - 1) / 2) * M_inlet^2);
+    Pt_inlet = P_inlet * (1 + ((gamma - 1) / 2) * M_inlet^2)^(gamma / (gamma - 1));
+
+    % calc mach number along the blade 
+    for i = 1:length(area_vec)
+        area_ratio = area_vec(i) / area_vec(1);
+        
+        % assume isentropic and numerically solve for mach number from area - mach equation (Andrew uses for nozzle)
+        Mach_vec(i) = isentropicMachFinder(area_ratio, gamma, M_inlet, M_outlet);
+        
+        % calc static temperature and pressure using isentropic relations
+        T_static = Tt_inlet / (1 + ((gamma - 1) / 2) * Mach_vec(i)^2);
+        P_vec(i) = Pt_inlet * (T_static / Tt_inlet)^(gamma / (gamma - 1));
+    end
+end
+
+function Mach = isentropicMachFinder(area_ratio, gamma, M_inlet, M_outlet)
+    options = optimset('Display', 'off');
+    Mach_guess = (M_inlet + M_outlet) / 2; % guess as avg mach
+    
+    % function for the isentropic area-Mach relation
+    func = @(M) area_ratio - (1/M) * ((2/(gamma+1)) * (1 + ((gamma-1)/2) * M^2))^((gamma+1)/(2*(gamma-1)));
+    
+    % sovle for mach
+    Mach = fsolve(func, Mach_guess, options);
+end
+
+function plotMachPressureDistributions(Mach_vec, P_vec)
+    x = [1:1:length(Mach_vec)]; % lower coordinate  
+
+    figure;
+    sgtitle("Analysis along Lower Surface")
+    hold on
+    subplot(2, 1, 1);
+    plot(x, Mach_vec, 'b-')
+    grid on
+    xlabel("Lower Surface Coordinate")
+    ylabel("Mach Number")
+    title("Mach Number vs Lower (Pressure) Surface Coordinate")
+
+    subplot(2, 1, 2)
+    plot(x, P_vec, 'g-')
+    grid on
+    xlabel("Lower Surface Coordinate")
+    ylabel("Static Pressure [Pa]")
+    title("Pressure Distribution along Pressure Surface ")
 end
