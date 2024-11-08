@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CFturboFluidFile Version="2024.1">
+  <FluidMng Type="Object">
+    <Version>2024.1.2.106</Version>
+    <FluidLiquid Type="Object" Name="HC30">
+      <FluidDescription>Dynalene HC30, props derived @ T = 25°C</FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">3088.38078341045</FluidCp>
+      <FluidRho Type="Float">1272.44261304996</FluidRho>
+      <FluidVapPressure Type="Float">0</FluidVapPressure>
+      <FluidVisc Type="Float">1.85105998780054E-6</FluidVisc>
+      <FluidLambda Type="Float">0.524000000000025</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Hydrogen">
+      <FluidDescription>props derived @ T = -255 °C/ p = 5 bar</FluidDescription>
+      <FluidSymbol>H2</FluidSymbol>
+      <FluidCp Type="Float">8514.03641858021</FluidCp>
+      <FluidRho Type="Float">73.7232614997547</FluidRho>
+      <FluidVapPressure Type="Float">49204.1672011018</FluidVapPressure>
+      <FluidVisc Type="Float">2.29167171400009E-7</FluidVisc>
+      <FluidLambda Type="Float">0.103194479010498</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Water">
+      <FluidDescription>props derived @ T = 298.15 K/ p = 1 bar</FluidDescription>
+      <FluidSymbol>H2O</FluidSymbol>
+      <FluidCp Type="Float">4181.31883095802</FluidCp>
+      <FluidRho Type="Float">997.047039017707</FluidRho>
+      <FluidVapPressure Type="Float">3169.92938881239</FluidVapPressure>
+      <FluidVisc Type="Float">8.9265865996655E-7</FluidVisc>
+      <FluidLambda Type="Float">0.606515328152684</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Kerosene">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">2000</FluidCp>
+      <FluidRho Type="Float">800</FluidRho>
+      <FluidVapPressure Type="Float">689.475908677537</FluidVapPressure>
+      <FluidVisc Type="Float">2.39E-6</FluidVisc>
+      <FluidLambda Type="Float">0.145</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Water (20°C)">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">4182</FluidCp>
+      <FluidRho Type="Float">998.2</FluidRho>
+      <FluidVapPressure Type="Float">2340</FluidVapPressure>
+      <FluidVisc Type="Float">1E-6</FluidVisc>
+      <FluidLambda Type="Float">0.556</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Air (20°C)">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">1004.9</FluidCp>
+      <FluidRho Type="Float">1.2</FluidRho>
+      <FluidVisc Type="Float">1.535E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0262</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Air (45°C)">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">1004.9</FluidCp>
+      <FluidRho Type="Float">1.1</FluidRho>
+      <FluidVisc Type="Float">1.756E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0262</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Glycol-H2O 50/50 (20 deg C)">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">3312</FluidCp>
+      <FluidRho Type="Float">1064.9</FluidRho>
+      <FluidVapPressure Type="Float">5000</FluidVapPressure>
+      <FluidVisc Type="Float">3.468E-6</FluidVisc>
+      <FluidLambda Type="Float">0.38915</FluidLambda>
+    </FluidLiquid>
+    <FluidGas Type="Object" Name="Air">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>N2;O2</FluidSymbol>
+      <FluidCp Type="Float">1004.85</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">287.1</FluidR>
+      <Fluidpcrit Type="Float">3720000</Fluidpcrit>
+      <FluidTcrit Type="Float">132.5</FluidTcrit>
+      <Fluidrhocrit Type="Float">313</Fluidrhocrit>
+      <Fluidomega Type="Float">0.035</Fluidomega>
+      <cpfactor0 Type="Float">1050.01</cpfactor0>
+      <cpfactor1 Type="Float">-0.36506</cpfactor1>
+      <cpfactor2 Type="Float">0.0008482</cpfactor2>
+      <cpfactor3 Type="Float">-3.9183E-7</cpfactor3>
+      <FluidVisc Type="Float">1.535E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0262</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Ammonia">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>NH3</FluidSymbol>
+      <FluidCp Type="Float">2060</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">488.23</FluidR>
+      <Fluidpcrit Type="Float">11300000</Fluidpcrit>
+      <FluidTcrit Type="Float">405.6</FluidTcrit>
+      <Fluidrhocrit Type="Float">235</Fluidrhocrit>
+      <Fluidomega Type="Float">0.25</Fluidomega>
+      <cpfactor0 Type="Float">2060</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">8.27E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0242</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Argon">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>Ar</FluidSymbol>
+      <FluidCp Type="Float">520</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">208.13</FluidR>
+      <Fluidpcrit Type="Float">4897900</Fluidpcrit>
+      <FluidTcrit Type="Float">150.8</FluidTcrit>
+      <Fluidrhocrit Type="Float">535.7</Fluidrhocrit>
+      <Fluidomega Type="Float">-0.002</Fluidomega>
+      <cpfactor0 Type="Float">520</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.885E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0179</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="CarbonMonoxide">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>CO</FluidSymbol>
+      <FluidCp Type="Float">1039.5</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">296.838354736327</FluidR>
+      <Fluidpcrit Type="Float">3494000</Fluidpcrit>
+      <FluidTcrit Type="Float">132.86</FluidTcrit>
+      <Fluidrhocrit Type="Float">303.909585</Fluidrhocrit>
+      <Fluidomega Type="Float">0.0497</Fluidomega>
+      <cpfactor0 Type="Float">1039.5</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.475E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0161</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="CarbonDioxide">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>CO2</FluidSymbol>
+      <FluidCp Type="Float">840.3</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">188.9</FluidR>
+      <Fluidpcrit Type="Float">7400000</Fluidpcrit>
+      <FluidTcrit Type="Float">304.35</FluidTcrit>
+      <Fluidrhocrit Type="Float">464</Fluidrhocrit>
+      <Fluidomega Type="Float">0.239</Fluidomega>
+      <cpfactor0 Type="Float">840.3</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.245E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0168</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R1234ze(E)">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1bar</FluidDescription>
+      <FluidSymbol>C3H2F4</FluidSymbol>
+      <FluidCp Type="Float">873.774066674839</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">72.9073647242149</FluidR>
+      <Fluidpcrit Type="Float">3636250</Fluidpcrit>
+      <FluidTcrit Type="Float">382.52</FluidTcrit>
+      <Fluidrhocrit Type="Float">489.238433112</Fluidrhocrit>
+      <Fluidomega Type="Float">0.313</Fluidomega>
+      <cpfactor0 Type="Float">375.849138123444</cpfactor0>
+      <cpfactor1 Type="Float">1.7572751745051</cpfactor1>
+      <cpfactor2 Type="Float">-0.000197719684702036</cpfactor2>
+      <cpfactor3 Type="Float">-3.17277937130435E-7</cpfactor3>
+      <FluidVisc Type="Float">2.62209302009463E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0137797919239823</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Chlorine">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>Cl2</FluidSymbol>
+      <FluidCp Type="Float">415.7</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">118.8</FluidR>
+      <Fluidpcrit Type="Float">7700000</Fluidpcrit>
+      <FluidTcrit Type="Float">417</FluidTcrit>
+      <Fluidrhocrit Type="Float">573</Fluidrhocrit>
+      <Fluidomega Type="Float">0.09</Fluidomega>
+      <cpfactor0 Type="Float">415.7</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.126E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0089</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Fluorine">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>F2</FluidSymbol>
+      <FluidCp Type="Float">823.75</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">218.820474666163</FluidR>
+      <Fluidpcrit Type="Float">5172400</Fluidpcrit>
+      <FluidTcrit Type="Float">144.414</FluidTcrit>
+      <Fluidrhocrit Type="Float">592.86422643</Fluidrhocrit>
+      <Fluidomega Type="Float">0.0449</Fluidomega>
+      <cpfactor0 Type="Float">823.75</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.868E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0279</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Hydrogen">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>H2</FluidSymbol>
+      <FluidCp Type="Float">14182.5</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">4124.3</FluidR>
+      <Fluidpcrit Type="Float">1300000</Fluidpcrit>
+      <FluidTcrit Type="Float">31.15</FluidTcrit>
+      <Fluidrhocrit Type="Float">31</Fluidrhocrit>
+      <Fluidomega Type="Float">-0.216</Fluidomega>
+      <cpfactor0 Type="Float">14182.5</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">7.33E-6</FluidVisc>
+      <FluidLambda Type="Float">0.186</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Helium">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>He</FluidSymbol>
+      <FluidCp Type="Float">5177</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">2077.26368996967</FluidR>
+      <Fluidpcrit Type="Float">227600</Fluidpcrit>
+      <FluidTcrit Type="Float">5.1953</FluidTcrit>
+      <Fluidrhocrit Type="Float">72.56717426</Fluidrhocrit>
+      <Fluidomega Type="Float">-0.3836</Fluidomega>
+      <cpfactor0 Type="Float">5177</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.68E-5</FluidVisc>
+      <FluidLambda Type="Float">0.1567</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Neon">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>Ne</FluidSymbol>
+      <FluidCp Type="Float">1030</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">412.04</FluidR>
+      <Fluidpcrit Type="Float">2654000</Fluidpcrit>
+      <FluidTcrit Type="Float">44.4</FluidTcrit>
+      <Fluidrhocrit Type="Float">483.5</Fluidrhocrit>
+      <Fluidomega Type="Float">-0.035</Fluidomega>
+      <cpfactor0 Type="Float">1030</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">2.652E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0491</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Nitrogen">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>N2</FluidSymbol>
+      <FluidCp Type="Float">1121.3</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">296.8</FluidR>
+      <Fluidpcrit Type="Float">3390000</Fluidpcrit>
+      <FluidTcrit Type="Float">127.15</FluidTcrit>
+      <Fluidrhocrit Type="Float">313</Fluidrhocrit>
+      <Fluidomega Type="Float">0.039</Fluidomega>
+      <cpfactor0 Type="Float">1121.3</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.458E-5</FluidVisc>
+      <FluidLambda Type="Float">0.026</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="NitrogenMonoxide">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>NO</FluidSymbol>
+      <FluidCp Type="Float">1009</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">277.09</FluidR>
+      <Fluidpcrit Type="Float">6485000</Fluidpcrit>
+      <FluidTcrit Type="Float">180.2</FluidTcrit>
+      <Fluidrhocrit Type="Float">517</Fluidrhocrit>
+      <Fluidomega Type="Float">0.588</Fluidomega>
+      <cpfactor0 Type="Float">1009</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.586E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0257</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="NitrogenDioxide">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>NO2</FluidSymbol>
+      <FluidCp Type="Float">804.27</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">180.71</FluidR>
+      <Fluidpcrit Type="Float">10130000</Fluidpcrit>
+      <FluidTcrit Type="Float">431.35</FluidTcrit>
+      <Fluidrhocrit Type="Float">271</Fluidrhocrit>
+      <Fluidomega Type="Float">0.834</Fluidomega>
+      <cpfactor0 Type="Float">804.27</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.674E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0132</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="NitrousOxide">
+      <FluidDescription>cp coeff. derived @ T = 298.15 K/ p = 1 bar</FluidDescription>
+      <FluidSymbol>N2O</FluidSymbol>
+      <FluidCp Type="Float">876.700273739543</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">188.910316998691</FluidR>
+      <Fluidpcrit Type="Float">7245000</Fluidpcrit>
+      <FluidTcrit Type="Float">309.52</FluidTcrit>
+      <Fluidrhocrit Type="Float">452.011456</Fluidrhocrit>
+      <Fluidomega Type="Float">0.1613</Fluidomega>
+      <cpfactor0 Type="Float">395.281153773569</cpfactor0>
+      <cpfactor1 Type="Float">2.37844452783172</cpfactor1>
+      <cpfactor2 Type="Float">-0.00315152965953559</cpfactor2>
+      <cpfactor3 Type="Float">1.97861932200168E-6</cpfactor3>
+      <FluidVisc Type="Float">0</FluidVisc>
+      <FluidLambda Type="Float">0</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Oxygen">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>O2</FluidSymbol>
+      <FluidCp Type="Float">918.032280063898</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">259.832868732577</FluidR>
+      <Fluidpcrit Type="Float">5043000</Fluidpcrit>
+      <FluidTcrit Type="Float">154.581</FluidTcrit>
+      <Fluidrhocrit Type="Float">436.143644</Fluidrhocrit>
+      <Fluidomega Type="Float">0.0222</Fluidomega>
+      <cpfactor0 Type="Float">909.3</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.697E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0262</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Water">
+      <FluidDescription>Steam</FluidDescription>
+      <FluidSymbol>H2O</FluidSymbol>
+      <FluidCp Type="Float">1849.4</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">461.5</FluidR>
+      <Fluidpcrit Type="Float">22000000</Fluidpcrit>
+      <FluidTcrit Type="Float">647.15</FluidTcrit>
+      <Fluidrhocrit Type="Float">322</Fluidrhocrit>
+      <Fluidomega Type="Float">0.344</Fluidomega>
+      <cpfactor0 Type="Float">1849.4</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">8.44E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0248</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Toluene">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1 bar</FluidDescription>
+      <FluidSymbol>C7H8</FluidSymbol>
+      <FluidCp Type="Float">1126.47233178021</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">90.2389253039069</FluidR>
+      <Fluidpcrit Type="Float">4126000</Fluidpcrit>
+      <FluidTcrit Type="Float">591.75</FluidTcrit>
+      <Fluidrhocrit Type="Float">291.98665298</Fluidrhocrit>
+      <Fluidomega Type="Float">0.2657</Fluidomega>
+      <cpfactor0 Type="Float">211.832285864725</cpfactor0>
+      <cpfactor1 Type="Float">1.29954953037683</cpfactor1>
+      <cpfactor2 Type="Float">0.00894222872480656</cpfactor2>
+      <cpfactor3 Type="Float">-1.01014739732849E-5</cpfactor3>
+      <FluidVisc Type="Float">6.40414320280904E-7</FluidVisc>
+      <FluidLambda Type="Float">0.130347563677608</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="SulfurDioxide">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol>SO2</FluidSymbol>
+      <FluidCp Type="Float">594.3</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">129.8</FluidR>
+      <Fluidpcrit Type="Float">7880000</Fluidpcrit>
+      <FluidTcrit Type="Float">430.65</FluidTcrit>
+      <Fluidrhocrit Type="Float">524</Fluidrhocrit>
+      <Fluidomega Type="Float">0.256</Fluidomega>
+      <cpfactor0 Type="Float">594.3</cpfactor0>
+      <cpfactor1 Type="Float">0.01</cpfactor1>
+      <cpfactor2 Type="Float">0.0005</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.049E-5</FluidVisc>
+      <FluidLambda Type="Float">0.00994</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Methane">
+      <FluidDescription>cp coeff. derived @ T = 298.15K/ p = 1bar</FluidDescription>
+      <FluidSymbol>CH4</FluidSymbol>
+      <FluidCp Type="Float">2225.82549</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">518.27</FluidR>
+      <Fluidpcrit Type="Float">4599200</Fluidpcrit>
+      <FluidTcrit Type="Float">190.564</FluidTcrit>
+      <Fluidrhocrit Type="Float">162.66</Fluidrhocrit>
+      <Fluidomega Type="Float">0.01142</Fluidomega>
+      <cpfactor0 Type="Float">2828.73344904972</cpfactor0>
+      <cpfactor1 Type="Float">-8.08053939859444</cpfactor1>
+      <cpfactor2 Type="Float">0.0261118770100721</cpfactor2>
+      <cpfactor3 Type="Float">-1.94263115359768E-5</cpfactor3>
+      <FluidVisc Type="Float">1.727067E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0341368</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Ethanol">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1bar</FluidDescription>
+      <FluidSymbol>C2H6O</FluidSymbol>
+      <FluidCp Type="Float">1415.37960650111</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">180.480867161988</FluidR>
+      <Fluidpcrit Type="Float">6268000</Fluidpcrit>
+      <FluidTcrit Type="Float">514.71</FluidTcrit>
+      <Fluidrhocrit Type="Float">273.1858492</Fluidrhocrit>
+      <Fluidomega Type="Float">0.644</Fluidomega>
+      <cpfactor0 Type="Float">1032.19524249098</cpfactor0>
+      <cpfactor1 Type="Float">-2.10569614875896</cpfactor1>
+      <cpfactor2 Type="Float">0.0158918518096112</cpfactor2>
+      <cpfactor3 Type="Float">-1.51552123139603E-5</cpfactor3>
+      <FluidVisc Type="Float">1.37854701681593E-6</FluidVisc>
+      <FluidLambda Type="Float">0.163496302482986</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Propylene">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1bar</FluidDescription>
+      <FluidSymbol>C3H6</FluidSymbol>
+      <FluidCp Type="Float">1530.40727140396</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">197.588483198803</FluidR>
+      <Fluidpcrit Type="Float">4555000</Fluidpcrit>
+      <FluidTcrit Type="Float">364.211</FluidTcrit>
+      <Fluidrhocrit Type="Float">229.62914118</Fluidrhocrit>
+      <Fluidomega Type="Float">0.146</Fluidomega>
+      <cpfactor0 Type="Float">864.729259210732</cpfactor0>
+      <cpfactor1 Type="Float">-0.20625623529301</cpfactor1>
+      <cpfactor2 Type="Float">0.0114762068698503</cpfactor2>
+      <cpfactor3 Type="Float">-1.10546374883038E-5</cpfactor3>
+      <FluidVisc Type="Float">4.97063954154935E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0171283510136452</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Natural gas">
+      <FluidDescription>[89][6][5]</FluidDescription>
+      <FluidSymbol>CH4;C2H6;C3H4</FluidSymbol>
+      <FluidCp Type="Float">2161.39</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">488.228</FluidR>
+      <Fluidpcrit Type="Float">4666920</Fluidpcrit>
+      <FluidTcrit Type="Float">208.04</FluidTcrit>
+      <Fluidrhocrit Type="Float">167.5966</Fluidrhocrit>
+      <Fluidomega Type="Float">0.0263</Fluidomega>
+      <cpfactor0 Type="Float">2615.8</cpfactor0>
+      <cpfactor1 Type="Float">-7.124511</cpfactor1>
+      <cpfactor2 Type="Float">0.02423027</cpfactor2>
+      <cpfactor3 Type="Float">-1.8267E-5</cpfactor3>
+      <FluidVisc Type="Float">1.5746E-5</FluidVisc>
+      <FluidLambda Type="Float">0.03239</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Ethane">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1bar</FluidDescription>
+      <FluidSymbol>C2H6</FluidSymbol>
+      <FluidCp Type="Float">1745.12293740056</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">276.512718729963</FluidR>
+      <Fluidpcrit Type="Float">4872200</Fluidpcrit>
+      <FluidTcrit Type="Float">305.322</FluidTcrit>
+      <Fluidrhocrit Type="Float">206.180000006732</Fluidrhocrit>
+      <Fluidomega Type="Float">0.099</Fluidomega>
+      <cpfactor0 Type="Float">1348.86464115973</cpfactor0>
+      <cpfactor1 Type="Float">-2.88273876983031</cpfactor1>
+      <cpfactor2 Type="Float">0.0192537330357543</cpfactor2>
+      <cpfactor3 Type="Float">-1.71972993081182E-5</cpfactor3>
+      <FluidVisc Type="Float">7.65366127717146E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0209828542965025</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="Propyne">
+      <FluidDescription>cp coeff. derived @ T = 25°C/ p = 1bar</FluidDescription>
+      <FluidSymbol>C3H4</FluidSymbol>
+      <FluidCp Type="Float">1514.11865062179</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">207.546180728907</FluidR>
+      <Fluidpcrit Type="Float">5626000</Fluidpcrit>
+      <FluidTcrit Type="Float">402.38</FluidTcrit>
+      <Fluidrhocrit Type="Float">244.8999998</Fluidrhocrit>
+      <Fluidomega Type="Float">0.204</Fluidomega>
+      <cpfactor0 Type="Float">345.916140396467</cpfactor0>
+      <cpfactor1 Type="Float">4.80267268944086</cpfactor1>
+      <cpfactor2 Type="Float">-0.0032905201509268</cpfactor2>
+      <cpfactor3 Type="Float">1.08644672764839E-6</cpfactor3>
+      <FluidVisc Type="Float">5.198E-6</FluidVisc>
+      <FluidLambda Type="Float">0.028</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R12">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>CCl2F2</FluidSymbol>
+      <FluidCp Type="Float">573</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">68.76</FluidR>
+      <Fluidpcrit Type="Float">4160000</Fluidpcrit>
+      <FluidTcrit Type="Float">385.16</FluidTcrit>
+      <Fluidrhocrit Type="Float">558</Fluidrhocrit>
+      <Fluidomega Type="Float">0.179</Fluidomega>
+      <cpfactor0 Type="Float">573</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.04E-5</FluidVisc>
+      <FluidLambda Type="Float">0.009947</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R124">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>C3H3F3</FluidSymbol>
+      <FluidCp Type="Float">725.75436126581</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">60.9224978421146</FluidR>
+      <Fluidpcrit Type="Float">3624295</Fluidpcrit>
+      <FluidTcrit Type="Float">395.425</FluidTcrit>
+      <Fluidrhocrit Type="Float">560</Fluidrhocrit>
+      <Fluidomega Type="Float">0.288095084221429</Fluidomega>
+      <cpfactor0 Type="Float">193.507706914939</cpfactor0>
+      <cpfactor1 Type="Float">2.2767533449535</cpfactor1>
+      <cpfactor2 Type="Float">-0.00204170901083156</cpfactor2>
+      <cpfactor3 Type="Float">1.3178824188853E-6</cpfactor3>
+      <FluidVisc Type="Float">2.28146424775424E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0131417721546253</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R22">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>CHF2Cl</FluidSymbol>
+      <FluidCp Type="Float">650</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">96.156</FluidR>
+      <Fluidpcrit Type="Float">4990000</Fluidpcrit>
+      <FluidTcrit Type="Float">369.33</FluidTcrit>
+      <Fluidrhocrit Type="Float">513</Fluidrhocrit>
+      <Fluidomega Type="Float">0.221</Fluidomega>
+      <cpfactor0 Type="Float">650</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.109E-5</FluidVisc>
+      <FluidLambda Type="Float">0.0115</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R134a">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>CF3Cl</FluidSymbol>
+      <FluidCp Type="Float">800</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">81.5</FluidR>
+      <Fluidpcrit Type="Float">4060000</Fluidpcrit>
+      <FluidTcrit Type="Float">374.21</FluidTcrit>
+      <Fluidrhocrit Type="Float">511.9</Fluidrhocrit>
+      <Fluidomega Type="Float">0.32684</Fluidomega>
+      <cpfactor0 Type="Float">800</cpfactor0>
+      <cpfactor1 Type="Float">-0.33</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">8.44E-6</FluidVisc>
+      <FluidLambda Type="Float">0.01339</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R410A">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>50R32;50R125</FluidSymbol>
+      <FluidCp Type="Float">820</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">113.89</FluidR>
+      <Fluidpcrit Type="Float">4900000</Fluidpcrit>
+      <FluidTcrit Type="Float">345</FluidTcrit>
+      <Fluidrhocrit Type="Float">552</Fluidrhocrit>
+      <Fluidomega Type="Float">0.296</Fluidomega>
+      <cpfactor0 Type="Float">820</cpfactor0>
+      <cpfactor1 Type="Float">0</cpfactor1>
+      <cpfactor2 Type="Float">0</cpfactor2>
+      <cpfactor3 Type="Float">0</cpfactor3>
+      <FluidVisc Type="Float">1.237E-5</FluidVisc>
+      <FluidLambda Type="Float">0.013327</FluidLambda>
+    </FluidGas>
+    <FluidGas Type="Object" Name="R245fa">
+      <FluidDescription>refrigerant agent</FluidDescription>
+      <FluidSymbol>C3H3F5</FluidSymbol>
+      <FluidCp Type="Float">860.176865427861</FluidCp>
+      <FluidZ Type="Float">1</FluidZ>
+      <FluidR Type="Float">62.0260341188384</FluidR>
+      <Fluidpcrit Type="Float">3651000</Fluidpcrit>
+      <FluidTcrit Type="Float">427.01</FluidTcrit>
+      <Fluidrhocrit Type="Float">519.4357675</Fluidrhocrit>
+      <Fluidomega Type="Float">0.3776</Fluidomega>
+      <cpfactor0 Type="Float">160.930554606457</cpfactor0>
+      <cpfactor1 Type="Float">2.96020778479102</cpfactor1>
+      <cpfactor2 Type="Float">-0.00248265064827309</cpfactor2>
+      <cpfactor3 Type="Float">1.4094333766789E-6</cpfactor3>
+      <FluidVisc Type="Float">2.10585012545895E-6</FluidVisc>
+      <FluidLambda Type="Float">0.0157155680493755</FluidLambda>
+    </FluidGas>
+    <FluidLiquid Type="Object" Name="G50-T20">
+      <FluidDescription></FluidDescription>
+      <FluidSymbol></FluidSymbol>
+      <FluidCp Type="Float">0</FluidCp>
+      <FluidRho Type="Float">1072.3</FluidRho>
+      <FluidVapPressure Type="Float">2340</FluidVapPressure>
+      <FluidVisc Type="Float">4.29E-6</FluidVisc>
+      <FluidLambda Type="Float">0</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Oxygen_1">
+      <FluidDescription>props derived @ T = -150°C/ p = 22.216bar</FluidDescription>
+      <FluidSymbol>O2</FluidSymbol>
+      <FluidCp Type="Float">1695.52065217346</FluidCp>
+      <FluidRho Type="Float">1143.49285651068</FluidRho>
+      <FluidVapPressure Type="Float">1221597.79453859</FluidVapPressure>
+      <FluidVisc Type="Float">9.66560496004132E-8</FluidVisc>
+      <FluidLambda Type="Float">0.15151</FluidLambda>
+    </FluidLiquid>
+    <FluidLiquid Type="Object" Name="Oxygen">
+      <FluidDescription>props derived @ T = 90 K/ p = 3.44737954338769 bar</FluidDescription>
+      <FluidSymbol>O2</FluidSymbol>
+      <FluidCp Type="Float">1697.59625116706</FluidCp>
+      <FluidRho Type="Float">1142.64950236651</FluidRho>
+      <FluidVapPressure Type="Float">99350.3215279369</FluidVapPressure>
+      <FluidVisc Type="Float">1.71645958188912E-7</FluidVisc>
+      <FluidLambda Type="Float">0.151232491273918</FluidLambda>
+    </FluidLiquid>
+  </FluidMng>
+</CFturboFluidFile>
