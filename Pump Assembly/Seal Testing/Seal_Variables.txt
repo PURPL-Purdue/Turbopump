@@ -5,4 +5,4 @@
 "Shaft_clearance"= .002in
 "O-Ring_ID"= .801in
 "O-Ring_CS"= .070in
-"Shaft_OD"= .5in
+"Shaft_OD"= .5in"Flange_OD"=2.3in
