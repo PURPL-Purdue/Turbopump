@@ -1,0 +1,8 @@
+﻿"Cavity_Depth" = 0.031in
+"Cavity_Width" = 0.031in
+"Tooth_Width" = .01in
+"Shaft_Seal_OD"= 17mm'diameter at seal area
+"Shaft_clearance"= .002in
+"O-Ring_ID"= .801in
+"O-Ring_CS"= .070in
+"Shaft_OD"= .5in"Flange_OD"=2.3in
