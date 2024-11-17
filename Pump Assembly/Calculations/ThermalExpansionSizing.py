@@ -1,5 +1,6 @@
 #this code is for finding sizing parts on the shaft
 # and their wear rings at differnent temps
+# PTFE might not work
 
 # %% setup
 # You should get the jupyter notebooks extension for VS code, this works a little better with that
