@@ -1,0 +1,22 @@
+Variable,Value,Units,Description
+R_S,733.977754237288,J/(kg·K),Specific gas constant
+rho_0,3.75302558761398,kg/m^3,Stagnation density
+v_e,1666.58894431792,m/s,Exit velocity
+T_throat,826.423281920664,K,Throat temperature
+P_throat,1387171.82628553,N/m^2,Throat pressure
+rho_throat,2.28688759511966,kg/m^3,Throat density
+v_throat,824.273085018318,m/s,Throat velocity
+A_throat,0.000261564829097944,m^2,Throat area
+M_e,2.24024196105381,-,Exit Mach number
+rho_e,0.41862956534907,kg/m^3,Exit density
+A_e,0.000706702929138355,m^2,Exit area
+T_e,673.174169712086,K,Exit temperature
+r_throat,0.00912461894984383,m,Throat radius
+r_e,0.0149983508740055,m,Exit radius
+dist,0.0219210659710106,m,Nozzle length
+F_thrust,821.719855597961,N,Thrust force
+A_throat_n,0.000130782414548972,m^2,Throat area per nozzle
+A_e_n,0.000353351464569177,m^2,Exit area per nozzle
+r_throat_n,0.00645207993517785,m,Throat radius per nozzle
+r_e_n,0.0106054356096245,m,Exit radius per nozzle
+dist_n,0.0155005343989393,m,Nozzle length per nozzle
