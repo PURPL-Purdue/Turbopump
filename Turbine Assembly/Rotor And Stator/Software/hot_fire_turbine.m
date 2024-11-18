@@ -2,27 +2,32 @@
 % TODO: prendtl-meyer based US  
 % TODO: spans 
 
+%% CONVERSION FACTORS 
+lb_to_kg = 0.45359237;
+bar_to_pa = 100000;
+psi_to_pa = 6894.75729;
+
 %% COLD GAS CONSTANTS
 
-P_0 = 3447378.6466; % [N/m^2, 500psi]
-P_e = 101352.93221; % [N/m^2, 14.7psi]
+P_0 = 24.132 * bar_to_pa; % [N/m^2, 500psi]
+P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
 P_A = P_e;
-m_dot = 0.25; % [kg/s]
-T_0 = 293; % [K]
-gamma = 1.4; % (Specific heat ratio of Air)
+m_dot_imperial = 1.087; % pounds / second 
+m_dot = m_dot_imperial * lb_to_kg; % [kg/s]
+T_0 = 876.05; % [K]
+gamma = 1.1201; % (Specific heat ratio )
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
-m_m = 28.02; % [g/mol] (Molar Mass of Air)
+m_m = 11.328; % [g/mol] (Molar Mass )
 n = 2; % (number of nozzles)
 
 %% TURBINE CONSTANTS
 
 rotor_radius = 0.04; % [m]
 hub_radius = 0.035; % [m] % 0.02
-mass_flow_n2 = m_dot; % [kg/s]
-shaft_power = 10; % [kW]
-gamma_n2 = 1.4; % specific heat ratio
+mass_flow = m_dot; % [kg/s]
+shaft_power = 150; % [kW]
 
-turbine_rpm = 10000; % [rpm]
+turbine_rpm = 50000; % [rpm]
 
 %% Conversion Factors
 kw_to_hp = 1.34102209; % [hp/kw]
@@ -30,7 +35,7 @@ kw_to_hp = 1.34102209; % [hp/kw]
 % Input parameters
 radius = (rotor_radius + hub_radius) / 2; % [m]
 horse_power = shaft_power * kw_to_hp; % [HP]
-torque = horse_power * 5252 / turbine_rpm * 1.355817; % N*m
+torque = horse_power * 5252 / turbine_rpm * 1.355817; % 746 * horse_power/(2 * pi * turbine_rpm/60); % N*m
 degree_of_reaction = 0;
 num_blades = 25; % 10
 chord = 0.01; % [m]
@@ -38,7 +43,7 @@ blade_spacing = 2 * pi * hub_radius / num_blades; % [m]
 beta = 60; % initial estimate [deg] - refined in vtriangle
 % V_in = 564; % [m/2]
 min_blade_thickness = 0.005; % [m] % 0.01
-inlet_area = 0.005; % [m]
+inlet_area = 0.0025; % [m]
 
 %% COLD GAS NOZZLE CALCULATIONS
 
@@ -81,10 +86,10 @@ dist_n = calc_dist_n(r_throat_n, r_e_n) % [m]
 
 %% TURBINE CALCULATONS
 
-[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow_n2 / num_blades, deg2rad(beta), radius, v_e);
+[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow / num_blades, deg2rad(60), radius, v_e);
 plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1, -a2);
 
-efficiency = calculate_blade_efficiency(mass_flow_n2, v1, v2, w, w, b, b, a1);
+efficiency = calculate_blade_efficiency(mass_flow, v1, v2, w, w, b, b, a1);
 fprintf("isentropic efficiency: %.4f\n", efficiency)
 
 [max_blade_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_upper, areas] = generate_blade_geom(chord, rad2deg(b), inlet_area, blade_spacing, min_blade_thickness)
@@ -110,8 +115,8 @@ radius_turbine = calc_radius_turbine(height_blade, hub_radius) % [m]
 mass_blade = calc_mass_blade(Length_blade, width_blade, height_bmin, rho_blade) % [kg]
 Force_centrifugal = calc_Force_centrifugal(mass_blade, w, radius_turbine) % [N]
 stress_centrifugal = calc_stress_centrifugal(rho_blade, height_blade, mean_diameter, w) % [N/m^2]
-Force_tangential = calc_Force_tangential(mass_flow_n2, w, b, w, -b) % [N]
-Force_axial = calc_Force_axial(mass_flow_n2, v1, a1, w, -b) % [N]
+Force_tangential = calc_Force_tangential(mass_flow, w, b, w, -b) % [N]
+Force_axial = calc_Force_axial(mass_flow, v1, a1, w, -b) % [N]
 torque_blade = calc_torque_blade(Force_tangential, height_blade) % [Nm]
 torque_turbine = calc_torque_turbine(Force_tangential, radius_turbine, Z_blade) % [Nm]
 P = calc_P(torque_turbine, w) % [Nm/s]
@@ -138,7 +143,7 @@ Description = {
 };
 
 T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-gas_values.csv');
+writetable(T, 'HotGas-gas_values.csv');
 disp(T);
 
 % Nozzle Parameters
@@ -167,7 +172,7 @@ Description = {
 };
 
 T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-nozzle_values.csv');
+writetable(T, 'HotGas-nozzle_values.csv');
 disp(T);
 
 % Turbine values
@@ -198,7 +203,7 @@ Description = {
 };
 
 T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-turbine_values.csv');
+writetable(T, 'HotGas-turbine_values.csv');
 disp(T);
 
 % structure table
@@ -225,8 +230,10 @@ Description = {
 };
 
 T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-structure_values.csv');
+writetable(T, 'HotGas-structure_values.csv');
 disp(T);
+
+
 
 %% STRUCTURE FUNCTIONS
 
@@ -365,7 +372,13 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
     surf(X,Y,Z,C)
     shading interp
     axis equal
+    xlabel("width [m]")
+    ylabel("length [m]")
+    zlabel("height [m]")
     colorbar
+
+    figure;
+    contour(X,Y,Z, [])
 end
 
 function percentage=exp_scale(x)
