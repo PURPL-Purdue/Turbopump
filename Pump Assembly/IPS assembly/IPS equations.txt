@@ -1,0 +1,16 @@
+﻿"kero_radius"=0.334in
+"lox_radius"=0.23622in
+"Cavity_width"=0.031in
+"tooth_width"=0.01in
+"cavity_depth"=0.031in
+"seal_step"=0.02in
+"purge_length"=0.04in
+"D1@Sketch1"="lox_radius"+"seal_step"+"radial_clearance"
+"insert_radius" = 0.55in
+"recycle_groove width" = 0.04in
+"recycle_groove_depth" = 0.04in
+"N2_purge_width"= .04in
+"N2_purge_depth"= .04in
+"drain_width"= .04in
+"drain_depth"= .04in
+"radial_clearance"= .002in

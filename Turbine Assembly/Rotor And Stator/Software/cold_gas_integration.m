@@ -120,6 +120,114 @@ Moment_Bending = calc_Moment_Bending(height_blade, Z_blade, Force_gas) % [Nm]
 I = calc_I(Length_blade, height_bmin) % [m^4]
 stress_gas = calc_stress_gas(height_bmin, Force_gas, width_blade, I) % [N/m^2]
 
+%% SAVE TABLES
+
+% gas parameters
+Variable = {'P_0'; 'P_e'; 'P_A'; 'm_dot'; 'T_0'; 'gamma'; 'R'; 'm_m'};
+Value = [P_0; P_e; P_A; m_dot; T_0; gamma; R; m_m];
+Units = {'N/m^2'; 'N/m^2'; 'N/m^2'; 'kg/s'; 'K'; '-'; 'J/(mol*K)'; 'g/mol'};
+Description = {
+    'Total pressure (500 psi)';
+    'Exit pressure (14.7 psi)';
+    'Ambient pressure';
+    'Mass flow rate';
+    'Total temperature';
+    'Specific heat ratio';
+    'Universal gas constant';
+    'Molar mass'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-gas_values.csv');
+disp(T);
+
+% Nozzle Parameters
+Variable = {
+    'R_S'; 'rho_0'; 'v_e'; 'T_throat'; 'P_throat'; 'rho_throat'; 'v_throat';
+    'A_throat'; 'M_e'; 'rho_e'; 'A_e'; 'T_e'; 'r_throat'; 'r_e'; 'dist'; 
+    'F_thrust'; 'A_throat_n'; 'A_e_n'; 'r_throat_n'; 'r_e_n'; 'dist_n'
+};
+Value = [
+    R_S; rho_0; v_e; T_throat; P_throat; rho_throat; v_throat;
+    A_throat; M_e; rho_e; A_e; T_e; r_throat; r_e; dist;
+    F_thrust; A_throat_n; A_e_n; r_throat_n; r_e_n; dist_n
+];
+Units = {
+    'J/(kg·K)'; 'kg/m^3'; 'm/s'; 'K'; 'N/m^2'; 'kg/m^3'; 'm/s';
+    'm^2'; '-'; 'kg/m^3'; 'm^2'; 'K'; 'm'; 'm'; 'm'; 
+    'N'; 'm^2'; 'm^2'; 'm'; 'm'; 'm'
+};
+Description = {
+    'Specific gas constant'; 'Stagnation density'; 'Exit velocity'; 
+    'Throat temperature'; 'Throat pressure'; 'Throat density'; 'Throat velocity';
+    'Throat area'; 'Exit Mach number'; 'Exit density'; 'Exit area'; 
+    'Exit temperature'; 'Throat radius'; 'Exit radius'; 'Nozzle length'; 
+    'Thrust force'; 'Throat area per nozzle'; 'Exit area per nozzle'; 
+    'Throat radius per nozzle'; 'Exit radius per nozzle'; 'Nozzle length per nozzle'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-nozzle_values.csv');
+disp(T);
+
+% Turbine values
+Variable = {
+    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
+    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
+    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
+    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
+};
+Value = [
+    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
+    radius; horse_power; torque; degree_of_reaction; num_blades;
+    chord; blade_spacing; min_blade_thickness; inlet_area;
+    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
+];
+Units = {
+    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
+    'm'; 'HP'; 'N*m'; '-'; '-';
+    'm'; 'm'; 'm'; 'm²';
+    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
+};
+Description = {
+    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
+    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
+    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
+    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
+    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-turbine_values.csv');
+disp(T);
+
+% structure table
+% Create a table
+Variable = {
+    'radius_turbine'; 'mass_blade'; 'Force_centrifugal'; 'stress_centrifugal';
+    'Force_tangential'; 'Force_axial'; 'torque_blade'; 'torque_turbine';
+    'P'; 'Force_gas'; 'Moment_Bending'; 'I'; 'stress_gas'
+};
+Value = [
+    radius_turbine; mass_blade; Force_centrifugal; stress_centrifugal;
+    Force_tangential; Force_axial; torque_blade; torque_turbine;
+    P; Force_gas; Moment_Bending; I; stress_gas
+];
+Units = {
+    'm'; 'kg'; 'N'; 'N/m^2';
+    'N'; 'N'; 'N*m'; 'N*m';
+    'W'; 'N'; 'N*m'; 'm^4'; 'N/m^2'
+};
+Description = {
+    'Turbine radius'; 'Blade mass'; 'Centrifugal force on blade'; 'Centrifugal stress';
+    'Tangential force'; 'Axial force'; 'Blade torque'; 'Turbine torque';
+    'Power'; 'Gas force'; 'Bending moment'; 'Second moment of area (I)'; 'Gas stress'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-structure_values.csv');
+disp(T);
+
 %% STRUCTURE FUNCTIONS
 
 function radius_turbine = calc_radius_turbine(height_blade, radius_hub) % [m]
