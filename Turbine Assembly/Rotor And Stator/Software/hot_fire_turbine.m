@@ -374,16 +374,20 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
     Y = R .* cos(Thetas);
     Z = R .* sin(Thetas);
     C = X;
+
     surf(X,Y,Z,C)
     shading interp
     axis equal
-    xlabel("width [m]")
-    ylabel("length [m]")
+    xlabel("length [m]")
+    ylabel("width [m]")
     zlabel("height [m]")
     colorbar
 
+    minZ = min(Z(:));
+    maxZ = max(Z(:));  
+
     figure;
-    contour(X,Y,Z, [])
+    contour(X,Y,Z,linspace(minZ, maxZ / 2, 10))
 end
 
 function percentage=exp_scale(x)
@@ -506,12 +510,12 @@ function plot_velocity_triangles_angles(v1, v2, u, w1, w2, chord_length, inclina
     quiver(chord_end(1) + w2(1), chord_end(2) + w2(2), u2(1), u2(2), 0, 'b', 'LineWidth', 2);
     quiver(chord_end(1), chord_end(2), v2(1), v2(2), 0, 'g', 'LineWidth', 2);
     
-    text(w1(1)/2, w1(2)/2, 'w1', 'FontSize', 12);
-    text(w1(1) + u1(1)/2, w1(2) + u1(2)/2, 'u1', 'FontSize', 12);
-    text(v1(1)/2, v1(2)/2, 'v1', 'FontSize', 12);
-    text(chord_end(1) + w2(1)/2, chord_end(2) + w2(2)/2, 'w2', 'FontSize', 12);
-    text(chord_end(1) + w2(1) + u2(1)/2, chord_end(2) + w2(2) + u2(2)/2, 'u2', 'FontSize', 12);
-    text(chord_end(1) + v2(1)/2, chord_end(2) + v2(2)/2, 'v2', 'FontSize', 12);
+    text(w1(1)/2, w1(2)/2, sprintf('w1 = %.2f m/s', mag_w1), 'FontSize', 12);
+    text(w1(1) + u1(1)/2, w1(2) + u1(2)/2, sprintf('u1 = %.2f m/s', mag_u1), 'FontSize', 12);
+    text(v1(1)/2, v1(2)/2, sprintf('v1 = %.2f m/s', mag_v1), 'FontSize', 12);
+    text(chord_end(1) + w2(1)/2, chord_end(2) + w2(2)/2, sprintf('w2 = %.2f m/s', mag_w2), 'FontSize', 12);
+    text(chord_end(1) + w2(1) + u2(1)/2, chord_end(2) + w2(2) + u2(2)/2, sprintf('u2 = %.2f m/s', mag_u2), 'FontSize', 12);
+    text(chord_end(1) + v2(1)/2, chord_end(2) + v2(2)/2, sprintf('v2 = %.2f m/s', mag_v2), 'FontSize', 12);
     
     xlabel('X');
     ylabel('Y');
@@ -647,8 +651,8 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     end
     
     % Label and axes
-    xlabel('x');
-    ylabel('y');
+    xlabel('x [m]');
+    ylabel('y [m]');
     title('Blade Geomtetry Parametric Curves');
     grid on;
     axis equal;
@@ -751,8 +755,8 @@ function [min_distances] = calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_u
         fprintf('Min at iteration %d is %.3f at x=%.3f\n', i, min_distances(i), min_dist_x(i));
     end
 
-    xlabel('X Coordinate');
-    ylabel('Y Coordinate');
+    xlabel('X Coordinate [m]');
+    ylabel('Y Coordinate [m]');
     title('Lower and Upper Surfaces with Normals');
     legend('Lower Surface', 'Upper Surface', 'Location', 'best');
     grid on;
@@ -760,8 +764,8 @@ function [min_distances] = calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_u
 
     subplot(2, 1, 2);
     plot(min_dist_x, min_distances, 'g-o', 'LineWidth', 1.5);
-    xlabel('Upper Curve X');
-    ylabel('Minimum Distance to Lower Surface');
+    xlabel('Upper Curve X [m]');
+    ylabel('Minimum Distance to Lower Surface [m]');
     title('Minimum Distance from Upper Surface to Lower Surface');
     grid on;
 
@@ -801,17 +805,18 @@ function [cross_sectional_area] = calc_cross_sectional_area(x_lower, y_lower, x_
     end
 
     cross_sectional_area = upper_surf_area - lower_surf_area;
+    cross_sectional_area = cross_sectional_area * 10000;
 
     fill([x_upper, fliplr(x_lower)], [y_upper, fliplr(y_lower)], 'y', 'FaceAlpha', 0.3); % plot cross sectional area
 
-    xlabel('X Coordinate');
-    ylabel('Y Coordinate');
-    title('Lower and Upper Surfaces Area');
-    legend('Lower Surface', 'Upper Surface', "Cross Sectional Area = " + cross_sectional_area, 'Location', 'best');
+    xlabel('X Coordinate [m]');
+    ylabel('Y Coordinate [m]');
+    title('Cross Sectional Area');
+    legend('Lower Surface', 'Upper Surface', "Cross Sectional Area = " + cross_sectional_area + " cm^2", 'Location', 'best');
     grid on;
     axis equal;
 
-    fprintf('Cross Sectional Area %.5f\n', cross_sectional_area);
+    fprintf('Cross Sectional Area %.5f cm^2\n', cross_sectional_area);
 end
 
 function plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, blade_radius, offset)
@@ -860,7 +865,9 @@ function plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius
 
     hold off;
     axis equal;
-    xlabel('X'); ylabel('Y'); zlabel('Z');
+    xlabel('X [m]'); 
+    ylabel('Y [m]'); 
+    zlabel('Z [m]');
     title('Plot of turbine');
 
 end
