@@ -7,7 +7,7 @@
 "cavity_depth"=0.031in
 "seal_step"=0.01in
 "purge_length"=0.04in
-"insert_radius" = 0.7in
+"insert_radius" = 0.6in
 "recycle_groove width" = 0.06in
 "recycle_groove_depth" = 0.06in
 "N2_purge_width"= .06in
@@ -15,9 +15,9 @@
 "drain_width"= .06in
 "drain_depth"= .06in
 "radial_clearance"= .002in
-"IPS_flange_width"= .2in
+"IPS_flange_width"= .25in
 "IPS_flange_radius" = 1.4in
 "IPS_LOX_male_radius"= .9in
 "IPS_Kero_male_radius" = .9in
-"IPS_radius"= 1.15in
-"InsertLength"= 1.525in
+"IPS_radius"= .95in
+"InsertLength"= 1in
