@@ -45,6 +45,27 @@ beta = 60; % initial estimate [deg] - refined in vtriangle
 min_blade_thickness = 0.005; % [m] % 0.01
 inlet_area = 0.0025; % [m]
 
+%% GAS CONSTANTS TABLE
+
+% gas parameters
+Variable = {'P_0'; 'P_e'; 'P_A'; 'm_dot'; 'T_0'; 'gamma'; 'R'; 'm_m'};
+Value = [P_0; P_e; P_A; m_dot; T_0; gamma; R; m_m];
+Units = {'N/m^2'; 'N/m^2'; 'N/m^2'; 'kg/s'; 'K'; '-'; 'J/(mol*K)'; 'g/mol'};
+Description = {
+    'Total pressure (500 psi)';
+    'Exit pressure (14.7 psi)';
+    'Ambient pressure';
+    'Mass flow rate';
+    'Total temperature';
+    'Specific heat ratio';
+    'Universal gas constant';
+    'Molar mass'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'HotGas-gas_values.csv');
+disp(T);
+
 %% COLD GAS NOZZLE CALCULATIONS
 
 R_S = calc_R_S(R, m_m) % The actual value is 296.1, idk why its giving a different number
@@ -83,68 +104,8 @@ dist_n = calc_dist_n(r_throat_n, r_e_n) % [m]
 
 [X,Y,Z] = plot_nozzle(A_e, A_throat, A_e, dist_n, dist_n);
 
+%% NOZZLE TABLE
 
-%% TURBINE CALCULATONS
-
-[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow / num_blades, deg2rad(60), radius, v_e);
-plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1, -a2);
-
-efficiency = calculate_blade_efficiency(mass_flow, v1, v2, w, w, b, b, a1);
-fprintf("isentropic efficiency: %.4f\n", efficiency)
-
-[max_blade_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_upper, areas] = generate_blade_geom(chord, rad2deg(b), inlet_area, blade_spacing, min_blade_thickness)
-plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, max_blade_thickness / 2)
-areas = areas * (rotor_radius - hub_radius);
-[Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
-plotMachPressureDistributions(Mach_vec, P_vec);
-
-
-%% STRUCTURE CALCULATIONS
-
-% These values are random rough values %
-w = turbine_rpm / 60 * 2 * pi % [rad/s] (Conversion of 10,000 rpm to rads)
-height_blade = max_blade_thickness % [m]
-rho_blade = 0.845 % [kg/m^3]
-Length_blade = chord % [m]
-height_bmin = min_blade_thickness % [m]
-width_blade = rotor_radius - hub_radius % [m]
-Z_blade = num_blades % [Number of blades]
-mean_diameter = radius * 2; % [m] mean blade diam
-
-radius_turbine = calc_radius_turbine(height_blade, hub_radius) % [m]
-mass_blade = calc_mass_blade(Length_blade, width_blade, height_bmin, rho_blade) % [kg]
-Force_centrifugal = calc_Force_centrifugal(mass_blade, w, radius_turbine) % [N]
-stress_centrifugal = calc_stress_centrifugal(rho_blade, height_blade, mean_diameter, w) % [N/m^2]
-Force_tangential = calc_Force_tangential(mass_flow, w, b, w, -b) % [N]
-Force_axial = calc_Force_axial(mass_flow, v1, a1, w, -b) % [N]
-torque_blade = calc_torque_blade(Force_tangential, height_blade) % [Nm]
-torque_turbine = calc_torque_turbine(Force_tangential, radius_turbine, Z_blade) % [Nm]
-P = calc_P(torque_turbine, w) % [Nm/s]
-Force_gas = calc_Force_gas(Force_tangential, Force_axial) % [N]
-Moment_Bending = calc_Moment_Bending(height_blade, Z_blade, Force_gas) % [Nm]
-I = calc_I(Length_blade, height_bmin) % [m^4]
-stress_gas = calc_stress_gas(height_bmin, Force_gas, width_blade, I) % [N/m^2]
-
-%% SAVE TABLES
-
-% gas parameters
-Variable = {'P_0'; 'P_e'; 'P_A'; 'm_dot'; 'T_0'; 'gamma'; 'R'; 'm_m'};
-Value = [P_0; P_e; P_A; m_dot; T_0; gamma; R; m_m];
-Units = {'N/m^2'; 'N/m^2'; 'N/m^2'; 'kg/s'; 'K'; '-'; 'J/(mol*K)'; 'g/mol'};
-Description = {
-    'Total pressure (500 psi)';
-    'Exit pressure (14.7 psi)';
-    'Ambient pressure';
-    'Mass flow rate';
-    'Total temperature';
-    'Specific heat ratio';
-    'Universal gas constant';
-    'Molar mass'
-};
-
-T = table(Variable, Value, Units, Description);
-writetable(T, 'HotGas-gas_values.csv');
-disp(T);
 
 % Nozzle Parameters
 Variable = {
@@ -174,6 +135,23 @@ Description = {
 T = table(Variable, Value, Units, Description);
 writetable(T, 'HotGas-nozzle_values.csv');
 disp(T);
+
+%% TURBINE CALCULATONS
+
+[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow / num_blades, deg2rad(60), radius, v_e);
+plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1, -a2);
+
+efficiency = calculate_blade_efficiency(mass_flow, v1, v2, w, w, b, b, a1);
+fprintf("isentropic efficiency: %.4f\n", efficiency)
+
+[max_blade_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_upper, areas] = generate_blade_geom(chord, rad2deg(b), inlet_area, blade_spacing, min_blade_thickness);
+plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, max_blade_thickness / 2)
+areas = areas * (rotor_radius - hub_radius);
+[Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
+plotMachPressureDistributions(Mach_vec, P_vec);
+
+
+%% TURBINE TABLE
 
 % Turbine values
 Variable = {
@@ -206,8 +184,35 @@ T = table(Variable, Value, Units, Description);
 writetable(T, 'HotGas-turbine_values.csv');
 disp(T);
 
+%% STRUCTURE CALCULATIONS
+
+% These values are random rough values %
+w = turbine_rpm / 60 * 2 * pi % [rad/s] (Conversion of 10,000 rpm to rads)
+height_blade = max_blade_thickness % [m]
+rho_blade = 0.845 % [kg/m^3]
+Length_blade = chord % [m]
+height_bmin = min_blade_thickness % [m]
+width_blade = rotor_radius - hub_radius % [m]
+Z_blade = num_blades % [Number of blades]
+mean_diameter = radius * 2; % [m] mean blade diam
+
+radius_turbine = calc_radius_turbine(height_blade, hub_radius) % [m]
+mass_blade = calc_mass_blade(Length_blade, width_blade, height_bmin, rho_blade) % [kg]
+Force_centrifugal = calc_Force_centrifugal(mass_blade, w, radius_turbine) % [N]
+stress_centrifugal = calc_stress_centrifugal(rho_blade, height_blade, mean_diameter, w) % [N/m^2]
+Force_tangential = calc_Force_tangential(mass_flow, w, b, w, -b) % [N]
+Force_axial = calc_Force_axial(mass_flow, v1, a1, w, -b) % [N]
+torque_blade = calc_torque_blade(Force_tangential, height_blade) % [Nm]
+torque_turbine = calc_torque_turbine(Force_tangential, radius_turbine, Z_blade) % [Nm]
+P = calc_P(torque_turbine, w) % [Nm/s]
+Force_gas = calc_Force_gas(Force_tangential, Force_axial) % [N]
+Moment_Bending = calc_Moment_Bending(height_blade, Z_blade, Force_gas) % [Nm]
+I = calc_I(Length_blade, height_bmin) % [m^4]
+stress_gas = calc_stress_gas(height_bmin, Force_gas, width_blade, I) % [N/m^2]
+
+%% STRUCTURE TABLES
+
 % structure table
-% Create a table
 Variable = {
     'radius_turbine'; 'mass_blade'; 'Force_centrifugal'; 'stress_centrifugal';
     'Force_tangential'; 'Force_axial'; 'torque_blade'; 'torque_turbine';
@@ -412,11 +417,11 @@ function [v1, v2, w, U, a1, a2, b] = rotorBackCalculate(RPM, torque, mass_flow, 
 
     syms v2 a1 a2 w u c b v1
 
-    eq1 = v1 * sin(a1) == w * sin(b) + u
-    eq2 = v1 * cos(a1) == w * cos(b)
-    eq3 = v2 * sin(a2) == w * sin(b) - u
-    eq4 = v2 * cos(a2) == w * cos(b)
-    eq5 = v1 * sin(a1) - v2 * sin(a2) == c
+    % eq1 = v1 * sin(a1) == w * sin(b) + u
+    % eq2 = v1 * cos(a1) == w * cos(b)
+    % eq3 = v2 * sin(a2) == w * sin(b) - u
+    % eq4 = v2 * cos(a2) == w * cos(b)
+    % eq5 = v1 * sin(a1) - v2 * sin(a2) == c
     % eq6 = v1 * cos(a1) == v2 * cos(a2)
 
 
@@ -425,10 +430,10 @@ function [v1, v2, w, U, a1, a2, b] = rotorBackCalculate(RPM, torque, mass_flow, 
     eq8 = abs(v1 * sin(a1) - v2 * sin(a2)) == c
 
     % equations = subs([eq1, eq2, eq3, eq4, eq5], [v1, b, u, c], [V_in, deg2rad(beta), U, C])
-    equations = subs([eq6(1), eq6(2), eq7(1), eq7(2), eq8], [v1, u, c], [V_in, U, C])
+    equations = subs([eq6(1), eq6(2), eq7(1), eq7(2), eq8], [v1, u, c], [V_in, U, C]);
     % equations = subs([eq1, eq2, eq3, eq4, eq5], [v1, u, c], [V_in, U, C])
 
-    [v2, a1, a2, w, b] = vpasolve(equations, [v2, a1, a2, w, b], [V_in; beta + 10 * pi/180; beta - 10 * pi/180; V_in; beta])
+    [v2, a1, a2, w, b] = vpasolve(equations, [v2, a1, a2, w, b], [V_in; beta + 10 * pi/180; beta - 10 * pi/180; V_in; beta]);
     % [v2, a1, a2, w] = solve(equations, [v2, a1, a2, w], [v1, b + 10 * pi / 180, b + 10 * pi / 180, v1])
     
     v1 = V_in;
@@ -665,7 +670,7 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     areas = calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet);
 
     % calculate cross sectional area
-    y_upper = y_upper + B_spacing
+    y_upper = y_upper + B_spacing;
     cross_sectional_area = calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper);
 end
 

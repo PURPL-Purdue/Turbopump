@@ -15,8 +15,8 @@ min_blade_thickness,0.005,m,Minimum blade thickness
 inlet_area,0.005,m²,Inlet area
 V_in,621.623215896161,m/s,Inlet absolute velocity
 V_out,-553.549637830935,m/s,Outlet absolute velocity
-W_in,1047.1975511966,m/s,Inlet relative velocity
-W_out,1047.1975511966,m/s,Outlet relative velocity
+W_in,587.25989676995,m/s,Inlet relative velocity
+W_out,587.25989676995,m/s,Outlet relative velocity
 a_in,61.9399191987407,°,Inlet absolute angle
 a_out,-121.886949806895,°,Outlet absolute angle
 Beta,60.1373642271048,°,Blade angle (Beta)
