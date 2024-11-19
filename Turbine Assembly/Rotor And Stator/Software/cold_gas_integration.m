@@ -93,6 +93,38 @@ areas = areas * (rotor_radius - hub_radius);
 [Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
 plotMachPressureDistributions(Mach_vec, P_vec);
 
+%% TURBINE TABLE
+
+% Turbine values
+Variable = {
+    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
+    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
+    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
+    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
+};
+Value = [
+    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
+    radius; horse_power; torque; degree_of_reaction; num_blades;
+    chord; blade_spacing; min_blade_thickness; inlet_area;
+    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
+];
+Units = {
+    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
+    'm'; 'HP'; 'N*m'; '-'; '-';
+    'm'; 'm'; 'm'; 'm²';
+    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
+};
+Description = {
+    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
+    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
+    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
+    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
+    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-turbine_values.csv');
+disp(T);
 
 %% STRUCTURE CALCULATIONS
 
@@ -168,37 +200,6 @@ Description = {
 
 T = table(Variable, Value, Units, Description);
 writetable(T, 'ColdGas-nozzle_values.csv');
-disp(T);
-
-% Turbine values
-Variable = {
-    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
-    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
-    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
-    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
-};
-Value = [
-    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
-    radius; horse_power; torque; degree_of_reaction; num_blades;
-    chord; blade_spacing; min_blade_thickness; inlet_area;
-    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
-];
-Units = {
-    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
-    'm'; 'HP'; 'N*m'; '-'; '-';
-    'm'; 'm'; 'm'; 'm²';
-    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
-};
-Description = {
-    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
-    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
-    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
-    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
-    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
-};
-
-T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-turbine_values.csv');
 disp(T);
 
 % structure table
