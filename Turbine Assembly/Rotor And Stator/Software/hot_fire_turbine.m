@@ -381,6 +381,7 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
     xlabel("length [m]")
     ylabel("width [m]")
     zlabel("height [m]")
+    title("Plot of nozzle geometry")
     colorbar
 
     minZ = min(Z(:));
@@ -388,6 +389,9 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
 
     figure;
     contour(X,Y,Z,linspace(minZ, maxZ / 2, 10))
+    xlabel("length [m]")
+    ylabel("width [m]")
+    title("Contour Plot for nozzle")
 end
 
 function percentage=exp_scale(x)
