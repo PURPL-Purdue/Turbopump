@@ -7,7 +7,7 @@ lb_to_kg = 0.45359237;
 bar_to_pa = 100000;
 psi_to_pa = 6894.75729;
 
-%% COLD GAS CONSTANTS
+%% HOT GAS CONSTANTS
 
 P_0 = 24.132 * bar_to_pa; % [N/m^2, 500psi]
 P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
@@ -66,7 +66,7 @@ T = table(Variable, Value, Units, Description);
 writetable(T, 'HotGas-gas_values.csv');
 disp(T);
 
-%% COLD GAS NOZZLE CALCULATIONS
+%% HOT GAS NOZZLE CALCULATIONS
 
 R_S = calc_R_S(R, m_m) % The actual value is 296.1, idk why its giving a different number
 rho_0 = calc_rho_0(P_0, R_S, T_0) % [kg/m^3]
