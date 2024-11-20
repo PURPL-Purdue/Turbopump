@@ -7,7 +7,7 @@ lb_to_kg = 0.45359237;
 bar_to_pa = 100000;
 psi_to_pa = 6894.75729;
 
-%% COLD GAS CONSTANTS
+%% HOT GAS CONSTANTS
 
 P_0 = 24.132 * bar_to_pa; % [N/m^2, 500psi]
 P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
@@ -19,6 +19,7 @@ gamma = 1.1201; % (Specific heat ratio )
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 11.328; % [g/mol] (Molar Mass )
 n = 2; % (number of nozzles)
+c_star = 1056.9 % [m/s]
 
 %% TURBINE CONSTANTS
 
@@ -66,7 +67,7 @@ T = table(Variable, Value, Units, Description);
 writetable(T, 'HotGas-gas_values.csv');
 disp(T);
 
-%% COLD GAS NOZZLE CALCULATIONS
+%% HOT GAS NOZZLE CALCULATIONS
 
 R_S = calc_R_S(R, m_m) % The actual value is 296.1, idk why its giving a different number
 rho_0 = calc_rho_0(P_0, R_S, T_0) % [kg/m^3]
@@ -77,7 +78,7 @@ T_throat = calc_T_throat(T_0, gamma) % [K]
 P_throat = calc_P_throat(P_0, gamma) % [N/m^2]
 rho_throat = calc_rho_throat(P_throat, R_S, T_throat) % [kg/m^3]
 v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
-A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
+A_throat = calc_A_throat(c_star, m_dot, P_0) % [m^2]
 
 
 M_e = calc_M_e(P_e, P_0, gamma)
@@ -305,8 +306,12 @@ end
 function v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
     v_throat = sqrt((gamma*R_S*T_throat));
 end
-function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
-    A_throat = m_dot/(rho_throat*v_throat);
+% function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
+   % A_throat = m_dot/(rho_throat*v_throat);
+% end
+
+function A_throat = calc_A_throat(c_star, m_dot, P_0) % This is another way to calculate throat area
+    A_throat = (c_star*m_dot)/P_0;
 end
 
 function M_e = calc_M_e(P_e, P_0, gamma)
@@ -381,6 +386,7 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
     xlabel("length [m]")
     ylabel("width [m]")
     zlabel("height [m]")
+    title("Plot of nozzle geometry")
     colorbar
 
     minZ = min(Z(:));
@@ -388,6 +394,9 @@ function [X,Y,Z] = plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len)
 
     figure;
     contour(X,Y,Z,linspace(minZ, maxZ / 2, 10))
+    xlabel("length [m]")
+    ylabel("width [m]")
+    title("Contour Plot for nozzle")
 end
 
 function percentage=exp_scale(x)
