@@ -9,7 +9,7 @@ psi_to_pa = 6894.75729;
 
 %% HOT GAS CONSTANTS
 
-P_0 = 24.132 * bar_to_pa; % [N/m^2, 500psi]
+P_0 = 24.132 * bar_to_pa; % [N/m^2, 350psi]
 P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
 P_A = P_e;
 m_dot_imperial = 1.087; % pounds / second 
@@ -18,7 +18,7 @@ T_0 = 876.05; % [K]
 gamma = 1.1201; % (Specific heat ratio )
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 11.328; % [g/mol] (Molar Mass )
-n = 2; % (number of nozzles)
+n = 8; % (number of nozzles)
 c_star = 1056.9 % [m/s]
 
 %% TURBINE CONSTANTS
@@ -26,7 +26,7 @@ c_star = 1056.9 % [m/s]
 rotor_radius = 0.04; % [m]
 hub_radius = 0.035; % [m] % 0.02
 mass_flow = m_dot; % [kg/s]
-shaft_power = 150; % [kW]
+shaft_power = 134.226; % [kW]
 
 turbine_rpm = 50000; % [rpm]
 
