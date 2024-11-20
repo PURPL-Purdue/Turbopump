@@ -4,8 +4,8 @@
 
 %% COLD GAS CONSTANTS
 
-P_0 = 3447378.6466; % [N/m^2, 500psi]
-P_e = 101352.93221; % [N/m^2, 14.7psi]
+P_0 = 2413200; % [N/m^2, 350psi]
+P_e = 206843; % [N/m^2, 30psi]
 P_A = P_e;
 m_dot = 0.25; % [kg/s]
 T_0 = 293; % [K]
@@ -13,6 +13,7 @@ gamma = 1.4; % (Specific heat ratio of Air)
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 28.02; % [g/mol] (Molar Mass of Air)
 n = 2; % (number of nozzles)
+c_star = 1056.9; % [m/s]
 
 %% TURBINE CONSTANTS
 
@@ -51,7 +52,7 @@ T_throat = calc_T_throat(T_0, gamma) % [K]
 P_throat = calc_P_throat(P_0, gamma) % [N/m^2]
 rho_throat = calc_rho_throat(P_throat, R_S, T_throat) % [kg/m^3]
 v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
-A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
+A_throat = calc_A_throat(c_star, m_dot, P_0) % [m^2]
 
 
 M_e = calc_M_e(P_e, P_0, gamma)
@@ -294,8 +295,8 @@ end
 function v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
     v_throat = sqrt((gamma*R_S*T_throat));
 end
-function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
-    A_throat = m_dot/(rho_throat*v_throat);
+function A_throat = calc_A_throat(c_star, m_dot, P_0) % [m^2]
+    A_throat = (c_star*m_dot)/P_0;
 end
 
 function M_e = calc_M_e(P_e, P_0, gamma)
