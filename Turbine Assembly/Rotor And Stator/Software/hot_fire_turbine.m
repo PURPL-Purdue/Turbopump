@@ -9,7 +9,7 @@ psi_to_pa = 6894.75729;
 
 %% HOT GAS CONSTANTS
 
-P_0 = 24.132 * bar_to_pa; % [N/m^2, 500psi]
+P_0 = 24.132 * bar_to_pa; % [N/m^2, 350psi]
 P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
 P_A = P_e;
 m_dot_imperial = 1.087; % pounds / second 
@@ -18,14 +18,15 @@ T_0 = 876.05; % [K]
 gamma = 1.1201; % (Specific heat ratio )
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 11.328; % [g/mol] (Molar Mass )
-n = 2; % (number of nozzles)
+n = 8; % (number of nozzles)
+c_star = 1056.9 % [m/s]
 
 %% TURBINE CONSTANTS
 
 rotor_radius = 0.04; % [m]
 hub_radius = 0.035; % [m] % 0.02
 mass_flow = m_dot; % [kg/s]
-shaft_power = 150; % [kW]
+shaft_power = 134.226; % [kW]
 
 turbine_rpm = 50000; % [rpm]
 
@@ -77,7 +78,7 @@ T_throat = calc_T_throat(T_0, gamma) % [K]
 P_throat = calc_P_throat(P_0, gamma) % [N/m^2]
 rho_throat = calc_rho_throat(P_throat, R_S, T_throat) % [kg/m^3]
 v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
-A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
+A_throat = calc_A_throat(c_star, m_dot, P_0) % [m^2]
 
 
 M_e = calc_M_e(P_e, P_0, gamma)
@@ -305,8 +306,12 @@ end
 function v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
     v_throat = sqrt((gamma*R_S*T_throat));
 end
-function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
-    A_throat = m_dot/(rho_throat*v_throat);
+% function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
+   % A_throat = m_dot/(rho_throat*v_throat);
+% end
+
+function A_throat = calc_A_throat(c_star, m_dot, P_0) % This is another way to calculate throat area
+    A_throat = (c_star*m_dot)/P_0;
 end
 
 function M_e = calc_M_e(P_e, P_0, gamma)
