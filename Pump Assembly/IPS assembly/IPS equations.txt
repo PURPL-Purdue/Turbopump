@@ -1,6 +1,6 @@
 ﻿"bearing_radius"= 0.629921
 "bearing_width"=0.393701
-"kero_radius"=0.334in
+"kero_radius"=0.23622in
 "lox_radius"=0.23622in
 "Cavity_width"=0.031in
 "tooth_width"=0.01in
@@ -16,8 +16,8 @@
 "drain_depth"= .06in
 "radial_clearance"= .002in
 "IPS_flange_width"= .2in
-"IPS_flange_radius" = 1.4in
+"IPS_flange_radius" = 1.75in
 "IPS_LOX_male_radius"= .9in
 "IPS_Kero_male_radius" = .9in
-"IPS_radius"= 1.15in
+"IPS_radius"= 1.3in
 "InsertLength"= 1.525in
