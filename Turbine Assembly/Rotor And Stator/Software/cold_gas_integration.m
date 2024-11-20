@@ -4,20 +4,21 @@
 
 %% COLD GAS CONSTANTS
 
-P_0 = 3447378.6466; % [N/m^2, 500psi]
-P_e = 101352.93221; % [N/m^2, 14.7psi]
+P_0 = 2413165.0526; % [N/m^2, 350psi]
+P_e = 206843; % [N/m^2, 30psi]
 P_A = P_e;
-m_dot = 0.05; % [kg/s]
-T_0 = 250; % [K]
+m_dot = 0.25; % [kg/s]
+T_0 = 293; % [K]
 gamma = 1.4; % (Specific heat ratio of Air)
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
-m_m = 28.96; % [g/mol] (Molar Mass of Air)
+m_m = 28.02; % [g/mol] (Molar Mass of Air)
 n = 2; % (number of nozzles)
+c_star = 1056.9; % [m/s]
 
 %% TURBINE CONSTANTS
 
 rotor_radius = 0.04; % [m]
-hub_radius = 0.03; % [m] % 0.02
+hub_radius = 0.035; % [m] % 0.02
 mass_flow_n2 = m_dot; % [kg/s]
 shaft_power = 10; % [kW]
 gamma_n2 = 1.4; % specific heat ratio
@@ -30,10 +31,10 @@ kw_to_hp = 1.34102209; % [hp/kw]
 % Input parameters
 radius = (rotor_radius + hub_radius) / 2; % [m]
 horse_power = shaft_power * kw_to_hp; % [HP]
-torque = 746 * horse_power/(2 * pi * turbine_rpm/60); % N*m
+torque = horse_power * 5252 / turbine_rpm * 1.355817; % N*m
 degree_of_reaction = 0;
-num_blades = 12; % 10
-chord = 0.02; % [m]
+num_blades = 25; % 10
+chord = 0.01; % [m]
 blade_spacing = 2 * pi * hub_radius / num_blades; % [m]
 beta = 60; % initial estimate [deg] - refined in vtriangle
 % V_in = 564; % [m/2]
@@ -81,7 +82,7 @@ dist_n = calc_dist_n(r_throat_n, r_e_n) % [m]
 
 %% TURBINE CALCULATONS
 
-[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow_n2, deg2rad(beta), radius, v_e);
+[v1, v2, w, u, a1, a2, b] = rotorBackCalculate(turbine_rpm, torque / num_blades, mass_flow_n2 / num_blades, deg2rad(beta), radius, v_e);
 plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1, -a2);
 
 efficiency = calculate_blade_efficiency(mass_flow_n2, v1, v2, w, w, b, b, a1);
@@ -93,6 +94,38 @@ areas = areas * (rotor_radius - hub_radius);
 [Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
 plotMachPressureDistributions(Mach_vec, P_vec);
 
+%% TURBINE TABLE
+
+% Turbine values
+Variable = {
+    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
+    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
+    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
+    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
+};
+Value = [
+    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
+    radius; horse_power; torque; degree_of_reaction; num_blades;
+    chord; blade_spacing; min_blade_thickness; inlet_area;
+    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
+];
+Units = {
+    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
+    'm'; 'HP'; 'N*m'; '-'; '-';
+    'm'; 'm'; 'm'; 'm²';
+    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
+};
+Description = {
+    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
+    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
+    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
+    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
+    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-turbine_values.csv');
+disp(T);
 
 %% STRUCTURE CALCULATIONS
 
@@ -119,6 +152,83 @@ Force_gas = calc_Force_gas(Force_tangential, Force_axial) % [N]
 Moment_Bending = calc_Moment_Bending(height_blade, Z_blade, Force_gas) % [Nm]
 I = calc_I(Length_blade, height_bmin) % [m^4]
 stress_gas = calc_stress_gas(height_bmin, Force_gas, width_blade, I) % [N/m^2]
+
+%% SAVE TABLES
+
+% gas parameters
+Variable = {'P_0'; 'P_e'; 'P_A'; 'm_dot'; 'T_0'; 'gamma'; 'R'; 'm_m'};
+Value = [P_0; P_e; P_A; m_dot; T_0; gamma; R; m_m];
+Units = {'N/m^2'; 'N/m^2'; 'N/m^2'; 'kg/s'; 'K'; '-'; 'J/(mol*K)'; 'g/mol'};
+Description = {
+    'Total pressure (500 psi)';
+    'Exit pressure (14.7 psi)';
+    'Ambient pressure';
+    'Mass flow rate';
+    'Total temperature';
+    'Specific heat ratio';
+    'Universal gas constant';
+    'Molar mass'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-gas_values.csv');
+disp(T);
+
+% Nozzle Parameters
+Variable = {
+    'R_S'; 'rho_0'; 'v_e'; 'T_throat'; 'P_throat'; 'rho_throat'; 'v_throat';
+    'A_throat'; 'M_e'; 'rho_e'; 'A_e'; 'T_e'; 'r_throat'; 'r_e'; 'dist'; 
+    'F_thrust'; 'A_throat_n'; 'A_e_n'; 'r_throat_n'; 'r_e_n'; 'dist_n'
+};
+Value = [
+    R_S; rho_0; v_e; T_throat; P_throat; rho_throat; v_throat;
+    A_throat; M_e; rho_e; A_e; T_e; r_throat; r_e; dist;
+    F_thrust; A_throat_n; A_e_n; r_throat_n; r_e_n; dist_n
+];
+Units = {
+    'J/(kg·K)'; 'kg/m^3'; 'm/s'; 'K'; 'N/m^2'; 'kg/m^3'; 'm/s';
+    'm^2'; '-'; 'kg/m^3'; 'm^2'; 'K'; 'm'; 'm'; 'm'; 
+    'N'; 'm^2'; 'm^2'; 'm'; 'm'; 'm'
+};
+Description = {
+    'Specific gas constant'; 'Stagnation density'; 'Exit velocity'; 
+    'Throat temperature'; 'Throat pressure'; 'Throat density'; 'Throat velocity';
+    'Throat area'; 'Exit Mach number'; 'Exit density'; 'Exit area'; 
+    'Exit temperature'; 'Throat radius'; 'Exit radius'; 'Nozzle length'; 
+    'Thrust force'; 'Throat area per nozzle'; 'Exit area per nozzle'; 
+    'Throat radius per nozzle'; 'Exit radius per nozzle'; 'Nozzle length per nozzle'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-nozzle_values.csv');
+disp(T);
+
+% structure table
+% Create a table
+Variable = {
+    'radius_turbine'; 'mass_blade'; 'Force_centrifugal'; 'stress_centrifugal';
+    'Force_tangential'; 'Force_axial'; 'torque_blade'; 'torque_turbine';
+    'P'; 'Force_gas'; 'Moment_Bending'; 'I'; 'stress_gas'
+};
+Value = [
+    radius_turbine; mass_blade; Force_centrifugal; stress_centrifugal;
+    Force_tangential; Force_axial; torque_blade; torque_turbine;
+    P; Force_gas; Moment_Bending; I; stress_gas
+];
+Units = {
+    'm'; 'kg'; 'N'; 'N/m^2';
+    'N'; 'N'; 'N*m'; 'N*m';
+    'W'; 'N'; 'N*m'; 'm^4'; 'N/m^2'
+};
+Description = {
+    'Turbine radius'; 'Blade mass'; 'Centrifugal force on blade'; 'Centrifugal stress';
+    'Tangential force'; 'Axial force'; 'Blade torque'; 'Turbine torque';
+    'Power'; 'Gas force'; 'Bending moment'; 'Second moment of area (I)'; 'Gas stress'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-structure_values.csv');
+disp(T);
 
 %% STRUCTURE FUNCTIONS
 
@@ -186,8 +296,12 @@ function v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
     v_throat = sqrt((gamma*R_S*T_throat));
 end
 function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
-    A_throat = m_dot/(rho_throat*v_throat);
+   A_throat = m_dot/(rho_throat*v_throat);
 end
+
+% function A_throat = calc_A_throat(c_star, m_dot, P_0) % This is another way to calculate throat area
+    % A_throat = (c_star*m_dot)/P_0;
+% end
 
 function M_e = calc_M_e(P_e, P_0, gamma)
     P_ratio = P_e/P_0;
@@ -416,7 +530,7 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     hold on;
     
     %%% Lower Surface
-    
+
     % Lower Surface Guide Curves
     x1 = linspace(0, c/2, num_points);
     bottom_curve1 = tan(theta_l) * x1;
@@ -424,7 +538,7 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     bottom_curve2 = tan(-theta_l) * (x2 - c/2) + tan(theta_l) * (c/2);
     plot(x1, bottom_curve1, 'b--', 'LineWidth', 2);
     plot(x2, bottom_curve2, 'b--', 'LineWidth', 2);
-    
+
     % Lower Surface
     r = c/2 * sin(theta_l);
     C1 = c/2 - sqrt((tan(theta_l)^2 * r^2) / (1 + tan(theta_l) ^ 2));
@@ -440,7 +554,7 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     h3 = plot(x3, curve_DC_2, 'k-', 'LineWidth', 2);
     x_lower = [x1, x2, x3];
     y_lower = [curve_DC_1, curve_CC, curve_DC_2];
-    
+
     % Upper Surface Guide Curves
     % Area Normals
     x_upper1 = linspace(0, A_inlet * cos(theta_l), num_points);
@@ -474,7 +588,8 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
     %     k = abs((2*x2 - 2*x_m)*(2*y1 - 2*y2))/(8*((x2 - x_m)^2)^(3/2));
     % end
     y2 = fzero(@(y2) curvature_function(y2, m, x1, x2, y1) - (1/(r-A_inlet)), y2_initial_guess); 
-    y2 = r - B_spacing + blade_thickness
+
+    y2 = r - B_spacing + blade_thickness;
     max_thickness = r;
 
     x_m = (y2 - y1) / m + x1;
@@ -804,4 +919,17 @@ function plotMachPressureDistributions(Mach_vec, P_vec)
     xlabel("Lower Surface Coordinate")
     ylabel("Static Pressure [Pa]")
     title("Pressure Distribution along Pressure Surface ")
+end
+
+function A_ratio = kantrowitz_limit(M0, gamma)
+    term1 = M0 * ( (gamma + 1) / (2 + (gamma - 1) * M0^2) )^((gamma + 1) / (2 * (gamma - 1)));
+    term2 = ( ( (gamma + 1) * M0^2 ) / ( (gamma - 1) * M0^2 + 2 ) )^(-gamma / (gamma - 1));
+    term3 = ( (gamma + 1) / (2 * gamma * M0^2 - (gamma - 1)) )^(-1 / (gamma - 1));
+    
+    A_ratio = term1 * term2 * term3;
+end
+
+function M_rel = calc_relative_mach(U, V, theta, gamma, R, T)
+    a = sqrt(gamma * R * T);
+    M_rel = sqrt((V * cos(theta) - U) ^ 2 + (V * sin(theta)) ^ 2) / a;
 end
