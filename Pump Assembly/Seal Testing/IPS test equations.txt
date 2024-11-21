@@ -15,9 +15,9 @@
 "drain_width"= .06in
 "drain_depth"= .06in
 "radial_clearance"= .002in
-"IPS_flange_width"= .25in
-"IPS_flange_radius" = 1.4in
+"IPS_flange_width"= .4in
+"IPS_flange_radius" = 1.7in
 "IPS_LOX_male_radius"= .9in
 "IPS_Kero_male_radius" = .9in
-"IPS_radius"= .95in
+"IPS_radius"= 1.2in
 "InsertLength"= 1in
