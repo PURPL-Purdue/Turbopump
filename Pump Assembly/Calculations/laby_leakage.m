@@ -1,4 +1,4 @@
-function mdot = laby_leakage(c, s, w, R, N, Pi, Pe, rho, mu)
+function [mdot,Re] = laby_leakage(c, s, w, R, N, Pi, Pe, rho, mu)
 
 
 %c = 5.08e-5; % input('Enter radial clearance in m : ');
