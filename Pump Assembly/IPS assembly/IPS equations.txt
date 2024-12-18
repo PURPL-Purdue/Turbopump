@@ -19,5 +19,5 @@
 "IPS_flange_radius" = 1.75in
 "IPS_LOX_male_radius"= .9in
 "IPS_Kero_male_radius" = .9in
-"IPS_radius"= 1.3in
+"IPS_radius"= 1.5in
 "InsertLength"= 1.525in
