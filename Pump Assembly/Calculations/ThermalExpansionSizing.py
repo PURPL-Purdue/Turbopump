@@ -27,13 +27,13 @@ def thermalSize(deltaT, length, CFT):
 # %% calculate clearance at different temps with set dimensions
 
 #inside
-mat1 = "Inconel 718"
-rad1 = .7 #radius at room temp (inches)S
+mat1 = "316 Stainless"
+rad1 = .4 #radius at room temp (inches)S
 thermCo1 = thermal_expansion_coefficients.get(mat1)
 
 #outside 
-mat2 = 'Brass'
-rad2 = .70182547 #radius at room temp (inches)
+mat2 = 'Copper'
+rad2 = .402 #radius at room temp (inches)
 thermCo2 = thermal_expansion_coefficients.get(mat2)
 
 roomtemp = 70
