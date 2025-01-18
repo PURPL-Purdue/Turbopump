@@ -46,22 +46,24 @@ for i=1:sealNum
     seal_radii(i) = seal_radii_min + (i-1)*step;
 end
 
-mdotlox1 = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(1), teeth, loxPin, loxPdrain, loxRho, loxMu); %kg/s
+[mdotlox1,Relox1] = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(1), teeth, loxPin, loxPdrain, loxRho, loxMu); %kg/s
 Qlox1 = mdotlox1 / loxRho;
 mdotlox1 = mdotlox1*2.2046 %lbm/s
 Qlox1 = Qlox1*264.171; %gal/s;
 
-mdotlox2 = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(2), teeth, loxPdrain, atmP, loxRho, loxMu);
+[mdotlox2, Relox2] = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(2), teeth, loxPdrain, atmP, loxRho, loxMu);
 Qlox2 = mdotlox2 / loxRho;
 mdotlox2 = mdotlox2*2.2046 %lbm/s
 Qlox2 = Qlox2*264.1721; %gal/s
 
-mdotRp11 = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(6), teeth, rp1Pin, rp1Pdrain, rp1Rho, rp1Mu); %kg/s
+[mdotRp11,ReRp1] = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(6), teeth, rp1Pin, rp1Pdrain, rp1Rho, rp1Mu); %kg/s
 Qrp11 = mdotRp11 / rp1Rho *264.172;%gal/s
 mdotRp11 = mdotRp11 * 2.2046 %lbm/s
 
 
 
-mdotRp12 = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(5), teeth, rp1Pdrain, atmP, rp1Rho, rp1Mu); %kg/s
+[mdotRp12, ReRp2] = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(5), teeth, rp1Pdrain, atmP, rp1Rho, rp1Mu); %kg/s
 Qrp11 = mdotRp12 /rp1Rho * 264.172;%gal/s
 mdotRp12 = mdotRp12 * 2.2046   %lbm/s
+
+fprintf("%f, %f, %f, %f",Relox1, Relox2, ReRp1, ReRp2)

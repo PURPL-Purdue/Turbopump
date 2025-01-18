@@ -4,8 +4,8 @@
 
 %% COLD GAS CONSTANTS
 
-P_0 = 3447378.6466; % [N/m^2, 500psi]
-P_e = 101352.93221; % [N/m^2, 14.7psi]
+P_0 = 2413165.0526; % [N/m^2, 350psi]
+P_e = 206843; % [N/m^2, 30psi]
 P_A = P_e;
 m_dot = 0.25; % [kg/s]
 T_0 = 293; % [K]
@@ -13,6 +13,7 @@ gamma = 1.4; % (Specific heat ratio of Air)
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 28.02; % [g/mol] (Molar Mass of Air)
 n = 2; % (number of nozzles)
+c_star = 1056.9; % [m/s]
 
 %% TURBINE CONSTANTS
 
@@ -93,6 +94,38 @@ areas = areas * (rotor_radius - hub_radius);
 [Mach_vec, P_vec] = calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
 plotMachPressureDistributions(Mach_vec, P_vec);
 
+%% TURBINE TABLE
+
+% Turbine values
+Variable = {
+    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
+    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
+    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
+    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
+};
+Value = [
+    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
+    radius; horse_power; torque; degree_of_reaction; num_blades;
+    chord; blade_spacing; min_blade_thickness; inlet_area;
+    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
+];
+Units = {
+    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
+    'm'; 'HP'; 'N*m'; '-'; '-';
+    'm'; 'm'; 'm'; 'm²';
+    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
+};
+Description = {
+    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
+    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
+    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
+    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
+    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
+};
+
+T = table(Variable, Value, Units, Description);
+writetable(T, 'ColdGas-turbine_values.csv');
+disp(T);
 
 %% STRUCTURE CALCULATIONS
 
@@ -168,37 +201,6 @@ Description = {
 
 T = table(Variable, Value, Units, Description);
 writetable(T, 'ColdGas-nozzle_values.csv');
-disp(T);
-
-% Turbine values
-Variable = {
-    'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
-    'radius'; 'horse_power'; 'torque'; 'degree_of_reaction'; 'num_blades';
-    'chord'; 'blade_spacing'; 'min_blade_thickness'; 'inlet_area'; 
-    'V_in'; 'V_out'; 'W_in'; 'W_out'; 'a_in'; 'a_out'; 'Beta'; 'u'
-};
-Value = [
-    rotor_radius; hub_radius; mass_flow; shaft_power; turbine_rpm;
-    radius; horse_power; torque; degree_of_reaction; num_blades;
-    chord; blade_spacing; min_blade_thickness; inlet_area;
-    v1; v2; w; w; rad2deg(a1); rad2deg(a2); rad2deg(b); u
-];
-Units = {
-    'm'; 'm'; 'kg/s'; 'kW'; 'rpm';
-    'm'; 'HP'; 'N*m'; '-'; '-';
-    'm'; 'm'; 'm'; 'm²';
-    'm/s'; 'm/s'; 'm/s'; 'm/s'; '°'; '°'; '°'; 'm/s'
-};
-Description = {
-    'Rotor radius'; 'Hub radius'; 'Mass flow rate'; 'Shaft power'; 'Turbine RPM';
-    'Average radius'; 'Horsepower'; 'Torque'; 'Degree of reaction'; 'Number of blades';
-    'Blade chord length'; 'Blade spacing'; 'Minimum blade thickness'; 'Inlet area';
-    'Inlet absolute velocity'; 'Outlet absolute velocity'; 'Inlet relative velocity'; 'Outlet relative velocity';
-    'Inlet absolute angle'; 'Outlet absolute angle'; 'Blade angle (Beta)'; 'Turbine velocity'
-};
-
-T = table(Variable, Value, Units, Description);
-writetable(T, 'ColdGas-turbine_values.csv');
 disp(T);
 
 % structure table
@@ -294,8 +296,12 @@ function v_throat = calc_v_throat(gamma, R_S, T_throat) % [m/s]
     v_throat = sqrt((gamma*R_S*T_throat));
 end
 function A_throat = calc_A_throat(m_dot, rho_throat, v_throat) % [m^2]
-    A_throat = m_dot/(rho_throat*v_throat);
+   A_throat = m_dot/(rho_throat*v_throat);
 end
+
+% function A_throat = calc_A_throat(c_star, m_dot, P_0) % This is another way to calculate throat area
+    % A_throat = (c_star*m_dot)/P_0;
+% end
 
 function M_e = calc_M_e(P_e, P_0, gamma)
     P_ratio = P_e/P_0;
