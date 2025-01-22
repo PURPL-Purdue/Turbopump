@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="C:\Program Files\Siemens\NX 12.0\ugii\SWschema\dtk_xsl\dtk_181.xsl"?>
+<Log>
+<DtkApiVersion>181</DtkApiVersion>
+<DtkDllVersion>20171215</DtkDllVersion>
+<ProductMode>Psk</ProductMode>
+<InputFormat>SOLIDWORKS</InputFormat>
+<OutputFormat>PARASOLID</OutputFormat>
+<HealingFlag>0</HealingFlag>
+<ConfigFile>Error Loading Config File</ConfigFile>
+<FileName><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\Static_Testing_Rig\Static_test_assembly.SLDASM]]></FileName>
+<FileVersion>Warning unknown version</FileVersion>
+<OutPutFileName><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\Static_Testing_Rig\Static_test_assembly.SLDASM.x_t]]></OutPutFileName>
+<information>
+<info><message><![CDATA[PsKernel version used:28.0.197]]></message><type><![CDATA[Version]]></type></info>
+</information>
+<Conversion>
+<Start>  15:48:11</Start>
+<End>  15:48:12</End>
+<Duration>1 sec</Duration>
+</Conversion>
+</Log>
