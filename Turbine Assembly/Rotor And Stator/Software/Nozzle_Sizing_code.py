@@ -13,7 +13,7 @@ def main():
 # Nozzle Constants
     chamber_pressure = 350 * psi_to_pa # psi => N/m^2 (pa)
     exit_pressure = 30 * psi_to_pa # psi => N/m^2 (pa)
-    mass_flow = 0.81 * lb_to_kg # lbm/s => kg/s
+    mass_flow = 0.8153 * lb_to_kg # lbm/s => kg/s
     inlet_temp = 876.05 # K
     gamma = 1.1201 # Specific heat ratio (unitless)
     gas_constant = 8.3145 # J/(mol*K)
@@ -117,7 +117,7 @@ def main():
 
 
 # Prints (feel free to add more prints if you want to see other values)
-    print(f"Mass Flow: 0.81 kg/s or {mass_flow:.4f} lbm/s")
+    print(f"Mass Flow: 0.8153 lbm/s or {mass_flow:.4f} kg/s")
     print(f"Exhaust Velocity: {exhaust_velocity:.4f} m/s")
     print(f"Exit Mach: {mach_exit:.4f}")
     print(f"Exit Pressure: 30 psi")
