@@ -1,8 +1,8 @@
-P_0 = 3447378.6466; % [N/m^2, 500psi]
-P_e = 101352.93221; % [N/m^2, 14.7psi]
+P_0 = 2413165.05; % [N/m^2, 350psi]
+P_e = 206842.719; % [N/m^2, 30 psi]
 P_A = P_e;
 
-T_0 = 293; % [K]
+T_0 = 70; % [K] Figure out temp of what we are using to cold test turbine
 gamma = 1.4; % (Specific heat ratio of Air)
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
 m_m = 28.02; % [g/mol] (Molar Mass of Air)
