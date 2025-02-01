@@ -117,19 +117,26 @@ def main():
 
 
 # Prints (feel free to add more prints if you want to see other values)
-    print(f"Mass Flow: 0.8153 lbm/s or {mass_flow:.4f} kg/s")
-    print(f"Exhaust Velocity: {exhaust_velocity:.4f} m/s")
-    print(f"Exit Mach: {mach_exit:.4f}")
-    print(f"Exit Pressure: 30 psi")
-    print(f"Expansion Ratio: {expansion_ratio:.4f}")
-    print(f"Square Throat Area: {square_area_throat:.4e} m^2")
-    print(f"Square Exit Area: {square_area_exit:.4e} m^2")
-    print(f"Number of Nozzles: {n}")
-    print(f"Nozzle length from throat to exit: {nozzle_length_n:.4f} m")
+    print(f"Inputs:")
+    print(f"Mass Flow: 0.81 lbm/s or {mass_flow:.4f} kg/s")
+#    print(f"Exhaust Velocity: {exhaust_velocity:.4f} m/s")
+#    print(f"Exit Mach: {mach_exit:.4f}")
+    print(f"Chamber Pressure: 350 psi")
+#    print(f"Expansion Ratio: {expansion_ratio:.4f}")
+
+    print(f"\nOutputs:")
+    print(f"Total Throat Area: {area_throat * 1000000:.7} mm^2")
+    print(f"Total Exit Area: {area_exit * 1000000:.6} mm^2")
+#    print(f"Number of Nozzles: {n}")
+#    print(f"Nozzle length from throat to exit: {nozzle_length_n:.4f} m")
 
 # Inlet and exit angles (given from NASA SP-8120)
-    print("Throat Angle: ~21 degrees")
-    print("Exit Angle: ~15 degrees")
+    print("Throat Rao Angle: ~21 degrees")
+    print("Exit Rao Angle: ~15 degrees")
 
 if __name__ == "__main__":
     main()
+
+
+#    inputs: mass flow, turbine diameter, turbine power, annulus width, chamber pressure
+#    outputs: total throat area, total exit area, rao angles, total stator angle, blade angles 
