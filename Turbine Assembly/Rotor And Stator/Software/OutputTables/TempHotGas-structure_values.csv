@@ -1,0 +1,14 @@
+Variable,Value,Units,Description
+radius_turbine,0.0373392185589131,m,Turbine radius
+mass_blade,8.45e-08,kg,Blade mass
+Force_centrifugal,0.0865006116305088,N,Centrifugal force on blade
+stress_centrifugal,8128.60487817258,N/m^2,Centrifugal stress
+Force_tangential,384.083122768669,N,Tangential force
+Force_axial,72.1407494016419,N,Axial force
+torque_blade,0.898454368945777,N*m,Blade torque
+torque_turbine,501.947728304722,N*m,Turbine torque
+P,2628192.159547,W,Power
+Force_gas,390.799351227664,N,Gas force
+Moment_Bending,0.0261190027200845,N*m,Bending moment
+I,1.66666666666667e-10,m^4,Second moment of area (I)
+stress_gas,11723980.5368299,N/m^2,Gas stress

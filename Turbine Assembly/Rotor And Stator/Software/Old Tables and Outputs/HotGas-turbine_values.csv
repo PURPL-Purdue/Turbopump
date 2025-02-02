@@ -8,10 +8,10 @@ radius,0.0375,m,Average radius
 horse_power,201.1533135,HP,Horsepower
 torque,28.6472526984931,N*m,Torque
 degree_of_reaction,0,-,Degree of reaction
-num_blades,25,-,Number of blades
+num_blades,35,-,Number of blades
 chord,0.01,m,Blade chord length
-blade_spacing,0.00879645943005142,m,Blade spacing
-min_blade_thickness,0.005,m,Minimum blade thickness
+blade_spacing,0.00628318530717959,m,Blade spacing
+min_blade_thickness,0.002,m,Minimum blade thickness
 inlet_area,0.0025,m²,Inlet area
 V_in,1666.58894431792,m/s,Inlet absolute velocity
 V_out,1472.77993407221,m/s,Outlet absolute velocity
