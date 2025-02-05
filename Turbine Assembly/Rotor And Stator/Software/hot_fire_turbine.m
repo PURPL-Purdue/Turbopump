@@ -158,7 +158,7 @@ turbine_funs.plot_velocity_triangles_angles(v1, v2, u, w, w, chord, 0, b, -b, a1
 % a2 = mod(a2, 360);
 v2_comp =  [v2 * cos(a2), v2 * sin(a2)];
 v2 = sqrt(v2_comp(1) ^ 2 + v2_comp(2) ^ 2);
-a2 = atan2d(v2_comp(1), v2_comp(2));
+a2 = atan2(v2_comp(1), v2_comp(2));
 
 c_blade_sp = 0.8 * chord % 0.6 - 1.2
 c_num_blades = 2 * pi * radius / c_blade_sp

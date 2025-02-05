@@ -5,29 +5,33 @@ P_A = P_e;
 T_0 = 293; % [K]
 gamma = 1.4; % (Specific heat ratio of Air)
 R = 8.3145; % [J/(mol*K)] (Universal Gas Constant)
-m_m = 28.02; % [g/mol] (Molar Mass of Air)
+m_m = 28.0134; % 28.02; % [g/mol] (Molar Mass of Air)
 
 rpm = 50000;
-radius = 0.0375;
-a_in = 35.63709471;
-a_out = 23.12163596;
-Beta = 29.76722393;
-u = 196.3495408;
+hub_radius = 2 * 2.54 / 100 - 0.005; % 0.0375;
+rotor_radius = 2 * 2.54 / 100;
+radius = (hub_radius  +  rotor_radius) / 2
+a_in = 39.2928518696579;
+a_out = 66.91960678;
+Beta = 31.8901619005792;
+u = rpm / 60 * 2 * pi * radius; % 196.3495408;
 
-nozzle_data = readtable("ColdGas-nozzle_values.csv");
+nozzle_data = readtable("../OutputTables/FinalHotGas-nozzle_values.csv");
 nozzle_dict = struct();
 for i = 1:height(nozzle_data)
     nozzle_dict.(nozzle_data.Variable{i}) = nozzle_data.Value(i);
 end
 
-A_throat = nozzle_dict.A_throat;
-A_e = nozzle_dict.A_e;
+A_throat = 161.9683 % nozzle_dict.A_throat;
+A_e = 530.62 % nozzle_dict.A_e;
 area_ratio = A_e / A_throat;
 R_air = nozzle_dict.R_S;
-T_e = nozzle_dict.T_e;
+% nozzle_dict.T_e;
 rho_e = nozzle_dict.rho_e;
 
 M_e = isentropicMachFinder(area_ratio, gamma)
+cold = 18 + 273.15
+T_e = cold / (1 + ( (gamma - 1) / 2 ) * (M_e ^ 2) )
 v = mps_per_mach(M_e, gamma, R_air, T_e)
 
 horse_power_test = 100;
@@ -38,6 +42,8 @@ hp_values = 50:200;
 m_dot_values = zeros(size(hp_values));
 m_dot_values_imp = zeros(size(hp_values));
 v_dot_values = zeros(size(hp_values));
+
+n_blades = 36
 
 for i = 1:length(hp_values)
     horse_power = hp_values(i);

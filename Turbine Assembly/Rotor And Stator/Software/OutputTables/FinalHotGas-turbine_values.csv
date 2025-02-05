@@ -18,6 +18,6 @@ V_out,1402.02613372598,m/s,Outlet absolute velocity
 W_in,1519.08966721593,m/s,Inlet relative velocity
 W_out,1519.08966721593,m/s,Outlet relative velocity
 a_in,39.2928518696579,°,Inlet absolute angle
-a_out,3834.21103526435,°,Outlet absolute angle
+a_out,66.9196067816632,°,Outlet absolute angle
 Beta,31.8901619005792,°,Blade angle (Beta)
 u,252.898208613978,m/s,Turbine velocity
