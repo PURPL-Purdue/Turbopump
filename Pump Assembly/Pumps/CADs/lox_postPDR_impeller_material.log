@@ -1,16 +1,16 @@
 ﻿STEP to UG
 ! INFO-     NX STEP AP214 - V2007
 ! INFO-      
-! INFO-     Start of Translation: 7-FEB-2025  9:48:34 PM
+! INFO-     Start of Translation: 7-FEB-2025  9:48:29 PM
 ! INFO-      
-! STATUS-   Converting Part: C:\Users\danie\Desktop\Turbopump\Pump Assembly\Pumps\CADs\lox_postPDR_inducer_material.stp
+! STATUS-   Converting Part: C:\Users\danie\Desktop\Turbopump\Pump Assembly\Pumps\CADs\lox_postPDR_impeller_material.stp
 ! SUMMARY-   
 ! SUMMARY-    STEP Header Information
 ! SUMMARY-   
 ! SUMMARY-  Description      Open CASCADE Model
 ! SUMMARY-  Imp_Level        2;1
 ! SUMMARY-  File_Name        Open CASCADE Shape Model
-! SUMMARY-  Date             2024-11-30T10:32:37
+! SUMMARY-  Date             2024-11-30T10:32:43
 ! SUMMARY-  Author           Author
 ! SUMMARY-  Organization     Open CASCADE
 ! SUMMARY-  Pre_Version      Open CASCADE STEP processor 7.6
@@ -22,23 +22,26 @@
 ! SUMMARY-   
 ! SUMMARY-  Entity Type                                                   Count
 ! SUMMARY-  -----------                                                   ------
-! SUMMARY-  advanced_face ..............................................:     24
+! SUMMARY-  advanced_face ..............................................:     52
 ! SUMMARY-  application_context ........................................:      1
-! SUMMARY-  axis1_placement ............................................:     16
-! SUMMARY-  axis2_placement_3d .........................................:     15
-! SUMMARY-  b_spline_curve_with_knots ..................................:     68
-! SUMMARY-  b_spline_surface_with_knots ................................:      8
-! SUMMARY-  cartesian_point ............................................:   9325
-! SUMMARY-  circle .....................................................:     14
+! SUMMARY-  axis1_placement ............................................:     24
+! SUMMARY-  axis2_placement_3d .........................................:     79
+! SUMMARY-  b_spline_curve_with_knots ..................................:    110
+! SUMMARY-  b_spline_surface_with_knots ................................:     18
+! SUMMARY-  cartesian_point ............................................:  16987
+! SUMMARY-  circle .....................................................:     68
 ! SUMMARY-  closed_shell ...............................................:      1
-! SUMMARY-  direction ..................................................:     46
-! SUMMARY-  edge_curve .................................................:     66
-! SUMMARY-  edge_loop ..................................................:     24
-! SUMMARY-  face_bound .................................................:     24
+! SUMMARY-  conical_surface ............................................:      4
+! SUMMARY-  cylindrical_surface ........................................:      6
+! SUMMARY-  direction ..................................................:    184
+! SUMMARY-  edge_curve .................................................:    156
+! SUMMARY-  edge_loop ..................................................:     52
+! SUMMARY-  face_bound .................................................:     52
 ! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      1
 ! SUMMARY-  length_unit_and_si_unit ....................................:      1
+! SUMMARY-  line .......................................................:      2
 ! SUMMARY-  manifold_solid_brep ........................................:      1
-! SUMMARY-  oriented_edge ..............................................:    132
+! SUMMARY-  oriented_edge ..............................................:    312
 ! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      1
 ! SUMMARY-  product ....................................................:      1
 ! SUMMARY-  product_context ............................................:      1
@@ -48,19 +51,20 @@
 ! SUMMARY-  product_definition_shape ...................................:      1
 ! SUMMARY-  product_related_product_category ...........................:      1
 ! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      1
-! SUMMARY-  surface_of_revolution ......................................:     16
+! SUMMARY-  surface_of_revolution ......................................:     24
 ! SUMMARY-  uncertainty_measure_with_unit ..............................:      1
-! SUMMARY-  vertex_point ...............................................:     42
+! SUMMARY-  vector .....................................................:      2
+! SUMMARY-  vertex_point ...............................................:     92
 ! SUMMARY-                                                               -------
-! SUMMARY-  Total                                                           9835
+! SUMMARY-  Total                                                          18239
 ! STATUS-    
-! STATUS-   Converting to Output Form (Phase 2 of 3): 7-FEB-2025 9:48:34 PM
+! STATUS-   Converting to Output Form (Phase 2 of 3): 7-FEB-2025 9:48:29 PM
 ! STATUS-    
 ! STATUS-    
 ! STATUS-   Generating UG geometry and placing them in parts
 ! STATUS-    
-! STATUS-   Creating the UG part (Phase 3 of 3): 7-FEB-2025  9:48:34 PM
-! INFO-     Filing Part ..: C:\Users\danie\Desktop\Turbopump\Pump Assembly\Pumps\CADs\lox_postPDR_inducer_material_stp.prt
+! STATUS-   Creating the UG part (Phase 3 of 3): 7-FEB-2025  9:48:29 PM
+! INFO-     Filing Part ..: C:\Users\danie\Desktop\Turbopump\Pump Assembly\Pumps\CADs\lox_postPDR_impeller_material_stp.prt
 ! SUMMARY-   
 ! SUMMARY-  Summary of Unigraphics Part Entities
 ! SUMMARY-   
@@ -78,5 +82,5 @@
 ! INFO-      
 ! INFO-     Number of solids ending up as sheet bodies              :         0
 ! INFO-      
-! INFO-     End of Translation: 7-FEB-2025  9:48:34 PM
+! INFO-     End of Translation: 7-FEB-2025  9:48:30 PM
 ! INFO-      
