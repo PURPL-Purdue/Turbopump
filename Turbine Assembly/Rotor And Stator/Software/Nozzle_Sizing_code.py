@@ -32,8 +32,7 @@ def main():
     inlet_density = chamber_pressure / (specific_gas_constant * inlet_temp)
         # kg/m^3
 
-    exhaust_velocity = (inlet_temp * specific_gas_constant * ( (2 * gamma) / (gamma - 1) ) 
-                        * (1 - (exit_pressure / chamber_pressure) ** ( (gamma - 1) / gamma ) ) ) ** 0.5
+    exhaust_velocity = (inlet_temp * specific_gas_constant * ( (2 * gamma) / (gamma - 1) ) * (1 - (exit_pressure / chamber_pressure) ** ( (gamma - 1) / gamma ) ) ) ** 0.5
         # m/s
 
     temp_throat = inlet_temp / (1 + ( (gamma - 1) / 2 ) )
@@ -51,7 +50,7 @@ def main():
     density_exit = inlet_density / (1 + ( (gamma - 1) / 2 ) * (mach_exit ** 2) ) ** (1 / (gamma - 1))
         # kg/m^3
 
-    area_exit = mass_flow / (density_exit * exhaust_velocity)
+    area_exit = area_throat * ( ( (gamma + 1) / 2) ** ( -(gamma + 1) / ( 2 * (gamma - 1) ) ) ) * ( ( (1 + ( (gamma - 1) / 2) * mach_exit ** 2) ** ( (gamma + 1) / (2 * (gamma - 1) ) ) ) / mach_exit)
         # m^2
 
     temp_exit = inlet_temp / (1 + ( (gamma - 1) / 2 ) * (mach_exit ** 2) )
@@ -129,6 +128,7 @@ def main():
     print(f"Total Exit Area: {area_exit * 1000000:.6} mm^2")
 #    print(f"Number of Nozzles: {n}")
 #    print(f"Nozzle length from throat to exit: {nozzle_length_n:.4f} m")
+
 
 # Inlet and exit angles (given from NASA SP-8120)
     print("Throat Rao Angle: ~21 degrees")
