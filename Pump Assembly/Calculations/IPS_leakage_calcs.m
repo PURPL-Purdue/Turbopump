@@ -1,4 +1,4 @@
-%input
+%% input
 format long;
 seal_radii_min = .315; %inches
 step = .011; %inches
@@ -23,10 +23,7 @@ fuelRecycleP = 60; %psi
 fuelRho = 800; %kg/m^3
 fuelMu = 1.92e-3; %Pa s
 
-
-
-
-%change units
+%% change units
 loxPin = 6894.76*loxPin;
 loxRecycleP = 6894.76*loxRecycleP;
 N2inPressure = 6894.76*N2inPressure;
@@ -60,13 +57,13 @@ QloxDrain = QloxDrain*264.1721; %gal/s
 QfuelRecycle = mdotfuelRecycle / fuelRho *264.172; %gal/s
 mdotfuelRecycle = mdotfuelRecycle * 2.2046; %lbm/s
 
-
-
 [mdotfuelDrain, ReFuelDrain] = laby_leakage(clearance, tooth_pitch, tooth_width, seal_radii(5), teeth, fuelRecycleP, atmP, fuelRho, fuelMu); %kg/s
 QfuelDrain = mdotfuelDrain /fuelRho * 264.172;   %gal/s
 mdotfuelDrain = mdotfuelDrain * 2.2046;   %lbm/s
 
-
 fprintf("\n\nReynolds Numbers:\nLOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",ReloxRecycle, ReLoxDrain, ReFuelRecycle, ReFuelDrain)
 fprintf("\nLeakage Rates (lbm/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",mdotloxRecyle, mdotLoxDrain, mdotfuelRecycle, mdotfuelDrain)
 fprintf("\nLeakage Rates (gal/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",QloxRecycle, QloxDrain, QfuelRecycle, QfuelDrain)
+
+
+%% turbine leakage
