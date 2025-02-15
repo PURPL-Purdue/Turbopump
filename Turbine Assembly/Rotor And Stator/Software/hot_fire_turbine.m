@@ -213,7 +213,6 @@ analysis_funs.plotMachPressureDistributions(Mach_vec, P_vec);
 
 
 %% TURBINE TABLE
-
 % Turbine values
 Variable = {
     'rotor_radius'; 'hub_radius'; 'mass_flow'; 'shaft_power'; 'turbine_rpm';
