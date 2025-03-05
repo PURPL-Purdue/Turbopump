@@ -1,0 +1,92 @@
+﻿STEP to UG
+! INFO-     NX STEP AP214 - V2007
+! INFO-      
+! INFO-     Start of Translation: 4-MAR-2025  7:28:12 PM
+! INFO-      
+! STATUS-   Converting Part: C:\Users\arvin\Documents\GitHub\Turbopump\Full Assembly\Gas Generator Subassembly\TRBP_GasGenerator_Injector.STEP
+! SUMMARY-   
+! SUMMARY-    STEP Header Information
+! SUMMARY-   
+! SUMMARY-  Description      STEP AP214
+! SUMMARY-  Imp_Level        1
+! SUMMARY-  File_Name        GasGeneratorInjector_02-27.STEP
+! SUMMARY-  Date             2025-02-28T04:21:07
+! SUMMARY-  Author           Unknown
+! SUMMARY-  Organization     Unknown
+! SUMMARY-  Pre_Version      SwSTEP 2.0
+! SUMMARY-  Orig_System      SolidWorks 2024
+! SUMMARY-  Authorization    Unknown
+! SUMMARY-  Schema_ID        automotive_design
+! SUMMARY-   
+! SUMMARY-    Summary of STEP Entities
+! SUMMARY-   
+! SUMMARY-  Entity Type                                                   Count
+! SUMMARY-  -----------                                                   ------
+! SUMMARY-  advanced_face ..............................................:    370
+! SUMMARY-  application_context ........................................:      2
+! SUMMARY-  axis2_placement_3d .........................................:    551
+! SUMMARY-  b_spline_curve_with_knots ..................................:    231
+! SUMMARY-  b_spline_curve_with_knots_and_rational_b_spline_curve ......:    289
+! SUMMARY-  b_spline_surface_with_knots ................................:      9
+! SUMMARY-  b_spline_surface_with_knots_and_rational_b_spline_surface ..:     94
+! SUMMARY-  cartesian_point ............................................:  23789
+! SUMMARY-  circle .....................................................:    283
+! SUMMARY-  closed_shell ...............................................:      1
+! SUMMARY-  conical_surface ............................................:     26
+! SUMMARY-  conversion_based_unit_and_length_unit ......................:      2
+! SUMMARY-  cylindrical_surface ........................................:    200
+! SUMMARY-  dimensional_exponents ......................................:      2
+! SUMMARY-  direction ..................................................:   1320
+! SUMMARY-  edge_curve .................................................:   1021
+! SUMMARY-  edge_loop ..................................................:    427
+! SUMMARY-  face_bound .................................................:     57
+! SUMMARY-  face_outer_bound ...........................................:    370
+! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      2
+! SUMMARY-  length_measure_with_unit ...................................:      2
+! SUMMARY-  length_unit_and_si_unit ....................................:      2
+! SUMMARY-  line .......................................................:    218
+! SUMMARY-  manifold_solid_brep ........................................:      1
+! SUMMARY-  oriented_edge ..............................................:   2042
+! SUMMARY-  plane ......................................................:     12
+! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      2
+! SUMMARY-  product ....................................................:      1
+! SUMMARY-  product_context ............................................:      1
+! SUMMARY-  product_definition .........................................:      1
+! SUMMARY-  product_definition_context .................................:      1
+! SUMMARY-  product_definition_formation_with_specified_source .........:      1
+! SUMMARY-  product_definition_shape ...................................:      1
+! SUMMARY-  product_related_product_category ...........................:      1
+! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      2
+! SUMMARY-  toroidal_surface ...........................................:     29
+! SUMMARY-  uncertainty_measure_with_unit ..............................:      2
+! SUMMARY-  vector .....................................................:    218
+! SUMMARY-  vertex_point ...............................................:    638
+! SUMMARY-                                                               -------
+! SUMMARY-  Total                                                          32221
+! STATUS-    
+! STATUS-   Converting to Output Form (Phase 2 of 3): 4-MAR-2025 7:28:12 PM
+! STATUS-    
+! STATUS-    
+! STATUS-   Generating UG geometry and placing them in parts
+! STATUS-    
+! STATUS-   Creating the UG part (Phase 3 of 3): 4-MAR-2025  7:28:20 PM
+! INFO-     Filing Part ..: C:\Users\arvin\Documents\GitHub\Turbopump\Full Assembly\Gas Generator Subassembly\TRBP_GasGenerator_Injector_step.prt
+! SUMMARY-   
+! SUMMARY-  Summary of Unigraphics Part Entities
+! SUMMARY-   
+! SUMMARY-  Entities Processed             Count
+! SUMMARY-  ------------------             -----
+! SUMMARY-  Solid .......................:     1
+! SUMMARY-                                 -----
+! SUMMARY-  Total                              1
+! INFO-      
+! INFO-     Total number of solids input for this translation       :         1
+! INFO-      
+! INFO-     Number of solids created without body validation faults :         1
+! INFO-      
+! INFO-     Number of solids created with body validation fault(s)  :         0
+! INFO-      
+! INFO-     Number of solids ending up as sheet bodies              :         0
+! INFO-      
+! INFO-     End of Translation: 4-MAR-2025  7:28:23 PM
+! INFO-      
