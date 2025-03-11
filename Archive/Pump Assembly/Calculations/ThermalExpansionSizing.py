@@ -75,7 +75,7 @@ plt.show()
 # %% find dimensions for disired clearance
 
 # set either the od or ID to 0 if trying to find the proper size
-shaftOD = .7 #set this to zero if trying to find dia
+shaftOD = 2.466 #set this to zero if trying to find dia
 shaft_mat = 'Inconel 718'
 shaft_CFT = thermal_expansion_coefficients.get(shaft_mat)
 
