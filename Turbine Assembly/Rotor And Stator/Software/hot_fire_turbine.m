@@ -18,7 +18,7 @@ in_to_cm = 2.54; %1 in = 2.54 cm
 P_0 = 350 * psi_to_pa; % 24.132 * bar_to_pa; % [N/m^2, 500psi]
 P_e = 30 * psi_to_pa; % [N/m^2, 14.7psi]
 P_A = P_e;
-m_dot_imperial = 0.81; % 1.087; % pounds / second 
+m_dot_imperial = 1.0 + 0.25; % 1.087; % pounds / second 
 m_dot = m_dot_imperial * lb_to_kg; % [kg/s]
 T_0 = 876.05; % [K]
 gamma = 1.1201; % (Specific heat ratio )
@@ -31,7 +31,8 @@ n = 8; % (number of nozzles)
 rotor_radius = 2 * in_to_cm / 100; % 0.04; % [m]
 hub_radius = rotor_radius - 0.005; % 0.035; % [m] % 0.02
 mass_flow = m_dot; % [kg/s]
-shaft_power = 200; % 150; % [kW]
+predicted_efficiency = 0.4; %0.4;  
+shaft_power = 180 / predicted_efficiency; % 150; % [kW]
 blade_solidity = 1 / 0.8; % c / s
 turbine_rpm = 50000; % [rpm]
 
@@ -40,7 +41,7 @@ kw_to_hp = 1.34102209; % [hp/kw]
 
 % Input parameters
 radius = (rotor_radius + hub_radius) / 2; % [m]
-horse_power = 200; % shaft_power * kw_to_hp; % [HP]
+horse_power = 180 / predicted_efficiency; % shaft_power * kw_to_hp; % [HP] % 200
 torque = horse_power * 5252 / turbine_rpm * 1.355817; % 746 * horse_power/(2 * pi * turbine_rpm/60); % N*m
 degree_of_reaction = 0;
 num_blades = 35; % 10
@@ -175,6 +176,7 @@ fprintf("isentropic efficiency: %.4f\n", efficiency)
 turbine_funs.plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, max_blade_thickness / 2)
 areas = areas * (rotor_radius - hub_radius);
 
+M_inlet_rel = w / sqrt(gamma * R_S * T_e)
 [Mach_vec, P_vec] = analysis_funs.calculateMachPressureDistribution(areas, gamma, R, T_e, P_e, M_e, M_e);
 analysis_funs.plotMachPressureDistributions(Mach_vec, P_vec); 
 
@@ -243,6 +245,13 @@ Description = {
 T = table(Variable, Value, Units, Description);
 writetable(T, 'OutputTables/FinalHotGas-turbine_values.csv');
 disp(T);
+
+%% MAT FILE FOR PYTHON ANALYSIS
+
+a_in_deg = rad2deg(a1); 
+a_out_deg = rad2deg(a2);
+b_deg = rad2deg(b);
+save('turbine_vars.mat', 'M_inlet_rel', 'horse_power', 'mass_flow', 'm_dot_imperial', 'a_in_deg', 'a_out_deg', 'b_deg', 'w');
 
 %% Main Input Output Table (Turbine Geometry Specific Values)
 Variable = {

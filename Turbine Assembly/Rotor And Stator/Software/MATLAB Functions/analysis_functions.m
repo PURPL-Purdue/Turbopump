@@ -86,3 +86,4 @@ end
 function A_ratio = area_mach_relation(M, gamma)
     A_ratio = (1 / M) * ((2 / (gamma + 1)) * (1 + (gamma - 1) / 2 * M^2))^((gamma + 1) / (2 * (gamma - 1)));
 end
+

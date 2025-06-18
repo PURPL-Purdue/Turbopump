@@ -1,8 +1,8 @@
 Variable,Value,Units,Description
 Inputs,,,
-mass flow,0.3674098197,kg/s,mass flow
+mass flow,0.5669904625,kg/s,mass flow
 turbine diameter,0.1016,m,outer diameter
-turbine power,200,HP,shaft power
+turbine power,450,HP,shaft power
 annulus width,0.005,m,annulus width
 solidity,1.25,-,blade solidity
 ,,,
@@ -10,7 +10,7 @@ Outputs,,,
 blade spacing,0.008,m,blade spacing
 num blades,38,-,num bldades
 chord,0.01,m,chord
-inlet area,0.00277643265024701,m,mean rad arc length
+inlet area,0.00428461828741822,m,mean rad arc length
 absolute inlet velocity,1666.5847,m/s,inlet absolute velocity
-relative inlet angle,31.8901619005792,deg (°),inlet relative angle
-absolute inlet angle,39.2928518696579,deg (°),inlet absolute angle
+relative inlet angle,53.4451690013005,deg (°),inlet relative angle
+absolute inlet angle,58.6305744683663,deg (°),inlet absolute angle

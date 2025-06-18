@@ -6,17 +6,17 @@ T_throat,826.423281920664,K,Throat temperature
 P_throat,1387151.73695412,N/m^2,Throat pressure
 rho_throat,2.28685447590404,kg/m^3,Throat density
 v_throat,824.273085018318,m/s,Throat velocity
-A_throat,0.00019491313700669,m^2,Throat area
+A_throat,0.000300791878096744,m^2,Throat area
 M_e,2.24023445021424,-,Exit Mach number
 rho_e,0.41862891528803,kg/m^3,Exit density
-A_e,0.000526616132688621,m^2,Exit area
+A_e,0.00081267921711207,m^2,Exit area
 T_e,673.175215039546,K,Exit temperature
-r_throat,0.0078767238402984,m,Throat radius
-r_e,0.0129470892967749,m,Exit radius
-dist,0.0189228614965125,m,Nozzle length
-F_thrust,612.319566036775,N,Thrust force
-A_throat_n,2.43641421258363e-05,m^2,Throat area per nozzle
-A_e_n,6.58270165860777e-05,m^2,Exit area per nozzle
-r_throat_n,0.00278484242050437,m,Throat radius per nozzle
-r_e_n,0.00457748731918865,m,Exit radius per nozzle
-dist_n,0.00669024184181889,m,Nozzle length per nozzle
+r_throat,0.00978493885938912,m,Throat radius
+r_e,0.0160836509879715,m,Exit radius
+dist,0.0235071136861196,m,Nozzle length
+F_thrust,944.937601908603,N,Thrust force
+A_throat_n,3.7598984762093e-05,m^2,Throat area per nozzle
+A_e_n,0.000101584902139009,m^2,Exit area per nozzle
+r_throat_n,0.0034594983104849,m,Throat radius per nozzle
+r_e_n,0.00568642933991617,m,Exit radius per nozzle
+dist_n,0.00831101974678913,m,Nozzle length per nozzle

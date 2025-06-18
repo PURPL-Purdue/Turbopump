@@ -1,0 +1,361 @@
+*******************************************************************************
+
+         NASA-GLENN CHEMICAL EQUILIBRIUM PROGRAM CEA2, FEBRUARY 5, 2004
+                   BY  BONNIE MCBRIDE AND SANFORD GORDON
+      REFS: NASA RP-1311, PART I, 1994 AND NASA RP-1311, PART II, 1996
+
+ *******************************************************************************
+
+
+
+  
+ ### CEA analysis performed on Sun 08-Jun-2025 13:50:06
+  
+ # Problem Type: "Rocket" (Infinite Area Combustor)
+  
+ prob case = _______________8707 ro equilibrium
+  
+ # Pressure (1 value):
+ p,bar= 24.13
+ # Chamber/Exit Pressure Ratio (1 value):
+ pi/p= 11.6659
+  
+ # Oxidizer/Fuel Wt. ratio (1 value):
+ o/f = 0.4
+  
+ # You selected the following fuels and oxidizers:
+ reac
+ fuel RP-1              wt%=100.0000
+ oxid O2(L)             wt%=100.0000
+  
+ # You selected these options for output:
+ # short version of output
+ output short
+ # Proportions of any products will be expressed as Mass Fractions.
+ output massf
+ # Heat will be expressed as siunits
+ output siunits
+  
+ # Input prepared by this script:/var/www/sites/cearun/cgi-bin/CEARUN/prepareInpu
+ tFile.cgi
+  
+ ### IMPORTANT:  The following line is the end of your CEA input file!
+ end
+
+
+
+
+
+              THEORETICAL ROCKET PERFORMANCE ASSUMING EQUILIBRIUM
+
+           COMPOSITION DURING EXPANSION FROM INFINITE AREA COMBUSTOR
+
+ Pin =   350.0 PSIA
+ CASE = _______________
+
+             REACTANT                    WT FRACTION      ENERGY      TEMP
+                                          (SEE NOTE)     KJ/KG-MOL      K  
+ FUEL        RP-1                         1.0000000    -24717.700    298.150
+ OXIDANT     O2(L)                        1.0000000    -12979.000     90.170
+
+ O/F=    0.40000  %FUEL= 71.428571  R,EQ.RATIO= 8.514166  PHI,EQ.RATIO= 8.514166
+
+                 CHAMBER   THROAT     EXIT
+ Pinf/P            1.0000   1.7282   11.666
+ P, BAR            24.130   13.962   2.0684
+ T, K             1160.89  1101.14   929.67
+ RHO, KG/CU M    4.7162 0 2.9088 0 5.3139-1
+ H, KJ/KG        -1379.14 -1650.27 -2476.03
+ U, KJ/KG        -1890.79 -2130.28 -2865.28
+ G, KJ/KG        -14129.2 -13744.1 -12686.7
+ S, KJ/(KG)(K)    10.9830  10.9830  10.9830
+
+ M, (1/n)          18.865   19.073   19.858
+ MW, MOL WT        11.779   11.705   11.502
+ (dLV/dLP)t      -1.12273 -1.12267 -1.11344
+ (dLV/dLT)p        2.4392   2.5166   2.6003
+ Cp, KJ/(KG)(K)   10.8660  11.6259  12.9042
+ GAMMAs            1.1346   1.1297   1.1185
+ SON VEL,M/SEC      761.9    736.4    659.8
+ MACH NUMBER        0.000    1.000    2.245
+
+ PERFORMANCE PARAMETERS
+
+ Ae/At                      1.0000   2.7215
+ CSTAR, M/SEC               1126.5   1126.5
+ CF                         0.6537   1.3148
+ Ivac, M/SEC                1388.2   1743.9
+ Isp, M/SEC                  736.4   1481.1
+
+
+ MASS FRACTIONS
+
+ CH4              0.12859  0.12434  0.11228
+ *CO              0.27310  0.24181  0.13693
+ *CO2             0.06368  0.07565  0.11610
+ C2H4             0.00001  0.00001  0.00000
+ C2H6             0.00004  0.00003  0.00000
+ *H2              0.05761  0.05753  0.05672
+ H2O              0.09392  0.10425  0.13859
+ C(gr)            0.38303  0.39638  0.43937
+
+  * THERMODYNAMIC PROPERTIES FITTED TO 20000.K
+
+ NOTE. WEIGHT FRACTION OF FUEL IN TOTAL FUELS AND OF OXIDANT IN TOTAL OXIDANTS
+
+
+ WITH TRANSPORT PROPERTIES:
+
+ *******************************************************************************
+
+         NASA-GLENN CHEMICAL EQUILIBRIUM PROGRAM CEA2, FEBRUARY 5, 2004
+                   BY  BONNIE MCBRIDE AND SANFORD GORDON
+      REFS: NASA RP-1311, PART I, 1994 AND NASA RP-1311, PART II, 1996
+
+ *******************************************************************************
+
+
+
+  
+ ### CEA analysis performed on Sun 08-Jun-2025 14:00:45
+  
+ # Problem Type: "Rocket" (Infinite Area Combustor)
+  
+ prob case = _______________8707 ro equilibrium
+  
+ # Pressure (1 value):
+ p,bar= 24.13
+ # Chamber/Exit Pressure Ratio (1 value):
+ pi/p= 11.6659
+  
+ # Oxidizer/Fuel Wt. ratio (1 value):
+ o/f = 0.4
+  
+ # You selected the following fuels and oxidizers:
+ reac
+ fuel RP-1              wt%=100.0000
+ oxid O2(L)             wt%=100.0000
+  
+ # You selected these options for output:
+ # short version of output
+ output short
+ # Proportions of any products will be expressed as Mass Fractions.
+ output massf
+ # Heat will be expressed as siunits
+ output siunits
+ # Transport properties calculated
+ output transport
+  
+  
+ # Input prepared by this script:/var/www/sites/cearun/cgi-bin/CEARUN/prepareInpu
+ tFile.cgi
+  
+ ### IMPORTANT:  The following line is the end of your CEA input file!
+ end
+
+
+
+
+
+
+              THEORETICAL ROCKET PERFORMANCE ASSUMING EQUILIBRIUM
+
+           COMPOSITION DURING EXPANSION FROM INFINITE AREA COMBUSTOR
+
+ Pin =   350.0 PSIA
+ CASE = _______________
+
+             REACTANT                    WT FRACTION      ENERGY      TEMP
+                                          (SEE NOTE)     KJ/KG-MOL      K  
+ FUEL        RP-1                         1.0000000    -24717.700    298.150
+ OXIDANT     O2(L)                        1.0000000    -12979.000     90.170
+
+ O/F=    0.40000  %FUEL= 71.428571  R,EQ.RATIO= 8.514166  PHI,EQ.RATIO= 8.514166
+
+                 CHAMBER   THROAT     EXIT
+ Pinf/P            1.0000   1.7282   11.666
+ P, BAR            24.130   13.962   2.0684
+ T, K             1160.89  1101.14   929.67
+ RHO, KG/CU M    4.7162 0 2.9088 0 5.3139-1
+ H, KJ/KG        -1379.14 -1650.27 -2476.03
+ U, KJ/KG        -1890.79 -2130.28 -2865.28
+ G, KJ/KG        -14129.2 -13744.1 -12686.7
+ S, KJ/(KG)(K)    10.9830  10.9830  10.9830
+
+ M, (1/n)          18.865   19.073   19.858
+ MW, MOL WT        11.779   11.705   11.502
+ (dLV/dLP)t      -1.12273 -1.12267 -1.11344
+ (dLV/dLT)p        2.4392   2.5166   2.6003
+ Cp, KJ/(KG)(K)   10.8660  11.6259  12.9042
+ GAMMAs            1.1346   1.1297   1.1185
+ SON VEL,M/SEC      761.9    736.4    659.8
+ MACH NUMBER        0.000    1.000    2.245
+
+ TRANSPORT PROPERTIES (GASES ONLY)
+   CONDUCTIVITY IN UNITS OF MILLIWATTS/(CM)(K)
+
+ VISC,MILLIPOISE  0.67665  0.65750  0.59973
+
+  WITH EQUILIBRIUM REACTIONS
+
+ Cp, KJ/(KG)(K)   16.2052  17.7515  21.5433
+ CONDUCTIVITY     17.0860  17.7767  18.6591
+ PRANDTL NUMBER    0.6418   0.6566   0.6924
+
+  WITH FROZEN REACTIONS
+
+ Cp, KJ/(KG)(K)    3.5047   3.4942   3.4747
+ CONDUCTIVITY      6.1493   5.9879   5.5144
+ PRANDTL NUMBER    0.3857   0.3837   0.3779
+
+ PERFORMANCE PARAMETERS
+
+ Ae/At                      1.0000   2.7215
+ CSTAR, M/SEC               1126.5   1126.5
+ CF                         0.6537   1.3148
+ Ivac, M/SEC                1388.2   1743.9
+ Isp, M/SEC                  736.4   1481.1
+
+
+ MASS FRACTIONS
+
+ CH4              0.12859  0.12434  0.11228
+ *CO              0.27310  0.24181  0.13693
+ *CO2             0.06368  0.07565  0.11610
+ C2H4             0.00001  0.00001  0.00000
+ C2H6             0.00004  0.00003  0.00000
+ *H2              0.05761  0.05753  0.05672
+ H2O              0.09392  0.10425  0.13859
+ C(gr)            0.38303  0.39638  0.43937
+
+  * THERMODYNAMIC PROPERTIES FITTED TO 20000.K
+
+ NOTE. WEIGHT FRACTION OF FUEL IN TOTAL FUELS AND OF OXIDANT IN TOTAL OXIDANTS
+
+ // rerun again
+
+ *******************************************************************************
+
+         NASA-GLENN CHEMICAL EQUILIBRIUM PROGRAM CEA2, FEBRUARY 5, 2004
+                   BY  BONNIE MCBRIDE AND SANFORD GORDON
+      REFS: NASA RP-1311, PART I, 1994 AND NASA RP-1311, PART II, 1996
+
+ *******************************************************************************
+
+
+
+  
+ ### CEA analysis performed on Tue 10-Jun-2025 01:41:21
+  
+ # Problem Type: "Rocket" (Infinite Area Combustor)
+  
+ prob case = _______________8707 ro equilibrium
+  
+ # Pressure (1 value):
+ p,psia= 350
+ # Chamber/Exit Pressure Ratio (1 value):
+ pi/p= 11.6667
+  
+ # Oxidizer/Fuel Wt. ratio (1 value):
+ o/f = 0.28
+  
+ # You selected the following fuels and oxidizers:
+ reac
+ fuel RP-1              wt%=100.0000  t,k= 298.000
+ oxid O2(L)             wt%=100.0000
+  
+ # You selected these options for output:
+ # short version of output
+ output short
+ # Proportions of any products will be expressed as Mass Fractions.
+ output massf
+ # Heat will be expressed as siunits
+ output siunits
+ # Transport properties calculated
+ output transport
+  
+  
+ # Input prepared by this script:/var/www/sites/cearun/cgi-bin/CEARUN/prepareInpu
+ tFile.cgi
+  
+ ### IMPORTANT:  The following line is the end of your CEA input file!
+ end
+
+
+
+
+
+
+              THEORETICAL ROCKET PERFORMANCE ASSUMING EQUILIBRIUM
+
+           COMPOSITION DURING EXPANSION FROM INFINITE AREA COMBUSTOR
+
+ Pin =   350.0 PSIA
+ CASE = _______________
+
+             REACTANT                    WT FRACTION      ENERGY      TEMP
+                                          (SEE NOTE)     KJ/KG-MOL      K  
+ FUEL        RP-1                         1.0000000    -24717.700    298.000
+ OXIDANT     O2(L)                        1.0000000    -12979.000     90.170
+
+ O/F=    0.28000  %FUEL= 78.125000  R,EQ.RATIO=12.163094  PHI,EQ.RATIO=12.163094
+
+                 CHAMBER   THROAT     EXIT
+ Pinf/P            1.0000   1.7238   11.667
+ P, BAR            24.132   13.999   2.0684
+ T, K             1086.44  1032.26   869.53
+ RHO, KG/CU M    5.4908 0 3.3809 0 6.1366-1
+ H, KJ/KG        -1470.41 -1702.72 -2418.20
+ U, KJ/KG        -1909.90 -2116.80 -2755.26
+ G, KJ/KG        -12715.0 -12386.5 -11417.7
+ S, KJ/(KG)(K)    10.3499  10.3499  10.3499
+
+ M, (1/n)          20.554   20.727   21.449
+ MW, MOL WT        11.564   11.503   11.414
+ (dLV/dLP)t      -1.12147 -1.11906 -1.10693
+ (dLV/dLT)p        2.4305   2.4569   2.4468
+ Cp, KJ/(KG)(K)   10.3202  10.6276  10.8360
+ GAMMAs            1.1237   1.1221   1.1201
+ SON VEL,M/SEC      702.7    681.6    614.5
+ MACH NUMBER        0.000    1.000    2.241
+
+ TRANSPORT PROPERTIES (GASES ONLY)
+   CONDUCTIVITY IN UNITS OF MILLIWATTS/(CM)(K)
+
+ VISC,MILLIPOISE  0.63855  0.61978  0.55522
+
+  WITH EQUILIBRIUM REACTIONS
+
+ Cp, KJ/(KG)(K)   17.3508  18.1953  18.6700
+ CONDUCTIVITY     16.7574  16.7695  14.9715
+ PRANDTL NUMBER    0.6612   0.6725   0.6924
+
+  WITH FROZEN REACTIONS
+
+ Cp, KJ/(KG)(K)    3.9689   3.9450   3.8334
+ CONDUCTIVITY      5.8484   5.6737   4.9938
+ PRANDTL NUMBER    0.4333   0.4309   0.4262
+
+ PERFORMANCE PARAMETERS
+
+ Ae/At                      1.0000   2.7276
+ CSTAR, M/SEC               1047.2   1047.2
+ CF                         0.6509   1.3148
+ Ivac, M/SEC                1289.1   1621.6
+ Isp, M/SEC                  681.6   1376.8
+
+
+ MASS FRACTIONS
+
+ CH4              0.19182  0.18815  0.18280
+ *CO              0.13520  0.11348  0.04970
+ *CO2             0.05660  0.06266  0.07668
+ C2H4             0.00001  0.00000  0.00000
+ C2H6             0.00006  0.00004  0.00001
+ *H2              0.04900  0.04892  0.04696
+ H2O              0.11302  0.12202  0.15157
+ C(gr)            0.45429  0.46472  0.49228
+
+  * THERMODYNAMIC PROPERTIES FITTED TO 20000.K
+
+ NOTE. WEIGHT FRACTION OF FUEL IN TOTAL FUELS AND OF OXIDANT IN TOTAL OXIDANTS

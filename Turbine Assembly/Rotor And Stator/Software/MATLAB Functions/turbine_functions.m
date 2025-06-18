@@ -387,7 +387,7 @@ function [max_thickness, cross_sectional_area, x_lower, y_lower, x_upper, y_uppe
 
     half_len = floor(length(x_lower) / 2);
     x_lower_first_half = x_lower(1:half_len);
-    y_lower_first_half = y_lower(1:half_len)
+    y_lower_first_half = y_lower(1:half_len);
     slope = m;
     objectiveFunction = @(vars) calc_sq_err_min_dist( ...
         x_lower_first_half, y_lower_first_half, 0, -B_spacing, vars(1), slope, x2, vars(2), A_inlet, false);
