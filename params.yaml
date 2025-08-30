@@ -1,0 +1,102 @@
+###################################################################################################
+#                        Welcome to the Marlin Project's source of truth!                         #
+#                                                                                                 #
+# Why are we doing this?:                                                                         #
+#   As our project grows, it gets hard to keep track of the values on everyone's subsystems as    #
+#   they get more and more complicated. Consolidating all of our important design parameters,     #
+#   inputs and outputs in the same file helps reduce miscommunications and ensures everyone is in #
+#   the same page.                                                                                #
+# What the hell is a YAML?:                                                                       #
+#   YAML is a type of files that allows people to write data in a way that is readable to both a  #
+#   person AND a computer. As opposed to other filetypes like JSON and XML, the syntax is pretty  #
+#   nice and readable and will thus make a good reference for programmers and non-programmers in  #
+#   the team.                                                                                     #
+# (video explaining how to use a YAML) https://www.youtube.com/watch?v=BEki_rsWu4E                #
+#                                                                                                 #
+# Basic rules:                                                                                    #
+#   1. Be clear with naming, limit acronym usage on any parameters you add                        #
+#   2. Write the units in a comment using parenthesis and maintain unit system consistency        #
+#   3. Write your name next to any parameters you own, notify owners of inputs before             #
+#      changing them                                                                              #
+#   4. Do not change OUTPUTS manually, only code should do this!!!                                #
+#   5. No slop, only throw a value here if it actually is useful information. EX: things like     #
+#      shaft speed, design propellant temps... Not things like super specific shaft dimensions or #
+#      random off-design conditions                                                               #
+#   6. Check if the value is already there before adding it                                       #
+#                                                                                                 #
+# If you have any questions about how to use this document, reach out to Alejandro Diaz Contreras #
+# adiazcon@purdue.edu                                                                             #
+#                                                                                                 #
+###################################################################################################
+
+
+######################################
+###### TURBOPUMP SYSTEMS DESIGN ######
+######################################
+
+# High level performance (INPUTS)
+
+lox_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+lox_inlet_design_temperature: 162.27 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+lox_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
+lox_design_mdot: 15.4 #(lbm/s) Alejandro Diaz Contreras
+
+kero_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+kero_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
+kero_inlet_design_temperature: 536.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+kero_design_mdot: 7.4 #(lbm/s) Alejandro Diaz Contreras
+
+
+# Performance dispersion (INPUTS)
+
+min_ambient_temperature: 491.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+max_ambient_temperature: 563.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+
+min_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+max_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+
+min_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+max_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+
+
+# High level systems (OUTPUTS)
+
+
+
+
+########################
+###### SUBSYSTEMS ######
+########################
+
+# Rotor (INPUTS)
+
+shaft_speed: 50000 #(RPM) Alejandro Diaz Contreras
+#rotor_moment_of_inertia: -------------------------------------------------- #(lbm*in^2) Daniel Bennet
+
+
+# Rotor (OUTPUTS)
+
+#lox_coolant_rate: --------------------------------------------------------- #(lb/s) James Nida
+#fuel_coolant_rate: -------------------------------------------------------- #(lb/s) James Nida
+
+
+# IPS (INPUTS)
+
+#IPS_gap_width: ------------------------------------------------------------ #(in) Chris Suffredini
+
+
+# Gas generator (INPUTS)
+
+GG_chamber_design_pressure: 390 #(psi) Miles Cohen
+GG_chamber_OF: 0.28 #(Unitless) Miles Cohen
+
+
+# Turbine (INPUTS)
+
+design_power_output: 180 #(HP) Amanjyoti Mridha
+
+
+# Turbine (OUTPUTS)
+
+#turbine_efficiency: ------------------------------------------------------- #(Unitless) Amanjyoti Mridha
+
