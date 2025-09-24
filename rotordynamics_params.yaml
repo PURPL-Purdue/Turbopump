@@ -1,20 +1,3 @@
-## THIS FILE IS BEING PHASED OUT IN FAVOR OF SYSTEM-SPECIFIC PARAM FILES
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###################################################################################################
 #                        Welcome to the Marlin Project's source of truth!                         #
 #                                                                                                 #
@@ -47,55 +30,6 @@
 ###################################################################################################
 
 
-######################################
-###### TURBOPUMP SYSTEMS DESIGN ######
-######################################
-
-# High level performance (INPUTS)
-
-lox_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-lox_inlet_design_temperature: 162.27 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-lox_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
-lox_design_mdot: 15.4 #(lbm/s) Alejandro Diaz Contreras
-
-kero_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-kero_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
-kero_inlet_design_temperature: 536.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-kero_design_mdot: 7.4 #(lbm/s) Alejandro Diaz Contreras
-
-# Pump design flow parameters (OUTPUTS) Do not edit manually!
-
-#lox_inducer_head_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#lox_inducer_flow_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#lox_impeller_head_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#lox_impeller_flow_coefficient: #(nondimensional) Alejandro Diaz Contreras
-
-#kero_inducer_head_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#kero_inducer_flow_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#kero_impeller_head_coefficient: #(nondimensional) Alejandro Diaz Contreras
-#kero_impeller_flow_coefficient: #(nondimensional) Alejandro Diaz Contreras
-
-# Performance dispersion (INPUTS)
-
-min_ambient_temperature: 491.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-max_ambient_temperature: 563.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-
-min_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-max_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-
-min_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-max_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-
-
-# High level systems (OUTPUTS)
-
-
-
-
-########################
-###### SUBSYSTEMS ######
-########################
-
 # Rotor (INPUTS)
 
 shaft_speed: 50000 #(RPM) Alejandro Diaz Contreras
@@ -111,20 +45,3 @@ shaft_speed: 50000 #(RPM) Alejandro Diaz Contreras
 # IPS (INPUTS)
 
 #IPS_gap_width: ------------------------------------------------------------ #(in) Chris Suffredini
-
-
-# Gas generator (INPUTS)
-
-GG_chamber_design_pressure: 390 #(psi) Miles Cohen
-GG_chamber_OF: 0.28 #(Unitless) Miles Cohen
-
-
-# Turbine (INPUTS)
-
-design_power_output: 180 #(HP) Amanjyoti Mridha
-
-
-# Turbine (OUTPUTS)
-
-#turbine_efficiency: ------------------------------------------------------- #(Unitless) Amanjyoti Mridha
-

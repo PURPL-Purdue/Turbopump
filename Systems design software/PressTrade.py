@@ -18,17 +18,20 @@ ft3togal = 7.48052
 R2K = 0.555556
 
 ## YAML import ##
-with open('params.yaml') as file:
-    params = yaml.safe_load(file)
+with open('pumps_params.yaml') as file:
+    pumps_params = yaml.safe_load(file)
+
+with open('rotordynamics_params.yaml') as file:
+    rotordynamics_params = yaml.safe_load(file)
 
 ## Var initialize ##
-N = params['shaft_speed'] #(RPM)
+N = rotordynamics_params['shaft_speed'] #(RPM)
 
-lox_temp = params['lox_inlet_design_temperature'] #(R)
-kero_temp = params['kero_inlet_design_temperature'] #(R)
+lox_temp = pumps_params['lox_inlet_design_temperature'] #(R)
+kero_temp = pumps_params['kero_inlet_design_temperature'] #(R)
 
-lox_mdot = params['lox_design_mdot'] #(lbm/s)
-kero_mdot = params['kero_design_mdot'] #(lbm/s)
+lox_mdot = pumps_params['lox_design_mdot'] #(lbm/s)
+kero_mdot = pumps_params['kero_design_mdot'] #(lbm/s)
 
 lox_vapor_P = PropsSI('P','T', lox_temp*R2K,'Q',0,'oxygen')/psi2Pa #(psi)
 lox_rho = kgpm3tolbpft3 * PropsSI('D','T', lox_temp*R2K,'P', 14.7*psi2Pa, 'oxygen') #(lbm/ft^3)

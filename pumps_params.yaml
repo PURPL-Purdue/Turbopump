@@ -1,20 +1,3 @@
-## THIS FILE IS BEING PHASED OUT IN FAVOR OF SYSTEM-SPECIFIC PARAM FILES
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###################################################################################################
 #                        Welcome to the Marlin Project's source of truth!                         #
 #                                                                                                 #
@@ -85,46 +68,3 @@ max_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFO
 
 min_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 max_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-
-
-# High level systems (OUTPUTS)
-
-
-
-
-########################
-###### SUBSYSTEMS ######
-########################
-
-# Rotor (INPUTS)
-
-shaft_speed: 50000 #(RPM) Alejandro Diaz Contreras
-#rotor_moment_of_inertia: -------------------------------------------------- #(lbm*in^2) Daniel Bennet
-
-
-# Rotor (OUTPUTS)
-
-#lox_coolant_rate: --------------------------------------------------------- #(lb/s) James Nida
-#fuel_coolant_rate: -------------------------------------------------------- #(lb/s) James Nida
-
-
-# IPS (INPUTS)
-
-#IPS_gap_width: ------------------------------------------------------------ #(in) Chris Suffredini
-
-
-# Gas generator (INPUTS)
-
-GG_chamber_design_pressure: 390 #(psi) Miles Cohen
-GG_chamber_OF: 0.28 #(Unitless) Miles Cohen
-
-
-# Turbine (INPUTS)
-
-design_power_output: 180 #(HP) Amanjyoti Mridha
-
-
-# Turbine (OUTPUTS)
-
-#turbine_efficiency: ------------------------------------------------------- #(Unitless) Amanjyoti Mridha
-
