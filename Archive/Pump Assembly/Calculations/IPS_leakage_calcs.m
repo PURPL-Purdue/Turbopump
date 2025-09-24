@@ -2,14 +2,13 @@
 format long;
 seal_radii_min = .315; %inches
 step = .011; %inches
-sealNum = 6; %number of seals in the seal stack up
+sealNum = 5; %number of seals in the seal stack up
 
-clearance = .0025; %inches
+clearance = .002; %inches
 tooth_width = .01; %inches
 cavity_width = .031; %inches
 
 teeth = 5;
-
 loxPin = 1000; %psi
 loxRecycleP = 50; %psi
 loxRho = 1140; % density kg/m^3
@@ -24,19 +23,19 @@ fuelRho = 800; %kg/m^3
 fuelMu = 1.92e-3; %Pa s
 
 %% change units
-loxPin = 6894.76*loxPin;
-loxRecycleP = 6894.76*loxRecycleP;
-N2inPressure = 6894.76*N2inPressure;
-fuelPin = 6894.76*fuelPin;
-fuelRecycleP = 6894.76*fuelRecycleP;
-atmP = atmP * 6894.76;
+loxPin = 6894.76*loxPin; %Pa
+loxRecycleP = 6894.76*loxRecycleP; %Pa
+N2inPressure = 6894.76*N2inPressure; %Pa
+fuelPin = 6894.76*fuelPin; %Pa
+fuelRecycleP = 6894.76*fuelRecycleP; %Pa
+atmP = atmP * 6894.76; %Pa
 
-step = step * .0245;
-seal_radii_min = seal_radii_min * .0245;
-clearance = clearance * .0245;
-tooth_width = tooth_width * .0245;
-cavity_width = cavity_width * .0245;
-tooth_pitch = tooth_width + cavity_width;
+step = step * .0245; %m
+seal_radii_min = seal_radii_min * .0245; %m
+clearance = clearance * .0245; %m
+tooth_width = tooth_width * .0245; %m
+cavity_width = cavity_width * .0245; %m
+tooth_pitch = tooth_width + cavity_width; %m
 
 seal_radii = [];
 for i=1:sealNum
@@ -65,5 +64,3 @@ fprintf("\n\nReynolds Numbers:\nLOx Recycle = %f\nLox Drain = %f\nFuel Recycle =
 fprintf("\nLeakage Rates (lbm/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",mdotloxRecyle, mdotLoxDrain, mdotfuelRecycle, mdotfuelDrain)
 fprintf("\nLeakage Rates (gal/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",QloxRecycle, QloxDrain, QfuelRecycle, QfuelDrain)
 
-
-%% turbine leakage
