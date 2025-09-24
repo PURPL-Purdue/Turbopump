@@ -2,13 +2,14 @@
 format long;
 seal_radii_min = .315; %inches
 step = .011; %inches
-sealNum = 5; %number of seals in the seal stack up
+sealNum = 6; %number of seals in the seal stack up
 
-clearance = .002; %inches
+clearance = .01; %inches
 tooth_width = .01; %inches
 cavity_width = .031; %inches
 
 teeth = 5;
+
 loxPin = 1000; %psi
 loxRecycleP = 50; %psi
 loxRho = 1140; % density kg/m^3
@@ -34,8 +35,8 @@ step = step * .0245; %m
 seal_radii_min = seal_radii_min * .0245; %m
 clearance = clearance * .0245; %m
 tooth_width = tooth_width * .0245; %m
-cavity_width = cavity_width * .0245; %m
-tooth_pitch = tooth_width + cavity_width; %m
+cavity_width = cavity_width * .0245 
+tooth_pitch = tooth_width + cavity_width;
 
 seal_radii = [];
 for i=1:sealNum
@@ -64,3 +65,5 @@ fprintf("\n\nReynolds Numbers:\nLOx Recycle = %f\nLox Drain = %f\nFuel Recycle =
 fprintf("\nLeakage Rates (lbm/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",mdotloxRecyle, mdotLoxDrain, mdotfuelRecycle, mdotfuelDrain)
 fprintf("\nLeakage Rates (gal/s):\n LOx Recycle = %f\nLox Drain = %f\nFuel Recycle = %f\nFuel Drain = %f\n",QloxRecycle, QloxDrain, QfuelRecycle, QfuelDrain)
 
+
+%% turbine leakage
