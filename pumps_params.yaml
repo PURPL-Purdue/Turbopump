@@ -39,12 +39,12 @@
 lox_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 lox_inlet_design_temperature: 162.27 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 lox_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
-lox_design_mdot: 15.4 #(lbm/s) Alejandro Diaz Contreras
+lox_design_mdot: 15.423 #(lbm/s) Alejandro Diaz Contreras
 
 kero_inlet_design_pressure: 50 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 kero_outlet_design_pressure: 1000 #(psi) Alejandro Diaz Contreras
 kero_inlet_design_temperature: 536.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-kero_design_mdot: 7.4 #(lbm/s) Alejandro Diaz Contreras
+kero_design_mdot: 7.567 #(lbm/s) Alejandro Diaz Contreras
 
 # Pump design flow parameters (OUTPUTS) Do not edit manually!
 
