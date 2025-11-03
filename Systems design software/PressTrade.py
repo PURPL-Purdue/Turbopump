@@ -40,13 +40,13 @@ kero_vapor_P = 0.031 #(psi)
 kero_rho = 50.3 #(lbm/ft^3)
 
 ## Calcs ##
-lox_tank_P = np.linspace(14.7, 30, 100)
+lox_tank_P = np.linspace(14.7, 50, 100)
 lox_NPSHa = 144 * (lox_tank_P - lox_vapor_P) / lox_rho
-lox_Nss = N * (((lox_mdot / lox_rho) * ft3togal)** 0.5) / ((lox_NPSHa)**0.75)
+lox_Nss = N * (((lox_mdot / lox_rho) * ft3togal * 60)** 0.5) / ((lox_NPSHa)**0.75)
 
-kero_tank_P = np.linspace(14.7, 30, 100)
+kero_tank_P = np.linspace(14.7, 50, 100)
 kero_NPSHa = 144* (kero_tank_P - kero_vapor_P) / kero_rho
-kero_Nss = N * (((kero_mdot / kero_rho) * ft3togal)** 0.5) / ((kero_NPSHa)**0.75)
+kero_Nss = N * (((kero_mdot / kero_rho) * ft3togal * 60)** 0.5) / ((kero_NPSHa)**0.75)
 
 ## Display ##
 mpl.plot(lox_tank_P, lox_Nss, label="LOX Nss", color="blue")
@@ -55,7 +55,7 @@ mpl.title("Nss for given inlet pressures")
 mpl.xlabel("Inlet pressure (psi)")
 mpl.ylabel("Nss")
 mpl.legend()
-mpl.xlim(14.7, 30)
+mpl.xlim(14.7, 50)
 mpl.ylim(0, 80000)
 mpl.axhline(y=10000, color='black', linestyle="-", label="10,000 Nss")
 mpl.axhline(y=55000, color='black', linestyle="-", label="55,000 Nss")
