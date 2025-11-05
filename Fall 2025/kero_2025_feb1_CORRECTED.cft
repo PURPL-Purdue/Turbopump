@@ -1,0 +1,2066 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CFturboFile Version="2025.2" Info="PURPL">
+  <CFturboProject Type="Object">
+    <Version>2025.2.1.120</Version>
+    <ProjectType Type="Enum">Pump</ProjectType>
+    <Title></Title>
+    <Classification></Classification>
+    <MyName></MyName>
+    <Comment></Comment>
+    <Creation Type="DateTime">2024-10-24T18:06:28.207-04:00</Creation>
+    <LastChange Type="DateTime">2025-11-02T11:10:21.428-05:00</LastChange>
+    <AskDeactAutoCalc Type="Boolean">False</AskDeactAutoCalc>
+    <CurrentDesignIndex Type="Integer">2</CurrentDesignIndex>
+    <DesignPoint_Pump Type="Object">
+      <nRot Type="Float">833.333333333333</nRot>
+      <PressureDiff Type="Float">6894759.08677537</PressureDiff>
+      <mFlow Type="Float">2.98915809995161</mFlow>
+      <EnergyMode Type="Enum">Total pressure difference</EnergyMode>
+      <FlowMode Type="Enum">Mass flow</FlowMode>
+      <ptInlet Type="Float">344737.954338768</ptInlet>
+      <TtInlet Type="Float">293.15</TtInlet>
+      <EtaC Type="Float">1</EtaC>
+      <RotDir Type="Enum">Left</RotDir>
+      <SwirlMode Type="Enum">Swirlangle</SwirlMode>
+      <Alphahub Type="Float">1.5707963267949</Alphahub>
+      <Alphashroud Type="Float">1.5707963267949</Alphashroud>
+      <FluidLiquidModel Type="Enum">Constant</FluidLiquidModel>
+      <FluidLiquid Type="Object" Name="Jet A">
+        <FluidDescription></FluidDescription>
+        <FluidSymbol></FluidSymbol>
+        <FluidCp Type="Float">2000</FluidCp>
+        <FluidRho Type="Float">804</FluidRho>
+        <FluidVapPressure Type="Float">2000</FluidVapPressure>
+        <FluidVisc Type="Float">8E-6</FluidVisc>
+        <FluidLambda Type="Float">0.13</FluidLambda>
+      </FluidLiquid>
+    </DesignPoint_Pump>
+    <PolyList_CFturboDesign Type="Object">
+      <CFturboDesign_AxialImpeller Type="Object" Name="[Impeller_2]" Index="0">
+        <GUID>{53EB953B-3EF2-40E0-8E19-C2991EB8E17A}</GUID>
+        <Color Type="Integer">0x00008000</Color>
+        <Active Type="Boolean">True</Active>
+        <ComponentLinkReference>{00000000-0000-0000-0000-000000000000}</ComponentLinkReference>
+        <Caption>[Impeller_2]</Caption>
+        <ModelSetup_RotSym Type="Object">
+          <DistTolerance Type="Float">5E-5</DistTolerance>
+          <TRotSymCtObj Type="Object" Name="ExpPointCt">
+            <hub Type="Integer">80</hub>
+            <SkeletonLine Type="Integer">80</SkeletonLine>
+            <SuctionSide Type="Integer">80</SuctionSide>
+            <LeadingEdge Type="Integer">55</LeadingEdge>
+          </TRotSymCtObj>
+          <TRotSymCtObj Type="Object" Name="3DPointCt">
+            <hub Type="Integer">40</hub>
+            <SkeletonLine Type="Integer">50</SkeletonLine>
+            <SuctionSide Type="Integer">27</SuctionSide>
+            <LeadingEdge Type="Integer">23</LeadingEdge>
+          </TRotSymCtObj>
+        </ModelSetup_RotSym>
+        <MainDimensions Type="Object">
+          <CurrentDimIndex Type="Integer">0</CurrentDimIndex>
+          <MainDimensionsElement Type="Object" Name="Version 1.">
+            <UnShrouded Type="Boolean">True</UnShrouded>
+            <xTipInlet Type="Float">0.000133</xTipInlet>
+            <xTipOutlet Type="Float">0.000133</xTipOutlet>
+            <SplitterBlades Type="Boolean">False</SplitterBlades>
+            <SolidDensity Type="Float">8201.41039013744</SolidDensity>
+            <InflowSwirl Type="Enum">InflowSwirl</InflowSwirl>
+            <BladeDesignMode Type="Enum">MeanLine</BladeDesignMode>
+            <FreeStyle Type="Boolean">False</FreeStyle>
+            <Type Type="Enum">Inducer</Type>
+            <EnergyRel Type="Float">0.1</EnergyRel>
+            <ContraRotating Type="Boolean">False</ContraRotating>
+            <HasAlternativeSpeed Type="Boolean">False</HasAlternativeSpeed>
+            <ParaEffAutoUpdate Type="Boolean">False</ParaEffAutoUpdate>
+            <UseEff Type="Boolean">False</UseEff>
+            <EtaH Type="Float">0.8</EtaH>
+            <EtaV Type="Float">0.95</EtaV>
+            <EtaM Type="Float">0.986</EtaM>
+            <EtaMot Type="Float">0.8</EtaMot>
+            <AutoUpdate Type="Boolean">False</AutoUpdate>
+            <dH Type="Float">0.016</dH>
+            <dS Type="Float">0.03131</dS>
+            <dH2 Type="Float">0.016</dH2>
+            <dS2 Type="Float">0.03131</dS2>
+            <dShapeType Type="Enum">DShapeHubShr</dShapeType>
+            <dH1dS1 Type="Float">0.3</dH1dS1>
+            <FQ Type="Float">1.1</FQ>
+            <dS1Type Type="Enum">Nss</dS1Type>
+            <dH1TypeInd Type="Enum">DHDS</dH1TypeInd>
+            <nSS Type="Float">800</nSS>
+            <MerFlowCoefficient Type="Float">0.085</MerFlowCoefficient>
+            <PhiMAuto Type="Boolean">True</PhiMAuto>
+            <Beta2Hub90 Type="Boolean">False</Beta2Hub90>
+          </MainDimensionsElement>
+        </MainDimensions>
+        <Meridian Type="Object">
+          <TMerSolid_Active Type="Boolean">True</TMerSolid_Active>
+          <TMer2ndaryFlowPath_Active Type="Boolean">False</TMer2ndaryFlowPath_Active>
+          <MerFlowPath Type="Object">
+            <Sketch Type="Object" Name="Sketch">
+              <Geometry Type="Object" Name="Topology">
+                <TMFP_Contour Type="Object">
+                  <GID Type="Enum">SG0</GID>
+                  <FlowDomainDesignMode Type="Enum">dmHubShr</FlowDomainDesignMode>
+                  <FlowDomainReferenceP Type="Enum">rpInletMid</FlowDomainReferenceP>
+                  <TFPInletInterface Type="Object" Name="Inlet">
+                    <GID Type="Enum">SG0</GID>
+                    <Point Type="Object" Name="Hub">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">-0.01531</x>
+                        <y Type="Float">0.008</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Shr">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">-0.01531</x>
+                        <y Type="Float">0.015655</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Mid">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">-0.01531</x>
+                        <y Type="Float">0.0118275</y>
+                      </Position>
+                    </Point>
+                  </TFPInletInterface>
+                  <TFPOutletInterface Type="Object" Name="Outlet">
+                    <GID Type="Enum">SG0</GID>
+                    <Point Type="Object" Name="Hub">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0.008</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Shr">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0.015655</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Mid">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0.0118275</y>
+                      </Position>
+                    </Point>
+                  </TFPOutletInterface>
+                  <MerBlade Type="Object" Name="main">
+                    <LE_fixed Type="Boolean">False</LE_fixed>
+                    <TE_fixed Type="Boolean">False</TE_fixed>
+                    <MerEdge Type="Object" Name="leading edge">
+                      <GID Type="Enum">SG1</GID>
+                      <Coupled Type="Boolean">True</Coupled>
+                      <RelLimit Type="Boolean">True</RelLimit>
+                      <SAngleFixed Type="Boolean">False</SAngleFixed>
+                      <EAngleFixed Type="Boolean">False</EAngleFixed>
+                      <Straight Type="Boolean">True</Straight>
+                      <EdgeInvariant Type="Enum">eiInletDz</EdgeInvariant>
+                      <ExtentType Type="Enum">etFree</ExtentType>
+                      <Points Type="Object">
+                        <ControlPoint Type="Object" Index="0">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">-0.013779</x>
+                            <y Type="Float">0.008</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="1">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">-0.0114825</x>
+                            <y Type="Float">0.015522</y>
+                          </Position>
+                        </ControlPoint>
+                      </Points>
+                      <TDistanceQuantity Type="Object" Name="QDist04">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">3091544000</Ref0>
+                          <Ref1 Type="Integer">412555588</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist10">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">3854595457</Ref0>
+                          <Ref1 Type="Integer">3091544000</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist34">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">1744879907</Ref0>
+                          <Ref1 Type="Integer">412555588</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                    </MerEdge>
+                    <MerEdge Type="Object" Name="trailing edge">
+                      <GID Type="Enum">SG1</GID>
+                      <Coupled Type="Boolean">True</Coupled>
+                      <RelLimit Type="Boolean">True</RelLimit>
+                      <SAngleFixed Type="Boolean">False</SAngleFixed>
+                      <EAngleFixed Type="Boolean">False</EAngleFixed>
+                      <Straight Type="Boolean">True</Straight>
+                      <EdgeInvariant Type="Enum">eiOutletDz</EdgeInvariant>
+                      <ExtentType Type="Enum">etFree</ExtentType>
+                      <Points Type="Object">
+                        <ControlPoint Type="Object" Index="0">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">-0.001531</x>
+                            <y Type="Float">0.008</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="1">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">-0.0022965</x>
+                            <y Type="Float">0.015522</y>
+                          </Position>
+                        </ControlPoint>
+                      </Points>
+                      <TDistanceQuantity Type="Object" Name="QDist04">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">1906817134</Ref0>
+                          <Ref1 Type="Integer">2943208778</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist10">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">1051380599</Ref0>
+                          <Ref1 Type="Integer">1906817134</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist34">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">1029453637</Ref0>
+                          <Ref1 Type="Integer">2943208778</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                    </MerEdge>
+                  </MerBlade>
+                  <Wire Type="Object" Name="Hub">
+                    <GID Type="Enum">SG0</GID>
+                    <Curves Type="Object">
+                      <Curve Type="Object" Index="0">
+                        <GID Type="Enum">SG0</GID>
+                        <CurveType Type="Enum">crtLineSegments</CurveType>
+                        <LineSegmentCurve Type="Object">
+                          <GID Type="Enum">SG0</GID>
+                          <Straight Type="Boolean">True</Straight>
+                          <Points Type="Object">
+                            <ControlPoint Type="Object" Index="0">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">-0.01531</x>
+                                <y Type="Float">0.008</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="1">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0</x>
+                                <y Type="Float">0.008</y>
+                              </Position>
+                            </ControlPoint>
+                          </Points>
+                        </LineSegmentCurve>
+                      </Curve>
+                    </Curves>
+                  </Wire>
+                  <Wire Type="Object" Name="Shroud">
+                    <GID Type="Enum">SG0</GID>
+                    <Curves Type="Object">
+                      <Curve Type="Object" Index="0">
+                        <GID Type="Enum">SG0</GID>
+                        <CurveType Type="Enum">crtLineSegments</CurveType>
+                        <LineSegmentCurve Type="Object">
+                          <GID Type="Enum">SG0</GID>
+                          <Straight Type="Boolean">True</Straight>
+                          <Points Type="Object">
+                            <ControlPoint Type="Object" Index="0">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">-0.01531</x>
+                                <y Type="Float">0.015655</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="1">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0</x>
+                                <y Type="Float">0.015655</y>
+                              </Position>
+                            </ControlPoint>
+                          </Points>
+                        </LineSegmentCurve>
+                      </Curve>
+                    </Curves>
+                  </Wire>
+                </TMFP_Contour>
+              </Geometry>
+              <Constraints Type="Object">
+                <ConstraintAbsY Type="Object" Name="2291141776" Index="0">
+                  <yVal Type="Float">0.008</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2307918992</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintAbsY Type="Object" Name="2028812462" Index="1">
+                  <yVal Type="Float">0.015655</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2045589678</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintAbsX Type="Object" Name="2487712735" Index="2">
+                  <xVal Type="Float">-0.01531</xVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2487712735</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsX>
+                <ConstraintAngle Type="Object" Name="4168954942" Index="3">
+                  <Angle Type="Float">-1.5707963267949</Angle>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">2307918992</Ref0>
+                    <Ref1 Type="Integer">2045589678</Ref1>
+                  </TEntityLink01>
+                </ConstraintAngle>
+                <ConstraintAbsY Type="Object" Name="1389883912" Index="4">
+                  <yVal Type="Float">0.008</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">1406661128</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintAbsY Type="Object" Name="2956420678" Index="5">
+                  <yVal Type="Float">0.015655</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2973197894</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintAngle Type="Object" Name="3940586574" Index="6">
+                  <Angle Type="Float">-1.5707963267949</Angle>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1406661128</Ref0>
+                    <Ref1 Type="Integer">2973197894</Ref1>
+                  </TEntityLink01>
+                </ConstraintAngle>
+                <ConstraintDistX Type="Object" Name="1922279928" Index="7">
+                  <dxVal Type="Float">0.01531</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3822375463</Ref0>
+                    <Ref1 Type="Integer">2487712735</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintDistX Type="Object" Name="4239510153" Index="8">
+                  <dxVal Type="Float">0.001531</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3091544000</Ref0>
+                    <Ref1 Type="Integer">1106574665</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintPointOnWire Type="Object" Name="1076005291" Index="9">
+                  <PointOnWire Type="Float">0.1</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3091544000</Ref0>
+                    <Ref1 Type="Integer">4117216875</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+                <ConstraintDistX Type="Object" Name="3347656611" Index="10">
+                  <dxVal Type="Float">0.0038275</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3854595457</Ref0>
+                    <Ref1 Type="Integer">659118626</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintPointOnWire Type="Object" Name="965100027" Index="11">
+                  <PointOnWire Type="Float">0.249999999999992</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3854595457</Ref0>
+                    <Ref1 Type="Integer">3511039098</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+                <ConstraintDistX Type="Object" Name="3148516390" Index="12">
+                  <dxVal Type="Float">-0.001531</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1906817134</Ref0>
+                    <Ref1 Type="Integer">3473749064</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintPointOnWire Type="Object" Name="2311063045" Index="13">
+                  <PointOnWire Type="Float">0.9</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1906817134</Ref0>
+                    <Ref1 Type="Integer">4117216875</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+                <ConstraintDistX Type="Object" Name="4026560964" Index="14">
+                  <dxVal Type="Float">-0.0022965</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1051380599</Ref0>
+                    <Ref1 Type="Integer">3416963763</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintPointOnWire Type="Object" Name="3807182605" Index="15">
+                  <PointOnWire Type="Float">0.850000000000003</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1051380599</Ref0>
+                    <Ref1 Type="Integer">3511039098</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+              </Constraints>
+            </Sketch>
+          </MerFlowPath>
+          <TMerSolid Type="Object">
+            <Sketch Type="Object" Name="Sketch">
+              <Geometry Type="Object" Name="Topology">
+                <Wire Type="Object" Name="Hub">
+                  <GID Type="Enum">SG0</GID>
+                  <Connectors Type="Object">
+                    <ConnectorPoint Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">-0.01531</x>
+                        <y Type="Float">0.001</y>
+                      </Position>
+                    </ConnectorPoint>
+                    <ConnectorPoint Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0.001</y>
+                      </Position>
+                    </ConnectorPoint>
+                  </Connectors>
+                  <Curves Type="Object">
+                    <Curve Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">-0.01531</x>
+                              <y Type="Float">0.008</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">-0.01531</x>
+                              <y Type="Float">0.001</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">-0.01531</x>
+                              <y Type="Float">0.001</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0</x>
+                              <y Type="Float">0.001</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="2">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0</x>
+                              <y Type="Float">0.001</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0</x>
+                              <y Type="Float">0.008</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                  </Curves>
+                </Wire>
+              </Geometry>
+            </Sketch>
+          </TMerSolid>
+        </Meridian>
+        <BladeProperties Type="Object">
+          <nBl Type="Integer">2</nBl>
+          <Count Type="Integer">15</Count>
+          <inc_iRelHub Type="Float">0.4</inc_iRelHub>
+          <incidence Type="Enum">RelAngle</incidence>
+          <SlipModel Type="Enum">GuelichInd</SlipModel>
+          <Geometry Type="Enum">Radial</Geometry>
+          <BladeThicknessMode Type="Enum">Tangential</BladeThicknessMode>
+          <AutoUpdate1 Type="Boolean">False</AutoUpdate1>
+          <AutoUpdate2 Type="Boolean">False</AutoUpdate2>
+          <QMax Type="Float">1.25</QMax>
+          <BladePropsArray Type="Object" Name="BladeValues">
+            <BladePropsML Type="Object" Name="Main blade" Index="0">
+              <s1 Count="15" Type="Array1">
+                <Value Type="Float" Index="0">0.001</Value>
+                <Value Type="Float" Index="14">0.001</Value>
+              </s1>
+              <s2 Count="15" Type="Array1">
+                <Value Type="Float" Index="0">0.001</Value>
+                <Value Type="Float" Index="14">0.001</Value>
+              </s2>
+              <Beta1 Count="15" Type="Array1">
+                <Value Type="Float" Index="0">0.337522266582252</Value>
+              </Beta1>
+              <Beta2 Count="15" Type="Array1">
+                <Value Type="Float" Index="0">0.492250400665946</Value>
+              </Beta2>
+            </BladePropsML>
+          </BladePropsArray>
+          <TSpanDistrib Type="Object">
+            <CurveMode Type="Enum">Line</CurveMode>
+          </TSpanDistrib>
+          <CuCmDefinition Type="Object" Name="Cu-Cm-definition">
+            <Cu-Cm-definition Type="Enum">Free vortex</Cu-Cm-definition>
+          </CuCmDefinition>
+        </BladeProperties>
+        <SkeletonLines Type="Object">
+          <TMeanSurfSet Type="Object">
+            <MeanSurfaceShape Type="Enum">Radial</MeanSurfaceShape>
+            <TReadWriteArray_MeanSurface Type="Object">
+              <MeanSurface Type="Object" Name="Mean surface" Index="0">
+                <rStack Type="Float">0</rStack>
+                <DesignMode Type="Enum">dmTM</DesignMode>
+                <TReadWriteArray_TMeanLine Type="Object">
+                  <TMeanLine Type="Object" Index="0">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">1.45414187529925</x>
+                        <y Type="Float">0.510333333333333</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">5.33157202384224</x>
+                        <y Type="Float">1.02066666666667</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">6.28318530717959</x>
+                        <y Type="Float">1.531</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                </TReadWriteArray_TMeanLine>
+              </MeanSurface>
+            </TReadWriteArray_MeanSurface>
+          </TMeanSurfSet>
+        </SkeletonLines>
+        <BladeProfiles Type="Object">
+          <ApplyThickness Type="Enum">atMeanline</ApplyThickness>
+          <TReadWriteArray_TBladeProfParam Type="Object">
+            <TBladeProfParam Type="Object" Index="0">
+              <IdenticProfile Type="Boolean">False</IdenticProfile>
+              <ThicknessExp Type="Float">1</ThicknessExp>
+              <TThicknessMode Type="Enum">tmPerpToML</TThicknessMode>
+            </TBladeProfParam>
+          </TReadWriteArray_TBladeProfParam>
+          <TReadWriteArray_BezFillProf Type="Object" Name="MainBlades">
+            <BezFillProf Type="Object" Index="0">
+              <Coupling>None</Coupling>
+              <InitThick Type="Float" Edge="LeadingEdge">0.001</InitThick>
+              <InitThick Type="Float" Edge="TrailingEdge">0.001</InitThick>
+              <Asym Type="Float" Edge="LeadingEdge">0</Asym>
+              <Asym Type="Float" Edge="TrailingEdge">0</Asym>
+              <BezierNProf Type="Object" Name="PS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">1</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+              <BezierNProf Type="Object" Name="SS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="3" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">0.290985699052258</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="2">
+                    <x Type="Float">1</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">1</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+            </BezFillProf>
+            <BezFillProf Type="Object" Index="14">
+              <Coupling>None</Coupling>
+              <InitThick Type="Float" Edge="LeadingEdge">0.001</InitThick>
+              <InitThick Type="Float" Edge="TrailingEdge">0.001</InitThick>
+              <Asym Type="Float" Edge="LeadingEdge">0</Asym>
+              <Asym Type="Float" Edge="TrailingEdge">0</Asym>
+              <BezierNProf Type="Object" Name="PS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">1</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+              <BezierNProf Type="Object" Name="SS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="3" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">0.367041417448494</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="2">
+                    <x Type="Float">1</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">1</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+            </BezFillProf>
+          </TReadWriteArray_BezFillProf>
+        </BladeProfiles>
+        <BladeEdges Type="Object">
+          <TReadWriteArray_LeadingEdgeElement Type="Object">
+            <LeadingEdgeElement Type="Object" Index="0">
+              <Coupled Type="Enum">Linear</Coupled>
+              <TReadWriteArray_Bezier4Edge Type="Object">
+                <Bezier4Edge Type="Object" Index="0">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+                <Bezier4Edge Type="Object" Index="14">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+              </TReadWriteArray_Bezier4Edge>
+            </LeadingEdgeElement>
+          </TReadWriteArray_LeadingEdgeElement>
+          <TReadWriteArray_TrailingEdgeElement Type="Object">
+            <TrailingEdgeElement Type="Object" Index="0">
+              <Coupled Type="Enum">Linear</Coupled>
+              <TReadWriteArray_Bezier4Edge Type="Object">
+                <Bezier4Edge Type="Object" Index="0">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+                <Bezier4Edge Type="Object" Index="14">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+              </TReadWriteArray_Bezier4Edge>
+            </TrailingEdgeElement>
+          </TReadWriteArray_TrailingEdgeElement>
+        </BladeEdges>
+        <CFDSetup_RotSym Type="Object">
+          <Casing_Active Type="Boolean">False</Casing_Active>
+          <CFDSetup_RotSym_Extension_Outlet_Active Type="Boolean">False</CFDSetup_RotSym_Extension_Outlet_Active>
+        </CFDSetup_RotSym>
+        <Finishing Type="Object">
+          <ExtBlade Type="Boolean">False</ExtBlade>
+          <TrimEdge_Out Type="Object">
+            <TrimActive Type="Boolean">False</TrimActive>
+          </TrimEdge_Out>
+          <TrimMer Type="Object">
+            <TrimActive Type="Boolean">False</TrimActive>
+          </TrimMer>
+          <BladeFillets Type="Object" Name="MainBlFillets">
+            <BladeRootFillets Type="Object" Name="Fillet_Hub">
+              <BlRootFilletType Type="Enum">None</BlRootFilletType>
+            </BladeRootFillets>
+          </BladeFillets>
+        </Finishing>
+        <PerformanceEuler_AImp Type="Object">
+          <Zeta Type="Float">0</Zeta>
+          <ShockLoss Type="Float">0</ShockLoss>
+          <SlipCoeff Type="Float">0.87595831357143</SlipCoeff>
+        </PerformanceEuler_AImp>
+      </CFturboDesign_AxialImpeller>
+      <CFturboDesign_RadialImpeller Type="Object" Name="[Impeller_1]" Index="1">
+        <GUID>{327E899C-07AF-42F7-A551-0B1038FC6DBB}</GUID>
+        <Color Type="Integer">0x00FF0000</Color>
+        <Active Type="Boolean">True</Active>
+        <ComponentLinkReference>{00000000-0000-0000-0000-000000000000}</ComponentLinkReference>
+        <Caption>[Impeller_1]</Caption>
+        <ModelSetup_RotSym Type="Object">
+          <DistTolerance Type="Float">5E-5</DistTolerance>
+          <TRotSymCtObj Type="Object" Name="ExpPointCt">
+            <hub Type="Integer">80</hub>
+            <SkeletonLine Type="Integer">80</SkeletonLine>
+            <SuctionSide Type="Integer">80</SuctionSide>
+            <LeadingEdge Type="Integer">55</LeadingEdge>
+          </TRotSymCtObj>
+          <TRotSymCtObj Type="Object" Name="3DPointCt">
+            <hub Type="Integer">40</hub>
+            <SkeletonLine Type="Integer">50</SkeletonLine>
+            <SuctionSide Type="Integer">27</SuctionSide>
+            <LeadingEdge Type="Integer">23</LeadingEdge>
+          </TRotSymCtObj>
+        </ModelSetup_RotSym>
+        <MainDimensions Type="Object">
+          <CurrentDimIndex Type="Integer">0</CurrentDimIndex>
+          <MainDimensionsElement Type="Object" Name="Version 1.">
+            <UnShrouded Type="Boolean">False</UnShrouded>
+            <SplitterBlades Type="Boolean">False</SplitterBlades>
+            <SolidDensity Type="Float">8201.41039013744</SolidDensity>
+            <InflowSwirl Type="Enum">InflowSwirl</InflowSwirl>
+            <FreeStyle Type="Boolean">False</FreeStyle>
+            <Type Type="Enum">Standard</Type>
+            <EnergyRel Type="Float">0.9</EnergyRel>
+            <ContraRotating Type="Boolean">False</ContraRotating>
+            <HasAlternativeSpeed Type="Boolean">False</HasAlternativeSpeed>
+            <Psi Type="Float">1.033</Psi>
+            <ParaEffAutoUpdate Type="Boolean">True</ParaEffAutoUpdate>
+            <UseEff Type="Boolean">False</UseEff>
+            <EtaH Type="Float">0.795</EtaH>
+            <EtaV Type="Float">0.939</EtaV>
+            <EtaM Type="Float">0.985</EtaM>
+            <EtaMot Type="Float">0.8</EtaMot>
+            <AutoUpdate Type="Boolean">False</AutoUpdate>
+            <dH Type="Float">0.016</dH>
+            <dS Type="Float">0.03131</dS>
+            <dsType Type="Enum">Eps</dsType>
+            <d2Type Type="Enum">Psi</d2Type>
+            <b2Type Type="Enum">b2d2</b2Type>
+            <b2_d2 Type="Float">0.067</b2_d2>
+            <Tau Type="Float">15000000</Tau>
+            <SF Type="Float">1.15</SF>
+            <b2 Type="Float">0.003301</b2>
+            <d2 Type="Float">0.04927</d2>
+            <Eps Type="Float">0.097</Eps>
+            <EtaS Type="Float">0.955</EtaS>
+          </MainDimensionsElement>
+        </MainDimensions>
+        <Meridian Type="Object">
+          <TMerSolid_Active Type="Boolean">True</TMerSolid_Active>
+          <TMer2ndaryFlowPath_Active Type="Boolean">False</TMer2ndaryFlowPath_Active>
+          <MerFlowPath Type="Object">
+            <Sketch Type="Object" Name="Sketch">
+              <Geometry Type="Object" Name="Topology">
+                <TMFP_Contour Type="Object">
+                  <GID Type="Enum">SG0</GID>
+                  <FlowDomainDesignMode Type="Enum">dmMid</FlowDomainDesignMode>
+                  <FlowDomainReferenceP Type="Enum">rpInletMid</FlowDomainReferenceP>
+                  <TFPInletInterface Type="Object" Name="Inlet">
+                    <GID Type="Enum">SG0</GID>
+                    <Point Type="Object" Name="Hub">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">2.34366781186825E-19</x>
+                        <y Type="Float">0.008</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Shr">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">2.34366781186825E-19</x>
+                        <y Type="Float">0.015655</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Mid">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">2.34366781186825E-19</x>
+                        <y Type="Float">0.0118275</y>
+                      </Position>
+                    </Point>
+                  </TFPInletInterface>
+                  <TFPOutletInterface Type="Object" Name="Outlet">
+                    <GID Type="Enum">SG0</GID>
+                    <Point Type="Object" Name="Hub">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.00775715533432114</x>
+                        <y Type="Float">0.0246187036097604</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Shr">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.00445631624241426</x>
+                        <y Type="Float">0.0246512963902396</y>
+                      </Position>
+                    </Point>
+                    <Point Type="Object" Name="Mid">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.0061067357883677</x>
+                        <y Type="Float">0.024635</y>
+                      </Position>
+                    </Point>
+                  </TFPOutletInterface>
+                  <MerBlade Type="Object" Name="main">
+                    <LE_fixed Type="Boolean">False</LE_fixed>
+                    <TE_fixed Type="Boolean">True</TE_fixed>
+                    <MerEdge Type="Object" Name="leading edge">
+                      <GID Type="Enum">SG1</GID>
+                      <Coupled Type="Boolean">True</Coupled>
+                      <RelLimit Type="Boolean">True</RelLimit>
+                      <SAngleFixed Type="Boolean">False</SAngleFixed>
+                      <EAngleFixed Type="Boolean">False</EAngleFixed>
+                      <Straight Type="Boolean">False</Straight>
+                      <EdgeInvariant Type="Enum">eiInletDr</EdgeInvariant>
+                      <ExtentType Type="Enum">etFree</ExtentType>
+                      <Points Type="Object">
+                        <ControlPoint Type="Object" Index="0">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">0.00624482620832507</x>
+                            <y Type="Float">0.011137593096662</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="1">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">0.00461575677394416</x>
+                            <y Type="Float">0.0117729973111517</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="2">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">0.00298668733956324</x>
+                            <y Type="Float">0.0124084015256414</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="3">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">0.00244366419476961</x>
+                            <y Type="Float">0.0143146141691104</y>
+                          </Position>
+                        </ControlPoint>
+                        <ControlPoint Type="Object" Index="4">
+                          <GID Type="Enum">SG1</GID>
+                          <Position Type="Vector2">
+                            <x Type="Float">0.00190064104997597</x>
+                            <y Type="Float">0.0162208268125795</y>
+                          </Position>
+                        </ControlPoint>
+                      </Points>
+                      <TDistanceQuantity Type="Object" Name="QDist04">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">3091544000</Ref0>
+                          <Ref1 Type="Integer">412555588</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist10">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">3854595457</Ref0>
+                          <Ref1 Type="Integer">3091544000</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                      <TDistanceQuantity Type="Object" Name="QDist34">
+                        <GID Type="Enum">SG1</GID>
+                        <TEntityLink01 Type="Object">
+                          <Ref0 Type="Integer">1744879907</Ref0>
+                          <Ref1 Type="Integer">412555588</Ref1>
+                        </TEntityLink01>
+                      </TDistanceQuantity>
+                    </MerEdge>
+                  </MerBlade>
+                  <Wire Type="Object" Name="Mid">
+                    <GID Type="Enum">SG0</GID>
+                    <Curves Type="Object">
+                      <Curve Type="Object" Index="0">
+                        <GID Type="Enum">SG0</GID>
+                        <CurveType Type="Enum">crtBezier</CurveType>
+                        <BezierCurve Type="Object">
+                          <GID Type="Enum">SG0</GID>
+                          <Coupled Type="Boolean">True</Coupled>
+                          <RelLimit Type="Boolean">True</RelLimit>
+                          <SAngleFixed Type="Boolean">False</SAngleFixed>
+                          <EAngleFixed Type="Boolean">False</EAngleFixed>
+                          <Points Type="Object">
+                            <ControlPoint Type="Object" Index="0">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">2.34366781186825E-19</x>
+                                <y Type="Float">0.0118275</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="1">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0.0014950683469093</x>
+                                <y Type="Float">0.0118275</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="2">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0.00598027338763721</x>
+                                <y Type="Float">0.0118275</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="3">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0.0060561508280755</x>
+                                <y Type="Float">0.019512</y>
+                              </Position>
+                            </ControlPoint>
+                            <ControlPoint Type="Object" Index="4">
+                              <GID Type="Enum">SG0</GID>
+                              <Position Type="Vector2">
+                                <x Type="Float">0.0061067357883677</x>
+                                <y Type="Float">0.024635</y>
+                              </Position>
+                            </ControlPoint>
+                          </Points>
+                          <TDistanceQuantity Type="Object" Name="QDist04">
+                            <GID Type="Enum">SG0</GID>
+                            <TEntityLink01 Type="Object">
+                              <Ref0 Type="Integer">2179338488</Ref0>
+                              <Ref1 Type="Integer">1121281052</Ref1>
+                            </TEntityLink01>
+                          </TDistanceQuantity>
+                          <TDistanceQuantity Type="Object" Name="QDist10">
+                            <GID Type="Enum">SG0</GID>
+                            <TEntityLink01 Type="Object">
+                              <Ref0 Type="Integer">2023820865</Ref0>
+                              <Ref1 Type="Integer">2179338488</Ref1>
+                            </TEntityLink01>
+                          </TDistanceQuantity>
+                          <TDistanceQuantity Type="Object" Name="QDist34">
+                            <GID Type="Enum">SG0</GID>
+                            <TEntityLink01 Type="Object">
+                              <Ref0 Type="Integer">227661395</Ref0>
+                              <Ref1 Type="Integer">1121281052</Ref1>
+                            </TEntityLink01>
+                          </TDistanceQuantity>
+                        </BezierCurve>
+                      </Curve>
+                    </Curves>
+                  </Wire>
+                </TMFP_Contour>
+              </Geometry>
+              <Constraints Type="Object">
+                <ConstraintAbsX Type="Object" Name="2487712735" Index="0">
+                  <xVal Type="Float">0</xVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2487712735</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsX>
+                <ConstraintDistAbs Type="Object" Name="3907032142" Index="1">
+                  <Distance Type="Float">0.003301</Distance>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">1406661128</Ref0>
+                    <Ref1 Type="Integer">2973197894</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistAbs>
+                <ConstraintAbsY Type="Object" Name="3805598247" Index="2">
+                  <yVal Type="Float">0.024635</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">3822375463</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintDistX Type="Object" Name="1922279928" Index="3">
+                  <dxVal Type="Float">0.00610673578836773</dxVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3822375463</Ref0>
+                    <Ref1 Type="Integer">2487712735</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistX>
+                <ConstraintCoupled Type="Object" Name="831557107" Index="4">
+                  <Rel Type="Float">0.25</Rel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">2023820865</Ref0>
+                    <Ref1 Type="Integer">2179338488</Ref1>
+                    <Ref2 Type="Integer">3487011658</Ref2>
+                  </TEntityLink012>
+                </ConstraintCoupled>
+                <ConstraintCoupled Type="Object" Name="2274566405" Index="5">
+                  <Rel Type="Float">0.6</Rel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">227661395</Ref0>
+                    <Ref1 Type="Integer">3487011658</Ref1>
+                    <Ref2 Type="Integer">1121281052</Ref2>
+                  </TEntityLink012>
+                </ConstraintCoupled>
+                <ConstraintRelX Type="Object" Name="266659758" Index="6">
+                  <xRel Type="Float">0.979291325986072</xRel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">3487011658</Ref0>
+                    <Ref1 Type="Integer">2179338488</Ref1>
+                    <Ref2 Type="Integer">1121281052</Ref2>
+                  </TEntityLink012>
+                </ConstraintRelX>
+                <ConstraintRelY Type="Object" Name="149219246" Index="7">
+                  <yRel Type="Float">0</yRel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">3487011658</Ref0>
+                    <Ref1 Type="Integer">2179338488</Ref1>
+                    <Ref2 Type="Integer">1121281052</Ref2>
+                  </TEntityLink012>
+                </ConstraintRelY>
+                <ConstraintCoupled Type="Object" Name="236970595" Index="8">
+                  <Rel Type="Float">0.5</Rel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">3854595457</Ref0>
+                    <Ref1 Type="Integer">3091544000</Ref1>
+                    <Ref2 Type="Integer">1419419682</Ref2>
+                  </TEntityLink012>
+                </ConstraintCoupled>
+                <ConstraintCoupled Type="Object" Name="588085317" Index="9">
+                  <Rel Type="Float">0.5</Rel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">1744879907</Ref0>
+                    <Ref1 Type="Integer">1419419682</Ref1>
+                    <Ref2 Type="Integer">412555588</Ref2>
+                  </TEntityLink012>
+                </ConstraintCoupled>
+                <ConstraintRelX Type="Object" Name="4148727462" Index="10">
+                  <xRel Type="Float">0.75</xRel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">1419419682</Ref0>
+                    <Ref1 Type="Integer">3091544000</Ref1>
+                    <Ref2 Type="Integer">412555588</Ref2>
+                  </TEntityLink012>
+                </ConstraintRelX>
+                <ConstraintRelY Type="Object" Name="4031286950" Index="11">
+                  <yRel Type="Float">0.25</yRel>
+                  <TEntityLink012 Type="Object">
+                    <Ref0 Type="Integer">1419419682</Ref0>
+                    <Ref1 Type="Integer">3091544000</Ref1>
+                    <Ref2 Type="Integer">412555588</Ref2>
+                  </TEntityLink012>
+                </ConstraintRelY>
+                <ConstraintDistAbs Type="Object" Name="4202509374" Index="12">
+                  <Distance Type="Float">0.007655</Distance>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">2307918992</Ref0>
+                    <Ref1 Type="Integer">2045589678</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistAbs>
+                <ConstraintAbsY Type="Object" Name="2504489951" Index="13">
+                  <yVal Type="Float">0.0118275</yVal>
+                  <TEntityLink0 Type="Object">
+                    <Ref0 Type="Integer">2487712735</Ref0>
+                  </TEntityLink0>
+                </ConstraintAbsY>
+                <ConstraintDistY Type="Object" Name="3124898272" Index="14">
+                  <dyVal Type="Float">0.003137593096662</dyVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3091544000</Ref0>
+                    <Ref1 Type="Integer">67575328</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistY>
+                <ConstraintPointOnWire Type="Object" Name="4076298776" Index="15">
+                  <PointOnWire Type="Float">0.345532353313861</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">3091544000</Ref0>
+                    <Ref1 Type="Integer">1202869720</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+                <ConstraintDistY Type="Object" Name="3409890788" Index="16">
+                  <dyVal Type="Float">0.000565826812579502</dyVal>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">412555588</Ref0>
+                    <Ref1 Type="Integer">3584677024</Ref1>
+                  </TEntityLink01>
+                </ConstraintDistY>
+                <ConstraintPointOnWire Type="Object" Name="677651564" Index="17">
+                  <PointOnWire Type="Float">0.185078876032773</PointOnWire>
+                  <TEntityLink01 Type="Object">
+                    <Ref0 Type="Integer">412555588</Ref0>
+                    <Ref1 Type="Integer">1039351080</Ref1>
+                  </TEntityLink01>
+                </ConstraintPointOnWire>
+              </Constraints>
+            </Sketch>
+            <TMerCrossSecAreaProg Type="Object">
+              <ProgressionType Type="Enum">Tangential</ProgressionType>
+            </TMerCrossSecAreaProg>
+          </MerFlowPath>
+          <TMerSolid Type="Object">
+            <Sketch Type="Object" Name="Sketch">
+              <Geometry Type="Object" Name="Topology">
+                <Wire Type="Object" Name="Hub">
+                  <GID Type="Enum">SG0</GID>
+                  <Connectors Type="Object">
+                    <ConnectorPoint Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">8.22183673782768E-6</x>
+                        <y Type="Float">0.00100014518901619</y>
+                      </Position>
+                    </ConnectorPoint>
+                    <ConnectorPoint Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.00950000143999617</x>
+                        <y Type="Float">0.00100014518901619</y>
+                      </Position>
+                    </ConnectorPoint>
+                    <ConnectorPoint Type="Object" Index="2">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.00950000143999617</x>
+                        <y Type="Float">0.0246634289270848</y>
+                      </Position>
+                    </ConnectorPoint>
+                  </Connectors>
+                  <Curves Type="Object">
+                    <Curve Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">4.6873356237365E-19</x>
+                              <y Type="Float">0.008</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">8.22183673782768E-6</x>
+                              <y Type="Float">0.00100014518901619</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">8.22183673782768E-6</x>
+                              <y Type="Float">0.00100014518901619</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00950000143999617</x>
+                              <y Type="Float">0.00100014518901619</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="2">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00950000143999617</x>
+                              <y Type="Float">0.00100014518901619</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00950000143999617</x>
+                              <y Type="Float">0.0246634289270848</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="3">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00950000143999617</x>
+                              <y Type="Float">0.0246634289270848</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00775715533432114</x>
+                              <y Type="Float">0.0246187036097604</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                  </Curves>
+                </Wire>
+                <Wire Type="Object" Name="Shroud">
+                  <GID Type="Enum">SG0</GID>
+                  <Connectors Type="Object">
+                    <ConnectorPoint Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">-5.94683345546367E-6</x>
+                        <y Type="Float">0.018018387242837</y>
+                      </Position>
+                    </ConnectorPoint>
+                    <ConnectorPoint Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <Position Type="Vector2">
+                        <x Type="Float">0.00266152337969175</x>
+                        <y Type="Float">0.0246628548109838</y>
+                      </Position>
+                    </ConnectorPoint>
+                  </Connectors>
+                  <Curves Type="Object">
+                    <Curve Type="Object" Index="0">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">4.6873356237365E-19</x>
+                              <y Type="Float">0.015655</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">-5.94683345546367E-6</x>
+                              <y Type="Float">0.018018387242837</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="1">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">-5.94683345546367E-6</x>
+                              <y Type="Float">0.018018387242837</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00266152337969175</x>
+                              <y Type="Float">0.0198512781908224</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="2">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00266152337969175</x>
+                              <y Type="Float">0.0246628548109838</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                    <Curve Type="Object" Index="2">
+                      <GID Type="Enum">SG0</GID>
+                      <CurveType Type="Enum">crtBezier</CurveType>
+                      <BezierCurve Type="Object">
+                        <GID Type="Enum">SG0</GID>
+                        <Points Type="Object">
+                          <ControlPoint Type="Object" Index="0">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00266152337969175</x>
+                              <y Type="Float">0.0246628548109838</y>
+                            </Position>
+                          </ControlPoint>
+                          <ControlPoint Type="Object" Index="1">
+                            <GID Type="Enum">SG0</GID>
+                            <Position Type="Vector2">
+                              <x Type="Float">0.00445631624241426</x>
+                              <y Type="Float">0.0246512963902396</y>
+                            </Position>
+                          </ControlPoint>
+                        </Points>
+                      </BezierCurve>
+                    </Curve>
+                  </Curves>
+                </Wire>
+              </Geometry>
+            </Sketch>
+          </TMerSolid>
+        </Meridian>
+        <BladeProperties Type="Object">
+          <nBl Type="Integer">6</nBl>
+          <Count Type="Integer">5</Count>
+          <inc_RQHub Type="Float">1</inc_RQHub>
+          <inc_RQShr Type="Float">1</inc_RQShr>
+          <incidence Type="Enum">Q-ratio</incidence>
+          <DeltaHub Type="Float">0.349065840244293</DeltaHub>
+          <DeltaShr Type="Float">0.349065840244293</DeltaShr>
+          <SlipModel Type="Enum">User</SlipModel>
+          <UserSlipModel Type="Enum">usiDelta</UserSlipModel>
+          <Geometry Type="Enum">FreeForm</Geometry>
+          <BladeThicknessMode Type="Enum">Tangential</BladeThicknessMode>
+          <AutoUpdate1 Type="Boolean">False</AutoUpdate1>
+          <AutoUpdate2 Type="Boolean">False</AutoUpdate2>
+          <BetaModeLE Type="Enum">Linear</BetaModeLE>
+          <BetaModeTE Type="Enum">Linear</BetaModeTE>
+          <BladePropsArray Type="Object" Name="BladeValues">
+            <BladePropsML Type="Object" Name="Main blade" Index="0">
+              <s1 Count="5" Type="Array1">
+                <Value Type="Float" Index="0">0.001</Value>
+                <Value Type="Float" Index="4">0.001</Value>
+              </s1>
+              <s2 Count="5" Type="Array1">
+                <Value Type="Float" Index="0">0.001</Value>
+                <Value Type="Float" Index="4">0.001</Value>
+              </s2>
+              <Beta1 Count="5" Type="Array1">
+                <Value Type="Float" Index="0">0.252758179191138</Value>
+                <Value Type="Float" Index="4">0.174831126605945</Value>
+              </Beta1>
+              <Beta2 Count="5" Type="Array1">
+                <Value Type="Float" Index="0">0.529846259866105</Value>
+                <Value Type="Float" Index="4">0.568090246850741</Value>
+              </Beta2>
+            </BladePropsML>
+          </BladePropsArray>
+          <TSpanDistrib Type="Object">
+            <CurveMode Type="Enum">Line</CurveMode>
+          </TSpanDistrib>
+        </BladeProperties>
+        <SkeletonLines Type="Object">
+          <TMeanSurfSet Type="Object">
+            <MeanSurfaceShape Type="Enum">FreeForm</MeanSurfaceShape>
+            <TReadWriteArray_MeanSurface Type="Object">
+              <MeanSurface Type="Object" Name="Mean surface" Index="0">
+                <rTEAct Type="Boolean">False</rTEAct>
+                <Coupled Type="Boolean">True</Coupled>
+                <rStack Type="Float">0</rStack>
+                <DesignMode Type="Enum">dmTM</DesignMode>
+                <TReadWriteArray_TMeanLine Type="Object">
+                  <TMeanLine Type="Object" Index="0">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">0.64640589687503</x>
+                        <y Type="Float">0.16695501458277</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">1.28467053144057</x>
+                        <y Type="Float">0.651801845968927</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">1.5707963267949</x>
+                        <y Type="Float">0.819388732139331</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                  <TMeanLine Type="Object" Index="1">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">0.655798097434345</x>
+                        <y Type="Float">0.155818983781942</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">1.3150919410726</x>
+                        <y Type="Float">0.616851429286265</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">1.5707963267949</x>
+                        <y Type="Float">0.769922258470965</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                  <TMeanLine Type="Object" Index="2">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">0.665376841603913</x>
+                        <y Type="Float">0.144461774208752</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">1.3637063380224</x>
+                        <y Type="Float">0.560999532522647</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">1.5707963267949</x>
+                        <y Type="Float">0.687673689578325</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                  <TMeanLine Type="Object" Index="3">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">0.67515523876539</x>
+                        <y Type="Float">0.132867842490063</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">1.43046438442074</x>
+                        <y Type="Float">0.484302838754507</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">1.5707963267949</x>
+                        <y Type="Float">0.571996630168222</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                  <TMeanLine Type="Object" Index="4">
+                    <ProgMode Type="Enum">pmManual</ProgMode>
+                    <ProgPoints Count="4" Type="Array1">
+                      <Value Type="Vector2" Index="0">
+                        <x Type="Float">0</x>
+                        <y Type="Float">0</y>
+                      </Value>
+                      <Value Type="Vector2" Index="1">
+                        <x Type="Float">0.685147260443453</x>
+                        <y Type="Float">0.121020623037418</y>
+                      </Value>
+                      <Value Type="Vector2" Index="2">
+                        <x Type="Float">1.49971924157765</x>
+                        <y Type="Float">0.404737619909946</y>
+                      </Value>
+                      <Value Type="Vector2" Index="3">
+                        <x Type="Float">1.5707963267949</x>
+                        <y Type="Float">0.450104523111501</y>
+                      </Value>
+                    </ProgPoints>
+                    <StackingPhi Type="Float">0</StackingPhi>
+                    <ConstBetaLE Type="Boolean">False</ConstBetaLE>
+                    <ConstBetaTE Type="Boolean">False</ConstBetaTE>
+                  </TMeanLine>
+                </TReadWriteArray_TMeanLine>
+              </MeanSurface>
+            </TReadWriteArray_MeanSurface>
+          </TMeanSurfSet>
+        </SkeletonLines>
+        <BladeProfiles Type="Object">
+          <ApplyThickness Type="Enum">atMeanline</ApplyThickness>
+          <TReadWriteArray_TBladeProfParam Type="Object">
+            <TBladeProfParam Type="Object" Index="0">
+              <IdenticProfile Type="Boolean">False</IdenticProfile>
+              <ThicknessExp Type="Float">1</ThicknessExp>
+              <TThicknessMode Type="Enum">tmPerpToML</TThicknessMode>
+            </TBladeProfParam>
+          </TReadWriteArray_TBladeProfParam>
+          <TReadWriteArray_BezFillProf Type="Object" Name="MainBlades">
+            <BezFillProf Type="Object" Index="0">
+              <Coupling>Symmetric</Coupling>
+              <InitThick Type="Float" Edge="LeadingEdge">0.001</InitThick>
+              <InitThick Type="Float" Edge="TrailingEdge">0.001</InitThick>
+              <Asym Type="Float" Edge="LeadingEdge">0</Asym>
+              <Asym Type="Float" Edge="TrailingEdge">0</Asym>
+              <BezierNProf Type="Object" Name="PS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">0</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+              <BezierNProf Type="Object" Name="SS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">0</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+            </BezFillProf>
+            <BezFillProf Type="Object" Index="4">
+              <Coupling>Symmetric</Coupling>
+              <InitThick Type="Float" Edge="LeadingEdge">0.001</InitThick>
+              <InitThick Type="Float" Edge="TrailingEdge">0.001</InitThick>
+              <Asym Type="Float" Edge="LeadingEdge">0</Asym>
+              <Asym Type="Float" Edge="TrailingEdge">0</Asym>
+              <BezierNProf Type="Object" Name="PS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">0</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+              <BezierNProf Type="Object" Name="SS">
+                <CurveMode>Polygon</CurveMode>
+                <Points Count="2" Type="Array1">
+                  <Value Type="Vector2" Index="0">
+                    <x Type="Float">0</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                  <Value Type="Vector2" Index="1">
+                    <x Type="Float">1</x>
+                    <y Type="Float">-0.0005</y>
+                  </Value>
+                </Points>
+                <ProfMode>Simple</ProfMode>
+                <FlexibleXDir Type="Boolean">0</FlexibleXDir>
+                <FlexibleYDir Type="Boolean">0</FlexibleYDir>
+                <IsLoaded Type="Boolean">0</IsLoaded>
+                <ProfileName></ProfileName>
+              </BezierNProf>
+            </BezFillProf>
+          </TReadWriteArray_BezFillProf>
+        </BladeProfiles>
+        <BladeEdges Type="Object">
+          <TReadWriteArray_LeadingEdgeElement Type="Object">
+            <LeadingEdgeElement Type="Object" Index="0">
+              <Coupled Type="Enum">Linear</Coupled>
+              <TReadWriteArray_Bezier4Edge Type="Object">
+                <Bezier4Edge Type="Object" Index="0">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+                <Bezier4Edge Type="Object" Index="4">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Ellipse</EdgeMode>
+                  <EllRatio Type="Float">3</EllRatio>
+                </Bezier4Edge>
+              </TReadWriteArray_Bezier4Edge>
+            </LeadingEdgeElement>
+          </TReadWriteArray_LeadingEdgeElement>
+          <TReadWriteArray_TrailingEdgeElement Type="Object">
+            <TrailingEdgeElement Type="Object" Index="0">
+              <IsTrimmed Type="Boolean">True</IsTrimmed>
+              <TReadWriteArray_Bezier4Edge Type="Object">
+                <Bezier4Edge Type="Object" Index="0">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Line</EdgeMode>
+                </Bezier4Edge>
+                <Bezier4Edge Type="Object" Index="4">
+                  <CurveMode>Polyline</CurveMode>
+                  <EdgeMode>Line</EdgeMode>
+                </Bezier4Edge>
+              </TReadWriteArray_Bezier4Edge>
+            </TrailingEdgeElement>
+          </TReadWriteArray_TrailingEdgeElement>
+        </BladeEdges>
+        <CFDSetup_RotSym Type="Object">
+          <CFDSetup_RotSym_Extension_Outlet_Active Type="Boolean">False</CFDSetup_RotSym_Extension_Outlet_Active>
+        </CFDSetup_RotSym>
+        <Finishing Type="Object">
+          <ExtBlade Type="Boolean">False</ExtBlade>
+          <TrimEdge_Out Type="Object">
+            <TrimActive Type="Boolean">False</TrimActive>
+          </TrimEdge_Out>
+          <BladeFillets Type="Object" Name="MainBlFillets">
+            <uniform_hubshr Type="Boolean">False</uniform_hubshr>
+            <BladeRootFillets Type="Object" Name="Fillet_Hub">
+              <BlRootFilletType Type="Enum">None</BlRootFilletType>
+            </BladeRootFillets>
+            <BladeRootFillets Type="Object" Name="Fillet_Shroud">
+              <BlRootFilletType Type="Enum">None</BlRootFilletType>
+            </BladeRootFillets>
+          </BladeFillets>
+        </Finishing>
+        <PerformanceEuler_RImp Type="Object">
+          <Zeta Type="Float">0</Zeta>
+          <ShockLoss Type="Float">0</ShockLoss>
+          <SlipCoeff Type="Float">0.833679799367738</SlipCoeff>
+        </PerformanceEuler_RImp>
+      </CFturboDesign_RadialImpeller>
+      <CFturboDesign_OutletVolute Type="Object" Name="[Volute_1]" Index="2">
+        <GUID>{AC698EB1-759B-4669-BA77-DCF258BEC30E}</GUID>
+        <Color Type="Integer">0x0000008B</Color>
+        <Active Type="Boolean">True</Active>
+        <ComponentLinkReference>{00000000-0000-0000-0000-000000000000}</ComponentLinkReference>
+        <PrimaryInlet Type="Boolean">False</PrimaryInlet>
+        <PrimaryOutlet Type="Boolean">True</PrimaryOutlet>
+        <Caption>[Volute_1]</Caption>
+        <ModelSetup_Spiral Type="Object">
+          <DistTolerance Type="Float">0.0002</DistTolerance>
+          <TSpiralCtObj Type="Object" Name="ExpPointCt">
+            <SpiralSections Type="Integer">72</SpiralSections>
+            <SpiralPoints Type="Integer">72</SpiralPoints>
+            <DiffusorSections Type="Integer">20</DiffusorSections>
+            <CutwaterSections Type="Integer">20</CutwaterSections>
+            <CutwaterPoints Type="Integer">20</CutwaterPoints>
+          </TSpiralCtObj>
+          <TSpiralCtObj Type="Object" Name="3DPointCt">
+            <SpiralSections Type="Integer">25</SpiralSections>
+            <SpiralPoints Type="Integer">40</SpiralPoints>
+            <DiffusorSections Type="Integer">15</DiffusorSections>
+            <CutwaterSections Type="Integer">15</CutwaterSections>
+            <CutwaterPoints Type="Integer">15</CutwaterPoints>
+          </TSpiralCtObj>
+        </ModelSetup_Spiral>
+        <SpiralCasingBC Type="Object">
+          <Type Type="Enum">sptSingle</Type>
+          <SolidDensity Type="Float">7750</SolidDensity>
+          <EtaV Type="Float">1</EtaV>
+          <FQ Type="Float">1</FQ>
+          <MerData Type="Object" Name="MerInlet">
+            <HubShr Type="Boolean">False</HubShr>
+            <Hub Type="Vector2">
+              <x Type="Float">0.00775715533432114</x>
+              <y Type="Float">0.0246187036097604</y>
+            </Hub>
+            <Shr Type="Vector2">
+              <x Type="Float">0.00445631624241426</x>
+              <y Type="Float">0.0246512963902396</y>
+            </Shr>
+            <Width Type="Float">0.003301</Width>
+            <Gamma Type="Float">3.14159265358979</Gamma>
+            <GammaMode Type="Enum">Axial</GammaMode>
+            <OffsetMid Type="Vector2">
+              <x Type="Float">0</x>
+              <y Type="Float">0.001865</y>
+            </OffsetMid>
+          </MerData>
+        </SpiralCasingBC>
+        <SpiralCasingSection Type="Object">
+          <SpiralSectionList Type="Object">
+            <SpiralSection Type="Object" Index="0">
+              <Enabled Type="Boolean">True</Enabled>
+              <Angle Type="Float">6.28318530717959</Angle>
+              <LeftShape Type="Enum">RadiusBased</LeftShape>
+              <RightShape Type="Enum">RadiusBased</RightShape>
+              <SSShape_RadiusBased Type="Object" Name="SectionShape">
+                <Height Type="Float">0</Height>
+                <Delta Type="Float">0.959931088596881</Delta>
+                <Radius Type="Float">0.03</Radius>
+                <RadiusBase Type="Float">0</RadiusBase>
+                <RadiusCorner Type="Float">0.0016505</RadiusCorner>
+              </SSShape_RadiusBased>
+              <SSShape_RadiusBased Type="Object" Name="AsymmetricShape">
+                <Height Type="Float">0</Height>
+                <Delta Type="Float">0</Delta>
+                <Radius Type="Float">0</Radius>
+                <RadiusBase Type="Float">0</RadiusBase>
+                <RadiusCorner Type="Float">0</RadiusCorner>
+              </SSShape_RadiusBased>
+            </SpiralSection>
+          </SpiralSectionList>
+        </SpiralCasingSection>
+        <SpiralCasing Type="Object">
+          <Angle Type="Float">6.28318530717959</Angle>
+          <Rule Type="Enum">GeomBased</Rule>
+          <ProgressionType Type="Enum">Area</ProgressionType>
+          <BezierProgr Type="Object">
+            <CurveMode>Bezier</CurveMode>
+            <Points Count="2" Type="Array1">
+              <Value Type="Vector2" Index="0">
+                <x Type="Float">0</x>
+                <y Type="Float">0</y>
+              </Value>
+              <Value Type="Vector2" Index="1">
+                <x Type="Float">6.28318530717959</x>
+                <y Type="Float">0.0004</y>
+              </Value>
+            </Points>
+            <CurveProgressionType>Linear</CurveProgressionType>
+          </BezierProgr>
+        </SpiralCasing>
+        <SpiralCasingDiff Type="Object">
+          <EccenMode Type="Enum">Left</EccenMode>
+          <z-Mode Type="Enum">Offset</z-Mode>
+          <ZOffsetMode Type="Enum">Negative</ZOffsetMode>
+          <HeightOffset Type="Float">0</HeightOffset>
+          <VertOutDir Type="Boolean">True</VertOutDir>
+          <ProgressionType Type="Enum">Simple</ProgressionType>
+          <Section Type="Enum">Circle</Section>
+          <EndShapePos Type="Float">1</EndShapePos>
+          <GrowthRatio Type="Float">0</GrowthRatio>
+          <Diameter Type="Float">0.0254</Diameter>
+          <Bezier4Diff Type="Object">
+            <CurveMode>Polyline</CurveMode>
+            <Direction>Tangential</Direction>
+            <Phi6 Type="Float">0.523598790168762</Phi6>
+            <H6 Type="Float">0.03975</H6>
+          </Bezier4Diff>
+        </SpiralCasingDiff>
+        <SpiralCasingCutwater Type="Object">
+          <TongueMode Type="Enum">Automatic</TongueMode>
+          <AutoUpdate Type="Boolean">True</AutoUpdate>
+          <Fillet Type="Float">0.00053</Fillet>
+          <DiffBaseFormFactor Type="Float">0.5</DiffBaseFormFactor>
+          <SurfaceTransition Type="Enum">NonTangential</SurfaceTransition>
+        </SpiralCasingCutwater>
+        <CFDSetup_Spiral Type="Object">
+          <IsActiveExtension Type="Boolean">False</IsActiveExtension>
+        </CFDSetup_Spiral>
+        <SpiralCasingMaterial Type="Object">
+          <ThicknessActive Type="Boolean">True</ThicknessActive>
+          <Thickness Type="Float">0.0047625</Thickness>
+          <AngleLeft Type="Float">-0.610865238198015</AngleLeft>
+          <AngleRight Type="Float">0</AngleRight>
+        </SpiralCasingMaterial>
+        <Performance Type="Object">
+          <Zeta Type="Float">0</Zeta>
+          <ShockLoss Type="Float">0</ShockLoss>
+        </Performance>
+      </CFturboDesign_OutletVolute>
+    </PolyList_CFturboDesign>
+    <Export_Interfaces Type="Object">
+      <TTetraVolMeshExportInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <Format Type="Enum">OpenFOAM</Format>
+        <STLData Type="Object">
+          <MinSize Type="Float">0.0001</MinSize>
+          <MaxSize Type="Float">0.002</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Moderate</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+        </STLData>
+      </TTetraVolMeshExportInterface>
+      <TSimericsInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <UseLocalRotSym Type="Boolean">False</UseLocalRotSym>
+        <UseLocalVolutes Type="Boolean">False</UseLocalVolutes>
+        <SplitNearSurfaces Type="Boolean">True</SplitNearSurfaces>
+        <SizeSpecification Type="Enum">cssRelToSelCAD</SizeSpecification>
+        <CellSizeOnSurf Type="Float">0.006</CellSizeOnSurf>
+        <MinCellSize Type="Float">0.0001</MinCellSize>
+        <MaxCellSize Type="Float">0.012</MaxCellSize>
+        <HubCellSize Type="Float">0.006</HubCellSize>
+        <ShroudCellSize Type="Float">0.006</ShroudCellSize>
+        <BladesCellSize Type="Float">0.006</BladesCellSize>
+        <BladeLECellSize Type="Float">0.006</BladeLECellSize>
+        <BladeTECellSize Type="Float">0.006</BladeTECellSize>
+        <BladeTipCellSize Type="Float">0.006</BladeTipCellSize>
+        <InletRSCellSize Type="Float">0.006</InletRSCellSize>
+        <OutletRSCellSize Type="Float">0.006</OutletRSCellSize>
+        <SolidHubCellSize Type="Float">0.006</SolidHubCellSize>
+        <SolidShrCellSize Type="Float">0.006</SolidShrCellSize>
+        <SpiralCellSize Type="Float">0.006</SpiralCellSize>
+        <DiffuserCellSize Type="Float">0.006</DiffuserCellSize>
+        <CutWaterCellSize Type="Float">0.006</CutWaterCellSize>
+        <SplitterCellSize Type="Float">0.006</SplitterCellSize>
+        <InletSPCellSize Type="Float">0.006</InletSPCellSize>
+        <OutletSPCellSize Type="Float">0.006</OutletSPCellSize>
+        <RefineCasing Type="Boolean">False</RefineCasing>
+        <Solver Type="Enum">SimericsMP</Solver>
+        <SimulationType Type="Enum">Steady</SimulationType>
+        <ActivateCavitation Type="Boolean">True</ActivateCavitation>
+        <ActivateReverseFlow Type="Boolean">False</ActivateReverseFlow>
+        <WriteTurboExpressions Type="Boolean">True</WriteTurboExpressions>
+        <Iterations Type="Integer">500</Iterations>
+        <SavingFrecPerRotation Type="Integer">500</SavingFrecPerRotation>
+        <ConvergeCrierion Type="Float">0.001</ConvergeCrierion>
+        <NumberOfRotations Type="Integer">3</NumberOfRotations>
+        <TimeStepType Type="Enum">tstRotAnglePerStep</TimeStepType>
+        <DregreesPerStep Type="Float">0.0523598775598299</DregreesPerStep>
+        <StepsPerPocket Type="Integer">100</StepsPerPocket>
+        <NumericSchemeVelocity Type="Enum">nsUpwind</NumericSchemeVelocity>
+        <NumericSchemePressure Type="Enum">nsUpwind</NumericSchemePressure>
+        <RelaxationVel Type="Float">0</RelaxationVel>
+        <DiagRelaxationPress Type="Float">0</DiagRelaxationPress>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TSimericsInterface>
+      <TTCAEInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <MeshData Type="Object">
+          <RefineFactor Type="Integer">75</RefineFactor>
+        </MeshData>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TTCAEInterface>
+      <TOpenFOAMInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcSTLOnly</FileConfig>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TOpenFOAMInterface>
+      <TGridProInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <ExportFormat Type="Enum">STL</ExportFormat>
+        <File_write_mode Type="Enum">ASCII</File_write_mode>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TGridProInterface>
+      <TNeutral3DInterface Type="Object">
+        <DomainType Type="Enum">Material domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <ExportFormat Type="Enum">STEP</ExportFormat>
+        <File_write_mode Type="Enum">ASCII</File_write_mode>
+        <Face_mode Type="Enum">Surface</Face_mode>
+        <Neutral3DExport Type="Enum">Finished solid</Neutral3DExport>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">Binary</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </TNeutral3DInterface>
+      <THelyxInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <MeshData Type="Object">
+          <ScaleFactor Type="Float">1</ScaleFactor>
+        </MeshData>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">True</SeparateBoundaryFiles>
+        </STLData>
+      </THelyxInterface>
+      <TConvergeInterface Type="Object">
+        <DomainType Type="Enum">Flow domain</DomainType>
+        <BaseFileName></BaseFileName>
+        <ExportDir></ExportDir>
+        <Periodicity Type="Enum">Full 360°</Periodicity>
+        <FileConfig Type="Enum">fcAll</FileConfig>
+        <MeshData Type="Object">
+          <BaseGridSize Type="Float">0</BaseGridSize>
+          <StartCoarser Type="Boolean">True</StartCoarser>
+          <RSUseBoundaryEmbedding Type="Boolean">True</RSUseBoundaryEmbedding>
+          <RSInlet Type="Integer">0</RSInlet>
+          <RSOutlet Type="Integer">0</RSOutlet>
+          <RSHub Type="Integer">0</RSHub>
+          <RSShr Type="Integer">0</RSShr>
+          <RSBladeSides Type="Integer">0</RSBladeSides>
+          <RSBladeLE Type="Integer">0</RSBladeLE>
+          <RSBladeTE Type="Integer">0</RSBladeTE>
+          <RSBladeTip Type="Integer">0</RSBladeTip>
+          <RS2ndHub Type="Integer">0</RS2ndHub>
+          <RS2ndShr Type="Integer">0</RS2ndShr>
+          <RSRefineFlowDomain Type="Boolean">True</RSRefineFlowDomain>
+          <RefineImp Type="Integer">0</RefineImp>
+          <RefineSta Type="Integer">0</RefineSta>
+          <RSUseVelocityAMR Type="Boolean">True</RSUseVelocityAMR>
+          <AMRImp Type="Integer">0</AMRImp>
+          <AMRSta Type="Integer">0</AMRSta>
+          <SpUseBoundaryEmbedding Type="Boolean">True</SpUseBoundaryEmbedding>
+          <SpInlet Type="Integer">0</SpInlet>
+          <SpOutlet Type="Integer">0</SpOutlet>
+          <SpSpiral Type="Integer">0</SpSpiral>
+          <SpDiff Type="Integer">0</SpDiff>
+          <SpCW Type="Integer">0</SpCW>
+          <SpSplit Type="Integer">0</SpSplit>
+          <SpRefineFlowDomain Type="Boolean">True</SpRefineFlowDomain>
+          <RefineVol Type="Integer">0</RefineVol>
+          <SpUseVelocityAMR Type="Boolean">True</SpUseVelocityAMR>
+          <AMRVol Type="Integer">0</AMRVol>
+        </MeshData>
+        <SolverData Type="Object">
+          <SimulationType Type="Enum">Steady</SimulationType>
+          <NumSchemeGlobal Type="Enum">2ndOrderUpwind</NumSchemeGlobal>
+          <NumSchemeMomentum Type="Enum">2ndOrderUpwind</NumSchemeMomentum>
+          <NumSchemeTurbulence Type="Enum">2ndOrderUpwind</NumSchemeTurbulence>
+          <MaxIterations Type="Integer">3000</MaxIterations>
+          <Convergence Type="Float">0.001</Convergence>
+        </SolverData>
+        <STLData Type="Object">
+          <MinSize Type="Float">5E-5</MinSize>
+          <MaxSize Type="Float">0.001</MaxSize>
+          <STL_grading Type="Enum">Coarse</STL_grading>
+          <STL_granularity Type="Enum">Fine</STL_granularity>
+          <STL_optimization Type="Enum">Low</STL_optimization>
+          <STL_write_mode Type="Enum">ASCII</STL_write_mode>
+          <SeparateBoundaryFiles Type="Boolean">False</SeparateBoundaryFiles>
+        </STLData>
+      </TConvergeInterface>
+    </Export_Interfaces>
+    <SimpleReport>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</SimpleReport>
+    <MeridianContourImage Height="800" Width="1200">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</MeridianContourImage>
+  </CFturboProject>
+</CFturboFile>
