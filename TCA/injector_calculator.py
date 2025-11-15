@@ -1,7 +1,7 @@
 """
 This program computes the geometry and flow characteristics required to design a liquid
-liquid rocket engine injector element consisting of a fuel jet and an oxidizer jet that
-collide at a prescribed inpingement angle and location.
+rocket engine injector element consisting of a fuel jet and an oxidizer jet that collide
+at a prescribed inpingement angle and location.
 
 Author: Joaquin Alarcon
 """
@@ -185,4 +185,5 @@ print(f"The angle of the oxidizer, liquid oxygen, respective to the vertical is:
 print("=== Distances between orifices and the impingement distance ===")
 impinge_d, d_oo = compute_spacing_doublet(Longitude_chamber, impinge_fraction, theta_rp1, theta_lox)
 print(f"Distance between RP1 - lox orifices: {d_oo} m")
+
 print(f"Impingement distance: {impinge_d} m")
