@@ -25,7 +25,7 @@ P0 = 500*psi_into_pa #Chamber stagnation pressure [Pa]
 Cd = 0.7 #Discharge coefficient
 delta_P = 300 #Injector pressure drop [psi] (converted inside functions)
 theta_1 = 40 #Initial guess / design choice for injector angle [deg]
-Longitude_chamber = 319.05 #Combustion chamber length [mm]
+Length_chamber = 319.05 #Combustion chamber length [mm]
 impinge_fraction = 0.10 #streams will impinge at 10% of chamber length
 #ratio_inj_cooling = 1 #Fraction of fuel mass flow sent to cooling vs. injection 
 
@@ -183,7 +183,8 @@ print(f"The angle of the oxidizer, liquid oxygen, respective to the vertical is:
 #Distance of the two orifices that will allow both streams to meet at a single point for a given
 #impingement distance (in this case 10% of the chamber length). 
 print("=== Distances between orifices and the impingement distance ===")
-impinge_d, d_oo = compute_spacing_doublet(Longitude_chamber, impinge_fraction, theta_rp1, theta_lox)
+impinge_d, d_oo = compute_spacing_doublet(Length_chamber, impinge_fraction, theta_rp1, theta_lox)
 print(f"Distance between RP1 - lox orifices: {d_oo} m")
 
 print(f"Impingement distance: {impinge_d} m")
+
