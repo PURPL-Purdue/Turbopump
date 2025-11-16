@@ -64,7 +64,7 @@ min_ambient_temperature: 491.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK
 max_ambient_temperature: 563.67 #(R) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 
 min_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
-max_lox_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+max_lox_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 
-min_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
+min_kero_tank_press: 14.7 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
 max_kero_tank_press: 75 #(psi) Alejandro Diaz Contreras NOT FINALIZED, ASK BEFORE USING
