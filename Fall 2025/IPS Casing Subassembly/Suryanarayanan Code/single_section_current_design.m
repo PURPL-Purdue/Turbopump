@@ -1,15 +1,15 @@
 %% input
 format long;
-seal_radius = .75/2; %inches
-sealNum = 5; %number of seals in the seal stack up
+seal_radius = .75; %inches
+sealNum = 2; %number of seals in the seal stack up
 
-clearance = .002; %inches (radial)
-tooth_width = .01; %inches
+clearance = .004; %inches (radial)
+tooth_width = .005; %inches
 cavity_width = .031; %inches
 
-teeth = 5;
-loxPin = 100; %psi
-loxRecycleP = 50; %psi
+teeth = 6;
+loxPin = 1000; %psi
+loxRecycleP = 500; %psi
 loxRho = 1000; % density kg/m^3
 loxMu = 1.0016e-3; %Pa s
 
