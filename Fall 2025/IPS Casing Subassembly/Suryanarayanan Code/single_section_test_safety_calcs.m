@@ -1,0 +1,23 @@
+%% hoop stress
+P_psi = 1000;
+ri = .377; %in
+ro = 1; %in
+P_pa = P_psi*6894.76;
+ri_m = ri*.0254;
+ro_m = ro*.0254;
+A = P_pa*ri_m^2/(ro_m^2-ri_m^2);
+B = P_pa*(ro_m^2)*(ri_m^2)/(ro_m^2-ri_m^2);
+hoop_stress = A + B/(ro_m^2);
+hoop_stress_psi = hoop_stress/6894.76;
+yeild_stress = 40000; %psi
+FOS = yeild_stress/hoop_stress_psi
+
+%% bolts
+tensile_area =  12*0.7854*(.25-0.9743/20)^2;
+force = 1000*.755/2^2*pi;
+stress  = force/tensile_area;
+yeild_stress = 33000;
+youngs_mod = 30e6;
+strain = stress/youngs_mod
+fos = yeild_stress/stress
+
