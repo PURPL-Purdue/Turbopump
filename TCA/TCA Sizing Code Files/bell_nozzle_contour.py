@@ -522,12 +522,12 @@ def export_nozzle_csv(contour, filename="nozzle_contour.csv"):
 
 def export_nozzle_dxf(contour):
 	
-    xe,   ye   = contour[0], contour[1]
-    xe2,  ye2  = contour[3], contour[4]
-    xed,  yed  = contour[6], contour[7]
-    xeca, yeca = contour[9], contour[10]
-    xecc, yecc = contour[12], contour[13]
-    xbell,ybell= contour[15], contour[16]
+    xe,   ye   = np.divide(contour[0], 1000), np.divide(contour[1], 1000)
+    xe2,  ye2  = np.divide(contour[3], 1000), np.divide(contour[4], 1000)
+    xed,  yed  = np.divide(contour[6], 1000), np.divide(contour[7], 1000)
+    xeca, yeca = np.divide(contour[9], 1000), np.divide(contour[10], 1000)
+    xecc, yecc = np.divide(contour[12], 1000), np.divide(contour[13], 1000)
+    xbell,ybell= np.divide(contour[15], 1000), np.divide(contour[16], 1000)
     
     xed = xed[::-1]
     yed = yed[::-1]
