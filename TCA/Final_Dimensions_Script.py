@@ -1,0 +1,142 @@
+#*****note**** Change Output Path for CVS (line ) to your own computer and specific folder
+#EXAMPLE: output_file_path = r'C:\Users\igoto\OneDrive - purdue.edu\Turbopump\Final_TCA_Scripts\cea_dimensions.csv'
+#Make sure the path name ends with \cea_dimensions.csv
+
+##################################
+#Importing Necessary Libraries
+##################################
+import numpy as np
+import csv
+from rocketcea.cea_obj import CEA_Obj
+
+np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues that happened
+
+##################################
+#Define NASA Chemical Equilibrium with Applications (CEA) Object
+##################################
+
+#Define CEA Object as C
+C = CEA_Obj( oxName='LOX', fuelName='RP1')
+
+##################################
+#Define Global Conversion Factors
+##################################
+
+#psia to pascals conversion
+psi_to_pa = 6894.76
+#feet to meters conversion
+ft_to_m = 0.3048
+#m to cm
+mcm = 100
+#Rankine to Kelvin conversion factor
+rankineToKelvin = 5.0 / 9.0
+#Rankine to Fahrenheit conversion
+rankineToF = -459.67
+#lbf to N conversion, N = kg-m/s^2
+lbf_N = 4.4482216
+#universal gas constant (J / kmol-K)
+Ru_m = 8314.462618
+#m to in
+m_in = 39.3701
+#gravity in m/s^2
+g = 9.81
+#kg to lbm conversion
+kg_to_lbm = 2.20462
+
+##################################
+#Define Function Inputs
+##################################
+
+#VARIABLES
+#Target thrust (lbf)
+F = 5000
+#Target chamber pressure (psi)
+pc = 500
+#Efficieny factor of engine (estimate)
+ef = 0.95
+#Ambient pressure (psi)
+pamb= 14.7
+#Target exit pressure (psi), equal to pamb
+pe = 14.7
+#O/F ratio
+mr = 2.1
+#Characteristic Length (inches)
+L_star_in = 40
+#Characteristic Length calc converted to centimeters
+L_star_cm = L_star_in / 12 * ft_to_m * mcm
+#Contraction Ratio
+con_r = 3.6  #contraction ratio chamber area/throat area
+#Convergent Half-Angle
+a = 45
+
+##################################
+#Calculations
+##################################
+
+Ft = F * lbf_N                                                      #Converts force of thrust to Newtons
+Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))      #Calculates optimal expansion ratio
+Tc_F = C.get_Tcomb(Pc = pc, MR = mr) + rankineToF                   #Calculates combustion temperature in Fahrenheit
+Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef                #Calculates characteristic velocity in m/s, with efficiency factor
+cf_arr = C.get_PambCf(Pamb = 14.7, Pc = pc, MR = mr, eps = Eps)     
+cf = cf_arr[0] * ef                                                 #Calculates coefficient of thrust, with efficiency factor
+isp = (Cstar * cf) / g                                              #calculates isp in seconds
+
+At = Ft / (cf * pc * psi_to_pa)        #Calculates area of throat in m^2
+At_in = At * ((m_in) ** 2)             #Converts area of throat to in^2
+At_cm = At * (mcm ** 2)                #Converts area of throat to cm^2
+Dt_in = 2 * np.sqrt(At_in / np.pi)     #Calculates throat diameter in inches
+
+Ae_in = At_in * Eps                    #Calculates exit area in in^2
+De_in = 2 * np.sqrt(Ae_in / np.pi)     #Calculates exit diameter in inches
+
+MW_t, gam_t = C.get_Throat_MolWt_gamma(Pc = pc, MR = mr, eps = Eps, frozen=0)    #Outputs Molecular Weight at the throat
+R_comb = Ru_m / MW_t                                                             #Calculates gas constant for our combination
+Tc_1, Tt, Te = C.get_Temperatures(Pc = pc, MR = mr, eps = Eps, frozen=0, frozenAtThroat=0) #Outputs throat temps @ chamber, throat, exit
+Tt_K = Tt * rankineToKelvin                #Converts the throat temperature to Kelvin
+Tt_F = Tt + rankineToF                     #Converts the throat temperature to Fahrenheit
+
+#Calculates the mass flow rate for choked flow at the throat
+choked_mdot = (At * pc * psi_to_pa / (Tt_K**0.5)) * ((gam_t / R_comb)**0.5) * (((gam_t + 1.0)/2.0) ** (-(gam_t + 1.0)/(2.0*(gam_t - 1.0)))) * kg_to_lbm
+
+Ac_in = At_in * con_r                  #Calculates chamber area in in^2
+Dc_in = 2 * np.sqrt(Ac_in / np.pi)     #Calculates chamber diameter in inches
+
+Lc = (L_star_cm - (1.0/3.0) * np.sqrt(At_cm / np.pi) * (1 / np.tan(np.deg2rad(a))) * (con_r **(1.0/3.0) - 1)) / con_r  #Calculates chamber length in cm
+Lc_in = Lc / 100 / ft_to_m * 12     #Converts chamber length to inches
+
+#CEA Calcs for extra parameters
+k = C.get_HeatCapacities
+MW, gamma = C.get_Chamber_MolWt_gamma(Pc = pc, MR = mr, eps = Eps)
+gamma, viscosity, k, Pnum = C.get_Chamber_Transport(Pc = pc, MR = 2.1, eps = Eps, frozen=0)
+
+#Printing our outputs
+print('\nGiven these inputs:')
+print(f'Theoretical specific impulse is {isp: .3f} seconds')
+print(f'The temperature of combustion is {Tc_F: .3f} degrees Fahrenheit')
+print(f'\nTheoretically maximum mass flow rate (choked at throat) is {choked_mdot: .3f} lmb/s')
+print(f'\nThe throat diameter should be {Dt_in: .3f} inches')
+print(f'The contraction ratio should be {Eps: .3f}')
+print(f'The exit diameter should be {De_in: .3f} inches')
+print(f'The chamber diameter should be {Dc_in: .3f} inches')
+print(f'The combustion chamber length should be {Lc_in : .3f} inches')
+print(f'The molecular weight is {MW : .3f} lbm/lbmole')
+print(f'The ratio of specific heats is {gamma : .3f}')
+print(f'The thermal conductivity is {k : .3f} mcal/cm-K-s')
+
+#Construction of data list to export to csv, includes input values and output values
+data = [
+['Force of thrust(lbf)', 'Chamber Pressure (psia)', 'Contraction Ratio', 'O/F Ratio', 'L* (in)', 'Convergent Half-Angle (deg)',
+'Chamber Diameter (in)', 'Throat Diameter (in)', 'Exit Diameter (in)', 'Chamber Length (in)', 'Expansion Ratio', 'Mass Flow Rate (lbm/s)'],
+[F, pc, round(con_r, 1), round(mr, 1), round(L_star_in, 1), round(a, 1), round(Dc_in, 3), round(Dt_in, 3), round(De_in, 3), round(Lc_in, 3),
+ round(Eps, 3), round(choked_mdot,3)]
+]
+
+##################################
+#REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
+##################################
+output_file_path = r'C:\Users\igoto\OneDrive - purdue.edu\Turbopump\Final_TCA_Scripts\cea_dimensions1.csv'
+
+with open(output_file_path, 'w', newline='') as csvfile:
+  csv_writer = csv.writer(csvfile)
+  csv_writer.writerows(data)
+
