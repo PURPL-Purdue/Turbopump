@@ -30,3 +30,28 @@
 ###################################################################################################
 
 pepe: 12 #pepe 
+
+#Thrust Chamber Assembly Design Setpoints
+thrust: 5000  #(lbf) Devin Morris
+tca_chamber_pressure: 500  #(psi) Devin Morris
+characteristic_length: 40  #(in) Devin Morris
+oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
+c_star_efficiency: 0.95  #(Unitless) Devin Morris
+thrust_coefficient_efficiency: 0.95  #(Unitless) Devin Morris
+tca_exit_pressure: 14.7  #(psi) Devin Morris
+tca_contraction_ratio: 3.6  #(Unitless) Devin Morris
+tca_convergent_half_angle: 45  #(degrees) Devin Morris
+bell_nozzle_l_percent: 80  #(%) Devin Morris
+
+#Thrust Chamber Assembly Calculated Design Parameters
+tca_chamber_diameter: 5.667  #(in) Devin Morris
+tca_throat_diameter: 2.987  #(in) Devin Morris
+tca_exit_diameter: 6.904  #(in) Devin Morris
+tca_chamber_length: 11.037  #(in) Devin Morris
+tca_expansion_ratio: 5.342  #(Unitless) Devin Morris
+tca_throat_choked_flow: 19.884  #(lbm/s) Devin Morris
+
+chamber_molecular_weight: 21.250 #(lbm/lbmole) Devin Morris
+chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
+chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
+
