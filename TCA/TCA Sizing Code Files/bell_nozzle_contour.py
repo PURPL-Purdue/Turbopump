@@ -157,7 +157,7 @@ def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc):
 	# x(t) = (1 − t)^2 * Nx + 2(1 − t)t * Qx + t^2 * Ex, 0≤t≤1
 	# y(t) = (1 − t)^2 * Ny + 2(1 − t)t * Qy + t^2 * Ey, 0≤t≤1 [Eqn. 6]		
 	int_list = np.linspace(0, 1, data_intervel)
-	xbell = []; ybell = [];
+	xbell = [(xe2[-1])]; ybell = [(ye2[-1])];
 	for t in int_list:		
 		xbell.append( ((1-t)**2)*Nx + 2*(1-t)*t*Qx + (t**2)*Ex )
 		ybell.append( ((1-t)**2)*Ny + 2*(1-t)*t*Qy + (t**2)*Ey )
@@ -482,7 +482,7 @@ def plot(title, throat_radius, angles, contour):
 	return
 
 ######################### EXPORT TO CSV FILE #########################
-def export_nozzle_csv(contour, filename="nozzle_contour.csv"):
+def export_nozzle_csv(contour, filename=r"TCA\Countour Exportsnozzle_contour.csv"):
     """
     Write ONE CSV that unites all contour points.
     Expected contour structure from bell_nozzle(...):
@@ -522,12 +522,19 @@ def export_nozzle_csv(contour, filename="nozzle_contour.csv"):
 
 def export_nozzle_dxf(contour):
 	
-    xe,   ye   = contour[0], contour[1]
-    xe2,  ye2  = contour[3], contour[4]
-    xed,  yed  = contour[6], contour[7]
-    xeca, yeca = contour[9], contour[10]
-    xecc, yecc = contour[12], contour[13]
-    xbell,ybell= contour[15], contour[16]
+    xe,   ye   = np.divide(contour[0], 1000), np.divide(contour[1], 1000)
+    xe2,  ye2  = np.divide(contour[3], 1000), np.divide(contour[4], 1000)
+    xed,  yed  = np.divide(contour[6], 1000), np.divide(contour[7], 1000)
+    xeca, yeca = np.divide(contour[9], 1000), np.divide(contour[10], 1000)
+    xecc, yecc = np.divide(contour[12], 1000), np.divide(contour[13], 1000)
+    xbell,ybell= np.divide(contour[15], 1000), np.divide(contour[16], 1000)
+    
+    xed = xed[::-1]
+    yed = yed[::-1]
+    xeca = xeca[::-1]
+    yeca = yeca[::-1]    
+    xecc = xecc[::-1]
+    yecc = yecc[::-1]
 
     xs = list(chain(xecc, xeca, xed, xe, xe2, xbell))
     ys = list(chain(yecc, yeca, yed, ye, ye2, ybell))
@@ -538,14 +545,13 @@ def export_nozzle_dxf(contour):
     msp = doc.modelspace()
 
     msp.add_lwpolyline(points, close=False)
-    doc.saveas("combined_curve.dxf")
-
+    doc.saveas(r"TCA\Countour Exports\combined_curve_update.dxf")
     return()
 
 # __main method__
 if __name__=="__main__":
 
-	with open('TCA_params.yaml') as file:
+	with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
 		tca_params = yaml.safe_load(file)
 
 	l_percent = tca_params['bell_nozzle_l_percent']	# nozzle length percntage
@@ -561,7 +567,9 @@ if __name__=="__main__":
 	# rao_bell_nozzle_contour
 	angles, contour = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
 	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,1)) + ']' 
-	export_nozzle_csv(contour, filename="nozzle_contour.csv")
+	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
+	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
+
 	
 	
