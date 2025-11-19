@@ -61,11 +61,11 @@ pe = 14.7
 #O/F ratio
 mr = 2.1
 #Characteristic Length (inches)
-L_star_in = 40
+L_star_in = 50
 #Characteristic Length calc converted to centimeters
 L_star_cm = L_star_in / 12 * ft_to_m * mcm
 #Contraction Ratio
-con_r = 3.6  #contraction ratio chamber area/throat area
+con_r = 4.0  #contraction ratio chamber area/throat area
 #Convergent Half-Angle
 a = 45
 
@@ -115,7 +115,7 @@ print(f'Theoretical specific impulse is {isp: .3f} seconds')
 print(f'The temperature of combustion is {Tc_F: .3f} degrees Fahrenheit')
 print(f'\nTheoretically maximum mass flow rate (choked at throat) is {choked_mdot: .3f} lmb/s')
 print(f'\nThe throat diameter should be {Dt_in: .3f} inches')
-print(f'The contraction ratio should be {Eps: .3f}')
+print(f'The expansionion ratio should be {Eps: .3f}')
 print(f'The exit diameter should be {De_in: .3f} inches')
 print(f'The chamber diameter should be {Dc_in: .3f} inches')
 print(f'The combustion chamber length should be {Lc_in : .3f} inches')
