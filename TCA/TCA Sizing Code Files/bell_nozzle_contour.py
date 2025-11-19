@@ -482,7 +482,7 @@ def plot(title, throat_radius, angles, contour):
 	return
 
 ######################### EXPORT TO CSV FILE #########################
-def export_nozzle_csv(contour, filename="nozzle_contour.csv"):
+def export_nozzle_csv(contour, filename=r"TCA\Countour Exportsnozzle_contour.csv"):
     """
     Write ONE CSV that unites all contour points.
     Expected contour structure from bell_nozzle(...):
@@ -545,8 +545,7 @@ def export_nozzle_dxf(contour):
     msp = doc.modelspace()
 
     msp.add_lwpolyline(points, close=False)
-    doc.saveas("combined_curve.dxf")
-
+    doc.saveas(r"TCA\Countour Exports\combined_curve.dxf")
     return()
 
 # __main method__
@@ -568,7 +567,7 @@ if __name__=="__main__":
 	# rao_bell_nozzle_contour
 	angles, contour = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
 	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,1)) + ']' 
-	export_nozzle_csv(contour, filename="nozzle_contour.csv")
+	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
 
