@@ -545,7 +545,7 @@ def export_nozzle_dxf(contour):
     msp = doc.modelspace()
 
     msp.add_lwpolyline(points, close=False)
-    doc.saveas(r"TCA\Countour Exports\combined_curve.dxf")
+    doc.saveas(r"TCA\Countour Exports\combined_curve_update.dxf")
     return()
 
 # __main method__
