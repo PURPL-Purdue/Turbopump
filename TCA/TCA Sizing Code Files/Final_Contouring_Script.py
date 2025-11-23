@@ -342,7 +342,7 @@ def plot_nozzle(ax, title, Rt, angles, contour):
 	adj_text = 2
 	origin	= [ xe2[-1], nye2[-1]-adj_text ]
 	degree_symbol = r'$\theta$n'	
-	draw_angle_arc(ax, theta_n, origin, degree_symbol )
+	draw_angle_arc(ax, np.rad2deg(theta_n), origin, degree_symbol )
 
 	# bell section
 	ax.plot(xbell, ybell, linewidth=2.5, color='b')
@@ -355,10 +355,10 @@ def plot_nozzle(ax, title, Rt, angles, contour):
 	ax.annotate( "", [xbell[-1],0], [xbell[-1], ybell[-1]], arrowprops=dict(lw=0.5, arrowstyle='<-') )
 	ax.text( xbell[-1], ybell[-1]/2, text, fontsize=9 )	
 
-	# draw theta_n, throat exit angle
+	# draw theta_e, throat exit angle
 	origin	= [ xbell[-1], nybell[-1] ]
 	degree_symbol = r'$\theta$e'	
-	draw_angle_arc(ax, theta_e, origin, degree_symbol )
+	draw_angle_arc(ax, (np.rad2deg(theta_e)), origin, degree_symbol )
 
 	# nozzle length line [0,0] to [xe[-1], ye[-1]]
 	text = ' Ln = ' + str( round( nozzle_length, 1) ) 
@@ -478,6 +478,9 @@ def plot(title, throat_radius, angles, contour):
 	plot3D(ax2, contour)	
 	# show
 	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+	plt.savefig(r"TCA\Countour Exports\nozzle_contour_plot.png")
+
 	plt.show()
 	return
 
@@ -545,7 +548,7 @@ def export_nozzle_dxf(contour):
     msp = doc.modelspace()
 
     msp.add_lwpolyline(points, close=False)
-    doc.saveas(r"TCA\Countour Exports\combined_curve_update.dxf")
+    doc.saveas(r"TCA\Countour Exports\nozzle_contour.dxf")
     return()
 
 # __main method__
@@ -566,7 +569,7 @@ if __name__=="__main__":
 	###CHANGE TO EXPORT WHOLE CONTOUR
 	# rao_bell_nozzle_contour
 	angles, contour = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
-	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,1)) + ']' 
+	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,2)) + 'mm]' 
 	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
