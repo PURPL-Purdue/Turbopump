@@ -7,6 +7,7 @@
 ##################################
 import numpy as np
 import csv
+import yaml
 from rocketcea.cea_obj import CEA_Obj
 
 np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues that happened
@@ -47,27 +48,33 @@ kg_to_lbm = 2.20462
 #Define Function Inputs
 ##################################
 
+#Importing yaml file containing TCA parameters
+with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+	tca_params = yaml.safe_load(file)
+
 #VARIABLES
 #Target thrust (lbf)
-F = 5000
+F = tca_params['thrust']
 #Target chamber pressure (psi)
-pc = 500
+pc = tca_params['tca_chamber_pressure']
 #Efficieny factor of engine (estimate)
-ef = 0.95
+ef_cstar = tca_params['c_star_efficiency']
+#Efficieny factor of engine (estimate)
+ef_cf = tca_params['thrust_coefficient_efficiency']
 #Ambient pressure (psi)
-pamb= 14.7
+pamb= tca_params['ambient_pressure']
 #Target exit pressure (psi), equal to pamb
-pe = 14.7
+pe = tca_params['tca_exit_pressure']
 #O/F ratio
-mr = 2.1
+mr = tca_params['oxidizer_fuel_ratio']
 #Characteristic Length (inches)
-L_star_in = 50
+L_star_in = tca_params['characteristic_length']
 #Characteristic Length calc converted to centimeters
 L_star_cm = L_star_in / 12 * ft_to_m * mcm
 #Contraction Ratio
-con_r = 4.0  #contraction ratio chamber area/throat area
-#Convergent Half-Angle
-a = 45
+con_r = tca_params['tca_contraction_ratio']  #contraction ratio chamber area/throat area
+#Convergent Half-Angle (degrees)
+a = tca_params['tca_convergent_half_angle']
 
 ##################################
 #Calculations
@@ -76,9 +83,9 @@ a = 45
 Ft = F * lbf_N                                                      #Converts force of thrust to Newtons
 Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))      #Calculates optimal expansion ratio
 Tc_F = C.get_Tcomb(Pc = pc, MR = mr) + rankineToF                   #Calculates combustion temperature in Fahrenheit
-Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef                #Calculates characteristic velocity in m/s, with efficiency factor
+Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef_cstar                #Calculates characteristic velocity in m/s, with efficiency factor
 cf_arr = C.get_PambCf(Pamb = 14.7, Pc = pc, MR = mr, eps = Eps)     
-cf = cf_arr[0] * ef                                                 #Calculates coefficient of thrust, with efficiency factor
+cf = cf_arr[0] * ef_cf                                                 #Calculates coefficient of thrust, with efficiency factor
 isp = (Cstar * cf) / g                                              #calculates isp in seconds
 
 At = Ft / (cf * pc * psi_to_pa)        #Calculates area of throat in m^2
@@ -134,7 +141,7 @@ data = [
 ##################################
 #REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
 ##################################
-output_file_path = r'C:\Users\igoto\OneDrive - purdue.edu\Turbopump\Final_TCA_Scripts\cea_dimensions1.csv'
+output_file_path = r"TCA\Dimensions CSV\dimensions.csv"
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)
