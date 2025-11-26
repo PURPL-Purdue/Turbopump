@@ -126,7 +126,7 @@ def solve_thetas(mdot_fuel, mdot_ox, v_fuel, v_ox, theta_fuel, beta_target_deg,
     while theta_ox_deg <= theta_ox_max_deg:
         theta_ox_rad = theta_ox_deg*degrees_into_rad
         px = p_ox*np.sin(theta_ox_rad) - p_f*np.sin(theta_f_rad)
-        py = p_ox*np.cos(theta_ox_rad) + p_ox*np.cos(theta_f_rad)
+        py = p_ox*np.cos(theta_ox_rad) + p_f*np.cos(theta_f_rad)
         R = px/py
         beta_res = np.arctan(R)
         err = abs(beta_res - beta_target)
@@ -254,3 +254,4 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
