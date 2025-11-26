@@ -69,8 +69,6 @@ Qy = (m1 C2 − m2 C1 ) / (m1 − m2 ) [Eqn. 10]
 .................................................................
 """
 
-
-
 # sp.heat, area_ratio, throat_radius, length percentage, 
 def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc):
 	# upto the nozzle designer, usually -135
@@ -381,6 +379,96 @@ def plot_nozzle(ax, title, Rt, angles, contour):
 	plt.title(title, fontsize=9)
 	return
 
+# nozzle contour plot
+def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
+
+	# contour values
+	xe = np.divide(contour[0], 25.4); ye = np.divide(contour[1], 25.4); nye = np.divide(contour[2], 25.4);
+	xe2 = np.divide(contour[3], 25.4); ye2 = np.divide(contour[4], 25.4); nye2 = np.divide(contour[5], 25.4);
+	xed = np.divide(contour[6], 25.4); yed = np.divide(contour[7], 25.4); nyed = np.divide(contour[8], 25.4);
+	xeca = np.divide(contour[9], 25.4); yeca = np.divide(contour[10], 25.4); nyeca = np.divide(contour[11], 25.4);
+	xecc = np.divide(contour[12], 25.4); yecc = np.divide(contour[13], 25.4); nyecc = np.divide(contour[14], 25.4);
+	xbell = np.divide(contour[15], 25.4); ybell = np.divide(contour[16], 25.4); nybell = np.divide(contour[17], 25.4);
+	
+	# plot
+
+	fig2 = plt.figure(2, figsize=(12,9))
+
+	# throat enterant
+	plt.plot(xe, ye, linewidth=2.5, color='k')
+	plt.plot(xe, nye, linewidth=2.5, color='k')
+	
+	#convergent diagonal
+	plt.plot(xed, yed, linewidth=2.5, color='k')
+	plt.plot(xed, nyed, linewidth=2.5, color='k')
+
+	#convergent arc
+	plt.plot(xeca, yeca, linewidth=2.5, color='k')
+	plt.plot(xeca, nyeca, linewidth=2.5, color='k')	
+
+	#combustion chamber cylinder
+	plt.plot(xecc, yecc, linewidth=2.5, color='k')
+	plt.plot(xecc, nyecc, linewidth=2.5, color='k')	
+
+	# throat exit
+	plt.plot(xe2, ye2, linewidth=2.5, color='k')
+	plt.plot(xe2, nye2, linewidth=2.5, color='k')
+
+	# bell section
+	plt.plot(xbell, ybell, linewidth=2.5, color='k')
+	plt.plot(xbell, nybell, linewidth=2.5, color='k')
+
+	# throat diameter line
+	text = str(round(dia_t,2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xe[-1], 0.95 * nye[-1]], [xe[-1], 0.95 * ye[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(0.1,0.1, text, fontsize=12 )	
+
+	# chamber diameter line
+	text = str(round(dia_c,2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xecc[-1], 0.95 * nyecc[-1]], [xecc[-1], 0.95 * yecc[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(xecc[-1] + 0.1,0.1, text, fontsize=12 )	
+
+	# exit diameter line
+	text = str(round(dia_e,2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xbell[-1], 0.95 * nybell[-1]], [xbell[-1], 0.95 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(4.5,0.1, text, fontsize=12 )	
+
+	# chamber length line
+	text = str(round(len_c,2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xecc[-1], 1.2 * ybell[-1]], [0, 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text((-len_c / 2), 1.25* ybell[-1], text, fontsize=12 )
+
+	# divergent section length line
+	text = str(round(xbell[-1],2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [0, 1.2 * ybell[-1]], [xbell[-1], 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text((xbell[-1] / 2), 1.25* ybell[-1], text, fontsize=12 )
+
+	# axis
+	plt.axhline(color='black', lw=0.5, linestyle="dashed")
+	plt.axvline(color='black', lw=0.5, linestyle="dashed")		
+	
+	# grids
+	plt.grid()
+	plt.minorticks_on()
+	plt.grid(which='major', linestyle='-', linewidth='0.5') # , color='red'
+	plt.grid(which='minor', linestyle=':', linewidth='0.5') # , color='black'	
+	
+	# show
+	plt.xlabel('Inches', fontsize=9)
+	plt.ylabel('Inches', fontsize=9)
+	plt.axis('equal')
+	fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
+	
+	plt.savefig(r"TCA\Countour Exports\nozzle_contour_inches_plot.png")
+
+	plt.show()
+	return
+
 # theta_n in rad,  origin =[startx, starty], degree symbol
 def draw_angle_arc(ax, theta_n, origin, degree_symbol=r'$\theta$'):
 	length = 50
@@ -469,15 +557,15 @@ def plot3D(ax, contour):
 
 def plot(title, throat_radius, angles, contour):
 	# Plot 3d view
-	fig = plt.figure(figsize=(12,9))
+	fig1 = plt.figure(1, figsize=(12,9))
 	# plot some 2d information
-	ax1 = fig.add_subplot(121)
+	ax1 = fig1.add_subplot(121)
 	plot_nozzle(ax1, title, throat_radius, angles, contour)
 	# plot 3d view
-	ax2 = fig.add_subplot(122, projection='3d')
+	ax2 = fig1.add_subplot(122, projection='3d')
 	plot3D(ax2, contour)	
 	# show
-	fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+	fig1.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 	plt.savefig(r"TCA\Countour Exports\nozzle_contour_plot.png")
 
@@ -485,7 +573,7 @@ def plot(title, throat_radius, angles, contour):
 	return
 
 ######################### EXPORT TO CSV FILE #########################
-def export_nozzle_csv(contour, filename=r"TCA\Countour Exportsnozzle_contour.csv"):
+def export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv"):
     """
     Write ONE CSV that unites all contour points.
     Expected contour structure from bell_nozzle(...):
@@ -573,6 +661,12 @@ if __name__=="__main__":
 	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
+
+	Dt_in = tca_params['tca_throat_diameter']
+	Dc_in = tca_params['tca_chamber_diameter']
+	De_in = tca_params['tca_exit_diameter']
+	Lc_in = tca_params['tca_chamber_length']
+	plot_nozzle_inches(contour, Dt_in, Dc_in, De_in, Lc_in)
 
 	
 	
