@@ -422,31 +422,31 @@ def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
 	text = str(round(dia_t,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xe[-1], 0.95 * nye[-1]], [xe[-1], 0.95 * ye[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(0.1,0.1, text, fontsize=12 )	
+	plt.text(0.1,0.1, text, fontsize=25 )	
 
 	# chamber diameter line
 	text = str(round(dia_c,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xecc[-1], 0.95 * nyecc[-1]], [xecc[-1], 0.95 * yecc[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(xecc[-1] + 0.1,0.1, text, fontsize=12 )	
+	plt.text(xecc[-1] + 0.1,0.1, text, fontsize=25 )	
 
 	# exit diameter line
 	text = str(round(dia_e,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xbell[-1], 0.95 * nybell[-1]], [xbell[-1], 0.95 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(4.5,0.1, text, fontsize=12 )	
+	plt.text(4.0,0.1, text, fontsize=25 )	
 
 	# chamber length line
 	text = str(round(len_c,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xecc[-1], 1.2 * ybell[-1]], [0, 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text((-len_c / 2), 1.25* ybell[-1], text, fontsize=12 )
+	plt.text((-len_c / 2), 1.25* ybell[-1], text, fontsize=25 )
 
 	# divergent section length line
 	text = str(round(xbell[-1],2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [0, 1.2 * ybell[-1]], [xbell[-1], 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text((xbell[-1] / 2), 1.25* ybell[-1], text, fontsize=12 )
+	plt.text((xbell[-1] / 2), 1.25* ybell[-1], text, fontsize=25 )
 
 	# axis
 	plt.axhline(color='black', lw=0.5, linestyle="dashed")
