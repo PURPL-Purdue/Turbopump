@@ -457,10 +457,12 @@ def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
 	plt.minorticks_on()
 	plt.grid(which='major', linestyle='-', linewidth='0.5') # , color='red'
 	plt.grid(which='minor', linestyle=':', linewidth='0.5') # , color='black'	
+	plt.xticks(fontsize=15)
+	plt.yticks(fontsize=15)
 	
 	# show
-	plt.xlabel('Inches', fontsize=9)
-	plt.ylabel('Inches', fontsize=9)
+	plt.xlabel('Inches', fontsize=18)
+	plt.ylabel('Inches', fontsize=18)
 	plt.axis('equal')
 	fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
 	
