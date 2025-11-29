@@ -643,6 +643,7 @@ def export_nozzle_dxf(contour):
 if __name__=="__main__":
 
 	with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+	with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file: ##CHANGED FOR DANIEL
 		tca_params = yaml.safe_load(file)
 
 	l_percent = tca_params['bell_nozzle_l_percent']	# nozzle length percntage
