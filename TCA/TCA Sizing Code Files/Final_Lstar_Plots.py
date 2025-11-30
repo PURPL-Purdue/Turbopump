@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rocketcea.cea_obj import CEA_Obj
 
+import yaml
+
 np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues that happened
 
 ##################################
@@ -19,8 +21,6 @@ ft_to_m = 0.3048
 mcm = 100
 #lbf to N conversion, N = kg-m/s^2
 lbf_N = 4.4482216
-#Efficieny factor of engine (guessed)
-ef = 0.975
 
 #Define CEA Object as C
 C = CEA_Obj( oxName='LOX', fuelName='RP1')
@@ -41,20 +41,27 @@ cr_lo = 1.5
 cr_hi = 5.0
 
 #VARIABLES
-#Force of thurst (lbf)
-F = 5000
-#Chamber pressure (psi)
-pc = 500
+
+#Importing yaml file containing TCA parameters
+with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+	tca_params = yaml.safe_load(file)
+
+#Target thrust (lbf)
+F = tca_params['thrust']
+#Target chamber pressure (psi)
+pc = tca_params['tca_chamber_pressure']
+#Efficieny factor of engine (estimate)
+ef_cf = tca_params['thrust_coefficient_efficiency']
+#Target exit pressure (psi), equal to pamb
+pe = tca_params['tca_exit_pressure']
 #O/F ratio
-mr = 2.1
-#Exit pressure (psi), equal to ambient pressure
-pe = 14.7
-#Convergent half-angle (degrees)
-a = 45
-#Final Chosen L* (inches)
-L_star_in = 40.0
-#Final Chosen L* (centimeters conversion)
-L_star_cm = 40 / 12.0 * ft_to_m * mcm
+mr = tca_params['oxidizer_fuel_ratio']
+#Characteristic Length (inches)
+L_star_in = tca_params['characteristic_length']
+#Characteristic Length calc converted to centimeters
+L_star_cm = L_star_in / 12 * ft_to_m * mcm
+#Convergent Half-Angle (degrees)
+a = tca_params['tca_convergent_half_angle']
 
 #ARRAY DECLARATION
 cs = np.linspace(cr_lo, cr_hi, 100)    #Array of contraction ratios, with 100 values between the bounds
@@ -68,7 +75,7 @@ Lc_ins = [0] * len(cs)                 #Empty array to store L* outputs for both
 Ft = F * lbf_N                                                    #Converts thrust to Newtons
 Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))    #Calculates optimal expansion ratio
 cf_arr = C.get_PambCf(Pamb = 14.7, Pc = pc, MR = mr, eps = Eps)   
-cf = cf_arr[0] * ef                                               #Calculates the coefficient of thrust with efficiency factor
+cf = cf_arr[0] * ef_cf                                               #Calculates the coefficient of thrust with efficiency factor
 
 At = Ft / (cf * pc * psi_to_pa)  #Calculates area of throat (m^2)
 At_cm = At * (mcm ** 2)          #Converts throat area to cm^2
@@ -94,6 +101,8 @@ plt.title('Chamber Length vs Contraction Ratio')
 plt.grid()
 plt.legend()
 
+plt.savefig(r"TCA\CEA Graphs\L_Star_Range_Plot.png")
+
 #Plots Chamber Length (inches) vs Contraction Ratio for given range derived from Huzel and Huang chamber volume 
 #function and L* = Vc/At relation @chosen L*
 plt.figure(2)
@@ -107,5 +116,8 @@ plt.xlabel('Contraction Ratio (Ac/At)')
 plt.ylabel('Chamber Length (in)')
 plt.title(f'Chamber Length vs Contraction Ratio @L* = {L_star_in}in')
 plt.grid()
+
+plt.savefig(r"TCA\CEA Graphs\L_Star_Chosen.png")
+
 plt.show()
 
