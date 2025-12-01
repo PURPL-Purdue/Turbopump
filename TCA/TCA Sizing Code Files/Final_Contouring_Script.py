@@ -380,7 +380,9 @@ def plot_nozzle(ax, title, Rt, angles, contour):
 	return
 
 # nozzle contour plot
-def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
+def plot_nozzle_inches(contour, angles, dia_t, dia_c, dia_e, len_c):
+	# wall angles
+	theta_n = angles[1]; theta_e = angles[2];
 
 	# contour values
 	xe = np.divide(contour[0], 25.4); ye = np.divide(contour[1], 25.4); nye = np.divide(contour[2], 25.4);
@@ -422,31 +424,69 @@ def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
 	text = str(round(dia_t,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xe[-1], 0.95 * nye[-1]], [xe[-1], 0.95 * ye[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(0.1,0.1, text, fontsize=12 )	
+	plt.text(0.1,0.1, text, fontsize=25 )	
 
 	# chamber diameter line
 	text = str(round(dia_c,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xecc[-1], 0.95 * nyecc[-1]], [xecc[-1], 0.95 * yecc[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(xecc[-1] + 0.1,0.1, text, fontsize=12 )	
+	plt.text(xecc[-1] + 0.1,0.1, text, fontsize=25 )	
 
 	# exit diameter line
 	text = str(round(dia_e,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
 	plt.annotate( "", [xbell[-1], 0.95 * nybell[-1]], [xbell[-1], 0.95 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text(4.5,0.1, text, fontsize=12 )	
+	plt.text(4.0,0.1, text, fontsize=25 )	
+
+	con_len = len_c - abs(xecc[0])
 
 	# chamber length line
-	text = str(round(len_c,2)) + 'in'
+	text = str(round(con_len,2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
-	plt.annotate( "", [xecc[-1], 1.2 * ybell[-1]], [0, 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text((-len_c / 2), 1.25* ybell[-1], text, fontsize=12 )
+	plt.annotate( "", [(xecc[-1] - 0.05), 1.2 * ybell[-1]], [(xecc[0] + 0.05), 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(-8.9, 1.25* ybell[-1], text, fontsize=25 )
+
+	# convergent length line
+	text = str(round(abs(xecc[0]),2)) + 'in'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [(xecc[0] - 0.05), 1.2 * ybell[-1]], [0.05, 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(-2.0, 1.25* ybell[-1], text, fontsize=25 )
 
 	# divergent section length line
 	text = str(round(xbell[-1],2)) + 'in'
 	# draw dimension from [0,0] to [xe[-1], ye[-1]]
-	plt.annotate( "", [0, 1.2 * ybell[-1]], [xbell[-1], 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
-	plt.text((xbell[-1] / 2), 1.25* ybell[-1], text, fontsize=12 )
+	plt.annotate( "", [-0.05, 1.2 * ybell[-1]], [(xbell[-1] + 0.05), 1.2 * ybell[-1]], arrowprops=dict(lw=1, arrowstyle='|-|') )
+	plt.text(2.0, 1.25* ybell[-1], text, fontsize=25 )
+
+	# Theta n arc functions
+	angle_list 		= np.linspace(0, theta_n, 100)
+	tnarcx = []; tnarcy = [];
+	for i in angle_list:
+		tnarcx.append( xe2[-1] + 2.0 * math.cos(i))
+		tnarcy.append( ye2[-1] + 2.0 * math.sin(i))
+
+	# theta n angle
+	text = r'$\theta_n$ = ' + str(round((theta_n * 180 / np.pi),1)) + r'$^\circ$'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xe2[-1], ye2[-1]], [(xe2[-1] + 2.5), ye2[-1]], arrowprops=dict(lw=1, arrowstyle='-', color = 'r' ))
+	plt.annotate( "", [xe2[-1], ye2[-1]], [(xe2[-1] + (2.5 * math.cos(theta_n))), (ye2[-1] + (2.5 * math.sin(theta_n)))], arrowprops=dict(lw=1, arrowstyle='-', color = 'r'))
+	plt.plot(tnarcx, tnarcy, linewidth=1, color='r')
+	plt.text(2.5, 1.75, text, fontsize=20 )
+
+	# Theta e arc functions
+	angle_list 		= np.linspace(0, theta_e, 100)
+	tearcx = []; tearcy = [];
+	for i in angle_list:
+		tearcx.append( xbell[-1] + 1.5 * math.cos(i))
+		tearcy.append( ybell[-1] + 1.5 * math.sin(i))
+
+	# theta e angle
+	text = r'$\theta_e$ = ' + str(round((theta_e * 180 / np.pi),1)) + r'$^\circ$'
+	# draw dimension from [0,0] to [xe[-1], ye[-1]]
+	plt.annotate( "", [xbell[-1], ybell[-1]], [(xbell[-1] + 2.0), ybell[-1]], arrowprops=dict(lw=1, arrowstyle='-', color = 'r' ))
+	plt.annotate( "", [xbell[-1], ybell[-1]], [(xbell[-1] + (2.0 * math.cos(theta_e))), (ybell[-1] + (2.0 * math.sin(theta_e)))], arrowprops=dict(lw=1, arrowstyle='-', color = 'r'))
+	plt.plot(tearcx, tearcy, linewidth=1, color='r')
+	plt.text(6, 5, text, fontsize=20 )
 
 	# axis
 	plt.axhline(color='black', lw=0.5, linestyle="dashed")
@@ -457,10 +497,12 @@ def plot_nozzle_inches(contour, dia_t, dia_c, dia_e, len_c):
 	plt.minorticks_on()
 	plt.grid(which='major', linestyle='-', linewidth='0.5') # , color='red'
 	plt.grid(which='minor', linestyle=':', linewidth='0.5') # , color='black'	
+	plt.xticks(fontsize=15)
+	plt.yticks(fontsize=15)
 	
 	# show
-	plt.xlabel('Inches', fontsize=9)
-	plt.ylabel('Inches', fontsize=9)
+	plt.xlabel('Inches', fontsize=18)
+	plt.ylabel('Inches', fontsize=18)
 	plt.axis('equal')
 	fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
 	
@@ -666,7 +708,7 @@ if __name__=="__main__":
 	Dc_in = tca_params['tca_chamber_diameter']
 	De_in = tca_params['tca_exit_diameter']
 	Lc_in = tca_params['tca_chamber_length']
-	plot_nozzle_inches(contour, Dt_in, Dc_in, De_in, Lc_in)
+	plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in)
 
 	
 	

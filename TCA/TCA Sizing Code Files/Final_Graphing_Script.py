@@ -7,6 +7,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rocketcea.cea_obj import CEA_Obj
 
+import yaml
+
 np.set_printoptions(legacy='1.25')   #Fix for some numpy float printing isssues that happened
 
 ##################################
@@ -39,12 +41,17 @@ pLo = 45   #Lower bound of pc divided by 10: (pc / 10)
 pHi = 55   #Lower bound of pc divided by 10 plus 1:  (pc / 10) + 1
 
 #VARIABLES
+
+#Importing yaml file containing TCA parameters
+with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+	tca_params = yaml.safe_load(file)
+
 #Target chamber pressure (psi)
-pc = 500
+pc = tca_params['tca_chamber_pressure']
 #Ambient pressure (psi)
-pamb = 14.7
+pamb= tca_params['ambient_pressure']
 #Target exit pressure (psi), equal to pamb
-pe = 14.7
+pe = tca_params['tca_exit_pressure']
 
 #ARRAY DECLARATION
 mr_range = np.arange(mrLo, mrHi, .05)  #range of O/F ratios, from mrLo to mrHi with spacing 0.05 in between to get proper curves
@@ -70,6 +77,8 @@ plt.ylabel("Specific Impulse (s)")
 plt.title(f"Spec. Impulse vs O/F ratio @{pc} psi")
 plt.grid()
 
+plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_Target_psi.png")
+
 #This figure plots specific impulse values (in seconds) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(2)
 for p in range(pLo, pHi):
@@ -86,6 +95,8 @@ plt.title("Specific Impulse vs O/F ratio")
 plt.grid()
 plt.legend()
 
+plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_P_Range.png")
+
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(3)
 count = 0
@@ -98,6 +109,8 @@ plt.ylabel("Combustion Temperature (F)")
 plt.title(f"Combustion Temperature vs O/F ratio @{pc} psi")
 plt.grid()
 
+plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_Target_psi.png")
+
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(4)
 count = 0
@@ -109,10 +122,12 @@ for p in range(pLo, pHi):
         count = count + 1
     plt.plot(mr_range, Comb_Ts, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Combustion Temperature (K)")
+plt.ylabel("Combustion Temperature (F)")
 plt.title("Combustion Temps vs O/F ratio")
 plt.grid()
 plt.legend()
+
+plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_P_Range.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(5)
@@ -125,6 +140,8 @@ plt.xlabel("O/F ratio by mass")
 plt.ylabel("Characteristic Velocity (ft/s)")
 plt.title(f"Characteristic Velocity vs O/F ratio @{pc} psi")
 plt.grid()
+
+plt.savefig(r"TCA\CEA Graphs\Characteristic_Velocity_Target_psi.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(6)
@@ -141,6 +158,8 @@ plt.title("Characteristic Velocity vs O/F ratio")
 plt.grid()
 plt.legend()
 
+plt.savefig(r"TCA\CEA Graphs\Characteristic_Velocity_P_Range.png")
+
 #This figure plots coefficient of thrust values across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(7)
 count = 0
@@ -154,6 +173,8 @@ plt.xlabel("O/F ratio by mass")
 plt.ylabel("Coefficient of Thrust")
 plt.title(f"Coefficient of Thrust vs O/F ratio @{pc}psia")
 plt.grid()
+
+plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_Target_psi.png")
 
 #This figure plots coefficient of thrust values across a set range of O/F ratios and a range of chamber pressures
 plt.figure(8)
@@ -171,6 +192,8 @@ plt.ylabel("Coefficient of Thrust")
 plt.title("Coefficient of Thrust vs O/F ratio")
 plt.grid()
 plt.legend()
+
+plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_P_Range.png")
 
 plt.show()
 
