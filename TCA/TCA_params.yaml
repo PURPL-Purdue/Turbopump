@@ -34,14 +34,12 @@ pepe: 12 #pepe
 #Thrust Chamber Assembly Design Setpoints
 thrust: 5000  #(lbf) Devin Morris
 tca_chamber_pressure: 500  #(psi) Devin Morris
-characteristic_length: 50  #(in) Devin Morris
 characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
 oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
 c_star_efficiency: 0.95  #(Unitless) Devin Morris
 thrust_coefficient_efficiency: 0.95  #(Unitless) Devin Morris
 ambient_pressure: 14.7  #(psi) Devin Morris
 tca_exit_pressure: 14.7  #(psi) Devin Morris
-tca_contraction_ratio: 4.0  #(Unitless) Devin Morris
 tca_contraction_ratio: 3.5  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
 tca_convergent_half_angle: 45  #(degrees) Devin Morris
 bell_nozzle_l_percent: 80  #(%) Devin Morris
