@@ -192,7 +192,7 @@ def design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, D_init):
     def func(D):
         A = np.pi * (D**2) / 4.0
         v = mdot / (rho * A)
-        dpF   = f * (Lpath / D) * (rho * v**2 / 2.0)
+        dpF = f * (Lpath / D) * (rho * v**2 / 2.0)
         dpLoc = Ktot * (rho * v**2 / 2.0)
         return dpF + dpLoc - dp_allow
     D_min = D_init / 5.0
@@ -201,7 +201,7 @@ def design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, D_init):
     D = sol.root
     A = np.pi * (D**2) / 4.0
     v = mdot / (rho * A)
-    dpF   = f * (Lpath / D) * (rho * v**2 / 2.0)
+    dpF = f * (Lpath / D) * (rho * v**2 / 2.0)
     dpLoc = Ktot * (rho * v**2 / 2.0)
     dpTot = dpF + dpLoc
     ratio = dpTot / dp_inj
@@ -325,30 +325,23 @@ def ring_points(radius_mm, N):
     y = radius_mm * np.sin(ang)
     return x, y
 
-def plot_injector_layout(D_c_mm,
-                         R_ring_f_mm,
-                         R_ring_ox_mm,
-                         N_hole_ring,
-                         margin_extra_mm=5):
+def plot_injector_layout(D_c_mm, R_ring_f_mm, R_ring_ox_mm, N_hole_ring, margin_extra_mm=5):
     combRad = D_c_mm / 2.0   #chamber radius
-    x_f_in,  y_f_in  = ring_points(R_ring_f_mm[0], N_hole_ring)
+    x_f_in, y_f_in = ring_points(R_ring_f_mm[0], N_hole_ring)
     x_f_out, y_f_out = ring_points(R_ring_f_mm[1], N_hole_ring)
-    x_ox_in,  y_ox_in  = ring_points(R_ring_ox_mm[0], N_hole_ring)
+    x_ox_in, y_ox_in = ring_points(R_ring_ox_mm[0], N_hole_ring)
     x_ox_out, y_ox_out = ring_points(R_ring_ox_mm[1], N_hole_ring)
     fig, ax = plt.subplots(figsize=(20, 20))
-    chamber = plt.Circle((0, 0), combRad, color='gray',
-                         fill=False, linewidth=2)
+    chamber = plt.Circle((0, 0), combRad, color='gray', fill=False, linewidth=2)
     ax.add_artist(chamber)
     for R in R_ring_f_mm:
-        ax.add_artist(plt.Circle((0, 0), R, color='red',
-                                 fill=False, linewidth=0.7, alpha=0.4))
+        ax.add_artist(plt.Circle((0, 0), R, color='red', fill=False, linewidth=0.7, alpha=0.4))
     for R in R_ring_ox_mm:
-        ax.add_artist(plt.Circle((0, 0), R, color='blue',
-                                 fill=False, linewidth=0.7, alpha=0.4))
-    ax.scatter(x_f_in,  y_f_in,  s=18, color='red',     label='RP-1 inner')
+        ax.add_artist(plt.Circle((0, 0), R, color='blue', fill=False, linewidth=0.7, alpha=0.4))
+    ax.scatter(x_f_in,  y_f_in, s=18, color='red', label='RP-1 inner')
     ax.scatter(x_f_out, y_f_out, s=18, color='darkred', label='RP-1 outer')
-    ax.scatter(x_ox_in,  y_ox_in,  s=18, color='royalblue', label='LOX inner')
-    ax.scatter(x_ox_out, y_ox_out, s=18, color='navy',      label='LOX outer')
+    ax.scatter(x_ox_in,  y_ox_in, s=18, color='royalblue', label='LOX inner')
+    ax.scatter(x_ox_out, y_ox_out, s=18, color='navy', label='LOX outer')
     ax.set_aspect('equal', 'box')
     ax.set_xlabel('x [mm]')
     ax.set_ylabel('y [mm]')
@@ -403,3 +396,4 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
