@@ -169,7 +169,7 @@ def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc):
 	nybell  = [ -y for y in ybell]
 
 	# return
-	return angles, (xe, ye, nye, xe2, ye2, nye2, xed, yed, nyed, xeca, yeca, nyeca, xecc, yecc, nyecc, xbell, ybell, nybell)
+	return angles, (xe, ye, nye, xe2, ye2, nye2, xed, yed, nyed, xeca, yeca, nyeca, xecc, yecc, nyecc, xbell, ybell, nybell), R2
 
 # find wall angles (theta_n, theta_e) in radians for given aratio (ar)
 def find_wall_angles(ar, Rt, l_percent = 80 ):
@@ -380,9 +380,12 @@ def plot_nozzle(ax, title, Rt, angles, contour):
 	return
 
 # nozzle contour plot
-def plot_nozzle_inches(contour, angles, dia_t, dia_c, dia_e, len_c):
+def plot_nozzle_inches(contour, angles, dia_t, dia_c, dia_e, len_c, Rad2, cangle):
 	# wall angles
 	theta_n = angles[1]; theta_e = angles[2];
+
+	#converting r2 to inches
+	R2 = Rad2 / 25.4
 
 	# contour values
 	xe = np.divide(contour[0], 25.4); ye = np.divide(contour[1], 25.4); nye = np.divide(contour[2], 25.4);
@@ -487,6 +490,25 @@ def plot_nozzle_inches(contour, angles, dia_t, dia_c, dia_e, len_c):
 	plt.annotate( "", [xbell[-1], ybell[-1]], [(xbell[-1] + (2.0 * math.cos(theta_e))), (ybell[-1] + (2.0 * math.sin(theta_e)))], arrowprops=dict(lw=1, arrowstyle='-', color = 'r'))
 	plt.plot(tearcx, tearcy, linewidth=1, color='r')
 	plt.text(6, 5, text, fontsize=20 )
+
+	#r1 distance line
+	rt = dia_t / 2.0
+	r1_hangle = ((270 + 180 + cangle) / 2) * np.pi / 180
+	plt.annotate( "", [0, (2.5 * rt)], [(1.5 * rt * math.cos(r1_hangle)), (rt * ((1.5 * math.sin(r1_hangle)) + 2.5))], arrowprops=dict(lw=.5, arrowstyle='<-', color = 'b' ))
+	plt.plot(0, (2.5 * rt), '+' , color = 'b')
+	plt.text(-1.0, 2.75, r'$R_1$', fontsize=15 )
+
+	#r2 distance line
+	r2_hangle = ((90 + cangle) / 2) * np.pi / 180
+	plt.annotate( "", [xecc[0], (yecc[0] - R2)], [(xecc[0] + R2 * math.cos(r2_hangle)), (yecc[0] + R2 * (math.sin(r2_hangle) - 1))], arrowprops=dict(lw=.5, arrowstyle='<-', color = 'b' ))
+	plt.plot(xecc[0], (yecc[0] - R2), '+' , color = 'b')
+	plt.text(-3.1, 2.1, r'$R_2$', fontsize=15 )	
+
+	#rn distance line
+	rn_hangle = ((270 + 270 + cangle) / 2) * np.pi / 180
+	plt.annotate( "", [0, (1.382 * rt)], [(0.382 * rt * math.cos(rn_hangle)), (rt * ((0.382 * math.sin(rn_hangle)) + 1.382))], arrowprops=dict(lw=.5, arrowstyle='<-', color = 'b' ))
+	plt.plot(0, (1.382 * rt), '+', color = 'b')
+	plt.text(0.1, 2.0, r'$R_n$', fontsize=15)
 
 	# axis
 	plt.axhline(color='black', lw=0.5, linestyle="dashed")
@@ -698,7 +720,7 @@ if __name__=="__main__":
 
 	###CHANGE TO EXPORT WHOLE CONTOUR
 	# rao_bell_nozzle_contour
-	angles, contour = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
+	angles, contour, r2 = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
 	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,2)) + 'mm]' 
 	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
 	export_nozzle_dxf(contour)
@@ -708,7 +730,7 @@ if __name__=="__main__":
 	Dc_in = tca_params['tca_chamber_diameter']
 	De_in = tca_params['tca_exit_diameter']
 	Lc_in = tca_params['tca_chamber_length']
-	plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in)
+	plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, r2, cangle)
 
 	
 	
