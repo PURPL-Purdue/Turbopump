@@ -15,8 +15,8 @@ np.set_printoptions(legacy='1.25')   #Fix for some numpy float printing isssues 
 #Define Global Conversion Factors
 ##################################
 
-#Rankine to Fahrenheit conversion
-rankineToF = -459.67
+#Rankine to Kelvin conversion factor
+rankineToKelvin = 5.0 / 9.0
 
 ##################################
 #Define NASA Chemical Equilibrium with Applications (CEA) Object
@@ -101,7 +101,7 @@ plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_P_Range.png")
 plt.figure(3)
 count = 0
 for mr in mr_range:
-    Comb_Ts[count] = C.get_Tcomb(Pc = pc, MR = mr) + rankineToF   #Outputs combustion temperature in Rankine, converts to Fahrenheit
+    Comb_Ts[count] = C.get_Tcomb(Pc = pc, MR = mr) * rankineToKelvin   #Outputs combustion temperature in Rankine, converts to Fahrenheit
     count = count + 1
 plt.plot(mr_range, Comb_Ts)
 plt.xlabel("O/F ratio by mass")
@@ -118,7 +118,7 @@ for p in range(pLo, pHi):
     count = 0
     for mr in mr_range:
         po = p * 10.0      #Multiplies p values by 10 to reach actual chamber pressure to test
-        Comb_Ts[count] = C.get_Tcomb(Pc = po, MR = mr) + rankineToF   #Outputs combustion temperature in Rankine, converts to Fahrenheit
+        Comb_Ts[count] = C.get_Tcomb(Pc = po, MR = mr) * rankineToKelvin   #Outputs combustion temperature in Rankine, converts to Fahrenheit
         count = count + 1
     plt.plot(mr_range, Comb_Ts, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
