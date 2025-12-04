@@ -77,7 +77,8 @@ lox_tau1 = 2 * (gEnglish) * (lox_NPSHa) / (lox_u1 ** 2)
 
 lox_c_m1 = (lox_vdot) / (lox_A1) #(ft/s)
 lox_phi1 = lox_c_m1 / lox_u1
-lox_inducer_Nss_performance = 8147 * (lox_phi1 ** 0.5) * (lox_tau1 ** (-3/4)) * ((1 - (lox_inducer_DH1 / lox_inducer_D1)) ** 0.5)
+#lox_inducer_Nss_performance = 8147 * (lox_phi1 ** 0.5) * (lox_tau1 ** (-3/4)) * ((1 - (lox_inducer_DH1 / lox_inducer_D1) ** 2) ** 0.5)
+lox_inducer_Nss_performance = ((1 - (lox_inducer_DH2 / lox_inducer_D1) ** 2) ** 0.5) * (8147 / lox_phi1) * (lox_NPSHa / ((lox_c_m1 ** 2) / (2 * gEnglish)))**(-3/4) 
 
 lox_inducer_Nss = N * (((lox_mdot / lox_rho) * ft3togal * 60)** 0.5) / ((lox_NPSHa)**0.75)
 
@@ -87,7 +88,7 @@ lox_tau2 = 2 * (gEnglish) * (lox_impeller_NPSHa) / (lox_u2 ** 2)
 
 lox_c_m2 = (lox_vdot) / (lox_A2) #(ft/s)
 lox_phi2 = lox_c_m2 / lox_u2
-lox_impeller_Nss_performance = 8147 * (lox_phi2 ** 0.5) * (lox_tau2 ** (-3/4)) * ((1 - (lox_inducer_DH2 / lox_inducer_D1)) ** 0.5)
+lox_impeller_Nss_performance = 8147 * (lox_phi2 ** 0.5) * (lox_tau2 ** (-3/4)) * ((1 - (lox_inducer_DH2 / lox_inducer_D1) ** 2) ** 0.5)
 
 lox_impeller_Nss = N * (((lox_mdot / lox_rho) * ft3togal * 60)** 0.5) / ((lox_NPSHa)**0.75)
 
@@ -103,9 +104,11 @@ kero_impeller_Nss_performance = 8147 * (kero_phi2 ** 0.5) * (kero_tau2 ** (-3/4)
 
 
 ## Outuputs ##
+print(f"LOX NPSHa: {lox_NPSHa:.2f}")
+
 print(f"Tip speed: {lox_u1:.2f}")
 print(f"Meridional speed: {lox_c_m1:.2f}")
-print(f"Inlet energy ratio: {lox_NPSHa / ((lox_c_m1** 2) / (2 * gEnglish)):.2f}\n")
+print(f"Inlet energy ratio: {lox_NPSHa / ((lox_c_m1 ** 2) / (2 * gEnglish)):.2f}\n")
 
 print(f"Predicted LOX inducer Nss limit: {lox_inducer_Nss_performance:.2f}")
 print(f"LOX inducer Nss: {lox_inducer_Nss:.2f}")
