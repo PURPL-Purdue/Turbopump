@@ -72,9 +72,9 @@ for mr in mr_range:
     Isp_vals[count] = C.get_Isp(Pc = pc, MR = mr, eps = Eps) #Calculates specific impulse (s) for given inputs
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
-plt.xlabel("O/F ratio by mass", fontsize = 15)
-plt.ylabel("Specific Impulse (s)", fontsize = 15)
-plt.title(f"Spec. Impulse vs O/F ratio @{pc} psi", fontsize = 18)
+plt.xlabel("O/F ratio by mass", fontsize = 14)
+plt.ylabel("Specific Impulse [s]", fontsize = 14)
+plt.title(f"Spec. Impulse vs O/F ratio @{pc} psia", fontsize = 17)
 plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
@@ -92,7 +92,7 @@ for p in range(pLo, pHi):
       count = count + 1
     plt.plot(mr_range, Isp_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Specific Impulse (s)")
+plt.ylabel("Specific Impulse [s]")
 plt.title("Specific Impulse vs O/F ratio")
 plt.grid()
 plt.legend()
@@ -106,9 +106,9 @@ for mr in mr_range:
     Comb_Ts[count] = C.get_Tcomb(Pc = pc, MR = mr) * rankineToKelvin   #Outputs combustion temperature in Rankine, converts to Fahrenheit
     count = count + 1
 plt.plot(mr_range, Comb_Ts, 'r')
-plt.xlabel("O/F ratio by mass", fontsize = 15)
-plt.ylabel("Combustion Temperature (K)", fontsize = 15)
-plt.title(f"Combustion Temperature vs O/F ratio @{pc} psi", fontsize = 18)
+plt.xlabel("O/F ratio by mass", fontsize = 14)
+plt.ylabel("Combustion Temperature [K]", fontsize = 14)
+plt.title(f"Combustion Temperature vs O/F ratio @{pc} psia", fontsize = 17)
 plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
@@ -126,7 +126,7 @@ for p in range(pLo, pHi):
         count = count + 1
     plt.plot(mr_range, Comb_Ts, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Combustion Temperature (K)")
+plt.ylabel("Combustion Temperature [K]")
 plt.title("Combustion Temps vs O/F ratio")
 plt.grid()
 plt.legend()
@@ -141,8 +141,8 @@ for mr in mr_range:
     count = count + 1
 plt.plot(mr_range, Cstars)
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Characteristic Velocity (ft/s)")
-plt.title(f"Characteristic Velocity vs O/F ratio @{pc} psi")
+plt.ylabel("Characteristic Velocity [ft/s]")
+plt.title(f"Characteristic Velocity vs O/F ratio @{pc} psia")
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\Characteristic_Velocity_Target_psi.png")
@@ -157,7 +157,7 @@ for p in range(pLo, pHi):
         count = count + 1
     plt.plot(mr_range, Cstars, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Characteristic Velocity (ft/s)")
+plt.ylabel("Characteristic Velocity [ft/s]")
 plt.title("Characteristic Velocity vs O/F ratio")
 plt.grid()
 plt.legend()
@@ -175,7 +175,7 @@ for mr in mr_range:
 plt.plot(mr_range, Cf_vals)
 plt.xlabel("O/F ratio by mass")
 plt.ylabel("Coefficient of Thrust")
-plt.title(f"Coefficient of Thrust vs O/F ratio @{pc}psia")
+plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_Target_psi.png")

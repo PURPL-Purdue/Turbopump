@@ -1,0 +1,120 @@
+##################################
+#Importing Necessary Libraries
+##################################
+import numpy as np
+import csv
+import yaml
+from rocketcea.cea_obj import CEA_Obj
+
+np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues that happened
+
+##################################
+#Define NASA Chemical Equilibrium with Applications (CEA) Object
+##################################
+
+#Define CEA Object as C
+C = CEA_Obj( oxName='LOX', fuelName='RP1')
+
+##################################
+#Define Global Conversion Factors
+##################################
+
+#psia to pascals conversion
+psi_to_pa = 6894.76
+#feet to meters conversion
+ft_to_m = 0.3048
+#m to cm
+mcm = 100
+#Rankine to Kelvin conversion factor
+rankineToKelvin = 5.0 / 9.0
+#Rankine to Fahrenheit conversion
+rankineToF = -459.67
+#lbf to N conversion, N = kg-m/s^2
+lbf_N = 4.4482216
+#universal gas constant (J / kmol-K)
+Ru_m = 8314.462618
+#m to in
+m_in = 39.3701
+#gravity in m/s^2
+g = 9.81
+#kg to lbm conversion
+kg_to_lbm = 2.20462
+#Specific Heat Capacity SI Conversion (to W / m-K)
+c_siconv = 4186.8
+#Thermal Conductivity SI Conversion (to J / kg-K)
+tc_siconv = 418.4
+#Dynamic Viscosity SI Conversion  (to Pa-s)
+vis_siconv = 0.0001
+
+#MAIN FUNCTION
+
+pe = 14.7   #Exit pressure
+
+with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+	tca_params = yaml.safe_load(file)
+
+#Contraction Ratio
+con_r = tca_params['tca_contraction_ratio']  #contraction ratio chamber area/throat area
+
+mrLo = float(input('What is your lower bound for O/F ratio?: '))
+mrHi = float(input('What is your upper bound for O/F ratio?: '))
+mrInt = float(input('What interval would you like between your O/F ratios?: '))
+pc = float(input('What chamber pressure are you operating at (psia)?: '))
+
+MRs = np.arange(mrLo, (mrHi+ mrInt), mrInt)
+
+idx = 0
+
+# Define the number of rows and columns for the matrix
+rows = len(MRs)
+cols = 19
+
+data = []
+
+row1 = ['O/F', 'Chamber Heat Capacity (W/m-K)', 'Throat Heat Capacity (W/m-K)', 'Exit Heat Capacity (W/m-K)', 'Chamber Viscosity (Pa-s)', 
+        'Throat Viscosity (Pa-s)', 'Exit Viscosity (Pa-s)', 'Chamber Thermal Conductivity (J/kg-K)', 'Throat Thermal Conductivity (J/kg-K)', 
+        'Exit Thermal Conductivity(J/kg-K)', 'Chamber Prandtl Number', 'Throat Prandtl Number', 'Exit Prandtl Number', 'Chamber Mach', 'Throat Mach', 'Exit Mach', 
+        'Chamber Molecular Weight (kg/kmol)', 'Throat Molecular Weight (kg/kmol)', 'Exit Molecular Weight (kg/kmol)']
+
+data.append(row1)
+
+for ROW in range(rows):
+    row = []
+    for mr in MRs:
+        Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe = (pc / pe), frozen = 0)
+
+        heat_cap_c, viscosity_c, therm_con_c, p_num_c = C.get_Chamber_Transport(Pc = pc, MR = mr, eps = Eps, frozen=0)
+        CM = C.get_Chamber_MachNumber(Pc = pc, MR = mr, fac_CR = con_r)
+        MW_C = C.get_Chamber_MolWt_gamma(Pc = pc, MR = mr, eps = Eps)
+
+        hcc = heat_cap_c * c_siconv
+        vc = viscosity_c * vis_siconv
+        tcc = therm_con_c * tc_siconv
+    
+        heat_cap_t, viscosity_t, therm_con_t, p_num_t = C.get_Throat_Transport(Pc = pc, MR = mr, eps = Eps, frozen=0)
+        TM = 1
+        MW_T = C.get_Throat_MolWt_gamma(Pc = pc, MR = mr, eps = Eps)
+
+        hct = heat_cap_t * c_siconv
+        vt = viscosity_t * vis_siconv
+        tct = therm_con_t * tc_siconv        
+    
+        heat_cap_e, viscosity_e, therm_con_e, p_num_e = C.get_Exit_Transport(Pc = pc, MR = mr, eps = Eps, frozen=0)
+        EM = C.get_MachNumber(Pc = pc, MR = mr, eps = Eps, frozen=0)
+        MW_E = C.get_exit_MolWt_gamma(Pc = pc, MR = mr, eps = Eps, frozen=0)
+
+        hce = heat_cap_e * c_siconv
+        ve = viscosity_e * vis_siconv
+        tce = therm_con_e * tc_siconv
+
+        row.append([mr, hcc, hct, hce, vc, vt, ve, tcc, tct, tce, CM, TM, EM, MW_C[0], MW_T[0], MW_E[0]])
+
+        data.append(row)
+
+
+output_file_path = r"TCA\Bartz Data\barts_values.csv"
+
+with open(output_file_path, 'w', newline='') as csvfile:
+  csv_writer = csv.writer(csvfile)
+  csv_writer.writerows(data)
+
