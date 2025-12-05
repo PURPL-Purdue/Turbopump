@@ -71,10 +71,12 @@ for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))  #Optimal Nozzle Expansion Ratio for inputs
     Isp_vals[count] = C.get_Isp(Pc = pc, MR = mr, eps = Eps) #Calculates specific impulse (s) for given inputs
     count = count + 1
-plt.plot(mr_range, Isp_vals)
-plt.xlabel("O/F ratio by mass")
-plt.ylabel("Specific Impulse (s)")
-plt.title(f"Spec. Impulse vs O/F ratio @{pc} psi")
+plt.plot(mr_range, Isp_vals, 'b')
+plt.xlabel("O/F ratio by mass", fontsize = 15)
+plt.ylabel("Specific Impulse (s)", fontsize = 15)
+plt.title(f"Spec. Impulse vs O/F ratio @{pc} psi", fontsize = 18)
+plt.tick_params(axis='x', labelsize=12)
+plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_Target_psi.png")
@@ -103,10 +105,12 @@ count = 0
 for mr in mr_range:
     Comb_Ts[count] = C.get_Tcomb(Pc = pc, MR = mr) * rankineToKelvin   #Outputs combustion temperature in Rankine, converts to Fahrenheit
     count = count + 1
-plt.plot(mr_range, Comb_Ts)
-plt.xlabel("O/F ratio by mass")
-plt.ylabel("Combustion Temperature (F)")
-plt.title(f"Combustion Temperature vs O/F ratio @{pc} psi")
+plt.plot(mr_range, Comb_Ts, 'r')
+plt.xlabel("O/F ratio by mass", fontsize = 15)
+plt.ylabel("Combustion Temperature (K)", fontsize = 15)
+plt.title(f"Combustion Temperature vs O/F ratio @{pc} psi", fontsize = 18)
+plt.tick_params(axis='x', labelsize=12)
+plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_Target_psi.png")
@@ -122,7 +126,7 @@ for p in range(pLo, pHi):
         count = count + 1
     plt.plot(mr_range, Comb_Ts, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
-plt.ylabel("Combustion Temperature (F)")
+plt.ylabel("Combustion Temperature (K)")
 plt.title("Combustion Temps vs O/F ratio")
 plt.grid()
 plt.legend()
