@@ -112,9 +112,11 @@ for cr in cs:
    Lc_ins[idx] = (L_star_cm - (1.0/3.0) * np.sqrt(At_cm / np.pi) * (1 / np.tan(np.deg2rad(a))) * (cr **(1.0/3.0) - 1)) / cr / 100 / ft_to_m * 12
    idx = idx + 1
 plt.plot(cs, Lc_ins)
-plt.xlabel('Contraction Ratio (Ac/At)')
-plt.ylabel('Chamber Length (in)')
-plt.title(f'Chamber Length vs Contraction Ratio @L* = {L_star_in}in')
+plt.xlabel('Contraction Ratio (Ac/At)', fontsize = 14)
+plt.ylabel('Chamber Length (in)', fontsize = 14)
+plt.title(f'Chamber Length vs Contraction Ratio @L* = {L_star_in}in', fontsize = 17)
+plt.tick_params(axis='x', labelsize=12)
+plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\L_Star_Chosen.png")

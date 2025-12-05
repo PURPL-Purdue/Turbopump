@@ -52,6 +52,8 @@ pc = tca_params['tca_chamber_pressure']
 pamb= tca_params['ambient_pressure']
 #Target exit pressure (psi), equal to pamb
 pe = tca_params['tca_exit_pressure']
+#O/F ratio
+of = tca_params['oxidizer_fuel_ratio']
 
 #ARRAY DECLARATION
 mr_range = np.arange(mrLo, mrHi, .05)  #range of O/F ratios, from mrLo to mrHi with spacing 0.05 in between to get proper curves
@@ -72,6 +74,10 @@ for mr in mr_range:
     Isp_vals[count] = C.get_Isp(Pc = pc, MR = mr, eps = Eps) #Calculates specific impulse (s) for given inputs
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
+Eps_chosen = C.get_eps_at_PcOvPe(Pc = pc, MR = of, PcOvPe= (pc / pe))
+Isp_chosen = C.get_Isp(Pc = pc, MR = of, eps = Eps_chosen)
+plt.plot(of, Isp_chosen, 'k')
+plt.text(2.25, 300, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Specific Impulse [s]", fontsize = 14)
 plt.title(f"Spec. Impulse vs O/F ratio @{pc} psia", fontsize = 17)
@@ -106,6 +112,9 @@ for mr in mr_range:
     Comb_Ts[count] = C.get_Tcomb(Pc = pc, MR = mr) * rankineToKelvin   #Outputs combustion temperature in Rankine, converts to Fahrenheit
     count = count + 1
 plt.plot(mr_range, Comb_Ts, 'r')
+T_chosen = C.get_Tcomb(Pc = pc, MR = of) * rankineToKelvin
+plt.plot(of, T_chosen, 'k')
+plt.text(2.15, 3250, f'({of : .1f}, {T_chosen : .1f} [$^\circ[K]$])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Combustion Temperature [K]", fontsize = 14)
 plt.title(f"Combustion Temperature vs O/F ratio @{pc} psia", fontsize = 17)
