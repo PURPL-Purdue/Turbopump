@@ -76,8 +76,8 @@ for mr in mr_range:
 plt.plot(mr_range, Isp_vals, 'b')
 Eps_chosen = C.get_eps_at_PcOvPe(Pc = pc, MR = of, PcOvPe= (pc / pe))
 Isp_chosen = C.get_Isp(Pc = pc, MR = of, eps = Eps_chosen)
-plt.plot(of, Isp_chosen, 'k')
-plt.text(2.25, 300, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
+plt.plot(of, Isp_chosen, 'ko')
+plt.text(2.15, 300, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Specific Impulse [s]", fontsize = 14)
 plt.title(f"Spec. Impulse vs O/F ratio @{pc} psia", fontsize = 17)
@@ -113,8 +113,8 @@ for mr in mr_range:
     count = count + 1
 plt.plot(mr_range, Comb_Ts, 'r')
 T_chosen = C.get_Tcomb(Pc = pc, MR = of) * rankineToKelvin
-plt.plot(of, T_chosen, 'k')
-plt.text(2.15, 3250, f'({of : .1f}, {T_chosen : .1f} [$^\circ[K]$])', fontsize = 12)
+plt.plot(of, T_chosen, 'ko')
+plt.text(2.15, 3250, f'({of : .1f}, {T_chosen : .1f}[$^\circ K$])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Combustion Temperature [K]", fontsize = 14)
 plt.title(f"Combustion Temperature vs O/F ratio @{pc} psia", fontsize = 17)
