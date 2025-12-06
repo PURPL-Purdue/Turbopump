@@ -62,6 +62,8 @@ L_star_in = tca_params['characteristic_length']
 L_star_cm = L_star_in / 12 * ft_to_m * mcm
 #Convergent Half-Angle (degrees)
 a = tca_params['tca_convergent_half_angle']
+#Contraction Ratio
+con_r = tca_params['tca_contraction_ratio']  #contraction ratio chamber area/throat area
 
 #ARRAY DECLARATION
 cs = np.linspace(cr_lo, cr_hi, 100)    #Array of contraction ratios, with 100 values between the bounds
@@ -111,10 +113,15 @@ for cr in cs:
    #calculates chambe length in inches
    Lc_ins[idx] = (L_star_cm - (1.0/3.0) * np.sqrt(At_cm / np.pi) * (1 / np.tan(np.deg2rad(a))) * (cr **(1.0/3.0) - 1)) / cr / 100 / ft_to_m * 12
    idx = idx + 1
-plt.plot(cs, Lc_ins)
-plt.xlabel('Contraction Ratio (Ac/At)')
-plt.ylabel('Chamber Length (in)')
-plt.title(f'Chamber Length vs Contraction Ratio @L* = {L_star_in}in')
+plt.plot(cs, Lc_ins, 'b')
+Lc_chosen = (L_star_cm - (1.0/3.0) * np.sqrt(At_cm / np.pi) * (1 / np.tan(np.deg2rad(a))) * (con_r **(1.0/3.0) - 1)) / con_r / 100 / ft_to_m * 12
+plt.plot(con_r, Lc_chosen, 'ko')
+plt.text(3.6, 13, f'({con_r : .1f}, {Lc_chosen : .2f}[in])', fontsize = 12)
+plt.xlabel('Contraction Ratio (Ac/At)', fontsize = 14)
+plt.ylabel('Chamber Length (in)', fontsize = 14)
+plt.title(f'Chamber Length vs Contraction Ratio @L* = {L_star_in}in', fontsize = 17)
+plt.tick_params(axis='x', labelsize=12)
+plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
 plt.savefig(r"TCA\CEA Graphs\L_Star_Chosen.png")
