@@ -1,7 +1,8 @@
 """
-This program computes the geometry and flow characteristics required to design a liquid
-rocket engine injector element consisting of a fuel jet and an oxidizer jet that collide
-at a prescribed inpingement angle and location.
+This program computes the main geometric and flow parameters needed to design
+a liquid rocket injector plate. It calculates the injector element layout,
+orifice locations and angles, and the fuel and oxidizer manifold dimensions
+so that the required flow rates and pressure drops are satisfied.
 
 Author: Joaquin Alarcon
 """
@@ -34,10 +35,11 @@ impinge_fraction = 0.023425 #streams will impinge at 10% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 0.141939 #chamber inner diameter [m]
 marginWall = 0.01 #clearance from outer RP1 jet to wall [m]
-pairSpacing = 0.015 #spacing between mid-radii of FO pairs [m]
+pairSpacing = 0.019 #spacing between mid-radii of FO pairs [m]
 
 #MANIFOLD DESING
-dpFracMani = 0.10 #dp manifold ~10% of injector dp
+h_manifold = 0.0115 #m
+dpFracMani = 0.08 #dp manifold ~10% of injector dp
 fOx = 0.02 #darcy friction factor LOX
 fRP1 = 0.02 #darcy friction factor RP1
 KOx = 1 #lumped local loss K LOX
@@ -187,25 +189,40 @@ def max_mixing_ratio(rho_fuel, rho_ox, mdot_fuel, mdot_ox):
     MME = M*(rho_ox/rho_fuel * (mdot_ox/mdot_fuel)**2)**0.7
     return MME
 
-def design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, D_init):
-    dp_allow = dp_frac * dp_inj
-    def func(D):
-        A = np.pi * (D**2) / 4.0
+def design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, h, w_init):
+    dp_allow = dp_frac*dp_inj
+    def func(w):
+        A = w*h
         v = mdot / (rho * A)
-        dpF = f * (Lpath / D) * (rho * v**2 / 2.0)
+        Dh = 2*w*h/(w+h)
+        dpF = f * (Lpath / Dh) * (rho * v**2 / 2.0)
         dpLoc = Ktot * (rho * v**2 / 2.0)
-        return dpF + dpLoc - dp_allow
-    D_min = D_init / 5.0
-    D_max = D_init * 5.0
-    sol = optimize.root_scalar(func, bracket=[D_min, D_max], method="brentq")
-    D = sol.root
-    A = np.pi * (D**2) / 4.0
-    v = mdot / (rho * A)
-    dpF = f * (Lpath / D) * (rho * v**2 / 2.0)
-    dpLoc = Ktot * (rho * v**2 / 2.0)
-    dpTot = dpF + dpLoc
-    ratio = dpTot / dp_inj
-    return D, A, v, dpF, dpLoc, dpTot, ratio
+        dpTot = dpF + dpLoc
+        return dpTot - dp_allow
+    w_min = w_init / 10.0
+    w_max = 10.0 * w_init
+    f_min = func(w_min)
+    f_max = func(w_max)
+    if f_min * f_max > 0:
+        factor = 10.0
+        for _ in range(5):
+            w_min /= factor
+            w_max *= factor
+            f_min = func(w_min)
+            f_max = func(w_max)
+            if f_min * f_max <= 0:
+                break
+    sol = optimize.root_scalar(func, bracket=[w_min, w_max], method="brentq")
+    w = sol.root
+    A = w*h
+    P = 2*(w+h)
+    Dh = 4*A/P
+    v = mdot/(rho*A)
+    dpF = f*(Lpath / Dh)*(rho*v**2/2.0)
+    dpLoc = Ktot*(rho*v**2/2.0)
+    dpTot = dpF+dpLoc
+    ratio = dpTot/dp_inj
+    return w, Dh, A, v, dpF, dpLoc, dpTot, ratio
 
 #compute total and per-hole mass flow for RP1 and LOX injection holes
 #mdot_prop(...) distributes the propellant mass flow across the specified number of holes. 
@@ -288,22 +305,27 @@ circ_rp1 = 2*np.pi*Rring_rp1
 
 Lpath_ox = circ_ox / (2*NinletsOx)
 Lpath_rp1 = circ_rp1 / (2*NinletsRP1)
+Lpath_ox_avg = (Lpath_ox[0] + Lpath_ox[1])/2
 
-dpInjOx = delta_P
-dpInjRP1 = delta_P
+dpInjOx = delta_P*psi_into_pa
+dpInjRP1 = delta_P*psi_into_pa
 DguessOx = 0.3 #m
 DguessRP1 = 0.3 #m
+w_guess = 0.20
 mdot_lox_per_ring = mdot_lox_inj / Nrings
 mdot_rp1_per_ring = mdot_rp1_inj / Nrings
-mani_lox_inner = design_manifold(mdot_lox_per_ring, rho_lox, Lpath_ox[0], dpInjOx, dpFracMani, fOx, KOx, DguessOx)
-mani_lox_outer = design_manifold(mdot_lox_per_ring, rho_lox, Lpath_ox[1], dpInjOx, dpFracMani, fOx, KOx, DguessOx)
-mani_rp1_inner = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[0], dpInjRP1, dpFracMani, fRP1, KRP1, DguessRP1)
-mani_rp1_outer = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[1], dpInjRP1, dpFracMani, fRP1, KRP1, DguessRP1)
-def print_mani(label, mani, L_path, dp_inj):
-    D, A, v, dpF, dpLoc, dpTot, ratio = mani
+mani_lox_inner = design_manifold(mdot_lox_inj, rho_lox, Lpath_ox[0], dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
+mani_lox_outer = design_manifold(mdot_lox_inj, rho_lox, Lpath_ox[1], dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
+mani_lox = design_manifold(mdot_lox, rho_lox, Lpath_ox_avg, dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
+mani_rp1_inner = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[0], dpInjRP1, dpFracMani, fRP1, KRP1, h_manifold, w_guess)
+mani_rp1_outer = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[1], dpInjRP1, dpFracMani, fRP1, KRP1, h_manifold, w_guess)
+def print_mani(label, mani, L_path, dp_inj, h_man):
+    w, Dh, A, v, dpF, dpLoc, dpTot, ratio = mani
     print(f"{label}:")
+    print(f"The width is: {w:.7f} m")
+    print(f"The height of the manifold is {h_man:.5f} m")
+    print(f"The hydraulic diameter is {Dh:.2f} m")
     print(f"L_path (manifold length): {L_path*1e3:.2f} mm")
-    print(f"Internal diameter D: {D*1e3:.3f} mm")
     print(f"Flow area A: {A*1e6:.2f} mm^2")
     print(f"Mean velocity v: {v:.3f} m/s")
     print(f"Δp_friction (dpF): {dpF:.1f} Pa")
@@ -312,10 +334,9 @@ def print_mani(label, mani, L_path, dp_inj):
     print(f"dpTot / dp_inj (target ratio): {dpTot/dp_inj:.3f}")
     print()
 print("=== Manifold desing results ===")
-print_mani("LOX inner ring", mani_lox_inner, Lpath_ox[0], dpInjOx)
-print_mani("LOX outer ring", mani_lox_outer, Lpath_ox[1], dpInjOx)
-print_mani("RP-1 inner ring", mani_rp1_inner, Lpath_rp1[0], dpInjRP1)
-print_mani("RP-1 outer ring", mani_rp1_outer, Lpath_rp1[1], dpInjRP1)
+print_mani("RP-1 inner ring", mani_rp1_inner, Lpath_rp1[0], dpInjRP1, h_manifold)
+print_mani("RP-1 outer ring", mani_rp1_outer, Lpath_rp1[1], dpInjRP1, h_manifold)
+print_mani("LOX Main Manifold", mani_lox, Lpath_ox_avg, dpInjOx, h_manifold)
 
 # == PLOTS == 
 
@@ -326,18 +347,21 @@ def ring_points(radius_mm, N):
     return x, y
 
 def plot_injector_layout(D_c_mm, R_ring_f_mm, R_ring_ox_mm, N_hole_ring, margin_extra_mm=5):
-    combRad = D_c_mm / 2.0   #chamber radius
-    x_f_in, y_f_in = ring_points(R_ring_f_mm[0], N_hole_ring)
+    combRad = D_c_mm / 2.0 #chamber radius
+    x_f_in,  y_f_in  = ring_points(R_ring_f_mm[0], N_hole_ring)
     x_f_out, y_f_out = ring_points(R_ring_f_mm[1], N_hole_ring)
-    x_ox_in, y_ox_in = ring_points(R_ring_ox_mm[0], N_hole_ring)
+    x_ox_in,  y_ox_in  = ring_points(R_ring_ox_mm[0], N_hole_ring)
     x_ox_out, y_ox_out = ring_points(R_ring_ox_mm[1], N_hole_ring)
     fig, ax = plt.subplots(figsize=(20, 20))
-    chamber = plt.Circle((0, 0), combRad, color='gray', fill=False, linewidth=2)
+    chamber = plt.Circle((0, 0), combRad, color='gray',
+                         fill=False, linewidth=2)
     ax.add_artist(chamber)
     for R in R_ring_f_mm:
-        ax.add_artist(plt.Circle((0, 0), R, color='red', fill=False, linewidth=0.7, alpha=0.4))
+        ax.add_artist(plt.Circle((0, 0), R, color='red',
+                                 fill=False, linewidth=0.7, alpha=0.4))
     for R in R_ring_ox_mm:
-        ax.add_artist(plt.Circle((0, 0), R, color='blue', fill=False, linewidth=0.7, alpha=0.4))
+        ax.add_artist(plt.Circle((0, 0), R, color='blue',
+                                 fill=False, linewidth=0.7, alpha=0.4))
     ax.scatter(x_f_in,  y_f_in, s=18, color='red', label='RP-1 inner')
     ax.scatter(x_f_out, y_f_out, s=18, color='darkred', label='RP-1 outer')
     ax.scatter(x_ox_in,  y_ox_in, s=18, color='royalblue', label='LOX inner')
@@ -357,16 +381,53 @@ def plot_injector_layout(D_c_mm, R_ring_f_mm, R_ring_ox_mm, N_hole_ring, margin_
 holes_per_ring = int(num_holes_lox_inj/Nrings)
 plot_injector_layout(2*combRad * 1e3, Rring_rp1 * 1e3, Rring_lox * 1e3, holes_per_ring)
 
+#Plotting manifold geometry. h vs w
+w_init_ref = 0.2
+h_vals = np.linspace(0.005, 0.025, 50)
+def manifold_plot(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, w_init_ref):
+    w_list = []
+    for h in h_vals:
+        w, Dh, A, v, dpF, dpLoc, dpTot, ratio = design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, h, w_init_ref)
+        w_list.append(w)
+    return np.array(w_list)
+w_RP1_inner = manifold_plot(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[0], dpInjRP1, dpFracMani, fRP1, KRP1, w_init_ref)
+w_RP1_outer = manifold_plot(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[1], dpInjRP1, dpFracMani, fRP1, KRP1, w_init_ref)
+w_LOX_inner = manifold_plot(mdot_lox_per_ring, rho_lox, Lpath_ox[0], dpInjOx, dpFracMani, fOx, KOx, w_init_ref)
+w_LOX_outer = manifold_plot(mdot_lox_per_ring, rho_lox, Lpath_ox[1], dpInjOx, dpFracMani, fOx, KOx, w_init_ref)
+fig, axs = plt.subplots(2,2,figsize=(10,8))
+axs[0,0].plot(h_vals*1e3, w_RP1_inner*1e3, marker='o')
+axs[0,0].set_title("RP-1 Inner Manifold")
+axs[0,0].set_xlabel("h [mm]")
+axs[0,0].set_ylabel("w [mm]")
+axs[0,0].grid(True)
+axs[0,1].plot(h_vals*1e3, w_RP1_outer*1e3, marker='o', color='coral')
+axs[0,1].set_title("RP-1 Outer Manifold")
+axs[0,1].set_xlabel("h [mm]")
+axs[0,1].set_ylabel("w [mm]")
+axs[0,1].grid(True)
+axs[1,0].plot(h_vals*1e3, w_LOX_inner*1e3, marker='o', color='navy')
+axs[1,0].set_title("LOX Inner Manifold")
+axs[1,0].set_xlabel("h [mm]")
+axs[1,0].set_ylabel("w [mm]")
+axs[1,0].grid(True)
+axs[1,1].plot(h_vals*1e3, w_LOX_outer*1e3, marker='o', color='red')
+axs[1,1].set_title("LOX Outer Manifold")
+axs[1,1].set_xlabel("h [mm]")
+axs[1,1].set_ylabel("w [mm]")
+axs[1,1].grid(True)
+plt.tight_layout()
+plt.show()
+
 #Plotting theta_fuel vs theta_oxidizer
 theta_f_range = np.linspace(0, 80, 500)
-beta_list = [0, 7.5, 15]
+beta_list = [beta_res_deg - 5, beta_res_deg, beta_res_deg + 5]
 plt.figure(figsize = (9,6))
 for beta in beta_list:
     theta_ox_curve = []
     for theta_f in theta_f_range:   
         beta_ins, theta_ox = solve_thetas(mdot_rp1_inj_per_hole, mdot_lox_inj_per_hole, v_rp1, v_lox, theta_f, beta)
         theta_ox_curve.append(theta_ox)
-    plt.plot(theta_f_range, theta_ox_curve, label=f"β = {beta}°")
+    plt.plot(theta_f_range, theta_ox_curve, label=f"β = {beta:.3f}°")
 plt.xlabel("Fuel angle θ_f [deg]")
 plt.ylabel("Required LOX angle θ_ox [deg]")
 plt.title("Relationship between θ_f and θ_ox for different desired β")
@@ -377,7 +438,7 @@ plt.show()
 
 #Plotting theta_fuel vs distance between orifices
 theta_f_range = np.linspace(0, 80, 500)
-beta_list = [0, 7.5, 15]
+beta_list = [beta_res_deg - 5, beta_res_deg, beta_res_deg + 5]
 z_ipm = Length_chamber * 1e-3 * impinge_fraction
 plt.figure(figsize=(9,6))
 for beta in beta_list:
@@ -388,7 +449,7 @@ for beta in beta_list:
         theta_ox_rad = theta_ox_deg*degrees_into_rad
         d_between_orifices = z_imp*(np.tan(theta_f_rad)+np.tan(theta_ox_rad))
         d_between_orifices_curve.append(d_between_orifices)
-    plt.plot(theta_f_range, d_between_orifices_curve, label=f"β = {beta}°")
+    plt.plot(theta_f_range, d_between_orifices_curve, label=f"β = {beta:.3f}°")
 plt.xlabel("Fuel angle θ_f [deg]")
 plt.ylabel("Required injector spacing d_between [m]")
 plt.title("Fuel angle vs required spacing between fuel and LOX orifices")
@@ -396,4 +457,3 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
-
