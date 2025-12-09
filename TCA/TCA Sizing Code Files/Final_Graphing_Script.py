@@ -71,13 +71,14 @@ plt.figure(1)
 count = 0
 for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))  #Optimal Nozzle Expansion Ratio for inputs
-    Isp_vals[count] = C.get_Isp(Pc = pc, MR = mr, eps = Eps) #Calculates specific impulse (s) for given inputs
+    isps = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen = 0) #Calculates specific impulse (s) for given inputs
+    Isp_vals[count] = isps[0]
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
 Eps_chosen = C.get_eps_at_PcOvPe(Pc = pc, MR = of, PcOvPe= (pc / pe))
-Isp_chosen = C.get_Isp(Pc = pc, MR = of, eps = Eps_chosen)
-plt.plot(of, Isp_chosen, 'ko')
-plt.text(2.15, 300, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
+Isp_chosen = C.estimate_Ambient_Isp(Pc = pc, MR = of, eps = Eps_chosen, Pamb = pamb, frozen = 0)
+plt.plot(of, Isp_chosen[0], 'ko')
+plt.text(2.15, 273, f'({of : .1f}, {Isp_chosen[0] : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Specific Impulse [s]", fontsize = 14)
 plt.title(f"Spec. Impulse vs O/F ratio @{pc} psia", fontsize = 17)
@@ -94,7 +95,8 @@ for p in range(pLo, pHi):
     for mr in mr_range:
       po = p * 10.0     #Multiplies p values by 10 to reach actual chamber pressure to test
       Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))  #Optimal Nozzle Expansion Ratio for inputs
-      Isp_vals[count] = C.get_Isp(Pc = po, MR = mr, eps = Eps)     #Calculates specific impulse (s) for given inputs
+      isps = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen = 0)    #Calculates specific impulse (s) for given inputs
+      Isp_vals[count] = isps[0]
       count = count + 1
     plt.plot(mr_range, Isp_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
