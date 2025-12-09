@@ -54,6 +54,12 @@ pamb= tca_params['ambient_pressure']
 pe = tca_params['tca_exit_pressure']
 #O/F ratio
 of = tca_params['oxidizer_fuel_ratio']
+#Efficieny factor of engine (estimate)
+ef_cstar = tca_params['c_star_efficiency']
+#Efficieny factor of engine (estimate)
+ef_cf = tca_params['thrust_coefficient_efficiency']
+#Gravitational Acceleration (ft/s)
+g = 32.174
 
 #ARRAY DECLARATION
 mr_range = np.arange(mrLo, mrHi, .05)  #range of O/F ratios, from mrLo to mrHi with spacing 0.05 in between to get proper curves
@@ -71,14 +77,17 @@ plt.figure(1)
 count = 0
 for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))  #Optimal Nozzle Expansion Ratio for inputs
-    isps = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen = 0) #Calculates specific impulse (s) for given inputs
-    Isp_vals[count] = isps[0]
+    cfo = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps) 
+    cstar = C.get_Cstar(Pc = pc, MR = mr) * ef_cstar    #Calculates the coefficient of thrust at given set points
+    Isp_vals[count] = (cfo[0] * ef_cf) * (cstar) / g
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
 Eps_chosen = C.get_eps_at_PcOvPe(Pc = pc, MR = of, PcOvPe= (pc / pe))
-Isp_chosen = C.estimate_Ambient_Isp(Pc = pc, MR = of, eps = Eps_chosen, Pamb = pamb, frozen = 0)
-plt.plot(of, Isp_chosen[0], 'ko')
-plt.text(2.15, 273, f'({of : .1f}, {Isp_chosen[0] : .1f}[s])', fontsize = 12)
+cf_chosen = C.get_PambCf(Pamb = pamb, Pc = pc, MR = of, eps = Eps_chosen)
+cstar_chosen = C.get_Cstar(Pc = pc, MR = of) * ef_cstar
+Isp_chosen = (cf_chosen[0] * ef_cf) * cstar_chosen / g
+plt.plot(of, Isp_chosen, 'ko')
+plt.text(2.15, 244, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
 plt.ylabel("Specific Impulse [s]", fontsize = 14)
 plt.title(f"Spec. Impulse vs O/F ratio @{pc} psia", fontsize = 17)
@@ -95,8 +104,9 @@ for p in range(pLo, pHi):
     for mr in mr_range:
       po = p * 10.0     #Multiplies p values by 10 to reach actual chamber pressure to test
       Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))  #Optimal Nozzle Expansion Ratio for inputs
-      isps = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen = 0)    #Calculates specific impulse (s) for given inputs
-      Isp_vals[count] = isps[0]
+      cfo = C.get_PambCf(Pamb = pamb, Pc = po, MR = mr, eps = Eps) 
+      cstar = C.get_Cstar(Pc = po, MR = mr) * ef_cstar    #Calculates the coefficient of thrust at given set points
+      Isp_vals[count] = (cfo[0] * ef_cf) * (cstar) / g
       count = count + 1
     plt.plot(mr_range, Isp_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
@@ -148,7 +158,7 @@ plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_P_Range.png")
 plt.figure(5)
 count = 0
 for mr in mr_range:
-    Cstars[count] = C.get_Cstar(Pc = pc, MR = mr)
+    Cstars[count] = C.get_Cstar(Pc = pc, MR = mr) * ef_cstar
     count = count + 1
 plt.plot(mr_range, Cstars)
 plt.xlabel("O/F ratio by mass")
@@ -164,7 +174,7 @@ for p in range(pLo, pHi):
     count = 0
     for mr in mr_range:
         po = p * 10.0     #Multiplies p values by 10 to reach actual chamber pressure to test
-        Cstars[count] = C.get_Cstar(Pc = po, MR = mr)
+        Cstars[count] = C.get_Cstar(Pc = po, MR = mr) * ef_cstar
         count = count + 1
     plt.plot(mr_range, Cstars, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
@@ -181,7 +191,7 @@ count = 0
 for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))   #Optimal Nozzle Expansion Ratio for inputs
     cfo = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps)     #Calculates the coefficient of thrust at given set points
-    Cf_vals[count] = cfo[0]    
+    Cf_vals[count] = cfo[0] * ef_cf   
     count = count + 1
 plt.plot(mr_range, Cf_vals)
 plt.xlabel("O/F ratio by mass")
@@ -199,7 +209,7 @@ for p in range(pLo, pHi):
       po = p * 10.0    #Multiplies p values by 10 to reach actual chamber pressure to test
       Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))   #Optimal Nozzle Expansion Ratio for inputs
       cfo = C.get_PambCf(Pamb = pamb, Pc = po, MR = mr, eps = Eps)     #Calculates the coefficient of thrust at given set points
-      Cf_vals[count] = cfo[0]
+      Cf_vals[count] = cfo[0] * ef_cf
       count = count + 1
     plt.plot(mr_range, Cf_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
