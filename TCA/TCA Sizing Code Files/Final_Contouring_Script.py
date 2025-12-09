@@ -691,15 +691,25 @@ def export_nozzle_dxf(contour):
     xecc = xecc[::-1]
     yecc = yecc[::-1]
 
-    xs = list(chain(xecc, xeca, xed, xe, xe2, xbell))
-    ys = list(chain(yecc, yeca, yed, ye, ye2, ybell))
-
-    points = list(zip(xs, ys)) 
-
     doc = ezdxf.new("R2010")
     msp = doc.modelspace()
 
-    msp.add_lwpolyline(points, close=False)
+    sections = [
+        (xecc, yecc),   # Section 1
+        (xeca, yeca),   # Section 2
+        (xed, yed),     # Section 3
+        (xe, ye),       # Section 4
+        (xe2, ye2),     # Section 5
+        (xbell, ybell)  # Section 6
+    ]
+
+    for x_vals, y_vals in sections:
+        points = list(zip(x_vals, y_vals))
+        
+        if len(points) > 2: # Splines need at least 3 points usually
+            # 'degree=3' is standard for smooth curves
+            msp.add_spline(points, degree=3)
+
     doc.saveas(r"TCA\Countour Exports\nozzle_contour.dxf")
     return()
 
