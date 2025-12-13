@@ -49,7 +49,7 @@ kg_to_lbm = 2.20462
 ##################################
 
 #Importing yaml file containing TCA parameters
-with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #VARIABLES

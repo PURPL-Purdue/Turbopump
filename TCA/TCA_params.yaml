@@ -40,15 +40,15 @@ c_star_efficiency: 0.95  #(Unitless) Devin Morris
 thrust_coefficient_efficiency: 0.95  #(Unitless) Devin Morris
 ambient_pressure: 14.7  #(psi) Devin Morris
 tca_exit_pressure: 14.7  #(psi) Devin Morris
-tca_contraction_ratio: 3.5  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
+tca_contraction_ratio: 4.5  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
 tca_convergent_half_angle: 45  #(degrees) Devin Morris
 bell_nozzle_l_percent: 80  #(%) Devin Morris
 
 #Thrust Chamber Assembly Calculated Design Parameters
-tca_chamber_diameter: 5.588  #(in) Devin Morris
+tca_chamber_diameter: 6.336  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_throat_diameter: 2.987  #(in) Devin Morris
 tca_exit_diameter: 6.904  #(in) Devin Morris
-tca_chamber_length: 12.783  #(in) Devin Morris
+tca_chamber_length: 9.928  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_expansion_ratio: 5.342  #(Unitless) Devin Morris
 tca_throat_choked_flow: 19.884  #(lbm/s) Devin Morris
 
