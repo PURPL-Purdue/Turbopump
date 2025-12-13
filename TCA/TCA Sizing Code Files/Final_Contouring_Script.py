@@ -710,7 +710,7 @@ def export_nozzle_dxf(contour):
             # 'degree=3' is standard for smooth curves
             msp.add_spline(points, degree=3)
 
-    doc.saveas(r"TCA\Countour Exports\nozzle_contour.dxf")
+    doc.saveas(r"TCA\nozzle_contour_new.dxf")
     return()
 
 # __main method__

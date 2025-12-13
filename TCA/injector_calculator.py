@@ -26,14 +26,14 @@ Cd = 0.7 #Discharge coefficient
 
 inj_press_drop = 2/7 #Fraction of chamber pressure allocated to injector
 Pc = 500*psi_into_pa #Chamber stagnation pressure [Pa]
-Pin = 700*psi_into_pa #injector inlet pressure [Pa]
+Pin = 850*psi_into_pa #injector inlet pressure [Pa]
 stitfness = Pc/Pin
-delta_P = 200 #Injector pressure drop [psi] (converted inside functions)
+delta_P = 350 #Injector pressure drop [psi] (converted inside functions)
 
-Length_chamber = 400 #Combustion chamber length [mm]
-impinge_fraction = 0.023425 #streams will impinge at 10% of chamber length
+Length_chamber = 9.928/meters_into_inches #Combustion chamber length [mm]
+impinge_fraction = Length_chamber*0.1 #10% of chamber length
 distance_between_holes = 0.05 #[m]
-CombDiam = 0.141939 #chamber inner diameter [m]
+CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
 marginWall = 0.01 #clearance from outer RP1 jet to wall [m]
 pairSpacing = 0.019 #spacing between mid-radii of FO pairs [m]
 
