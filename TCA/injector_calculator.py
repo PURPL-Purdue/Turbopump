@@ -31,7 +31,7 @@ stitfness = Pc/Pin
 delta_P = 350 #Injector pressure drop [psi] (converted inside functions)
 delta_pressure_injector = delta_P*psi_into_pa #Injector pressure drop [Pa]
 
-Length_chamber = 9.928/meters_into_inches #Combustion chamber length [mm]
+Length_chamber = 9.928/meters_into_inches #Combustion chamber length [m]
 impinge_fraction = Length_chamber*0.1 #10% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
@@ -173,7 +173,7 @@ Notes:
 """
 def compute_spacing_doublet(Lc, impingement_fraction, theta_fuel_deg, theta_ox_deg):
     #convert chamber length from mm to m and compute axial impingement location
-    z_imp = Lc * 1e-3 *impingement_fraction
+    z_imp = Lc *impingement_fraction
     #converting jet angles into radians
     theta_f = theta_fuel_deg*degrees_into_rad
     theta_ox = theta_ox_deg*degrees_into_rad
