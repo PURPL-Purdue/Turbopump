@@ -29,6 +29,7 @@ Pc = 500*psi_into_pa #Chamber stagnation pressure [Pa]
 Pin = 850*psi_into_pa #injector inlet pressure [Pa]
 stitfness = Pc/Pin
 delta_P = 350 #Injector pressure drop [psi] (converted inside functions)
+delta_pressure_injector = delta_P*psi_into_pa #Injector pressure drop [Pa]
 
 Length_chamber = 9.928/meters_into_inches #Combustion chamber length [mm]
 impinge_fraction = Length_chamber*0.1 #10% of chamber length
@@ -52,7 +53,7 @@ NinletsRP1 = 1 #number of RP1 manifold inlets
 mdot_kero = mdot/(1+OF_Ratio) #Fuel mass flow (RP-1), from global O/F
 mdot_lox = mdot*OF_Ratio/(1+OF_Ratio) #Oxidizer mass flow (LOX), from global O/F
 
-delta_pressure_injector = Pin * inj_press_drop #Injector pressure drop [Pa]
+
 
 # === Injector element layout (design description) ===  
 #The injector uses a doublet impinging pair at the center of the faceplate.
