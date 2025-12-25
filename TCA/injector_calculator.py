@@ -22,25 +22,25 @@ mdot = 9.07185 #Total propellant mass flow rate [kg/s] (CHANGE AS NEEDED)
 OF_Ratio = 2.1 #Mixture ratio O/F 
 rho_rp1 = 810 #RP1 Density [kg/m^3] at injector conditions
 rho_lox = 1141 #LOX Density [kg/m^3] at injector conditions
-Cd = 0.7 #Discharge coefficient
+Cd = 0.8 #Discharge coefficient
 
-inj_press_drop = 2/7 #Fraction of chamber pressure allocated to injector
 Pc = 500*psi_into_pa #Chamber stagnation pressure [Pa]
 Pin = 850*psi_into_pa #injector inlet pressure [Pa]
-stifness = Pc/Pin
 delta_P = 350 #Injector pressure drop [psi] (converted inside functions)
+inj_press_drop = Pc/Pin #Fraction of chamber pressure allocated to injector
+stifness = delta_P*psi_into_pa/Pc
 
 Length_chamber = 9.928/meters_into_inches * 1e3 #Combustion chamber length [mm]
-impinge_fraction = 0.03 #streams will impinge at 3% of chamber length
+impinge_fraction = 0.022 #streams will impinge at 2.2% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
-marginWall = 0.0139 #clearance from outer RP1 jet to wall [m]
-pairSpacing = 0.0267 #spacing between mid-radii of FO pairs [m]
-thickness = 0.006 #[m]
+marginWall = 0.0119 #clearance from outer RP1 jet to wall [m]
+pairSpacing = 0.0237 #spacing between mid-radii of FO pairs [m]
+thickness = 0.013 #[m]
 
 #MANIFOLD DESING
-h_manifold = 0.0145 #m
-dpFracMani = 0.08 #dp manifold ~10% of injector dp
+h_manifold = 0.0155 #m
+dpFracMani = 0.08 #dp manifold ~9% of injector dp
 fOx = 0.01 #darcy friction factor LOX
 fRP1 = 0.01 #darcy friction factor RP1
 KOx = 1 #lumped local loss K LOX
@@ -186,8 +186,7 @@ def compute_spacing_doublet(Lc, impingement_fraction, theta_fuel_deg, theta_ox_d
 
 def dist(thickness, theta):
     theta_rad = theta*degrees_into_rad
-    alpha_rad = np.pi/2 - theta_rad
-    dist = thickness/(np.tan(alpha_rad))
+    dist = thickness*(np.tan(theta_rad))
     return dist
 
 def max_mixing_ratio(rho_fuel, rho_ox, mdot_fuel, mdot_ox):
@@ -195,53 +194,52 @@ def max_mixing_ratio(rho_fuel, rho_ox, mdot_fuel, mdot_ox):
     MME = M*(rho_ox/rho_fuel * (mdot_ox/mdot_fuel)**2)**0.7
     return MME
 
-def design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, h, w_init):
-    dp_allow = dp_frac*dp_inj
-    def func(w):
-        A = w*h
-        v = mdot / (rho * A)
-        Dh = 2*w*h/(w+h)
-        dpF = f * (Lpath / Dh) * (rho * v**2 / 2.0)
-        dpLoc = Ktot * (rho * v**2 / 2.0)
-        dpTot = dpF + dpLoc
-        return dpTot - dp_allow
-    w_min = w_init / 10.0
-    w_max = 10.0 * w_init
-    f_min = func(w_min)
-    f_max = func(w_max)
-    if f_min * f_max > 0:
-        factor = 10.0
-        for _ in range(5):
-            w_min /= factor
-            w_max *= factor
-            f_min = func(w_min)
-            f_max = func(w_max)
-            if f_min * f_max <= 0:
-                break
-    sol = optimize.root_scalar(func, bracket=[w_min, w_max], method="brentq")
-    w = sol.root
-    A = w*h
-    P = 2*(w+h)
-    Dh = 4*A/P
-    v = mdot/(rho*A)
-    dpF = f*(Lpath / Dh)*(rho*v**2/2.0)
-    dpLoc = Ktot*(rho*v**2/2.0)
-    dpTot = dpF+dpLoc
-    ratio = dpTot/dp_inj
-    return w, Dh, A, v, dpF, dpLoc, dpTot, ratio
+def design_manifold(d_orifice, n_orifices, h, rho, m_dot):
+    #Total exit area (orifices):
+    A_exit = n_orifices * (np.pi*(d_orifice**2)/4)
+    #required manifold cross-sectional area:
+    #based on the 4:1 rule for pressure uniformity
+    req_manifold_area = 3 * A_exit
+    #geometry with rounded corners (r = h/4)
+    r = h/6
+    #area loss at the 4 corners compared to a perfect rectangle
+    corner_area_loss = (r**2)*(4 - np.pi)
+    w = (req_manifold_area + corner_area_loss)/h
+    #manifold internal velocity
+    v = m_dot/(rho*req_manifold_area)
+    return A_exit, req_manifold_area, h, w, r, v
+
+def calculate_manifold_pressure_drop(w, h, r, length, rho, mu, mdot, epsilon = 0.015):
+    area = w*h - (4 - np.pi)*(r**2)
+    perimeter = 2*(w + h - 4*r) + 2*np.pi*r
+    #hydraulic diameter
+    Dh = (4*area/perimeter)
+    velocity = mdot/(rho*area)
+    #reynolds number
+    Re = (rho*velocity*Dh)/mu
+    #friction factor (using the Haaland equation)
+    if Re > 2300:
+        rel_roughness = (epsilon/1000)/Dh
+        f_inv_sqrt = -1.8 * np.log10(((rel_roughness/3.7)**1.11) + (6.9/Re))
+        f = (1/f_inv_sqrt)**2
+    else:
+        f = 64/Re
+    delta_P = f * (length/Dh) * (rho*velocity**2)/2
+    delta_P_psi = delta_P / psi_into_pa
+    return delta_P_psi
 
 #compute total and per-hole mass flow for RP1 and LOX injection holes
 #mdot_prop(...) distributes the propellant mass flow across the specified number of holes. 
 mdot_rp1_inj, mdot_rp1_inj_per_hole = mdot_prop(mdot_kero, num_holes_rp1_inj, num_holes_rp1_inj)
 mdot_lox_inj, mdot_lox_inj_per_hole = mdot_prop(mdot_lox, num_holes_lox_inj, num_holes_lox_inj) 
-print("=== Mass flow rate per hole ===")
+print("\n=== Mass flow rate per hole ===")
 print(f"RP1 injection mass flow rate per hole ({num_holes_rp1_inj}): {mdot_rp1_inj_per_hole:.5f} kg/s")
 print(f"LOX injection mass flow rate per hole ({num_holes_lox_inj}): {mdot_lox_inj_per_hole:.5f} kg/s")
 
 #computing injection velocity for each propellant
-v_lox = velocity(delta_pressure_injector, rho_lox)
-v_rp1 = velocity(delta_pressure_injector, rho_rp1)
-print("=== Velocity through injector holes ===")
+v_lox = velocity(delta_P*psi_into_pa, rho_lox)
+v_rp1 = velocity(delta_P*psi_into_pa, rho_rp1)
+print("\n=== Velocity through injector holes ===")
 print(f"Velocity through LOX injector holes: {v_lox:.5f} m/s")
 print(f"Velocity through RP1 injector holes: {v_rp1:.5f} m/s")
 
@@ -249,17 +247,17 @@ print(f"Velocity through RP1 injector holes: {v_rp1:.5f} m/s")
 #each diameter is sized to pass the per-hole mass flow at the specified ΔP and fluid density
 diameter_inj_rp1 = diameter(mdot_rp1_inj, rho_rp1, delta_P, num_holes_rp1_inj)
 diameter_inj_lox = diameter(mdot_lox_inj, rho_lox, delta_P, num_holes_lox_inj)
-print("=== Diameter of each hole ===")
+print("\n=== Diameter of each hole ===")
 print(f"The diameter of each RP1 hole into the injector is {diameter_inj_rp1:.8f} m")
 print(f"The diameter of each liquid oxygen hole into the injector is {diameter_inj_lox:.8f} m")
 
 MME = max_mixing_ratio(rho_rp1, rho_lox, mdot_rp1_inj_per_hole, mdot_lox_inj_per_hole)
-print("=== Max Mixing Ratio ===")
+print("\n=== Max Mixing Ratio ===")
 print(f"The maximum mixing ratio is {MME}")
 
 #computes the LOX injection angle rquired so that the resultant 
 #post-impingement sheet angle matches the desired beta.
-print("=== Injection Angle Results ===")
+print("\n=== Injection Angle Results ===")
 #user provides fuel angles and target sheet angle beta.
 theta_rp1_deg = float(input("Fuel angle (deg): "))
 beta_des = float(input("Enter an angle for the impingement (relative to vertical): "))
@@ -271,7 +269,7 @@ print(f"Resultant sheet angle β: {beta_res_deg:.3f}°")
 # Impinging geometry check
 #calculate impingement geometry using the final RP-1 and LOX angles:
 z_imp, d_rp1, d_lox, d_fo_req = compute_spacing_doublet(Length_chamber, impinge_fraction, theta_rp1_deg, theta_lox_deg)
-print("=== Impingement geometry ===")
+print("\n=== Impingement geometry ===")
 #Axial distance from the faceplate where both jets collide
 print(f"Axial impingement distance from the faceplate: {z_imp:.4f} m")
 #Required spacing between the RP-1 and LOX holes so the jets meet at z_imp
@@ -284,12 +282,12 @@ print(f"LOX lateral displacement at z_imp: {d_lox*1e3:.2f} mm")
 #distance between inner and outer orifices
 dist_fuel = dist(thickness, theta_rp1_deg)
 dist_ox = dist(thickness, theta_lox_deg)
-print(f"The distance between the inner and the outer orifice for fuel is {dist_fuel:.8f}")
-print(f"The distance between the ineer and the outer orifice for oxidizer is {dist_ox:.8f}")
+print(f"\nThe distance between the inner and the outer orifice for fuel is {dist_fuel:.8f}")
+print(f"The distance between the inner and the outer orifice for oxidizer is {dist_ox:.8f}")
 
 # Momentum Ratio
 J = (rho_lox*(v_lox)**2)/(rho_rp1*(v_rp1)**2)
-print("=== Momentum Ratio ===")
+print("\n=== Momentum Ratio ===")
 print(f"The momentum-flux ratio is: {J:.2f}")
 
 #MANIFOLD OUTPUTS
@@ -326,31 +324,51 @@ DguessRP1 = 0.3 #m
 w_guess = 0.20
 mdot_lox_per_ring = mdot_lox_inj / Nrings
 mdot_rp1_per_ring = mdot_rp1_inj / Nrings
-print(f"Inner RP1 Ring: {Rf_inner*1e3} mm")
-print(f"Outer RP1 Ring: {Rf_outer*1e3} mm")
-mani_lox_inner = design_manifold(mdot_lox_inj, rho_lox, Lpath_ox[0], dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
-mani_lox_outer = design_manifold(mdot_lox_inj, rho_lox, Lpath_ox[1], dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
-mani_lox = design_manifold(mdot_lox, rho_lox, Lpath_ox_avg, dpInjOx, dpFracMani, fOx, KOx, h_manifold, w_guess)
-mani_rp1_inner = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[0], dpInjRP1, dpFracMani, fRP1, KRP1, h_manifold, w_guess)
-mani_rp1_outer = design_manifold(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[1], dpInjRP1, dpFracMani, fRP1, KRP1, h_manifold, w_guess)
-def print_mani(label, mani, L_path, dp_inj, h_man):
-    w, Dh, A, v, dpF, dpLoc, dpTot, ratio = mani
-    print(f"{label}:")
-    print(f"The width is: {w:.7f} m")
-    print(f"The height of the manifold is {h_man:.5f} m")
-    print(f"The hydraulic diameter is {Dh:.2f} m")
-    print(f"L_path (manifold length): {L_path*1e3:.2f} mm")
-    print(f"Flow area A: {A*1e6:.2f} mm^2")
-    print(f"Mean velocity v: {v:.3f} m/s")
-    print(f"Δp_friction (dpF): {dpF:.1f} Pa")
-    print(f"Δp_local (dpLoc): {dpLoc:.1f} Pa")
-    print(f"Δp_total manifold (dpTot): {dpTot:.1f} Pa")
-    print(f"dpTot / dp_inj (target ratio): {dpTot/dp_inj:.3f}")
-    print()
-print("=== Manifold desing results ===")
-print_mani("RP-1 inner ring", mani_rp1_inner, Lpath_rp1[0], dpInjRP1, h_manifold)
-print_mani("RP-1 outer ring", mani_rp1_outer, Lpath_rp1[1], dpInjRP1, h_manifold)
-print_mani("LOX Main Manifold", mani_lox, Lpath_ox_avg, dpInjOx, h_manifold)
+#CAD Design Parameters
+print("\n=== CAD Design Parameters ===")
+print("=== Injector ring diameters at EXIT plane (chamber side) ===")
+print("Inner Ring Diameters:")
+print(f"Inner RP1 Ring (Diameter): {Rf_inner*1e3*2} mm")
+print(f"Inner LOX Ring (Diameter): {ROx_inner*1e3*2} mm")
+print("Outer Ring Diameters:")
+print(f"Outer LOX Ring (Diameter): {ROx_outer*1e3*2} mm")
+print(f"Outer RP1 Ring (Diameter): {Rf_outer*1e3*2} mm\n")
+print("=== Injector ring diameters at BACK plane (upstream by thickness) ===")
+print(f"RP-1  inner ring D_f_in_back = {2*(Rf_inner - dist_fuel)*1e3:.2f} mm")
+print(f"RP-1 outer ring D_f_out_back = {2*(Rf_outer + dist_fuel)*1e3:.2f} mm")
+print(f"LOX  inner ring D_ox_in_back = {2*(ROx_inner + dist_ox)*1e3:.2f} mm")
+print(f"LOX outer ring D_ox_out_back = {2*(ROx_outer - dist_ox)*1e3:.2f} mm")
+print("\n=== Manifold Design Results ===")
+A_exit_ox, A_mani_ox, h_ox, w_ox, r_ox, v_mani_ox = design_manifold(diameter_inj_lox, num_holes_lox_inj, h_manifold, rho_lox, mdot_lox_per_ring*2)
+A_exit_f_in, A_mani_f_in, h_f_in, w_f_in, r_f_in, v_mani_f_in = design_manifold(diameter_inj_rp1, num_holes_rp1_inj/2, h_manifold, rho_rp1, mdot_rp1_per_ring)
+A_exit_f_out, A_mani_f_out, h_f_out, w_f_out, r_f_out, v_mani_f_out = design_manifold(diameter_inj_rp1, num_holes_rp1_inj/2, h_manifold, rho_rp1, mdot_rp1_per_ring)
+print("=== LOX Manifold ===")
+print(f"LOX manifold required cross-sectional area: {A_mani_ox*1e6:.2f} mm^2")
+print(f"LOX manifold width w: {w_ox*1e3:.2f} mm")
+print(f"LOX manifold height h: {h_ox*1e3:.2f} mm")
+print(f"LOX manifold corner radius r: {r_ox*1e3:.2f} mm")
+print(f"LOX manifold internal velocity: {v_mani_ox:.2f} m/s\n")
+print("=== RP-1 Inner Manifold ===")
+print(f"RP-1 inner manifold required cross-sectional area: {A_mani_f_in*1e6:.2f} mm^2")
+print(f"RP-1 inner manifold width w: {w_f_in*1e3:.2f} mm")
+print(f"RP-1 inner manifold height h: {h_f_in*1e3:.2f} mm")
+print(f"RP-1 inner manifold corner radius r: {r_f_in*1e3:.2f} mm")
+print(f"RP-1 inner manifold internal velocity: {v_mani_f_in:.2f} m/s\n")
+print("=== RP-1 Outer Manifold ===")
+print(f"RP-1 outer manifold required cross-sectional area: {A_mani_f_out*1e6:.2f} mm^2")
+print(f"RP-1 outer manifold width w: {w_f_out*1e3:.2f} mm")
+print(f"RP-1 outer manifold height h: {h_f_out*1e3:.2f} mm")
+print(f"RP-1 outer manifold corner radius r: {r_f_out*1e3:.2f} mm")
+print(f"RP-1 outer manifold internal velocity: {v_mani_f_out:.2f} m/s\n")
+
+#compute manifold pressure drops
+dp_mani_ox = calculate_manifold_pressure_drop(w_ox, h_ox, r_ox, Lpath_ox_avg, rho_lox, 0.00019, mdot_lox_per_ring*2)
+dp_mani_rp1_in = calculate_manifold_pressure_drop(w_f_in, h_f_in, r_f_in, Lpath_rp1[0], rho_rp1, 0.0002, mdot_rp1_per_ring)
+dp_mani_rp1_out = calculate_manifold_pressure_drop(w_f_out, h_f_out, r_f_out, Lpath_rp1[1], rho_rp1, 0.0002, mdot_rp1_per_ring)
+print("=== Manifold Pressure Drops ===")
+print(f"LOX manifold pressure drop: {dp_mani_ox:.2f} psi")
+print(f"RP-1 inner manifold pressure drop: {dp_mani_rp1_in:.2f} psi")
+print(f"RP-1 outer manifold pressure drop: {dp_mani_rp1_out:.2f} psi")
 
 # == PLOTS == 
 
@@ -398,15 +416,15 @@ plot_injector_layout(2*combRad * 1e3, Rring_rp1 * 1e3, Rring_lox * 1e3, holes_pe
 #Plotting manifold geometry. h vs w
 w_init_ref = 0.2
 h_vals = np.linspace(0.005, 0.025, 50)
-def manifold_plot(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, w_init_ref):
+def manifold_plot(diameter, num_holes, rho, mdot):
     w_list = []
     for h in h_vals:
-        w, Dh, A, v, dpF, dpLoc, dpTot, ratio = design_manifold(mdot, rho, Lpath, dp_inj, dp_frac, f, Ktot, h, w_init_ref)
-        w_list.append(w)
+        Area_exit, A_mani, h_mani, w_mani, r_mani, v_mani = design_manifold(diameter, num_holes, h, rho, mdot)
+        w_list.append(w_mani)
     return np.array(w_list)
-w_RP1_inner = manifold_plot(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[0], dpInjRP1, dpFracMani, fRP1, KRP1, w_init_ref)
-w_RP1_outer = manifold_plot(mdot_rp1_per_ring, rho_rp1, Lpath_rp1[1], dpInjRP1, dpFracMani, fRP1, KRP1, w_init_ref)
-w_LOX_main = manifold_plot(mdot_lox_inj, rho_lox, Lpath_ox_avg, dpInjOx, dpFracMani, fOx, KOx, w_init_ref)
+w_RP1_inner = manifold_plot(diameter_inj_rp1, num_holes_rp1_inj/2, rho_rp1, mdot_rp1_per_ring)
+w_RP1_outer = manifold_plot(diameter_inj_rp1, num_holes_rp1_inj/2, rho_rp1, mdot_rp1_per_ring)
+w_LOX_main = manifold_plot(diameter_inj_lox, num_holes_lox_inj, rho_lox, mdot_lox_inj)
 fig, axs = plt.subplots(2,2,figsize=(10,8))
 axs[0,0].plot(h_vals*1e3, w_RP1_inner*1e3, marker='o')
 axs[0,0].set_title("RP-1 Inner Manifold")
