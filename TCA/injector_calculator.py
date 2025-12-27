@@ -36,8 +36,8 @@ Length_chamber = 9.928/meters_into_inches * 1e3 #Combustion chamber length [mm]
 impinge_fraction = 0.022 #streams will impinge at 2.2% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
-marginWall = 0.0119 #clearance from outer RP1 jet to wall [m]
-pairSpacing = 0.0237 #spacing between mid-radii of FO pairs [m]
+marginWall = 0.0152 #clearance from outer RP1 jet to wall [m]
+pairSpacing = 0.0212 #spacing between mid-radii of FO pairs [m]
 thickness = 0.013 #[m]
 
 #MANIFOLD DESING
@@ -514,3 +514,4 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
