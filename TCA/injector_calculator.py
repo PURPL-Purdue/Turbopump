@@ -11,6 +11,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from spicy import optimize
+import os
+from openpyxl import Workbook, load_workbook
 
 # == Conversion between units ==
 psi_into_pa = 6894.76 # Convert psi -> Pascal
@@ -18,7 +20,7 @@ meters_into_inches = 39.37 # Convert meters -> inches
 degrees_into_rad = np.pi/180 # Convert degrees -> radians
 
 # == Desing Parameters (Change as needed) == 
-mdot = 9.07185 #Total propellant mass flow rate [kg/s] (CHANGE AS NEEDED)
+mdot = 9 #Total propellant mass flow rate [kg/s] (CHANGE AS NEEDED)
 OF_Ratio = 2.1 #Mixture ratio O/F 
 rho_rp1 = 810 #RP1 Density [kg/m^3] at injector conditions
 rho_lox = 1141 #LOX Density [kg/m^3] at injector conditions
@@ -334,10 +336,10 @@ print("Outer Ring Diameters:")
 print(f"Outer LOX Ring (Diameter): {ROx_outer*1e3*2} mm")
 print(f"Outer RP1 Ring (Diameter): {Rf_outer*1e3*2} mm\n")
 print("=== Injector ring diameters at BACK plane (upstream by thickness) ===")
-print(f"RP-1  inner ring D_f_in_back = {2*(Rf_inner - dist_fuel)*1e3:.2f} mm")
-print(f"RP-1 outer ring D_f_out_back = {2*(Rf_outer + dist_fuel)*1e3:.2f} mm")
-print(f"LOX  inner ring D_ox_in_back = {2*(ROx_inner + dist_ox)*1e3:.2f} mm")
-print(f"LOX outer ring D_ox_out_back = {2*(ROx_outer - dist_ox)*1e3:.2f} mm")
+print(f"RP-1  inner ring D_f_in_back = {(-1)*dist_fuel*1e3:.2f} mm")
+print(f"RP-1 outer ring D_f_out_back = {dist_fuel*1e3:.2f} mm")
+print(f"LOX  inner ring D_ox_in_back = {(-1)*dist_ox*1e3:.2f} mm")
+print(f"LOX outer ring D_ox_out_back = {dist_ox*1e3:.2f} mm")
 print("\n=== Manifold Design Results ===")
 A_exit_ox, A_mani_ox, h_ox, w_ox, r_ox, v_mani_ox = design_manifold(diameter_inj_lox, num_holes_lox_inj, h_manifold, rho_lox, mdot_lox_per_ring*2)
 A_exit_f_in, A_mani_f_in, h_f_in, w_f_in, r_f_in, v_mani_f_in = design_manifold(diameter_inj_rp1, num_holes_rp1_inj/2, h_manifold, rho_rp1, mdot_rp1_per_ring)
@@ -369,6 +371,35 @@ print("=== Manifold Pressure Drops ===")
 print(f"LOX manifold pressure drop: {dp_mani_ox:.2f} psi")
 print(f"RP-1 inner manifold pressure drop: {dp_mani_rp1_in:.2f} psi")
 print(f"RP-1 outer manifold pressure drop: {dp_mani_rp1_out:.2f} psi")
+
+# == EXCEL ==
+
+def export_to_excel(filename, row_dict):
+    header = list(row_dict.keys())
+    values = list(row_dict.values())
+    if not os.path.exists(filename):
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "runs"
+        ws.append(header)
+        ws.append(values)
+        wb.save(filename)
+        return
+    wb = load_workbook(filename)
+    ws = wb.active
+    ws.append(values)
+    wb.save(filename)
+
+w_avg_lox = (ROx_outer*1e3*2 - dist_ox*1e3 + ROx_inner*1e3*2 + dist_ox*1e3)/2
+
+run_data = {"d_hole_rp1_mm": diameter_inj_rp1*1e3, "d_hole_lox_mm": diameter_inj_lox*1e3,
+            "N_holes": num_holes_rp1_inj, "diameter_rp1_inner_mm": Rf_inner*2*1e3, "diameter_rp1_outer_mm": Rf_outer*2*1e3,
+            "diameter_lox_inner_mm": ROx_inner*2*1e3, "diameter_lox_outer_mm": ROx_outer*2*1e3, "thickness_mm": thickness*1e3,
+            "dist_manifold_ring_rp1_mm": dist_fuel*1e3, "dist_manifold_ring_lox_mm": dist_ox*1e3, "w/2 rp1": w_f_out*1e3/2,
+            "w/2 lox": w_ox*1e3/2, "w_avg_lox": w_avg_lox, "h rp1": h_f_out*1e3, "h lox": h_ox*1e3, "radius_corner_rp1": r_f_out*1e3,
+            "radius_corner_lox": r_ox*1e3}
+
+export_to_excel("injector_design_runs.xlsx", run_data)
 
 # == PLOTS == 
 
