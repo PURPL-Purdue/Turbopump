@@ -36,7 +36,7 @@ Length_chamber = 9.928/meters_into_inches * 1e3 #Combustion chamber length [mm]
 impinge_fraction = 0.022 #streams will impinge at 2.2% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
-marginWall = 0.0152 #clearance from outer RP1 jet to wall [m]
+marginWall = 0.0168 #clearance from outer RP1 jet to wall [m]
 pairSpacing = 0.0212 #spacing between mid-radii of FO pairs [m]
 thickness = 0.013 #[m]
 
@@ -374,32 +374,43 @@ print(f"RP-1 outer manifold pressure drop: {dp_mani_rp1_out:.2f} psi")
 
 # == EXCEL ==
 
-def export_to_excel(filename, row_dict):
-    header = list(row_dict.keys())
-    values = list(row_dict.values())
-    if not os.path.exists(filename):
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "runs"
-        ws.append(header)
-        ws.append(values)
-        wb.save(filename)
+def create_fusion_excel(filename):
+    parameters = ["rp1_in", "rp1_out", "ox_in", "ox_out", "rp1_hole_diameter", "rp1_hole_diameter2", "ox_hole_diameter", "ox_hole_diameter2",
+                  "negative_rp1_d_angle", "positive_rp1_d_angle", "positive_ox_d_angle", "negative_ox_d_angle", "rp1_hole_diameter3",
+                  "rp1_hole_diameter4", "ox_hole_diameter3", "ox_hole_diameter4", "holes_per_ring", "positive_rp1_in_w_half", "negative_rp1_in_w_half",
+                  "manifold_height", "inj_plate_thickness", "w_avg_lox", "positive_ox_w_half"]
+    if os.path.exists(filename):
         return
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Parameters"
+    for param in parameters :
+        ws.append([param, "", "mm"])
+    wb.save(filename)
+
+create_fusion_excel("injector_design_runs.xlsx")
+
+def update_fustion_excel(filename, values_dict):
     wb = load_workbook(filename)
     ws = wb.active
-    ws.append(values)
+    for row in ws.iter_rows(min_row=1):
+        param_name = row[0].value
+        if param_name in values_dict:
+            row[1].value = values_dict[param_name]
+            row[2].value = "mm"
     wb.save(filename)
 
 w_avg_lox = (ROx_outer*1e3*2 - dist_ox*1e3 + ROx_inner*1e3*2 + dist_ox*1e3)/2
 
-run_data = {"d_hole_rp1_mm": diameter_inj_rp1*1e3, "d_hole_lox_mm": diameter_inj_lox*1e3,
-            "N_holes": num_holes_rp1_inj, "diameter_rp1_inner_mm": Rf_inner*2*1e3, "diameter_rp1_outer_mm": Rf_outer*2*1e3,
-            "diameter_lox_inner_mm": ROx_inner*2*1e3, "diameter_lox_outer_mm": ROx_outer*2*1e3, "thickness_mm": thickness*1e3,
-            "dist_manifold_ring_rp1_mm": dist_fuel*1e3, "dist_manifold_ring_lox_mm": dist_ox*1e3, "w/2 rp1": w_f_out*1e3/2,
-            "w/2 lox": w_ox*1e3/2, "w_avg_lox": w_avg_lox, "h rp1": h_f_out*1e3, "h lox": h_ox*1e3, "radius_corner_rp1": r_f_out*1e3,
-            "radius_corner_lox": r_ox*1e3}
+fusion_values = {"rp1_in": Rf_inner*2*1e3, "rp1_out": Rf_outer*2*1e3, "ox_in": ROx_inner*2*1e3, "ox_out": ROx_outer*2*1e3, "rp1_hole_diameter": diameter_inj_rp1*1e3,
+                 "rp1_hole_diameter2": diameter_inj_rp1*1e3, "ox_hole_diameter": diameter_inj_lox*1e3, "ox_hole_diameter2": diameter_inj_lox*1e3,
+                 "negative_rp1_d_angle": -dist_fuel*1e3, "positive_rp1_d_angle": dist_fuel*1e3, "positive_ox_d_angle": dist_ox*1e3, "negative_ox_d_angle": -dist_ox*1e3,
+                 "rp1_hole_diameter3": diameter_inj_rp1*1e3, "rp1_hole_diameter4": diameter_inj_rp1*1e3, "ox_hole_diameter3": diameter_inj_lox*1e3, "ox_hole_diameter4": diameter_inj_lox*1e3,
+                 "holes_per_ring": int(num_holes_lox_inj/Nrings), "positive_rp1_in_w_half": w_f_in*1e3/2, "negative_rp1_in_w_half": -w_f_in*1e3/2,
+                 "positive_rp1_out_w_half": w_f_out*1e3/2, "negative_rp1_out_w_half": -w_f_out*1e3/2, "manifold_height": h_manifold*1e3, "inj_plate_thickness": thickness*1e3,
+                 "w_avg_lox": w_avg_lox, "positive_ox_w_half": w_ox*1e3/2}
 
-export_to_excel("injector_design_runs.xlsx", run_data)
+update_fustion_excel("injector_design_runs.xlsx", fusion_values)
 
 # == PLOTS == 
 
@@ -514,4 +525,3 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
-
