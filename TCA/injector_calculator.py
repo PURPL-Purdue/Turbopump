@@ -11,8 +11,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from spicy import optimize
-import os
-from openpyxl import Workbook, load_workbook
+import csv
 
 # == Conversion between units ==
 psi_into_pa = 6894.76 # Convert psi -> Pascal
@@ -374,43 +373,30 @@ print(f"RP-1 outer manifold pressure drop: {dp_mani_rp1_out:.2f} psi")
 
 # == EXCEL ==
 
-def create_fusion_excel(filename):
-    parameters = ["rp1_in", "rp1_out", "ox_in", "ox_out", "rp1_hole_diameter", "rp1_hole_diameter2", "ox_hole_diameter", "ox_hole_diameter2",
-                  "negative_rp1_d_angle", "positive_rp1_d_angle", "positive_ox_d_angle", "negative_ox_d_angle", "rp1_hole_diameter3",
-                  "rp1_hole_diameter4", "ox_hole_diameter3", "ox_hole_diameter4", "holes_per_ring", "positive_rp1_in_w_half", "negative_rp1_in_w_half",
-                  "manifold_height", "inj_plate_thickness", "w_avg_lox", "positive_ox_w_half"]
-    if os.path.exists(filename):
-        return
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Parameters"
-    for param in parameters :
-        ws.append([param, "", "mm"])
-    wb.save(filename)
-
-create_fusion_excel("injector_design_runs.xlsx")
-
-def update_fustion_excel(filename, values_dict):
-    wb = load_workbook(filename)
-    ws = wb.active
-    for row in ws.iter_rows(min_row=1):
-        param_name = row[0].value
-        if param_name in values_dict:
-            row[1].value = values_dict[param_name]
-            row[2].value = "mm"
-    wb.save(filename)
-
+def export_fusion_parameters(filename, parameters):
+    with open(filename, "w", newline = "", encoding = "utf-8") as fo:
+        writer = csv.writer(fo)
+        writer.writerow(["Name", "Unit", "Expression", "Value", "Comments", "Favorite"])
+        for name, unit, value in parameters:
+            if unit == "ul":
+                expression = f"{value}"
+            else:
+                expression = f"{value} {unit}"
+            writer.writerow([name, unit, expression, value, "", "False"])
+            
 w_avg_lox = (ROx_outer*1e3*2 - dist_ox*1e3 + ROx_inner*1e3*2 + dist_ox*1e3)/2
 
-fusion_values = {"rp1_in": Rf_inner*2*1e3, "rp1_out": Rf_outer*2*1e3, "ox_in": ROx_inner*2*1e3, "ox_out": ROx_outer*2*1e3, "rp1_hole_diameter": diameter_inj_rp1*1e3,
-                 "rp1_hole_diameter2": diameter_inj_rp1*1e3, "ox_hole_diameter": diameter_inj_lox*1e3, "ox_hole_diameter2": diameter_inj_lox*1e3,
-                 "negative_rp1_d_angle": -dist_fuel*1e3, "positive_rp1_d_angle": dist_fuel*1e3, "positive_ox_d_angle": dist_ox*1e3, "negative_ox_d_angle": -dist_ox*1e3,
-                 "rp1_hole_diameter3": diameter_inj_rp1*1e3, "rp1_hole_diameter4": diameter_inj_rp1*1e3, "ox_hole_diameter3": diameter_inj_lox*1e3, "ox_hole_diameter4": diameter_inj_lox*1e3,
-                 "holes_per_ring": int(num_holes_lox_inj/Nrings), "positive_rp1_in_w_half": w_f_in*1e3/2, "negative_rp1_in_w_half": -w_f_in*1e3/2,
-                 "positive_rp1_out_w_half": w_f_out*1e3/2, "negative_rp1_out_w_half": -w_f_out*1e3/2, "manifold_height": h_manifold*1e3, "inj_plate_thickness": thickness*1e3,
-                 "w_avg_lox": w_avg_lox, "positive_ox_w_half": w_ox*1e3/2}
+params = [
+    ("rp1_in", "mm", Rf_inner*2*1e3), ("rp1_out", "mm", Rf_outer*2*1e3), ("ox_in", "mm", ROx_inner*2*1e3), ("ox_out", "mm", ROx_outer*2*1e3),
+    ("rp1_hole_diameter", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter2", "mm", diameter_inj_rp1*1e3), ("ox_hole_diameter", "mm", diameter_inj_lox*1e3),
+    ("ox_hole_diameter2", "mm", diameter_inj_lox*1e3), ("negative_rp1_d_angle", "mm", -dist_fuel*1e3), ("positive_rp1_d_angle", "mm", dist_fuel*1e3),
+    ("positive_ox_d_angle", "mm", dist_ox*1e3), ("negative_ox_d_angle", "mm", -dist_ox*1e3), ("rp1_hole_diameter3", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter4", "mm", diameter_inj_rp1*1e3),
+    ("ox_hole_diameter3", "mm", diameter_inj_lox*1e3), ("ox_hole_diameter4", "mm", diameter_inj_lox*1e3), ("holes_per_ring", "", int(num_holes_lox_inj/Nrings)),
+    ("positive_rp1_in_w_half", "mm", w_f_in*1e3/2), ("negative_rp1_in_w_half", "mm", -w_f_in*1e3/2), ("positive_rp1_out_w_half", "mm", w_f_out*1e3/2),
+    ("negative_rp1_out_w_half", "mm", -w_f_out*1e3/2), ("manifold_height", "mm", h_manifold*1e3), ("inj_plate_thickness", "mm", thickness*1e3),
+    ("w_avg_lox", "mm", w_avg_lox), ("positive_ox_w_half", "mm", w_ox*1e3/2)]
 
-update_fustion_excel("injector_design_runs.xlsx", fusion_values)
+export_fusion_parameters("injector_parameters.csv", params)
 
 # == PLOTS == 
 
