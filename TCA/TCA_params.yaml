@@ -56,7 +56,7 @@ chamber_molecular_weight: 21.250 #(lbm/lbmole) Devin Morris
 chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
 chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 
-#Injector Plate Design Parameters
+#Injector Plate Design Parameters %%TO CHANGE%%
 injector_number_of_holes_rp1: 75  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_lox: 75  #(Unitless) Daniel Lysenko Dudnyk
 injector_hole_diameter_rp1: 0.9906  #(mm) Daniel Lysenko Dudnyk # ANSI # is 61 
