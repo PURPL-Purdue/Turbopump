@@ -35,8 +35,8 @@ Length_chamber = 9.928/meters_into_inches * 1e3 #Combustion chamber length [mm]
 impinge_fraction = 0.022 #streams will impinge at 2.2% of chamber length
 distance_between_holes = 0.05 #[m]
 CombDiam = 6.336/meters_into_inches #chamber inner diameter [m]
-marginWall = 0.0168 #clearance from outer RP1 jet to wall [m]
-pairSpacing = 0.0212 #spacing between mid-radii of FO pairs [m]
+marginWall = 0.0108 #clearance from outer RP1 jet to wall [m]
+pairSpacing = 0.025 #spacing between mid-radii of FO pairs [m]
 thickness = 0.013 #[m]
 
 #MANIFOLD DESING
@@ -387,14 +387,14 @@ def export_fusion_parameters(filename, parameters):
 w_avg_lox = (ROx_outer*1e3*2 - dist_ox*1e3 + ROx_inner*1e3*2 + dist_ox*1e3)/2
 
 params = [
-    ("rp1_in", "mm", Rf_inner*2*1e3), ("rp1_out", "mm", Rf_outer*2*1e3), ("ox_in", "mm", ROx_inner*2*1e3), ("ox_out", "mm", ROx_outer*2*1e3),
-    ("rp1_hole_diameter", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter2", "mm", diameter_inj_rp1*1e3), ("ox_hole_diameter", "mm", diameter_inj_lox*1e3),
-    ("ox_hole_diameter2", "mm", diameter_inj_lox*1e3), ("negative_rp1_d_angle", "mm", -dist_fuel*1e3), ("positive_rp1_d_angle", "mm", dist_fuel*1e3),
-    ("positive_ox_d_angle", "mm", dist_ox*1e3), ("negative_ox_d_angle", "mm", -dist_ox*1e3), ("rp1_hole_diameter3", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter4", "mm", diameter_inj_rp1*1e3),
-    ("ox_hole_diameter3", "mm", diameter_inj_lox*1e3), ("ox_hole_diameter4", "mm", diameter_inj_lox*1e3), ("holes_per_ring", "", int(num_holes_lox_inj/Nrings)),
-    ("positive_rp1_in_w_half", "mm", w_f_in*1e3/2), ("negative_rp1_in_w_half", "mm", -w_f_in*1e3/2), ("positive_rp1_out_w_half", "mm", w_f_out*1e3/2),
-    ("negative_rp1_out_w_half", "mm", -w_f_out*1e3/2), ("manifold_height", "mm", h_manifold*1e3), ("inj_plate_thickness", "mm", thickness*1e3),
-    ("w_avg_lox", "mm", w_avg_lox), ("positive_ox_w_half", "mm", w_ox*1e3/2)]
+    ("rp1_in_1", "mm", Rf_inner*2*1e3), ("rp1_out_1", "mm", Rf_outer*2*1e3), ("ox_in_1", "mm", ROx_inner*2*1e3), ("ox_out_1", "mm", ROx_outer*2*1e3),
+    ("rp1_hole_diameter_1", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter2_1", "mm", diameter_inj_rp1*1e3), ("ox_hole_diameter_1", "mm", diameter_inj_lox*1e3),
+    ("ox_hole_diameter2_1", "mm", diameter_inj_lox*1e3), ("negative_rp1_d_angle_1", "mm", -dist_fuel*1e3), ("positive_rp1_d_angle_1", "mm", dist_fuel*1e3),
+    ("positive_ox_d_angle_1", "mm", dist_ox*1e3), ("negative_ox_d_angle_1", "mm", -dist_ox*1e3), ("rp1_hole_diameter3_1", "mm", diameter_inj_rp1*1e3), ("rp1_hole_diameter4_1", "mm", diameter_inj_rp1*1e3),
+    ("ox_hole_diameter3_1", "mm", diameter_inj_lox*1e3), ("ox_hole_diameter4_1", "mm", diameter_inj_lox*1e3), ("holes_per_ring_1", "", int(num_holes_lox_inj/Nrings)),
+    ("positive_rp1_in_w_half_1", "mm", w_f_in*1e3/2), ("negative_rp1_in_w_half_1", "mm", -w_f_in*1e3/2), ("positive_rp1_out_w_half_1", "mm", w_f_out*1e3/2),
+    ("negative_rp1_out_w_half_1", "mm", -w_f_out*1e3/2), ("manifold_height_1", "mm", h_manifold*1e3), ("inj_plate_thickness_1", "mm", thickness*1e3),
+    ("w_avg_lox_1", "mm", w_avg_lox), ("positive_ox_w_half_1", "mm", w_ox*1e3/2)]
 
 export_fusion_parameters("injector_parameters.csv", params)
 
