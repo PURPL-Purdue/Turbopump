@@ -61,16 +61,16 @@ chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
 chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 
 #Injector Plate Design Parameters 
-injector_plate_thickness: 0.013  #(m) Daniel Lysenko Dudnyk
+injector_plate_thickness: 0.009  #(m) Daniel Lysenko Dudnyk
 impinge_fraction: 0.022  #(Unitless) Daniel Lysenko Dudnyk
-distance_between_holes: 0.025 #[m]  Daniel Lysenko Dudnyk
-marginWall: 0.0108 #[m]  Daniel Lysenko Dudnyk
-pairSpacing: 0.006 #[m]  Daniel Lysenko Dudnyk
+marginWall: 0.009 #[m]  Daniel Lysenko Dudnyk
+pairSpacing: 0.009 #[m]  Daniel Lysenko Dudnyk
 discharge_coefficient: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 
-injector_number_of_holes_rp1: 68  #(Unitless) Daniel Lysenko Dudnyk
-injector_number_of_holes_lox: 68  #(Unitless) Daniel Lysenko Dudnyk
+injector_number_of_holes_rp1: 64  #(Unitless) Daniel Lysenko Dudnyk
+injector_number_of_holes_lox: 64  #(Unitless) Daniel Lysenko Dudnyk
 injector_hole_diameter_rp1: 0.9906  #(mm) Daniel Lysenko Dudnyk # ANSI # is 61 
 injector_hole_diameter_lox: 1.3208  #(mm) Daniel Lysenko Dudnyk # ANSI # is 55
 
-h_manifold: 0.0155  #[m] Daniel Lysenko Dudnyk
+h_manifold_ox: 0.02  #[m] Daniel Lysenko Dudnyk
+h_manifold_fuel: 0.015  #[m] Daniel Lysenko Dudnyk

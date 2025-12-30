@@ -10,7 +10,7 @@ Author: Joaquin Alarcon
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from spicy import optimize
+from scipy import optimize
 import csv
 
 # == Conversion between units ==
@@ -28,7 +28,9 @@ Cd = 0.8 #Discharge coefficient
 Pc = 500*psi_into_pa #Chamber stagnation pressure [Pa]
 Pin = 850*psi_into_pa #injector inlet pressure [Pa]
 delta_P = 350 #Injector pressure drop [psi] (converted inside functions)
-inj_press_drop = Pc/Pin #Fraction of chamber pressure allocated to injector
+# Fraction of inlet pressure represented by the injector pressure drop
+# (convert delta_P from psi -> Pa, then divide by Pin to get fraction)
+inj_press_drop = (delta_P * psi_into_pa) / Pin
 stifness = delta_P*psi_into_pa/Pc
 
 Length_chamber = 9.928/meters_into_inches * 1e3 #Combustion chamber length [mm]
@@ -199,10 +201,11 @@ def design_manifold(d_orifice, n_orifices, h, rho, m_dot):
     #Total exit area (orifices):
     A_exit = n_orifices * (np.pi*(d_orifice**2)/4)
     #required manifold cross-sectional area:
-    #based on the 4:1 rule for pressure uniformity
-    req_manifold_area = 3 * A_exit
-    #geometry with rounded corners (r = h/4)
-    r = h/6
+    #based on the 4:1 rule for pressure uniformity (manifold area ~= 4x total
+    #orifice area to reduce velocity and promote uniformity)
+    req_manifold_area = 4 * A_exit
+    #geometry with rounded corners (choose corner radius r = h/4)
+    r = h/4
     #area loss at the 4 corners compared to a perfect rectangle
     corner_area_loss = (r**2)*(4 - np.pi)
     w = (req_manifold_area + corner_area_loss)/h
@@ -220,7 +223,11 @@ def calculate_manifold_pressure_drop(w, h, r, length, rho, mu, mdot, epsilon = 0
     Re = (rho*velocity*Dh)/mu
     #friction factor (using the Haaland equation)
     if Re > 2300:
-        rel_roughness = (epsilon/1000)/Dh
+        # `epsilon` should be the absolute roughness in meters. Compute
+        # relative roughness as epsilon/Dh. If epsilon is provided in mm
+        # in older code paths this would have required a conversion; prefer
+        # using meters here and pass a realistic value (e.g. 1.5e-5 m).
+        rel_roughness = epsilon/Dh
         f_inv_sqrt = -1.8 * np.log10(((rel_roughness/3.7)**1.11) + (6.9/Re))
         f = (1/f_inv_sqrt)**2
     else:
