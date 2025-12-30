@@ -29,20 +29,25 @@
 #                                                                                                 #
 ###################################################################################################
 
-pepe: 12 #pepe 
-
 #Thrust Chamber Assembly Design Setpoints
 thrust: 5000  #(lbf) Devin Morris
 tca_chamber_pressure: 500  #(psi) Devin Morris
-characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
+incoming_pressure: 850  #(psi) Daniel Lysenko Dudnyk
+tca_throat_choked_flow: 19.884  #(lbm/s) Devin Morris
 oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
+
+
+#Assumed efficiies 
 c_star_efficiency: 0.95  #(Unitless) Devin Morris
 thrust_coefficient_efficiency: 0.95  #(Unitless) Devin Morris
-ambient_pressure: 14.7  #(psi) Devin Morris
-tca_exit_pressure: 14.7  #(psi) Devin Morris
+
+#Combustion chamber Design Parameters
+characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_contraction_ratio: 4.5  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
 tca_convergent_half_angle: 45  #(degrees) Devin Morris
 bell_nozzle_l_percent: 80  #(%) Devin Morris
+ambient_pressure: 14.7  #(psi) Devin Morris
+tca_exit_pressure: 14.7  #(psi) Devin Morris
 
 #Thrust Chamber Assembly Calculated Design Parameters
 tca_chamber_diameter: 6.336  #(in) Devin Morris // Daniel Lysenko Dudnyk
@@ -50,14 +55,22 @@ tca_throat_diameter: 2.987  #(in) Devin Morris
 tca_exit_diameter: 6.904  #(in) Devin Morris
 tca_chamber_length: 9.928  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_expansion_ratio: 5.342  #(Unitless) Devin Morris
-tca_throat_choked_flow: 19.884  #(lbm/s) Devin Morris
 
 chamber_molecular_weight: 21.250 #(lbm/lbmole) Devin Morris
 chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
 chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 
-#Injector Plate Design Parameters %%TO CHANGE%%
-injector_number_of_holes_rp1: 75  #(Unitless) Daniel Lysenko Dudnyk
-injector_number_of_holes_lox: 75  #(Unitless) Daniel Lysenko Dudnyk
+#Injector Plate Design Parameters 
+injector_plate_thickness: 0.013  #(m) Daniel Lysenko Dudnyk
+impinge_fraction: 0.022  #(Unitless) Daniel Lysenko Dudnyk
+distance_between_holes: 0.025 #[m]  Daniel Lysenko Dudnyk
+marginWall: 0.0108 #[m]  Daniel Lysenko Dudnyk
+pairSpacing: 0.006 #[m]  Daniel Lysenko Dudnyk
+discharge_coefficient: 0.8  #(Unitless) Daniel Lysenko Dudnyk
+
+injector_number_of_holes_rp1: 68  #(Unitless) Daniel Lysenko Dudnyk
+injector_number_of_holes_lox: 68  #(Unitless) Daniel Lysenko Dudnyk
 injector_hole_diameter_rp1: 0.9906  #(mm) Daniel Lysenko Dudnyk # ANSI # is 61 
 injector_hole_diameter_lox: 1.3208  #(mm) Daniel Lysenko Dudnyk # ANSI # is 55
+
+h_manifold: 0.0155  #[m] Daniel Lysenko Dudnyk
