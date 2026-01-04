@@ -62,10 +62,10 @@ chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 
 #Injector Plate Design Parameters 
 injector_plate_thickness_rp1: 0.006  #(m) Daniel Lysenko Dudnyk
-injector_plate_thickness_ox: 0.012  #(m) Daniel Lysenko Dudnyk
+injector_plate_thickness_ox: 0.01  #(m) Daniel Lysenko Dudnyk
 
 
-impinge_fraction: 0.028  #(Unitless) Daniel Lysenko Dudnyk
+impinge_fraction: 0.03  #(Unitless) Daniel Lysenko Dudnyk
 
 discharge_coefficient_lox: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 discharge_coefficient_rp1: 0.8  #(Unitless) Daniel Lysenko Dudnyk
