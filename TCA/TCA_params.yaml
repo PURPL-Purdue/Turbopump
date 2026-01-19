@@ -52,7 +52,7 @@ tca_exit_pressure: 14.7  #(psi) Devin Morris
 #Thrust Chamber Assembly Calculated Design Parameters
 tca_chamber_diameter: 6.376  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_throat_diameter: 2.987  #(in) Devin Morris
-tca_exit_diameter: 6.944  #(in) Devin Morris
+tca_exit_diameter: 56.944  #(in) Devin Morris
 tca_chamber_length: 9.928  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_expansion_ratio: 5.342  #(Unitless) Devin Morris
 
@@ -63,7 +63,6 @@ chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 #Injector Plate Design Parameters 
 injector_plate_thickness_rp1: 0.003  #(m) Daniel Lysenko Dudnyk
 injector_plate_thickness_ox: 0.007  #(m) Daniel Lysenko Dudnyk
-
 
 impinge_fraction: 0.03  #(Unitless) Daniel Lysenko Dudnyk
 
