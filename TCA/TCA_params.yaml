@@ -61,8 +61,8 @@ chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
 chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 
 #Injector Plate Design Parameters 
-injector_plate_thickness_rp1: 0.003  #(m) Daniel Lysenko Dudnyk
-injector_plate_thickness_ox: 0.007  #(m) Daniel Lysenko Dudnyk
+injector_plate_thickness_rp1: 0.006  #(m) Daniel Lysenko Dudnyk
+injector_plate_thickness_ox: 0.009  #(m) Daniel Lysenko Dudnyk
 
 impinge_fraction: 0.03  #(Unitless) Daniel Lysenko Dudnyk
 
