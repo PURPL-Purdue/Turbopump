@@ -145,7 +145,7 @@ data = [
 ##################################
 #REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
 ##################################
-output_file_path = r"TCA\Dimensions CSV\dimensions.csv"
+output_file_path = r"/Users/dl/Documents/GitHub/Turbopump/TCA/Dimensions CSV/dimensions.csv"
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)
