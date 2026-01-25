@@ -710,7 +710,7 @@ def export_nozzle_dxf(contour):
             # 'degree=3' is standard for smooth curves
             msp.add_spline(points, degree=3)
 
-    doc.saveas(r"TCA\nozzle_contour_new.dxf")
+    doc.saveas(r"/Users/dl/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour_new.dxf")
     return()
 
 # __main method__
@@ -732,7 +732,7 @@ if __name__=="__main__":
 	# rao_bell_nozzle_contour
 	angles, contour, r2 = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
 	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,2)) + 'mm]' 
-	export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv")
+	export_nozzle_csv(contour, filename=r"/Users/dl/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv")
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
 
