@@ -31,9 +31,9 @@ C = CEA_Obj( oxName='LOX', fuelName='RP1')
 
 #ARRAY BOUNDS
 #Lower bound for O/F ratio graphs
-mrLo = 1
+mrLo = 0.75
 #Upper bound for O/F ratio graphs
-mrHi = 3
+mrHi = 4
 
 #Lower bound for chamber pressure graphs 
 pLo = 45   #Lower bound of pc divided by 10: (pc / 10)
@@ -46,6 +46,12 @@ pHi = 55   #Lower bound of pc divided by 10 plus 1:  (pc / 10) + 1
 with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
+#Expansion Ratio of Nozzle
+EPS = tca_params['tca_expansion_ratio']
+#Exit Diameter of Nozzle
+De = tca_params['tca_exit_diameter']
+#Exit Area of Nozzle
+Ae = np.pi * ((De / 2.0) ** 2)
 #Target chamber pressure (psi)
 pc = tca_params['tca_chamber_pressure']
 #Ambient pressure (psi)
@@ -61,12 +67,17 @@ ef_cf = tca_params['thrust_coefficient_efficiency']
 #Gravitational Acceleration (ft/s)
 g = 32.174
 
+psi_to_pa = 6894.76
+
+N_to_lbf = 0.224809
+
 #ARRAY DECLARATION
 mr_range = np.arange(mrLo, mrHi, .05)  #range of O/F ratios, from mrLo to mrHi with spacing 0.05 in between to get proper curves
 Comb_Ts = [0] * len(mr_range)          #Empty array for combustion temperatures
 Isp_vals = [0] * len(mr_range)         #Empty array for specific impulse values
 Cstars = [0] * len(mr_range)           #Empty array for characteristic velocity values
 Cf_vals = [0] * len(mr_range)          #Empty array for coefficient of thrust values
+T_vals = [0] * len(mr_range)          #Empty array for thrust values
 
 ##################################
 #All Plotting Figures
@@ -219,6 +230,23 @@ plt.grid()
 plt.legend()
 
 plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_P_Range.png")
+
+plt.figure(9)
+mdot = 9.02
+count = 0
+for mr in mr_range:
+    Ve = C.get_MachNumber(Pc = pc, MR = mr, eps = EPS) * 343   #Exit velocity in m/s
+    pcpe = C.get_PcOvPe(Pc = pc, MR = mr, eps = EPS)
+    pet = (1.0 / pcpe) * pc * psi_to_pa        #exit pressure for case
+    T_vals[count] = (mdot * Ve) - ((pet - (pamb * psi_to_pa)) * Ae) * N_to_lbf
+    count = count + 1
+plt.plot(mr_range, T_vals)
+plt.xlabel("O/F ratio by mass")
+plt.ylabel("Thrust Force")
+plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
+plt.grid()
+
+plt.savefig(r"TCA\CEA Graphs\Thrust_Generation_Range.png")
 
 plt.show()
 
