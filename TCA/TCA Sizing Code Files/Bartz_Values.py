@@ -71,15 +71,14 @@ def compute_gamma(cp_JkgK, MW_kg_per_kmol):
     return cp_JkgK / denom
 
 # --------------------------
-# User inputs
+# User inputs (single O/F evaluation)
 # --------------------------
-mrLo = float(input('Lower bound for O/F ratio: '))
-mrHi = float(input('Upper bound for O/F ratio: '))
-mrInt = float(input('Interval between O/F ratios: '))
+mr = float(input('O/F ratio to evaluate: '))
 pc = float(input('Chamber pressure (psia): '))
 pe = 14.7  # exit pressure (psia) used for expansion calculations (kept as default)
 
-MRs = np.arange(mrLo, mrHi + mrInt, mrInt)
+# Create a one-element array so the existing loop logic is reused without an O/F sweep
+MRs = np.array([mr])
 
 # --------------------------
 # Output containers and headers
@@ -242,31 +241,42 @@ with open(properties_csv, 'w', newline='') as f:
 print(f"Saved properties CSV: {properties_csv}")
 
 # --------------------------
-# Polynomial fitting for each station and selected properties vs Temperature_K
-# Fits only: Gamma, Cp_J_kgK, Thermal_Conductivity, Molecular_Weight_kg_kmol
-# Degree up to 3 (but limited by number of samples)
+# Polynomial fitting: fit Gamma, Cp, Thermal Conductivity, and Molecular Weight
+# as functions of Temperature (Kelvin) using three station points: Combustor, Throat, Exit
+# Use quadratic (degree=2) when three valid points are available; otherwise degree = n-1
 # --------------------------
 poly_csv = os.path.join(os.getcwd(), 'TCA/turbopump_poly_coeffs.csv')
 with open(poly_csv, 'w', newline='') as f:
     writer = csv.writer(f)
-    writer.writerow(['Station', 'Property', 'Degree', 'Coefficients_high->low'])
+    writer.writerow(['O/F', 'Pc_psia', 'Property', 'Degree', 'Coefficients_high->low', 'T_points_K', 'Y_points'])
 
     fit_props = ['Gamma', 'Cp_J_kgK', 'Thermal_Conductivity', 'Molecular_Weight_kg_kmol']
-    for st in stations:
-        T_vals = np.array(poly_data[st]['Temperature_K'])
-        for pk in fit_props:
-            Y_vals = np.array(poly_data[st].get(pk, []))
-            # Filter invalid entries
-            mask = (~np.isnan(T_vals)) & (~np.isnan(Y_vals))
-            Tclean = T_vals[mask]
-            Yclean = Y_vals[mask]
-            if Tclean.size < 2:
-                coeffs = []
-                deg = 0
-            else:
-                deg = min(3, Tclean.size - 1)
-                coeffs = np.polyfit(Tclean, Yclean, deg).tolist()
-            writer.writerow([st, pk, deg, coeffs])
+
+    # Temperatures at the three stations (should each have one entry for the chosen O/F)
+    T_comb = poly_data['Combustor']['Temperature_K'][0] if len(poly_data['Combustor']['Temperature_K']) > 0 else np.nan
+    T_th = poly_data['Throat']['Temperature_K'][0] if len(poly_data['Throat']['Temperature_K']) > 0 else np.nan
+    T_ex = poly_data['Exit']['Temperature_K'][0] if len(poly_data['Exit']['Temperature_K']) > 0 else np.nan
+    T_points = np.array([T_comb, T_th, T_ex])
+
+    for pk in fit_props:
+        y_comb = poly_data['Combustor'].get(pk, [np.nan])[0]
+        y_th = poly_data['Throat'].get(pk, [np.nan])[0]
+        y_ex = poly_data['Exit'].get(pk, [np.nan])[0]
+        Y_points = np.array([y_comb, y_th, y_ex])
+
+        # filter out any invalid points
+        mask = (~np.isnan(T_points)) & (~np.isnan(Y_points))
+        Tfit = T_points[mask]
+        Yfit = Y_points[mask]
+
+        if Tfit.size < 2:
+            deg = 0
+            coeffs = []
+        else:
+            deg = min(2, Tfit.size - 1)
+            coeffs = np.polyfit(Tfit, Yfit, deg).tolist()
+
+        writer.writerow([mr, pc, pk, deg, coeffs, Tfit.tolist(), Yfit.tolist()])
 
 print(f"Saved polynomial coefficients CSV: {poly_csv}")
 
