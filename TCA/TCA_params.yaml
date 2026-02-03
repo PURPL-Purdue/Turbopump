@@ -64,7 +64,7 @@ chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 injector_plate_thickness_rp1: 0.006  #(m) Daniel Lysenko Dudnyk
 injector_plate_thickness_ox: 0.009  #(m) Daniel Lysenko Dudnyk
 
-impinge_fraction: 0.03  #(Unitless) Daniel Lysenko Dudnyk # 3% of chamber length. I hate this variable, I hope it goes away soon.
+impinge_distance: 0.2434  #(in) Joaquin Alarcon
 
 discharge_coefficient_lox: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 discharge_coefficient_rp1: 0.8  #(Unitless) Daniel Lysenko Dudnyk
