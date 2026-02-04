@@ -85,13 +85,13 @@ MRs = np.array([mr])
 # --------------------------
 # Note: Added `Molecular_Weight_kg_kmol` to properties and to fitted properties list
 properties_header = ['MR', 'Station', 'Temperature_K', 'Pressure_Pa', 'Density_kg_m3', 'Mach',
-                     'Speed_of_Sound_m_s', 'Gamma', 'Cp_J_kgK', 'Molecular_Weight_kg_kmol', 'Thermal_Conductivity', 'Prandtl']
+                     'Speed_of_Sound_m_s', 'Gamma', 'Cp_J_kgK', 'Molecular_Weight_kg_kmol', 'Thermal_Conductivity', 'Viscosity_Pa_s', 'Prandtl']
 properties_rows = []
 
 stations = ['Injector', 'Combustor', 'Throat', 'Exit']
 # Properties kept for general output; polynomial fittings will be restricted to a subset below
 prop_keys = ['Temperature_K', 'Pressure_Pa', 'Density_kg_m3', 'Mach',
-             'Speed_of_Sound_m_s', 'Gamma', 'Cp_J_kgK', 'Molecular_Weight_kg_kmol', 'Thermal_Conductivity', 'Prandtl']
+             'Speed_of_Sound_m_s', 'Gamma', 'Cp_J_kgK', 'Molecular_Weight_kg_kmol', 'Thermal_Conductivity', 'Viscosity_Pa_s', 'Prandtl']
 
 # Structure for polynomial data: poly_data[station][prop] = list of values (aligned by Temperature_K)
 poly_data = {st: {pk: [] for pk in prop_keys} for st in stations}
@@ -113,6 +113,7 @@ for mr in MRs:
     heat_cap_c, viscosity_c, therm_con_c, pr_c = C.get_Chamber_Transport(Pc=pc, MR=mr, eps=Eps, frozen=0)
     cp_c = heat_cap_c * c_siconv
     k_c = therm_con_c * tc_siconv
+    mu_c = viscosity_c * vis_siconv
     prandtl_c = pr_c
     MW_C = C.get_Chamber_MolWt_gamma(Pc=pc, MR=mr, eps=Eps)
     MW_C_val = MW_C[0] if isinstance(MW_C, (list, tuple, np.ndarray)) else MW_C
@@ -124,6 +125,7 @@ for mr in MRs:
     heat_cap_t, viscosity_t, therm_con_t, pr_t = C.get_Throat_Transport(Pc=pc, MR=mr, eps=Eps, frozen=0)
     cp_t = heat_cap_t * c_siconv
     k_t = therm_con_t * tc_siconv
+    mu_t = viscosity_t * vis_siconv
     prandtl_t = pr_t
     MW_T = C.get_Throat_MolWt_gamma(Pc=pc, MR=mr, eps=Eps)
     MW_T_val = MW_T[0] if isinstance(MW_T, (list, tuple, np.ndarray)) else MW_T
@@ -133,6 +135,7 @@ for mr in MRs:
     heat_cap_e, viscosity_e, therm_con_e, pr_e = C.get_Exit_Transport(Pc=pc, MR=mr, eps=Eps, frozen=0)
     cp_e = heat_cap_e * c_siconv
     k_e = therm_con_e * tc_siconv
+    mu_e = viscosity_e * vis_siconv
     prandtl_e = pr_e
     MW_E = C.get_exit_MolWt_gamma(Pc=pc, MR=mr, eps=Eps, frozen=0)
     MW_E_val = MW_E[0] if isinstance(MW_E, (list, tuple, np.ndarray)) else MW_E
@@ -151,7 +154,7 @@ for mr in MRs:
     a_inj = np.sqrt(gamma_inj * R_spec_inj * T_inj_K) if not np.isnan(gamma_inj) else np.nan
 
     # Injector: include molecular weight from chamber composition (MW_C_val)
-    properties_rows.append([mr, 'Injector', T_inj_K, p_inj, rho_inj, M_inj, a_inj, gamma_inj, cp_c, MW_C_val, k_c, prandtl_c])
+    properties_rows.append([mr, 'Injector', T_inj_K, p_inj, rho_inj, M_inj, a_inj, gamma_inj, cp_c, MW_C_val, k_c, mu_c, prandtl_c])
     poly_data['Injector']['Temperature_K'].append(T_inj_K)
     poly_data['Injector']['Pressure_Pa'].append(p_inj)
     poly_data['Injector']['Density_kg_m3'].append(rho_inj)
@@ -161,6 +164,7 @@ for mr in MRs:
     poly_data['Injector']['Cp_J_kgK'].append(cp_c)
     poly_data['Injector']['Molecular_Weight_kg_kmol'].append(MW_C_val)
     poly_data['Injector']['Thermal_Conductivity'].append(k_c)
+    poly_data['Injector']['Viscosity_Pa_s'].append(mu_c)
     poly_data['Injector']['Prandtl'].append(prandtl_c) 
 
     # ----- Combustor (use chamber static at Mach = M_comb) -----
@@ -173,7 +177,7 @@ for mr in MRs:
     a_comb = np.sqrt(gamma_comb * R_spec_comb * T_comb_K) if not np.isnan(gamma_comb) else np.nan
 
     # Combustor end: molecular weight same as chamber composition (MW_C_val)
-    properties_rows.append([mr, 'Combustor', T_comb_K, p_comb, rho_comb, M_comb, a_comb, gamma_comb, cp_c, MW_C_val, k_c, prandtl_c])
+    properties_rows.append([mr, 'Combustor', T_comb_K, p_comb, rho_comb, M_comb, a_comb, gamma_comb, cp_c, MW_C_val, k_c, mu_c, prandtl_c])
     poly_data['Combustor']['Temperature_K'].append(T_comb_K)
     poly_data['Combustor']['Pressure_Pa'].append(p_comb)
     poly_data['Combustor']['Density_kg_m3'].append(rho_comb)
@@ -183,6 +187,7 @@ for mr in MRs:
     poly_data['Combustor']['Cp_J_kgK'].append(cp_c)
     poly_data['Combustor']['Molecular_Weight_kg_kmol'].append(MW_C_val)
     poly_data['Combustor']['Thermal_Conductivity'].append(k_c)
+    poly_data['Combustor']['Viscosity_Pa_s'].append(mu_c)
     poly_data['Combustor']['Prandtl'].append(prandtl_c) 
 
     # ----- Throat -----
@@ -195,7 +200,7 @@ for mr in MRs:
     a_th = np.sqrt(gamma_th * R_spec_th * T_th_K) if not np.isnan(gamma_th) else np.nan
 
     # Throat: molecular weight from throat composition (MW_T_val)
-    properties_rows.append([mr, 'Throat', T_th_K, p_th, rho_th, M_th, a_th, gamma_th, cp_t, MW_T_val, k_t, prandtl_t])
+    properties_rows.append([mr, 'Throat', T_th_K, p_th, rho_th, M_th, a_th, gamma_th, cp_t, MW_T_val, k_t, mu_t, prandtl_t])
     poly_data['Throat']['Temperature_K'].append(T_th_K)
     poly_data['Throat']['Pressure_Pa'].append(p_th)
     poly_data['Throat']['Density_kg_m3'].append(rho_th)
@@ -205,6 +210,7 @@ for mr in MRs:
     poly_data['Throat']['Cp_J_kgK'].append(cp_t)
     poly_data['Throat']['Molecular_Weight_kg_kmol'].append(MW_T_val)
     poly_data['Throat']['Thermal_Conductivity'].append(k_t)
+    poly_data['Throat']['Viscosity_Pa_s'].append(mu_t)
     poly_data['Throat']['Prandtl'].append(prandtl_t) 
 
     # ----- Exit -----
@@ -216,7 +222,7 @@ for mr in MRs:
     a_ex = np.sqrt(gamma_ex * R_spec_ex * T_ex_K) if not np.isnan(gamma_ex) else np.nan
 
     # Exit: molecular weight from exit composition (MW_E_val)
-    properties_rows.append([mr, 'Exit', T_ex_K, p_ex, rho_ex, M_ex, a_ex, gamma_ex, cp_e, MW_E_val, k_e, prandtl_e])
+    properties_rows.append([mr, 'Exit', T_ex_K, p_ex, rho_ex, M_ex, a_ex, gamma_ex, cp_e, MW_E_val, k_e, mu_e, prandtl_e])
     poly_data['Exit']['Temperature_K'].append(T_ex_K)
     poly_data['Exit']['Pressure_Pa'].append(p_ex)
     poly_data['Exit']['Density_kg_m3'].append(rho_ex)
@@ -226,6 +232,7 @@ for mr in MRs:
     poly_data['Exit']['Cp_J_kgK'].append(cp_e)
     poly_data['Exit']['Molecular_Weight_kg_kmol'].append(MW_E_val)
     poly_data['Exit']['Thermal_Conductivity'].append(k_e)
+    poly_data['Exit']['Viscosity_Pa_s'].append(mu_e)
     poly_data['Exit']['Prandtl'].append(prandtl_e) 
 
 # --------------------------
@@ -250,7 +257,7 @@ with open(poly_csv, 'w', newline='') as f:
     writer = csv.writer(f)
     writer.writerow(['O/F', 'Pc_psia', 'Property', 'Degree', 'Coefficients_high->low', 'T_points_K', 'Y_points'])
 
-    fit_props = ['Gamma', 'Cp_J_kgK', 'Thermal_Conductivity', 'Molecular_Weight_kg_kmol']
+    fit_props = ['Gamma', 'Cp_J_kgK', 'Thermal_Conductivity', 'Viscosity_Pa_s', 'Molecular_Weight_kg_kmol']
 
     # Temperatures at the three stations (should each have one entry for the chosen O/F)
     T_comb = poly_data['Combustor']['Temperature_K'][0] if len(poly_data['Combustor']['Temperature_K']) > 0 else np.nan
