@@ -637,7 +637,7 @@ def plot(title, throat_radius, angles, contour):
 	return
 
 ######################### EXPORT TO CSV FILE #########################
-def export_nozzle_csv(contour, filename=r"TCA\Countour Exports\nozzle_contour.csv"):
+def export_nozzle_csv(contour, filename=r"/Users/igoto/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv"):
     """
     Write ONE CSV that unites all contour points.
     Expected contour structure from bell_nozzle(...):
