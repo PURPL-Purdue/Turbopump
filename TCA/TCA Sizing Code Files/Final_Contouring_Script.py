@@ -637,7 +637,7 @@ def plot(title, throat_radius, angles, contour):
 	return
 
 ######################### EXPORT TO CSV FILE #########################
-def export_nozzle_csv(contour, filename=r"/Users/igoto/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv"):
+def export_nozzle_csv(contour, filename=r"/Users/dl/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv"):
     """
     Write ONE CSV that unites all contour points.
     Expected contour structure from bell_nozzle(...):
@@ -710,13 +710,13 @@ def export_nozzle_dxf(contour):
             # 'degree=3' is standard for smooth curves
             msp.add_spline(points, degree=3)
 
-    doc.saveas(r"/Users/igoto/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour_new.dxf")
+    doc.saveas(r"/Users/dl/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour_new.dxf")
     return()
 
 # __main method__
 if __name__=="__main__":
 
-	with open(r'/Users/igoto/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file: ##CHANGED FOR DANIEL
+	with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file: ##CHANGED FOR DANIEL
 		tca_params = yaml.safe_load(file)
 
 	l_percent = tca_params['bell_nozzle_l_percent']	# nozzle length percntage
@@ -732,7 +732,7 @@ if __name__=="__main__":
 	# rao_bell_nozzle_contour
 	angles, contour, r2 = bell_nozzle(aratio, throat_radius, l_percent, cratio, cangle, clength)
 	title = 'Bell Nozzle \n [Area Ratio = ' + str(round(aratio,1)) + ', Throat Radius = ' + str(round(throat_radius,2)) + 'mm]' 
-	export_nozzle_csv(contour, filename=r"/Users/igoto/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv")
+	export_nozzle_csv(contour, filename=r"/Users/dl/Documents/GitHub/Turbopump/TCA/Countour Exports/nozzle_contour.csv")
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
 

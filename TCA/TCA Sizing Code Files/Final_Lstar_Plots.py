@@ -36,14 +36,14 @@ L_lo = 40
 L_hi = 50 
 
 #Lower bound for contraction ratio
-cr_lo = 1.5
+cr_lo = 3
 #Upper bound for contraction ratio
-cr_hi = 5.0
+cr_hi = 6.0
 
 #VARIABLES
 
 #Importing yaml file containing TCA parameters
-with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #Target thrust (lbf)

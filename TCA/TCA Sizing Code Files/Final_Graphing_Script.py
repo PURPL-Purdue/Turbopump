@@ -43,7 +43,7 @@ pHi = 55   #Lower bound of pc divided by 10 plus 1:  (pc / 10) + 1
 #VARIABLES
 
 #Importing yaml file containing TCA parameters
-with open(r'C:\Users\igoto\Documents\GitHub\Turbopump\TCA\TCA_params.yaml') as file:
+with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #Expansion Ratio of Nozzle
@@ -106,7 +106,7 @@ plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
-plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_Target_psi.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Specific_Impulse_Target_psi.png")
 
 #This figure plots specific impulse values (in seconds) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(2)
@@ -126,7 +126,7 @@ plt.title("Specific Impulse vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"TCA\CEA Graphs\Specific_Impulse_P_Range.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Specific_Impulse_P_Range.png")
 
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(3)
@@ -145,7 +145,7 @@ plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
-plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_Target_psi.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Combustion_Temps_Target_psi.png")
 
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(4)
@@ -163,7 +163,7 @@ plt.title("Combustion Temps vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"TCA\CEA Graphs\Combustion_Temps_P_Range.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Combustion_Temps_P_Range.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(5)
@@ -177,7 +177,7 @@ plt.ylabel("Characteristic Velocity [ft/s]")
 plt.title(f"Characteristic Velocity vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"TCA\CEA Graphs\Characteristic_Velocity_Target_psi.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Characteristic_Velocity_Target_psi.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(6)
@@ -194,7 +194,7 @@ plt.title("Characteristic Velocity vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"TCA\CEA Graphs\Characteristic_Velocity_P_Range.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Characteristic_Velocity_P_Range.png")
 
 #This figure plots coefficient of thrust values across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(7)
@@ -210,7 +210,7 @@ plt.ylabel("Coefficient of Thrust")
 plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_Target_psi.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Coefficient_Target_psi.png")
 
 #This figure plots coefficient of thrust values across a set range of O/F ratios and a range of chamber pressures
 plt.figure(8)
@@ -229,7 +229,7 @@ plt.title("Coefficient of Thrust vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"TCA\CEA Graphs\Thrust_Coefficient_P_Range.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Coefficient_P_Range.png")
 
 plt.figure(9)
 mdot = 9.02
@@ -246,7 +246,7 @@ plt.ylabel("Thrust Force")
 plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"TCA\CEA Graphs\Thrust_Generation_Range.png")
+plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Generation_Range.png")
 
 plt.show()
 
