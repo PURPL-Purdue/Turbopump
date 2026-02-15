@@ -88,15 +88,10 @@ plt.figure(1)
 count = 0
 for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))  #Optimal Nozzle Expansion Ratio for inputs
-    cfo = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps) 
-    cstar = C.get_Cstar(Pc = pc, MR = mr) * ef_cstar    #Calculates the coefficient of thrust at given set points
-    Isp_vals[count] = (cfo[0] * ef_cf) * (cstar) / g
+    Isp_vals[count] = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb)
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
-Eps_chosen = C.get_eps_at_PcOvPe(Pc = pc, MR = of, PcOvPe= (pc / pe))
-cf_chosen = C.get_PambCf(Pamb = pamb, Pc = pc, MR = of, eps = Eps_chosen)
-cstar_chosen = C.get_Cstar(Pc = pc, MR = of) * ef_cstar
-Isp_chosen = (cf_chosen[0] * ef_cf) * cstar_chosen / g
+Isp_chosen = C.estimate_Ambient_Isp(Pc = pc, MR = of, eps = EPS, Pamb = pamb)
 plt.plot(of, Isp_chosen, 'ko')
 plt.text(2.15, 244, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
@@ -115,9 +110,7 @@ for p in range(pLo, pHi):
     for mr in mr_range:
       po = p * 10.0     #Multiplies p values by 10 to reach actual chamber pressure to test
       Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))  #Optimal Nozzle Expansion Ratio for inputs
-      cfo = C.get_PambCf(Pamb = pamb, Pc = po, MR = mr, eps = Eps) 
-      cstar = C.get_Cstar(Pc = po, MR = mr) * ef_cstar    #Calculates the coefficient of thrust at given set points
-      Isp_vals[count] = (cfo[0] * ef_cf) * (cstar) / g
+      Isp_vals[count] = C.estimate_Ambient_Isp(Pc = po, MR = mr, eps = Eps, Pamb = pamb)
       count = count + 1
     plt.plot(mr_range, Isp_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
