@@ -49,7 +49,7 @@ kg_to_lbm = 2.20462
 ##################################
 
 #Importing yaml file containing TCA parameters
-with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
+with open(r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #VARIABLES
@@ -75,6 +75,8 @@ L_star_cm = L_star_in / 12 * ft_to_m * mcm
 con_r = tca_params['tca_contraction_ratio']  #contraction ratio chamber area/throat area
 #Convergent Half-Angle (degrees)
 a = tca_params['tca_convergent_half_angle']
+#System Mass Flow Rate (lbm/s)
+mdot = tca_params['turbopump_mdot']
 
 ##################################
 #Calculations
@@ -83,12 +85,12 @@ a = tca_params['tca_convergent_half_angle']
 Ft = F * lbf_N                                                      #Converts force of thrust to Newtons
 Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))      #Calculates optimal expansion ratio
 Tc_F = C.get_Tcomb(Pc = pc, MR = mr) + rankineToF                   #Calculates combustion temperature in Fahrenheit
-Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef_cstar                #Calculates characteristic velocity in m/s, with efficiency factor
-cf_arr = C.get_PambCf(Pamb = 14.7, Pc = pc, MR = mr, eps = Eps)     
+Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef_cstar          #Calculates characteristic velocity in m/s, with efficiency factor
+cf_arr = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps)     
 cf = cf_arr[0] * ef_cf                                                 #Calculates coefficient of thrust, with efficiency factor
-isp = (Cstar * cf) / g                                              #calculates isp in seconds
+isp = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen=0, frozenAtThroat=0)   #calculates isp in seconds
 
-At = Ft / (cf * pc * psi_to_pa)        #Calculates area of throat in m^2
+At = ((mdot / kg_to_lbm) * Cstar) / (pc * psi_to_pa)           #Calculates area of throat in m^2
 At_in = At * ((m_in) ** 2)             #Converts area of throat to in^2
 At_cm = At * (mcm ** 2)                #Converts area of throat to cm^2
 Dt_in = 2 * np.sqrt(At_in / np.pi)     #Calculates throat diameter in inches
@@ -103,7 +105,7 @@ Tt_K = Tt * rankineToKelvin                #Converts the throat temperature to K
 Tt_F = Tt + rankineToF                     #Converts the throat temperature to Fahrenheit
 
 #Calculates the mass flow rate for choked flow at the throat
-choked_mdot = (At * pc * psi_to_pa / (Tt_K**0.5)) * ((gam_t / R_comb)**0.5) * (((gam_t + 1.0)/2.0) ** (-(gam_t + 1.0)/(2.0*(gam_t - 1.0)))) * kg_to_lbm
+#choked_mdot = (At * pc * psi_to_pa / (Tt_K**0.5)) * ((gam_t / R_comb)**0.5) * (((gam_t + 1.0)/2.0) ** (-(gam_t + 1.0)/(2.0*(gam_t - 1.0)))) * kg_to_lbm
 
 Ac_in = At_in * con_r                  #Calculates chamber area in in^2
 Dc_in = 2 * np.sqrt(Ac_in / np.pi)     #Calculates chamber diameter in inches
@@ -120,7 +122,7 @@ gamma, viscosity, k, Pnum = C.get_Chamber_Transport(Pc = pc, MR = 2.1, eps = Eps
 print('\nGiven these inputs:')
 print(f'Theoretical specific impulse is {isp: .3f} seconds')
 print(f'The temperature of combustion is {Tc_F: .3f} degrees Fahrenheit')
-print(f'\nTheoretically maximum mass flow rate (choked at throat) is {choked_mdot: .3f} lmb/s')
+print(f'\nTheoretically maximum mass flow rate (choked at throat) is {mdot: .3f} lmb/s')
 print(f'\nThe throat diameter should be {Dt_in: .3f} inches')
 print(f'The throat radius should be {(Dt_in / 2): .3f} inches')
 print(f'The throat area should be {(At_in): .3f} inches squared')
@@ -139,13 +141,13 @@ data = [
 ['Force of thrust(lbf)', 'Chamber Pressure (psia)', 'Contraction Ratio', 'O/F Ratio', 'L* (in)', 'Convergent Half-Angle (deg)',
 'Chamber Diameter (in)', 'Throat Diameter (in)', 'Exit Diameter (in)', 'Chamber Length (in)', 'Expansion Ratio', 'Mass Flow Rate (lbm/s)'],
 [F, pc, round(con_r, 1), round(mr, 1), round(L_star_in, 1), round(a, 1), round(Dc_in, 3), round(Dt_in, 3), round(De_in, 3), round(Lc_in, 3),
- round(Eps, 3), round(choked_mdot,3)]
+ round(Eps, 3), round(mdot,3)]
 ]
 
 ##################################
 #REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
 ##################################
-output_file_path = r"/Users/dl/Documents/GitHub/Turbopump/TCA/Dimensions CSV/dimensions.csv"
+output_file_path = r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\Dimensions CSV/dimensions.csv"
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)
