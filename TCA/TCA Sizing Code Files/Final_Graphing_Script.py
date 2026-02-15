@@ -17,6 +17,10 @@ np.set_printoptions(legacy='1.25')   #Fix for some numpy float printing isssues 
 
 #Rankine to Kelvin conversion factor
 rankineToKelvin = 5.0 / 9.0
+#kg to lbm conversion
+kg_to_lbm = 2.20462
+#inches to meter conversion
+in_to_m = 0.0254
 
 ##################################
 #Define NASA Chemical Equilibrium with Applications (CEA) Object
@@ -42,8 +46,15 @@ pHi = 55   #Lower bound of pc divided by 10 plus 1:  (pc / 10) + 1
 
 #VARIABLES
 
+##################################
+#REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
+#Devin Path: 'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml'
+#Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml'
+#Other Path: 
+#################################
+
 #Importing yaml file containing TCA parameters
-with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
+with open(r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #Expansion Ratio of Nozzle
@@ -51,7 +62,7 @@ EPS = tca_params['tca_expansion_ratio']
 #Exit Diameter of Nozzle
 De = tca_params['tca_exit_diameter']
 #Exit Area of Nozzle
-Ae = np.pi * ((De / 2.0) ** 2)
+Ae = np.pi * ((De / 2.0) ** 2) * in_to_m
 #Target chamber pressure (psi)
 pc = tca_params['tca_chamber_pressure']
 #Ambient pressure (psi)
@@ -83,15 +94,23 @@ T_vals = [0] * len(mr_range)          #Empty array for thrust values
 #All Plotting Figures
 ##################################
 
+##################################
+#REPLACE ALL PATHS WITH PATH YOU NEED FOR YOUR OWN COMPUTER
+#Devin Path: "C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\..."
+#Dani Path: "C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\..."
+#Other Path: 
+#################################
+
 #This figure plots specific impulse values (in seconds) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(1)
 count = 0
 for mr in mr_range:
     Eps = C.get_eps_at_PcOvPe(Pc = pc, MR = mr, PcOvPe= (pc / pe))  #Optimal Nozzle Expansion Ratio for inputs
-    Isp_vals[count] = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb)
+    isp = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb)
+    Isp_vals[count] = isp[0]
     count = count + 1
 plt.plot(mr_range, Isp_vals, 'b')
-Isp_chosen = C.estimate_Ambient_Isp(Pc = pc, MR = of, eps = EPS, Pamb = pamb)
+Isp_chosen, x = C.estimate_Ambient_Isp(Pc = pc, MR = of, eps = EPS, Pamb = pamb)
 plt.plot(of, Isp_chosen, 'ko')
 plt.text(2.15, 244, f'({of : .1f}, {Isp_chosen : .1f}[s])', fontsize = 12)
 plt.xlabel("O/F ratio by mass", fontsize = 14)
@@ -101,7 +120,8 @@ plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Specific_Impulse_Target_psi.png")
+#End of path (...): \Specific_Impulse_Target_psi.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Specific_Impulse_Target_psi.png")
 
 #This figure plots specific impulse values (in seconds) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(2)
@@ -110,7 +130,8 @@ for p in range(pLo, pHi):
     for mr in mr_range:
       po = p * 10.0     #Multiplies p values by 10 to reach actual chamber pressure to test
       Eps = C.get_eps_at_PcOvPe(Pc = po, MR = mr, PcOvPe= (po / pe))  #Optimal Nozzle Expansion Ratio for inputs
-      Isp_vals[count] = C.estimate_Ambient_Isp(Pc = po, MR = mr, eps = Eps, Pamb = pamb)
+      isp = C.estimate_Ambient_Isp(Pc = po, MR = mr, eps = Eps, Pamb = pamb)
+      Isp_vals[count] = isp[0]
       count = count + 1
     plt.plot(mr_range, Isp_vals, label = f'Chamber pressure = {po} psia')
 plt.xlabel("O/F ratio by mass")
@@ -119,7 +140,8 @@ plt.title("Specific Impulse vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Specific_Impulse_P_Range.png")
+#End of path (...): \Specific_Impulse_P_Range.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Specific_Impulse_P_Range.png")
 
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(3)
@@ -138,7 +160,8 @@ plt.tick_params(axis='x', labelsize=12)
 plt.tick_params(axis='y', labelsize=12)
 plt.grid()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Combustion_Temps_Target_psi.png")
+#End of path (...): \Combustion_Temps_Target_psi.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Combustion_Temps_Target_psi.png")
 
 #This figure plots combustion temperatures (in Fahrenhiet) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(4)
@@ -156,7 +179,8 @@ plt.title("Combustion Temps vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Combustion_Temps_P_Range.png")
+#End of path (...): \Combustion_Temps_P_Range.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Combustion_Temps_P_Range.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(5)
@@ -170,7 +194,8 @@ plt.ylabel("Characteristic Velocity [ft/s]")
 plt.title(f"Characteristic Velocity vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Characteristic_Velocity_Target_psi.png")
+#End of path (...): \Characteristic_Velocity_Target_psi.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Characteristic_Velocity_Target_psi.png")
 
 #This figure plots characteristic velocity values (in ft/s) across a set range of O/F ratios and a range of chamber pressures
 plt.figure(6)
@@ -187,7 +212,8 @@ plt.title("Characteristic Velocity vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Characteristic_Velocity_P_Range.png")
+#End of path (...): \Characteristic_Velocity_P_Range.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Characteristic_Velocity_P_Range.png")
 
 #This figure plots coefficient of thrust values across a set range of O/F ratios at the chosen chamber pressure
 plt.figure(7)
@@ -203,7 +229,8 @@ plt.ylabel("Coefficient of Thrust")
 plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Coefficient_Target_psi.png")
+#End of path (...): \Thrust_Coefficient_Target_psi.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Thrust_Coefficient_Target_psi.png")
 
 #This figure plots coefficient of thrust values across a set range of O/F ratios and a range of chamber pressures
 plt.figure(8)
@@ -222,10 +249,11 @@ plt.title("Coefficient of Thrust vs O/F ratio")
 plt.grid()
 plt.legend()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Coefficient_P_Range.png")
+#End of path (...): \Thrust_Coefficient_P_Range.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Thrust_Coefficient_P_Range.png")
 
 plt.figure(9)
-mdot = 9.02
+mdot = tca_params['turbopump_mdot'] / kg_to_lbm
 count = 0
 for mr in mr_range:
     Ve = C.get_MachNumber(Pc = pc, MR = mr, eps = EPS) * 343   #Exit velocity in m/s
@@ -239,7 +267,8 @@ plt.ylabel("Thrust Force")
 plt.title(f"Coefficient of Thrust vs O/F ratio @{pc} psia")
 plt.grid()
 
-plt.savefig(r"C:\Users\dl\Documents\GitHub\Turbopump\TCA\CEA Graphs\Thrust_Generation_Range.png")
+#End of path (...): \Thrust_Generation_Range.png
+plt.savefig(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\CEA Graphs\Thrust_Generation_Range.png")
 
 plt.show()
 
