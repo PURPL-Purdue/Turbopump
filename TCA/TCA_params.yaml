@@ -42,7 +42,7 @@ thrust_coefficient_efficiency: 0.90  #(Unitless) Devin Morris
 
 #Combustion chamber Design Parameters
 characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
-tca_contraction_ratio: 5.527  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
+tca_contraction_ratio: 4.431  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
 tca_convergent_half_angle: 45  #(degrees) Devin Morris
 bell_nozzle_l_percent: 80  #(%) Devin Morris
 ambient_pressure: 14.7  #(psi) Devin Morris
@@ -52,7 +52,7 @@ tca_exit_pressure: 12.0  #(psi) Devin Morris
 tca_chamber_diameter: 6.1  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_throat_diameter: 2.898  #(in) Devin Morris
 tca_exit_diameter: 7.203  #(in) Devin Morris
-tca_chamber_length: 8.074  #(in) Devin Morris // Daniel Lysenko Dudnyk
+tca_chamber_length: 10.086  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_expansion_ratio: 6.178  #(Unitless) Devin Morris
 
 estimated_isp: 274.789   #(s) Devin Morris
