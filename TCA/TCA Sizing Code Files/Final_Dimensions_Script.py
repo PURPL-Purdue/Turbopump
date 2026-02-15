@@ -78,12 +78,12 @@ mr = tca_params['oxidizer_fuel_ratio']
 L_star_in = tca_params['characteristic_length']
 #Characteristic Length calc converted to centimeters
 L_star_cm = L_star_in / 12 * ft_to_m * mcm
-#Contraction Ratio
-con_r = tca_params['tca_contraction_ratio']  #contraction ratio chamber area/throat area
 #Convergent Half-Angle (degrees)
 a = tca_params['tca_convergent_half_angle']
 #System Mass Flow Rate (lbm/s)
 mdot = tca_params['turbopump_mdot']
+#Chosen chamber diameter to match pipe (inches)
+Dc_in = tca_params['tca_chamber_diameter']
 
 ##################################
 #Calculations
@@ -114,6 +114,8 @@ Tt_F = Tt + rankineToF                     #Converts the throat temperature to F
 #Calculates the mass flow rate for choked flow at the throat
 #choked_mdot = (At * pc * psi_to_pa / (Tt_K**0.5)) * ((gam_t / R_comb)**0.5) * (((gam_t + 1.0)/2.0) ** (-(gam_t + 1.0)/(2.0*(gam_t - 1.0)))) * kg_to_lbm
 
+con_r = (Dc_in / Dt_in) ** 2
+
 Ac_in = At_in * con_r                  #Calculates chamber area in in^2
 Dc_in = 2 * np.sqrt(Ac_in / np.pi)     #Calculates chamber diameter in inches
 
@@ -137,7 +139,7 @@ print(f'\nThe expansion ratio should be {Eps: .3f}')
 print(f'\nThe exit diameter should be {De_in: .3f} inches')
 print(f'The exit radius should be {(De_in / 2): .3f} inches')
 print(f'\nThe chamber diameter should be {Dc_in: .3f} inches')
-print(f'The chamber radius should be {(Dc_in / 2): .3f} inches')
+print(f'The contraction ratio is {con_r: .3f}')
 print(f'\nThe combustion chamber length should be {Lc_in : .3f} inches')
 print(f'\nThe molecular weight is {MW : .3f} lbm/lbmole')
 print(f'The ratio of specific heats is {gamma : .3f}')
