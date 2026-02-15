@@ -37,8 +37,8 @@ oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
 turbopump_mdot: 20.0   #(lbm/s) Devin Morris
 
 #Assumed efficiies 
-c_star_efficiency: 0.90  #(Unitless) Devin Morris
-thrust_coefficient_efficiency: 0.90  #(Unitless) Devin Morris
+c_star_efficiency: 0.875  #(Unitless) Devin Morris
+thrust_coefficient_efficiency: 0.875  #(Unitless) Devin Morris
 
 #Combustion chamber Design Parameters
 characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
