@@ -48,6 +48,13 @@ kg_to_lbm = 2.20462
 #Define Function Inputs
 ##################################
 
+##################################
+#REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
+#Devin Path: 'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml'
+#Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml'
+#Other Path: 
+#################################
+
 #Importing yaml file containing TCA parameters
 with open(r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
@@ -146,8 +153,12 @@ data = [
 
 ##################################
 #REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
+
+#Devin Path: 'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\Dimensions CSV/dimensions.csv'
+#Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/Dimensions CSV/dimensions.csv'
+#Other Path: 
 ##################################
-output_file_path = r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\Dimensions CSV/dimensions.csv"
+output_file_path = r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\Dimensions CSV/dimensions.csv'
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)
