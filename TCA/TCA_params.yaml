@@ -49,7 +49,7 @@ ambient_pressure: 14.7  #(psi) Devin Morris
 tca_exit_pressure: 12.0  #(psi) Devin Morris
 
 #Thrust Chamber Assembly Calculated Design Parameters
-tca_chamber_diameter: 6.1  #(in) Devin Morris // Daniel Lysenko Dudnyk
+tca_chamber_diameter: 5.189  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_throat_diameter: 2.857  #(in) Devin Morris
 tca_exit_diameter: 7.102  #(in) Devin Morris
 tca_chamber_length: 9.805  #(in) Devin Morris // Daniel Lysenko Dudnyk
