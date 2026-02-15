@@ -120,7 +120,7 @@ gamma, viscosity, k, Pnum = C.get_Chamber_Transport(Pc = pc, MR = 2.1, eps = Eps
 
 #Printing our outputs
 print('\nGiven these inputs:')
-print(f'Theoretical specific impulse is {isp: .3f} seconds')
+print(f'Theoretical specific impulse is {isp[0]: .3f} seconds')
 print(f'The temperature of combustion is {Tc_F: .3f} degrees Fahrenheit')
 print(f'\nTheoretically maximum mass flow rate (choked at throat) is {mdot: .3f} lmb/s')
 print(f'\nThe throat diameter should be {Dt_in: .3f} inches')
