@@ -74,9 +74,12 @@ injector_number_of_holes_rp1: 80  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_lox: 80  #(Unitless) Daniel Lysenko Dudnyk
 N_film_Holes: 0  #(Unitless) Daniel Lysenko Dudnyk
 
-injector_hole_diameter_rp1: 1.0922  #(mm) Daniel Lysenko Dudnyk #57 drill = 0.0430" = 1.0922 mm
-injector_hole_diameter_lox: 1.5113  #(mm) Daniel Lysenko Dudnyk #53 drill = 0.0595" = 1.5113 mm
+injector_hole_diameter_rp1: 1.1811  #(mm) Daniel Lysenko Dudnyk #56 drill = 0.0465" = 1.1811 mm
+injector_hole_diameter_lox: 1.7018  #(mm) Daniel Lysenko Dudnyk #51 drill = 0.0670" = 1.7018 mm
 film_cooling_hole_diameter: 0  #(mm) Daniel Lysenko Dudnyk 
+
+th_rp1: 38 #degrees.
+th_lox: 24.096 #degrees.
 
 rp1_manifold_diameter: 5.1054 #7 drill = 0.2010 in = 5.1054 mm  #(mm) Daniel Lysenko Dudnyk
 lox_countersink_diameter: 3.048 #31 drill = 0.1200 in = 3.048 mm  #(mm) Daniel Lysenko Dudnyk
