@@ -1,0 +1,489 @@
+# %% [markdown]
+# # Injector Plate Sizing - Updated with Momentum-Balanced Angle Calculation
+# This notebook sizes an impinging doublet injector plate using:
+# - Fixed orifice diameters → calculates required inlet pressures
+# - Momentum balance for optimal LOX injection angle
+# - Cd-based pressure drop calculations
+
+# %%
+import numpy as np
+import yaml
+import matplotlib.pyplot as plt
+from CoolProp.CoolProp import PropsSI
+import csv
+
+# %%
+# Load configuration file
+with open(r'/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml') as file:
+    tca_params = yaml.safe_load(file)
+
+# %%
+# == Conversion between units ==
+psi_into_pa = 6894.76  # Convert psi -> Pascal
+pa_to_psi = 1 / psi_into_pa  # Convert Pascal -> psi
+meters_into_inches = 39.37  # Convert meters -> inches
+inches_into_meters = 0.0254  # Convert inches -> meters
+degrees_into_rad = np.pi/180  # Convert degrees -> radians
+rad_into_degrees = 180/np.pi  # Convert radians -> degrees
+lbm_into_kg = 0.453592  # Convert lbm -> kg
+lbf_into_newton = 4.44822  # Convert lbf -> Newton
+g0 = 9.81  # m/s^2
+
+# %%
+# == Design Parameters (Change as needed) ==
+mdot = tca_params['tca_throat_choked_flow'] * lbm_into_kg  # Total propellant mass flow rate [kg/s]
+OF_Ratio = tca_params['oxidizer_fuel_ratio']  # Mixture ratio O/F
+
+# Propellant densities
+rho_rp1 = 810  # RP1 Density [kg/m^3] at injector conditions
+rho_lox = 1141  # LOX Density [kg/m^3] at injector conditions
+
+# Pressures
+Pc = tca_params['tca_chamber_pressure'] * psi_into_pa  # Chamber stagnation pressure [Pa]
+pressure_out = 500  # Chamber/downstream pressure [psi]
+
+# Discharge coefficients - NEW: Using Cd = 0.8 for pressure drop calculations
+Cd = 0.8  # Discharge coefficient for pressure drop calculation
+Cd_ox = 0.8  # Discharge coefficient for LOX
+Cd_rp1 = 0.8  # Discharge coefficient for RP1
+Cd_film = tca_params['discharge_coefficient_film']  # Discharge coefficient film cooling
+
+# Chamber geometry
+Length_chamber = tca_params['tca_chamber_length'] / meters_into_inches  # Combustion chamber length [m]
+CombDiam = tca_params['tca_chamber_diameter'] / meters_into_inches  # chamber inner diameter [m]
+throat_diameter = tca_params['tca_throat_diameter'] / meters_into_inches  # throat diameter [m]
+
+# NEW: Fixed orifice diameters (measured/designed values)
+diameter_RP1 = 0.0430  # RP1 orifice diameter [inches]
+diameter_LOX = 0.0595  # LOX orifice diameter [inches]
+
+# Convert to meters
+diameter_LOX_m = diameter_LOX * inches_into_meters
+diameter_RP1_m = diameter_RP1 * inches_into_meters
+
+# Number of holes
+num_holes_rp1_inj = tca_params['injector_number_of_holes_rp1']  # number of RP1 holes in injector faceplate
+num_holes_lox_inj = tca_params['injector_number_of_holes_lox']  # number of LOX holes in injector faceplate
+N_film_Holes = tca_params['N_film_Holes']  # Number of film cooling holes
+
+# NEW: Mass flow scaling factor (dividing by 80 for per-hole calculations)
+mass_flow_scale = 80  # Scale factor for mass flow calculations
+
+# == Injector Geometry Parameters ==
+wall_thickness_rp1 = tca_params['injector_plate_thickness_rp1']  # [m]
+wall_thickness_ox = tca_params['injector_plate_thickness_ox']  # [m]
+
+impinge_distance = tca_params['impinge_distance'] / meters_into_inches  # streams will impinge at X% of chamber length
+
+# MANIFOLD DESIGN
+h_manifold_ox = tca_params['h_manifold_ox']
+
+ratio_film_cooling = 0.15  # Fraction of fuel mass flow sent to film cooling vs. injection
+
+# Friction factors and local loss coefficients
+fOx = 0.01  # darcy friction factor LOX
+fRP1 = 0.01  # darcy friction factor RP1
+KOx = 1  # lumped local loss K LOX
+KRP1 = 1  # lumped local loss K RP1
+NinletsOx = 1  # number of LOX manifold inlets
+NinletsRP1 = 1  # number of RP1 manifold inlets
+
+# %%
+# Surface tension properties
+sigma_rp1 = PropsSI('SURFACE_TENSION', 'T', 298, 'Q', 0, 'Dodecane')  # Surface tension of RP-1 [N/m]
+sigma_lox = PropsSI('SURFACE_TENSION', 'T', 90, 'Q', 0, 'Oxygen')  # Surface tension of LOX [N/m]
+
+# %%
+# Split total mass flow into fuel and oxidizer
+mdot_kero = mdot / (1 + OF_Ratio)  # Fuel mass flow (RP-1)
+mdot_lox = mdot * OF_Ratio / (1 + OF_Ratio)  # Oxidizer mass flow (LOX)
+
+# %% [markdown]
+# ## Mass Flow Distribution
+# This function distributes the total propellant mass flow among a specific set of injector holes
+# - `mdot_propellant` --- the total mass flow rate of that propellant [kg/s]
+# - `number_holes` --- number of holes of this specific type
+# - `total_number_of_holes` --- total number of holes that share the propellant flow
+
+# %%
+def mdot_prop(mdot_propellant, number_holes, total_number_of_holes):
+    mdot_propel = mdot_propellant * number_holes / total_number_of_holes
+    mdot_per_hole = mdot_propel / number_holes
+    return mdot_propel, mdot_per_hole
+
+mdot_rp1_inj, mdot_rp1_inj_per_hole = mdot_prop(mdot_kero, num_holes_rp1_inj, num_holes_rp1_inj)
+mdot_lox_inj, mdot_lox_inj_per_hole = mdot_prop(mdot_lox, num_holes_lox_inj, num_holes_lox_inj)
+
+# NEW: Apply mass flow scaling
+mass_flow_RP1_scaled = mdot_rp1_inj / mass_flow_scale  # [kg/s]
+mass_flow_LOX_scaled = mdot_lox_inj / mass_flow_scale  # [kg/s]
+
+print(f"RP1 total mass flow: {mdot_rp1_inj:.3f} kg/s")
+print(f"LOX total mass flow: {mdot_lox_inj:.3f} kg/s")
+print(f"\nScaled mass flows (/{mass_flow_scale}):")
+print(f"RP1 scaled mass flow: {mass_flow_RP1_scaled:.5f} kg/s")
+print(f"LOX scaled mass flow: {mass_flow_LOX_scaled:.5f} kg/s")
+
+# %% [markdown]
+# ## Velocity and Area Calculations
+# Calculate jet velocities based on fixed orifice diameters and mass flow rates
+
+# %%
+# Calculate orifice areas
+area_LOX = np.pi * (diameter_LOX_m / 2)**2
+area_RP1 = np.pi * (diameter_RP1_m / 2)**2
+
+# Calculate jet velocities from continuity equation: v = mdot / (rho * A)
+velocity_LOX = mass_flow_LOX_scaled / (rho_lox * area_LOX)
+velocity_RP1 = mass_flow_RP1_scaled / (rho_rp1 * area_RP1)
+
+print(f"\n=== Jet Velocities ===")
+print(f"LOX velocity: {velocity_LOX:.2f} m/s")
+print(f"RP1 velocity: {velocity_RP1:.2f} m/s")
+print(f"\n=== Orifice Diameters ===")
+print(f"LOX orifice diameter: {diameter_LOX:.4f} inches ({diameter_LOX_m*1000:.3f} mm)")
+print(f"RP1 orifice diameter: {diameter_RP1:.4f} inches ({diameter_RP1_m*1000:.3f} mm)")
+
+# %% [markdown]
+# ## Pressure Drop Calculations (NEW APPROACH)
+# Calculate required inlet pressure based on:
+# - Fixed orifice diameters
+# - Desired jet velocities
+# - Cd-based pressure drop formula: ΔP = (v² × ρ) / (Cd² × 2)
+
+# %%
+# NEW: Calculate pressure drop using Cd-based formula
+# ΔP = (v² × ρ) / (Cd² × 2)
+pressure_drop_LOX_pa = (velocity_LOX**2 * rho_lox) / (Cd**2 * 2)
+pressure_drop_RP1_pa = (velocity_RP1**2 * rho_rp1) / (Cd**2 * 2)
+
+# Convert to psi
+pressure_drop_LOX = pressure_drop_LOX_pa * pa_to_psi
+pressure_drop_RP1 = pressure_drop_RP1_pa * pa_to_psi
+
+# Calculate required inlet pressures
+pressure_inlet_LOX = pressure_out + pressure_drop_LOX
+pressure_inlet_RP1 = pressure_out + pressure_drop_RP1
+
+print(f"\n=== Pressure Drop Analysis ===")
+print(f"LOX pressure drop: {pressure_drop_LOX:.2f} psi ({pressure_drop_LOX_pa/1000:.2f} kPa)")
+print(f"RP1 pressure drop: {pressure_drop_RP1:.2f} psi ({pressure_drop_RP1_pa/1000:.2f} kPa)")
+print(f"\n=== Required Inlet Pressures ===")
+print(f"LOX inlet pressure: {pressure_inlet_LOX:.2f} psi")
+print(f"RP1 inlet pressure: {pressure_inlet_RP1:.2f} psi")
+print(f"\nChamber pressure: {pressure_out:.2f} psi")
+print(f"Pressure drop as % of chamber pressure:")
+print(f"  LOX: {(pressure_drop_LOX/pressure_out)*100:.1f}%")
+print(f"  RP1: {(pressure_drop_RP1/pressure_out)*100:.1f}%")
+
+# %% [markdown]
+# ## Injection Angle Optimization (NEW MOMENTUM BALANCE APPROACH)
+# Calculate the optimal LOX injection angle based on momentum balance:
+# - User specifies fuel injection angle
+# - LOX angle calculated to balance transverse momentum components
+# - Formula: sin(θ_ox) = (ṁ_fuel × v_fuel × sin(θ_fuel)) / (ṁ_ox × v_ox)
+
+# %%
+def find_optimal_theta_ox(theta_fuel_deg, fuel_mass_flow, ox_mass_flow, fuel_velocity, ox_velocity):
+    """
+    NEW APPROACH: Calculate optimal oxidizer injection angle using momentum balance.
+    
+    The transverse momentum components must balance for stable impingement:
+    ṁ_fuel × v_fuel × sin(θ_fuel) = ṁ_ox × v_ox × sin(θ_ox)
+    
+    Parameters:
+    -----------
+    theta_fuel_deg : float
+        Fuel injection angle [degrees]
+    fuel_mass_flow : float
+        Fuel mass flow rate [kg/s]
+    ox_mass_flow : float
+        Oxidizer mass flow rate [kg/s]
+    fuel_velocity : float
+        Fuel jet velocity [m/s]
+    ox_velocity : float
+        Oxidizer jet velocity [m/s]
+    
+    Returns:
+    --------
+    theta_ox_deg : float
+        Optimal oxidizer injection angle [degrees]
+    """
+    theta_f_rad = theta_fuel_deg * degrees_into_rad
+    
+    # Transverse component factor for fuel (toward center)
+    sin_theta_f = np.sin(theta_f_rad)
+    
+    # Required sine of oxidizer angle for momentum balance
+    required_sin_theta_ox = (fuel_mass_flow * fuel_velocity * sin_theta_f) / (ox_mass_flow * ox_velocity)
+    
+    # Check if physically achievable
+    if required_sin_theta_ox > 1.0:
+        print(f"WARNING: Required sin(θ_ox) = {required_sin_theta_ox:.3f} > 1.0")
+        print(f"Cannot achieve momentum balance with given parameters!")
+        return None
+    
+    theta_ox_rad = np.arcsin(required_sin_theta_ox)
+    theta_ox_deg = theta_ox_rad * rad_into_degrees
+    
+    return theta_ox_deg
+
+# %%
+# Interactive angle calculation
+print("\n=== Injection Angle Optimization ===")
+print("Enter the desired RP1 (fuel) injection angle.")
+print("The optimal LOX angle will be calculated for momentum balance.\n")
+
+theta_rp1_deg = float(input("RP1 injection angle (degrees): "))
+
+# Calculate optimal LOX angle using NEW momentum balance approach
+theta_lox_deg = find_optimal_theta_ox(
+    theta_rp1_deg, 
+    mass_flow_RP1_scaled, 
+    mass_flow_LOX_scaled, 
+    velocity_RP1, 
+    velocity_LOX
+)
+
+if theta_lox_deg is not None:
+    print(f"\n=== Injection Angle Results ===")
+    print(f"RP1 injection angle: {theta_rp1_deg:.3f}°")
+    print(f"Optimal LOX injection angle: {theta_lox_deg:.3f}°")
+    print(f"\nMomentum balance verification:")
+    momentum_fuel = mass_flow_RP1_scaled * velocity_RP1 * np.sin(theta_rp1_deg * degrees_into_rad)
+    momentum_ox = mass_flow_LOX_scaled * velocity_LOX * np.sin(theta_lox_deg * degrees_into_rad)
+    print(f"Fuel transverse momentum: {momentum_fuel:.6f} N")
+    print(f"Ox transverse momentum: {momentum_ox:.6f} N")
+    print(f"Balance error: {abs(momentum_fuel - momentum_ox)/momentum_fuel * 100:.3f}%")
+
+# %% [markdown]
+# ## Impingement Geometry
+
+# %%
+def spacing_from_center(impingement_distance, angle_deg):
+    """
+    Calculate radial distance from centerline where jet reaches impingement plane.
+    
+    Parameters:
+    -----------
+    impingement_distance : float
+        Axial distance to impingement plane [m]
+    angle_deg : float
+        Injection angle from axial [degrees]
+    
+    Returns:
+    --------
+    radius : float
+        Radial distance from centerline [m]
+    """
+    angle_rad = angle_deg * degrees_into_rad
+    radius = impingement_distance * np.tan(angle_rad)
+    return radius
+
+# %%
+if theta_lox_deg is not None:
+    # Calculate impingement geometry
+    r_fuel = spacing_from_center(impinge_distance, theta_rp1_deg)
+    r_ox = spacing_from_center(impinge_distance, theta_lox_deg)
+    
+    print(f"\n=== Impingement Geometry ===")
+    print(f"Impingement distance from injector face: {impinge_distance*1000:.2f} mm")
+    print(f"Radius from centerline for RP1 jets at impingement: {r_fuel*1000:.3f} mm")
+    print(f"Radius from centerline for LOX jets at impingement: {r_ox*1000:.3f} mm")
+    print(f"Radial separation between fuel and oxidizer: {abs(r_fuel - r_ox)*1000:.3f} mm")
+    print(f"Distance between adjacent RP1 jets: {r_fuel*1000*2:.3f} mm")
+
+# %% [markdown]
+# ## Injector Plate Offset Calculation
+# Calculate lateral offset distance on injector plate for angled holes
+
+# %%
+def plate_offset_distance(thickness, theta_deg):
+    """
+    Calculate lateral offset on plate for angled hole.
+    
+    Parameters:
+    -----------
+    thickness : float
+        Plate thickness [m]
+    theta_deg : float
+        Hole angle from normal [degrees]
+    
+    Returns:
+    --------
+    offset : float
+        Lateral offset distance [m]
+    """
+    theta_rad = theta_deg * degrees_into_rad
+    offset = thickness * np.tan(theta_rad)
+    return offset
+
+if theta_lox_deg is not None:
+    offset_rp1 = plate_offset_distance(wall_thickness_rp1, theta_rp1_deg)
+    offset_lox = plate_offset_distance(wall_thickness_ox, theta_lox_deg)
+    
+    print(f"\n=== Injector Plate Hole Offsets ===")
+    print(f"RP1 plate thickness: {wall_thickness_rp1*1000:.2f} mm")
+    print(f"LOX plate thickness: {wall_thickness_ox*1000:.2f} mm")
+    print(f"RP1 hole lateral offset for {theta_rp1_deg}° angle: {offset_rp1*1000:.3f} mm")
+    print(f"LOX hole lateral offset for {theta_lox_deg:.3f}° angle: {offset_lox*1000:.3f} mm")
+
+# %% [markdown]
+# ## Weber Number Analysis
+# Check atomization quality using Weber number (We > 100 for good atomization)
+
+# %%
+if theta_lox_deg is not None:
+    # Weber number: We = (ρ × v_transverse² × d) / σ
+    # Using transverse velocity component (perpendicular to jet axis)
+    v_lox_transverse = velocity_LOX * np.sin(theta_lox_deg * degrees_into_rad)
+    v_rp1_transverse = velocity_RP1 * np.sin(theta_rp1_deg * degrees_into_rad)
+    
+    We_lox = (rho_lox * v_lox_transverse**2 * diameter_LOX_m) / sigma_lox
+    We_rp1 = (rho_rp1 * v_rp1_transverse**2 * diameter_RP1_m) / sigma_rp1
+    
+    print(f"\n=== Weber Number Check ===")
+    print(f"Weber Number for LOX jets: {We_lox:.2f}")
+    print(f"Weber Number for RP1 jets: {We_rp1:.2f}")
+    print(f"\nAtomization quality assessment:")
+    print(f"  We < 100: Poor atomization")
+    print(f"  100 < We < 1000: Good atomization")
+    print(f"  We > 1000: Excellent atomization")
+    
+    if We_lox > 1000 and We_rp1 > 1000:
+        print(f"\n✓ Both propellants show excellent atomization characteristics")
+    elif We_lox > 100 and We_rp1 > 100:
+        print(f"\n✓ Both propellants show good atomization characteristics")
+    else:
+        print(f"\n⚠ Warning: Atomization may be poor (We < 100)")
+
+# %% [markdown]
+# ## Manifold Design
+
+# %%
+def design_manifold_circular(d_orifice, n_orifices_total, rho, m_dot_total, n_inlets=1, area_ratio=3.5):
+    """
+    Design circular manifold using area ratio rule.
+    
+    Parameters:
+    -----------
+    d_orifice : float
+        Orifice diameter [m]
+    n_orifices_total : int
+        Total number of orifices
+    rho : float
+        Propellant density [kg/m³]
+    m_dot_total : float
+        Total mass flow rate [kg/s]
+    n_inlets : int
+        Number of manifold inlets (default: 1)
+    area_ratio : float
+        Manifold area to total orifice area ratio (default: 3.5)
+    
+    Returns:
+    --------
+    A_exit : float
+        Total orifice exit area [m²]
+    A_manifold : float
+        Manifold cross-sectional area [m²]
+    D : float
+        Manifold diameter [m]
+    R : float
+        Manifold radius [m]
+    v : float
+        Flow velocity in manifold [m/s]
+    """
+    # Orifices and flow handled by a single inlet/branch
+    n_inlets = max(1, int(n_inlets))
+    n_orifices = max(1, int(n_orifices_total / n_inlets))
+    m_dot = m_dot_total / n_inlets
+    
+    # Total exit area for the orifices served by this inlet
+    A_exit = n_orifices * (np.pi * (d_orifice**2) / 4.0)
+    
+    # Area ratio rule: manifold area = ratio × total orifice exit area
+    A_manifold = area_ratio * A_exit
+    
+    # Circular cross-section: A = π D² / 4 → D = sqrt(4A/π)
+    D = np.sqrt(4.0 * A_manifold / np.pi) if A_manifold > 0 else np.inf
+    R = 0.5 * D if np.isfinite(D) else np.inf
+    
+    # Internal velocity in this branch
+    v = m_dot / (rho * A_manifold) if A_manifold > 0 else np.inf
+    
+    return A_exit, A_manifold, D, R, v
+
+# Design manifolds for both propellants
+A_exit_rp1, A_manifold_rp1, D_manifold_rp1, R_manifold_rp1, v_manifold_rp1 = design_manifold_circular(
+    d_orifice=diameter_RP1_m,
+    n_orifices_total=num_holes_rp1_inj,
+    rho=rho_rp1,
+    m_dot_total=mdot_rp1_inj,
+    n_inlets=NinletsRP1
+)
+
+A_exit_lox, A_manifold_lox, D_manifold_lox, R_manifold_lox, v_manifold_lox = design_manifold_circular(
+    d_orifice=diameter_LOX_m,
+    n_orifices_total=num_holes_lox_inj,
+    rho=rho_lox,
+    m_dot_total=mdot_lox_inj,
+    n_inlets=NinletsOx
+)
+
+print(f"\n=== Manifold Design ===")
+print(f"\nRP1 Manifold:")
+print(f"  Diameter: {D_manifold_rp1*1000:.3f} mm")
+print(f"  Flow velocity: {v_manifold_rp1:.2f} m/s")
+print(f"  Cross-sectional area: {A_manifold_rp1*1e6:.2f} mm²")
+
+print(f"\nLOX Manifold:")
+print(f"  Diameter: {D_manifold_lox*1000:.3f} mm")
+print(f"  Flow velocity: {v_manifold_lox:.2f} m/s")
+print(f"  Cross-sectional area: {A_manifold_lox*1e6:.2f} mm²")
+
+# %% [markdown]
+# ## Design Summary
+
+# %%
+if theta_lox_deg is not None:
+    print("\n" + "="*60)
+    print("INJECTOR DESIGN SUMMARY")
+    print("="*60)
+    
+    print(f"\n--- Flow Conditions ---")
+    print(f"Total mass flow: {mdot:.3f} kg/s")
+    print(f"O/F Ratio: {OF_Ratio:.3f}")
+    print(f"RP1 mass flow: {mdot_rp1_inj:.3f} kg/s")
+    print(f"LOX mass flow: {mdot_lox_inj:.3f} kg/s")
+    
+    print(f"\n--- Orifice Design ---")
+    print(f"Number of RP1 holes: {num_holes_rp1_inj}")
+    print(f"Number of LOX holes: {num_holes_lox_inj}")
+    print(f"RP1 orifice diameter: {diameter_RP1:.4f} in ({diameter_RP1_m*1000:.3f} mm)")
+    print(f"LOX orifice diameter: {diameter_LOX:.4f} in ({diameter_LOX_m*1000:.3f} mm)")
+    
+    print(f"\n--- Velocities ---")
+    print(f"RP1 jet velocity: {velocity_RP1:.2f} m/s")
+    print(f"LOX jet velocity: {velocity_LOX:.2f} m/s")
+    
+    print(f"\n--- Pressures ---")
+    print(f"Chamber pressure: {pressure_out:.2f} psi")
+    print(f"RP1 inlet pressure: {pressure_inlet_RP1:.2f} psi (ΔP = {pressure_drop_RP1:.2f} psi)")
+    print(f"LOX inlet pressure: {pressure_inlet_LOX:.2f} psi (ΔP = {pressure_drop_LOX:.2f} psi)")
+    
+    print(f"\n--- Injection Angles (Momentum Balanced) ---")
+    print(f"RP1 angle: {theta_rp1_deg:.3f}°")
+    print(f"LOX angle: {theta_lox_deg:.3f}°")
+    
+    print(f"\n--- Impingement Geometry ---")
+    print(f"Impingement distance: {impinge_distance*1000:.2f} mm")
+    print(f"RP1 impingement radius: {r_fuel*1000:.3f} mm")
+    print(f"LOX impingement radius: {r_ox*1000:.3f} mm")
+    
+    print(f"\n--- Atomization Quality ---")
+    print(f"RP1 Weber number: {We_rp1:.1f}")
+    print(f"LOX Weber number: {We_lox:.1f}")
+    
+    print("\n" + "="*60)
+
+
