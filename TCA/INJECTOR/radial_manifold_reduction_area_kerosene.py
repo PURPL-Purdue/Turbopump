@@ -57,6 +57,7 @@ velocity = np.sqrt(2*dynamics_pressure/rho_rp1) # velocity from dynamic pressure
 initial_area = mdot_kero/(rho_rp1*velocity) # initial area assuming all flow at the start [m^2]
 print(f"The velocity would be {velocity*meters_into_foot:.4f} ft/s thoughout all the manifold.\n")
 
+
 number_steps = number_of_elements/4 # number of steps in the manifold
 area_list, mass_flow_rate_list = calculate_area_step(initial_area, mdot_kero, mass_flow_rate_per_element, rho_rp1, int(number_steps))
 

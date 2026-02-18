@@ -72,7 +72,6 @@ discharge_coefficient_film: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 
 injector_number_of_holes_rp1: 80  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_lox: 80  #(Unitless) Daniel Lysenko Dudnyk
-N_film_Holes: 0  #(Unitless) Daniel Lysenko Dudnyk
 
 injector_hole_diameter_rp1: 1.1811  #(mm) Daniel Lysenko Dudnyk #56 drill = 0.0465" = 1.1811 mm
 injector_hole_diameter_lox: 1.7018  #(mm) Daniel Lysenko Dudnyk #51 drill = 0.0670" = 1.7018 mm
