@@ -64,7 +64,7 @@ chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 injector_plate_thickness_rp1: 0.005  #(m) Daniel Lysenko Dudnyk
 injector_plate_thickness_ox: 0.009  #(m) Daniel Lysenko Dudnyk
 
-impinge_distance: 0.2434  #(in) Joaquin Alarcon
+impinge_distance: 0.3  #(in) Joaquin Alarcon  0.2434
 
 discharge_coefficient_lox: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 discharge_coefficient_rp1: 0.8  #(Unitless) Daniel Lysenko Dudnyk
@@ -73,7 +73,7 @@ discharge_coefficient_film: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_rp1: 80  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_lox: 80  #(Unitless) Daniel Lysenko Dudnyk
 
-injector_hole_diameter_rp1: 1.1811  #(mm) Daniel Lysenko Dudnyk #56 drill = 0.0465" = 1.1811 mm
+injector_hole_diameter_rp1: 1.2  #(mm) Daniel Lysenko Dudnyk #56 drill = 0.0472" = 1.2 mm
 injector_hole_diameter_lox: 1.7018  #(mm) Daniel Lysenko Dudnyk #51 drill = 0.0670" = 1.7018 mm
 film_cooling_hole_diameter: 0  #(mm) Daniel Lysenko Dudnyk 
 
