@@ -30,11 +30,11 @@ n_holes_total = n_type1 * holes_type1 + n_type2 * holes_type2   # 80 holes
 mdot_per_hole = mdot_kero / n_holes_total
 
 # Manifold geometry  ← FIXED OUTER, ECCENTRIC INNER
-R_outer      = 76.06*10**-3        # Outer circle radius [m]  ← fixed
+R_outer      = 80*10**-3        # Outer circle radius [m]  ← fixed
 h_manifold   = 19*10**-3    # Manifold height (axial depth) [m]  ← constant
 
 # Dynamic pressure assumption (sets velocity)
-dyn_pressure_fraction = 0.01
+dyn_pressure_fraction = 0.005
 
 # ─────────────────────────────────────────────
 # DERIVED FLOW QUANTITIES
