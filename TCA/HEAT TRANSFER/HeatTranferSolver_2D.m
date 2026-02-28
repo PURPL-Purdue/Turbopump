@@ -55,10 +55,10 @@ n           = 100;      % number of radial control volumes
 %   3 = Graphite (constant props)
 mtype1      = 2;       % base wall material
 mtype_ins   = 3;       % insert material
-% ---- Insert geometry ----
-ins_x_start = 0.29;   % [m]  axial start position from injector
-ins_length  = 0.09;    % [m]  axial length of the insert
-ins_thick   = 0.037;   % [m]  radial thickness measured from r_throat
+% ---- Insert geometry ---- Changed for Test1 16:02 28/02
+ins_x_start = 0.28685;   % [m]  axial start position from injector
+ins_length  = 0.1016;    % [m]  axial length of the insert
+ins_thick   = 0.03992;   % [m]  radial thickness measured from r_throat
 % ---- Boundary conditions ----
 h_nat       = 5;       % [W/m²K]  outer-wall natural convection
 h_nat_inner = 10;      % [W/m²K]  inner-wall natural convection (post-firing)
