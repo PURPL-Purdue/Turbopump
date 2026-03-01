@@ -27,15 +27,15 @@ insert_material: 2    # graphite insert (index 2)
 al_material:     3    # aluminum exit section (index 3)
 
 # ---- Insert geometry (graphite) ----
-insert_x_start:    0.28685   # [m]  axial start position from injector face
+insert_x_start:    0.28685   # [m]  axial start position from injector face % Measured from injector plate
 insert_length:     0.1143    # [m]  axial length of the insert
-insert_thickness:  0.03992   # [m]  radial thickness measured from throat radius
+insert_thickness:  0.03992   # [m]  radial thickness measured from throat radius % Measured from the throat point.
 
 # ---- Aluminum exit section ----
 # Axial:  starts at (insert_x_start + insert_length), ends at nozzle exit
 # Radial: same principle as graphite — measured from inner wall surface outward
-al_thickness:  0.110506 # [m]  radial thickness of the aluminum exit section (from inner wall outward) 
-steel_thickness: 0.084156   # [m]  radial wall thickness of the steel body
+al_thickness:  0.110506 # [m]  radial thickness of the aluminum exit section (from inner wall outward) % Measured from centerline
+steel_thickness: 0.084156   # [m]  radial wall thickness of the steel body % Measured from centerline
 
 
 # ---- Boundary conditions ----
