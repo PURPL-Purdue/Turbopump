@@ -63,3 +63,13 @@ materials:
     cp_poly:  [900.0,  0.0, 0.0, 0.0]   # J/kg·K
     T_max:    755.15   # K  (solidus ~855 K for 6061)
     T_melt:   855.0    # K  solidus (~582 °C, ASM handbook)
+
+# ---------- index 4 : Steel 4130 ------------------------------------------
+  - name:        "Steel 4130"
+    description: ""
+    source:      ""
+    k_poly:   [42.69,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [7850.00, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [470.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:   1705    # K  ()
+    T_melt:  1705     # K  solidus ()
