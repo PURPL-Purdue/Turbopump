@@ -1,0 +1,65 @@
+# =============================================================================
+#  materials.yaml  —  Wall material thermophysical properties
+# -----------------------------------------------------------------------------
+#  All properties are described by a cubic polynomial in temperature T [K]:
+#
+#    value(T) = c0 + c1·T + c2·T² + c3·T³
+#
+#  For constant-property materials set c1 = c2 = c3 = 0.
+#
+#  Properties required per material:
+#    k_poly    [W/m·K]   thermal conductivity polynomial coefficients
+#    rho_poly  [kg/m³]   density polynomial coefficients
+#    cp_poly   [J/kg·K]  specific heat capacity polynomial coefficients
+#    T_max     [K]       upper temperature limit — polynomial is clamped here
+#                        to avoid divergence outside the fit range
+#    T_melt    [K]       melting (or sublimation) temperature — shown as a
+#                        reference line on the wall temperature profile plot
+#
+#  Material index (0-based) is the position in the list below.
+#  Reference these indices in heat_transfer.yaml:
+#    wall_material:   1    # index 0 = Copper, 1 = Steel, 2 = Graphite, 3 = Aluminum
+#    insert_material: 2
+# =============================================================================
+
+materials:
+
+  # ---------- index 0 : Copper (CuCrZr-type) ----------------------------------
+  - name:        "Copper CuCrZr"
+    description: "Precipitation-hardened CuCrZr copper — polynomial k(T), rho(T), cp(T)"
+    source:      "Polynomial fit to ESA/NASA CuCrZr data"
+    k_poly:   [ 507.735,  -0.540163,   7.06823e-4,  -3.13884e-7 ]   # W/m·K
+    rho_poly: [9075.0,    -0.512415,   0.0,           0.0        ]   # kg/m³
+    cp_poly:  [ 188.548,   1.00219,   -1.32148e-3,    5.75175e-7 ]   # J/kg·K
+    T_max:    1200.0   # K (solidus ~1356 K)
+    T_melt:   1356.0   # K  solidus
+
+  # ---------- index 1 : Steel AISI 8630 ----------------------------------------
+  - name:        "Steel AISI 8630"
+    description: "Low-alloy structural steel — constant properties"
+    source:      "AISI/ASM handbook values at ~300 K"
+    k_poly:   [42.7,   0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [7850.0, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [475.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:    5000.0   # K (no upper-temperature poly issue)
+    T_melt:   1693.0   # K  solidus (~1420 °C, ASM handbook)
+
+  # ---------- index 2 : Graphite -----------------------------------------------
+  - name:        "Graphite"
+    description: "Structural/thermal graphite — constant properties"
+    source:      "Typical isotropic graphite (e.g. SGL R7710)"
+    k_poly:   [168.0,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [2500.0, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [717.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:    3900.0   # K (graphite sublimation point ~3900 K)
+    T_melt:   3900.0   # K  sublimation (graphite does not melt at ambient pressure)
+
+  # ---------- index 3 : Aluminum 6061 ------------------------------------------
+  - name:        "Aluminum 6061"
+    description: "Aluminum alloy 6061-T6 — constant properties"
+    source:      "ASM handbook / MIL-HDBK-5 values at ~300 K"
+    k_poly:   [170.0,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [2700.0, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [900.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:    755.15   # K  (solidus ~855 K for 6061)
+    T_melt:   855.0    # K  solidus (~582 °C, ASM handbook)
