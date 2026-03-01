@@ -7,7 +7,7 @@
 # =============================================================================
 
 # ---- Time integration ----
-dt:      1.0e-3   # [s]  time step  (implicit scheme -> stable for any dt)
+dt:      1.0e-2   # [s]  time step  (implicit scheme -> stable for any dt)
 runtime: 2.0      # [s]  engine firing duration
 tf:      10.0     # [s]  total simulation time (firing + cooling)
 

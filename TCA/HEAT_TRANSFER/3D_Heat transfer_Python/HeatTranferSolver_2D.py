@@ -664,20 +664,26 @@ def run(ht_params, tca_params, props_csv_path, script_dir):
     ax3.axvline(ins_x_start + ins_length, color='g',    linestyle='--', linewidth=1.2, label='Graphite end')
     ax3.axvline(al_x_start,               color='cyan', linestyle='--', linewidth=1.2, label='Al start')
 
-    # Melting / sublimation temperature reference lines for each active material
+    # Melting / sublimation temperature reference lines — each drawn only over
+    # the x-range where that material is actually present.
+    #   Steel   : chamber inlet  → graphite insert start
+    #   Graphite: insert start   → insert end  (= al_x_start)
+    #   Aluminum: al_x_start     → nozzle exit
+    _x0 = x_contour[0]
+    _x1 = x_contour[-1]
     _melt_styles = [
-        (mtype1,   'orange', mat_names[mtype1]),
-        (mtype_ins, 'purple', mat_names[mtype_ins]),
-        (mtype_al,  'teal',  mat_names[mtype_al]),
+        (mtype1,    'orange', mat_names[mtype1],    (_x0,          ins_x_start)),
+        (mtype_ins, 'purple', mat_names[mtype_ins], (ins_x_start,  ins_x_start + ins_length)),
+        (mtype_al,  'teal',  mat_names[mtype_al],  (al_x_start,   _x1)),
     ]
     _seen = set()
-    for _idx, _color, _name in _melt_styles:
+    for _idx, _color, _name, (_xa, _xb) in _melt_styles:
         _Tm = mat_T_melt[_idx]
-        if np.isnan(_Tm) or _idx in _seen:
+        if np.isnan(_Tm) or _idx in _seen or _xa >= _xb:
             continue
         _seen.add(_idx)
-        ax3.axhline(_Tm, color=_color, linestyle=':', linewidth=1.2,
-                    label=f'{_name} melt  {_Tm:.0f} K')
+        ax3.plot([_xa, _xb], [_Tm, _Tm], color=_color, linestyle=':', linewidth=1.2,
+                 label=f'{_name} melt  {_Tm:.0f} K')
 
     ax3.set_xlabel('Axial Position [m]', fontsize=12)
     ax3.set_ylabel('Temperature [K]',    fontsize=12)
