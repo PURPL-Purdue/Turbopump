@@ -7,9 +7,9 @@
 # =============================================================================
 
 # ---- Time integration ----
-dt:      1.0e-2   # [s]  time step  (implicit scheme -> stable for any dt)
-runtime: 2.0      # [s]  engine firing duration
-tf:      10.0     # [s]  total simulation time (firing + cooling)
+dt:      8.0e-3   # [s]  time step  (implicit scheme -> stable for any dt)
+runtime: 1.0      # [s]  engine firing duration
+tf:      5    # [s]  total simulation time (firing + cooling)
 
 # ---- Spatial discretization ----
 n_radial: 20      # number of radial control volumes
@@ -28,14 +28,14 @@ al_material:     3    # aluminum exit section (index 3)
 
 # ---- Insert geometry (graphite) ----
 insert_x_start:    0.28685   # [m]  axial start position from injector face
-insert_length:     0.1016    # [m]  axial length of the insert
+insert_length:     0.1143    # [m]  axial length of the insert
 insert_thickness:  0.03992   # [m]  radial thickness measured from throat radius
 
 # ---- Aluminum exit section ----
 # Axial:  starts at (insert_x_start + insert_length), ends at nozzle exit
 # Radial: same principle as graphite — measured from inner wall surface outward
-al_thickness:  0.08421 # [m]  radial thickness of the aluminum exit section (from inner wall outward) 
-steel_thickness: 0.03   # [m]  radial wall thickness of the steel body
+al_thickness:  0.110506 # [m]  radial thickness of the aluminum exit section (from inner wall outward) 
+steel_thickness: 0.084156   # [m]  radial wall thickness of the steel body
 
 
 # ---- Boundary conditions ----
@@ -55,7 +55,7 @@ contour_csv: "contour.csv"   # nozzle wall contour (x [mm], r [mm])
 
 # ---- Live visualization / video ----
 plot_interval:  10                          # refresh plot every N time steps
-record_video:   false    # set to false to skip MP4 output (faster runs)
+record_video:   True    # set to false to skip MP4 output (faster runs)
 video_filename: "nozzle_heat_transfer.mp4"
 video_fps:      15
 video_quality:  8                           # imageio quality 0–10 (10 = best)

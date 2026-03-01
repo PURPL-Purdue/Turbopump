@@ -313,8 +313,8 @@ def run(ht_params, tca_params, props_csv_path, script_dir):
     al_start_j    = int(np.searchsorted(x_contour, al_x_start))
     if al_start_j >= m:
         al_start_j = m - 1
-    r_outer_steel = r_contour[cc_idx] + steel_thick
-    r_outer_al    = r_contour[al_start_j] + al_thick
+    r_outer_steel = steel_thick
+    r_outer_al    = al_thick
 
     thickness = np.where(x_contour >= al_x_start,
                          r_outer_al   - r_contour,
