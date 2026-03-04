@@ -8,8 +8,12 @@ over the rocket nozzle/combustion-chamber wall cross-section.
 
     rho*cp * dT/dt = 1/r * d/dr(r*k*dT/dr) + d/dz(k*dT/dz)
 
+Author         : Rafael Macia Titos
+Date           : 2026
+
 Discretization : FVM, implicit backward-Euler
-Linear solver  : Red-Black SOR
+Linear solver  : Line-by-line TDMA (Thomas algorithm, alternating
+                 radial / axial sweeps)
 
 Can be run standalone or called via run() from run.py.
 
@@ -521,6 +525,20 @@ def run(ht_params, tca_params, props_csv_path, script_dir):
             aS[:,   0] = 0.0
             aN[:, m-1] = 0.0
 
+            # ── Exposed vertical face at the aluminum step (Hunk 1 of 2) ─────────
+            # The geometric contour jump at al_start_j creates an annular surface
+            # whose outward normal points in the +z (axial) direction.  This is the
+            # *north* face of column j_exp = al_start_j - 1.
+            #
+            # Without this patch the harmonic-averaged aN[:, j_exp] would still
+            # carry heat across that face as if it were an internal interface,
+            # making it effectively adiabatic (no balance equation on the other
+            # side is consistent with the jump).  We cut the link entirely so that
+            # the face is handled solely by the Robin BC below (Hunk 2).
+            j_exp = al_start_j - 1          # last column before the Al section
+            if 0 <= j_exp < m - 1:          # guard: valid, not already a boundary
+                aN[:, j_exp] = 0.0          # remove internal axial conductance
+
             if step_count < firing_steps:
                 term_Ma  = 1.0 + (gamma_g - 1.0) / 2.0 * M**2
                 sigma_v  = 1.0 / ((0.5 * (T_2d[0, :] / T_g) * term_Ma
@@ -542,6 +560,27 @@ def run(ht_params, tca_params, props_csv_path, script_dir):
             aP_bc        = np.zeros((n, m))
             aP_bc[0,  :] = bin_row
             aP_bc[n-1,:] += bout_row
+
+            # ── Exposed vertical face Robin BC (Hunk 2 of 2) ─────────────────────
+            # FVM balance for column j_exp, north face (area = Ar[:, j_exp]):
+            #
+            #   flux = h_nat * Ar[:, j_exp] * (T[:, j_exp] - T_amb)
+            #
+            # Discretised in the implicit system:
+            #   aP[:, j_exp]  += h_nat * Ar[:, j_exp]          (diagonal)
+            #   src[:,  j_exp] += h_nat * Ar[:, j_exp] * T_amb  (RHS source)
+            #
+            # Bm = AP0 * T_old + src  is built *after* this block, so both
+            # contributions automatically propagate into:
+            #   • the radial-sweep RHS  (rhs_r = Bm + aS*T_S + aN*T_N)
+            #   • the axial-sweep  RHS  (rhs_z = Bm + aW*T_W + aE*T_E)
+            #   • the residual          (aP*T - … - Bm)
+            # No further changes to the TDMA loops are required.
+            if 0 <= j_exp < m - 1:
+                h_face           = h_nat * Ar[:, j_exp]   # [W/K], shape (n,)
+                aP_bc[:, j_exp] += h_face
+                src[:,   j_exp] += h_face * T_amb
+
             aP = aW + aE + aS + aN + AP0 + aP_bc
 
             Bm     = AP0 * T_2d + src

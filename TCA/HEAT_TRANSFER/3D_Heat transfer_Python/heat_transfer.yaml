@@ -7,12 +7,12 @@
 # =============================================================================
 
 # ---- Time integration ----
-dt:      8.0e-3   # [s]  time step  (implicit scheme -> stable for any dt)
-runtime: 1.0      # [s]  engine firing duration
+dt:      5e-3   # [s]  time step  (implicit scheme -> stable for any dt)
+runtime: 2      # [s]  engine firing duration
 tf:      5    # [s]  total simulation time (firing + cooling)
 
 # ---- Spatial discretization ----
-n_radial: 20      # number of radial control volumes
+n_radial: 50      # number of radial control volumes
                   # axial count is set automatically from the contour
 
 # ---- Wall materials ----
@@ -62,4 +62,4 @@ video_quality:  8                           # imageio quality 0–10 (10 = best)
 
 # ---- Line-by-line TDMA solver ----
 solver_tolerance:      1.0e-6   # relative residual: max|R| < tol * max|B|
-solver_max_iterations: 10       # outer TDMA iterations per time step (3-5 typically suffice)
+solver_max_iterations: 50       # outer TDMA iterations per time step (3-5 typically suffice)
