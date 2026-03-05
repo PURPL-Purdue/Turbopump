@@ -1,0 +1,102 @@
+import CoolProp
+import numpy as np
+import matplotlib.pyplot as plt
+from CoolProp.CoolProp import PropsSI
+import pandas as pd
+import numpy as np
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from mpl_toolkits.mplot3d import Axes3D
+
+vol_flow, head = np.genfromtxt('C:\\Users\\alexs\\OneDrive\\Desktop\\Pu\\Q_H_data.csv', delimiter=',', unpack=True, skip_header=1, dtype=float)
+
+# 1. Define the 3D model function
+def func(data, a, b, c, d, e, f):
+    x, y = data
+    return a + b*(x) + c * (y) + d*x**2 + e*y**2 + f
+
+
+# 2. Prepare 3D data
+# Generate artificial data with some noise
+x_data = vol_flow
+y_data = head
+# Create a meshgrid for x and y
+X, Y = np.meshgrid(vol_flow, head)
+#Flatten the meshgrid for curve_fit
+# Generate data based on the non-linear model
+
+rpm_25000 = np.ones(99, int) * 25000
+rpm_30000 = np.ones(100, int) * 30000
+rpm_35000 = np.ones(100, int) * 35000
+rpm_40000 = np.ones(100, int) * 40000
+rpm_45000 = np.ones(100, int) * 45000
+rpm_50000 = np.ones(100, int) * 50000
+rpm_55000 = np.ones(100, int) * 55000
+rpm_60000 = np.ones(100, int) * 60000
+
+#combinging all rpms into one vector
+hstack_1 = np.hstack((rpm_25000, rpm_30000))
+hstack_2 = np.hstack((hstack_1, rpm_35000))
+hstack_3 = np.hstack((hstack_2, rpm_40000))
+hstack_4 = np.hstack((hstack_3, rpm_45000))
+hstack_5 = np.hstack((hstack_4, rpm_50000))
+hstack_6 = np.hstack((hstack_5, rpm_55000))
+hstack_7 = np.hstack((hstack_6, rpm_60000))
+
+rpm_vector = hstack_7
+
+z_data = rpm_vector
+print(z_data)
+
+# Note: Automatic legend for plot_surface is tricky; the label is for description.
+
+x_flat = vol_flow
+y_flat = head
+z_data = rpm_vector 
+
+# NOW curve_fit will work
+popt, _ = curve_fit(func, (x_flat, y_flat), z_data, p0=[1, 1, 1, 1, 1, 1])
+# 3. Create a grid ONLY for the visual surface
+x_range = np.linspace(min(x_flat), max(x_flat), 30)
+y_range = np.linspace(min(y_flat), max(y_flat), 30)
+X_grid, Y_grid = np.meshgrid(x_range, y_range)
+Z_fit_grid = func((X_grid, Y_grid), *popt)
+
+# 4. Plot
+#ax.scatter(x_flat, y_flat, z_data, color='blue', alpha=0.5) # Points
+
+# 3. Use curve_fit to find optimal parameters
+# Independent variables should be passed as a combined array/tuple
+# Initial guesses for [a, b, c, d]
+p0 = [0, 1, 1, 1, 1, 0] 
+print(x_data)
+print(y_data)
+#popt, pcov = curve_fit(func, (x_flat, y_flat), z_data, p0=p0)
+a_fit, b_fit, c_fit, d_fit, e_fit, f_fit = popt
+print(f"Fitted parameters: a={a_fit:.2f}, b={b_fit:.2f}, c={c_fit:.2f}, d={d_fit:.2f}, e_fit={e_fit:.2f}, f_fit={f_fit:.2f}")
+
+# 4. Generate the fitted surface
+# Use the fitted parameters to predict Z values over the original meshgrid
+z_fit = func((X, Y), *popt)
+
+# 5. Plot the original data and the fitted surface
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
+
+# Plot the original scatter data points
+ax.scatter(x_data, y_data, z_data, label='Original Data', color='blue', alpha=0.5)
+
+# Plot the fitted surface
+# We use plot_surface for the fitted continuous area
+#ax.plot_surface(X, Y, z_fit, color='red', alpha=0.3, label='Fitted Surface')
+
+ax.set_xlabel('X axis')
+ax.set_ylabel('Y axis')
+ax.set_zlabel('Z axis')
+ax.set_title('3D Regression Plot with scipy.optimize.curve_fit')
+
+ax.plot_surface(X_grid, Y_grid, Z_fit_grid, color='red', alpha=0.3) # Surface
+
+
+plt.show()
