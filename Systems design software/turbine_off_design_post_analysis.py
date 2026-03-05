@@ -6,7 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 data_folder = "./"
 
 # load data
-mdot_range = np.loadtxt(data_folder + "turbine_off_design_mdot_range.csv", delimiter=",")
+mdot_range = np.loadtxt(data_folder + "turbine_off_design_mdot_range.csv", delimiter=",") / 0.45359237 # lbm/s
 rpm_range = np.loadtxt(data_folder + "turbine_off_design_rpm_range.csv", delimiter=",")
 HP = np.loadtxt(data_folder + "turbine_hp_surface.csv", delimiter=",")
 
