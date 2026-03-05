@@ -32,7 +32,7 @@
 #Thrust Chamber Assembly Design Setpoints
 thrust: 5000  #(lbf) Devin Morris
 tca_chamber_pressure: 500  #(psi) Devin Morris
-incoming_pressure: 700  #(psi) Daniel Lysenko Dudnyk
+incoming_pressure: 700  #(psi) Daniel Lysenko Dudnyk #Outdated, I dont want to delete it if it is used in some script I am not aware of.
 oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
 turbopump_mdot: 20.0   #(lbm/s) Devin Morris
 
@@ -64,7 +64,7 @@ chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
 injector_plate_thickness_rp1: 0.005  #(m) Daniel Lysenko Dudnyk
 injector_plate_thickness_ox: 0.009  #(m) Daniel Lysenko Dudnyk
 
-impinge_distance: 0.3  #(in) Joaquin Alarcon  0.2434
+impinge_distance: 0.3  #(in) Joaquin Alarcon  
 
 discharge_coefficient_lox: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 discharge_coefficient_rp1: 0.8  #(Unitless) Daniel Lysenko Dudnyk
@@ -77,10 +77,19 @@ injector_hole_diameter_rp1: 1.2  #(mm) Daniel Lysenko Dudnyk #56 drill = 0.0472"
 injector_hole_diameter_lox: 1.7018  #(mm) Daniel Lysenko Dudnyk #51 drill = 0.0670" = 1.7018 mm
 film_cooling_hole_diameter: 0  #(mm) Daniel Lysenko Dudnyk 
 
-th_rp1: 38 #degrees.
-th_lox: 24.096 #degrees.
+th_rp1: 40 #degrees.
+th_lox: 24.438 #degrees.
 
-rp1_manifold_diameter: 5.1054 #7 drill = 0.2010 in = 5.1054 mm  #(mm) Daniel Lysenko Dudnyk
+rp1_manifold_diameter: 5.0  # 5.0 mm  #(mm) Daniel Lysenko Dudnyk
 lox_countersink_diameter: 3.048 #31 drill = 0.1200 in = 3.048 mm  #(mm) Daniel Lysenko Dudnyk
 
 h_manifold_ox: 0.015  #[m] Daniel Lysenko Dudnyk
+
+#Injector pressure data for 2.1 O/F
+"Injector inlet pressure":
+  LOX: 613.27 #psi
+  RP1: 646.89 #psi
+#Injector pressure drop for 2.1 O/F
+"Pressure drop as % of chamber pressure":
+  LOX: 22.7%
+  RP1: 29.4%
