@@ -1,0 +1,23 @@
+Parameter,Value
+Mean Radius (m),0.048299999999999996
+Blade Height (m),0.005
+Hub Radius (m),0.0458
+Rotor Radius (m),0.0508
+Blade Solidity (unitless),1.25
+Turbine RPM (RPM),50000.0
+Turbine Torque (Nm),64.0868027802444
+Expected Torque (Nm),26.44489653700714
+Degree of Reaction (unitless),0.0
+Number of Blades (unitless),40.0
+Chord (m),0.01
+Blade Spacing (m),0.00758694625841935
+Inlet Area (m^2),0.0025
+Inlet Velocity (m/s),1666.5846507225917
+Outlet Velocity (m/s),1262.4814422723482
+Relative Velocity (m/s),1456.6140158370529
+Inlet Absolute Angle (deg),58.63063129638122
+Outlet Absolute Angle (deg),46.59307884376992
+Inlet Relative Angle (deg),53.44523357978021
+Zweifel Loading Coefficient (unitless),0.0
+Predicted Turbine Efficiency (unitless),0.11632522446876584
+Expected Horsepower (HP),185.68883023325995

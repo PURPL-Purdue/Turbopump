@@ -1,0 +1,12 @@
+Parameter,Value
+Force_centrifugal (N),0.10934425053695769
+stress_centrifugal (N/m^2),6265.981543482274
+Force_tangential (N),983.7806504506666
+Force_axial (N),143.39087226746108
+torque_blade (Nm),1.3772929106309333
+torque_turbine (Nm),1857.3778680508585
+P (W),9725207.775348082
+Force_gas (N),994.1756939549267
+Moment_Bending (Nm),0.03479614928842243
+I (m^4),1.6666666666666669e-10
+stress_gas (N/m^2),29825270.818647783

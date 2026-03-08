@@ -1,0 +1,30 @@
+Parameter,Value
+Inlet Total Pressure (Pa),2413165.0515
+Exit Total Pressure (Pa),206842.7187
+Ambient Pressure (Pa),206842.7187
+Mass Flow Rate (kg/s),0.5669904625000001
+Inlet Total Temperature (K),876.05
+Specific Heat Ratio (unitless),1.1201
+Gas Constant (J/(kg*K)),8.3145
+Molar Mass (kg/mol),11.328
+Number of Nozzles (unitless),8.0
+Specific Gas Constant (J/(kg*K)),733.9777542372883
+Inlet Density (kg/m^3),3.752971235461339
+Exit Velocity (m/s),1666.5846507225917
+Throat Temperature (K),826.4232819206642
+Throat Pressure (Pa),2398123.0902363877
+Throat Density (kg/m^3),3.95353902285984
+Throat Velocity (m/s),824.2730850183176
+Throat Area (m^2),0.00017398772309158738
+Exit Mach Number (unitless),2.240234450214243
+Exit Density (kg/m^3),0.41862891528803026
+Exit Area (m^2),0.0008126792171120701
+Exit Temperature (K),673.1752150395462
+Throat Radius (m),0.007441909186133628
+Exit Radius (m),0.016083650987971456
+Nozzle Throat Area (m^2),2.1748465386448422e-05
+Nozzle Exit Area (m^2),0.00010158490213900877
+Nozzle Throat Radius (m),0.0026311122252447743
+Nozzle Exit Radius (m),0.005686429339916165
+Nozzle Length (m),0.011402598705188378
+Nozzle Exit Total Pressure (Pa),2413165.0515000015

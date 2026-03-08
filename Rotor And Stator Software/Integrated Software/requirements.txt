@@ -1,0 +1,11 @@
+shapely
+numpy
+scipy
+matplotlib
+pandas
+requests
+pillow
+sympy
+openpyxl
+plotly
+pyvista

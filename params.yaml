@@ -90,13 +90,48 @@ shaft_speed: 50000 #(RPM) Alejandro Diaz Contreras
 GG_chamber_design_pressure: 390 #(psi) Miles Cohen
 GG_chamber_OF: 0.28 #(Unitless) Miles Cohen
 
+# Stator (INPUTS)
+
+S_design_exit_pressure: 30 #(psi) Amanjyoti Mridha
+S_inlet_pressure: 350 #(psi) Amanjyoti Mridha
+S_mass_flow_rate: 1.25 #(lbs/s) Amanjyoti Mridha
+S_inlet_temperature: 876.05 #(K) Amanjyoti Mridha
+S_inlet_specific_heat: 1.1201 #(unitless) Amanjyoti Mridha
+S_inlet_gas_constant: 8.3145 #(J/mol-K) Amanjyoti Mridha
+S_inlet_molar_mass: 11.328 #(g/mol) Amanjyoti Mridha
+S_number_nozzles: 8 #(unitless) Amanjyoti Mridha
 
 # Turbine (INPUTS)
 
-design_power_output: 180 #(HP) Amanjyoti Mridha
+T_design_power_output: 180 #(HP) Amanjyoti Mridha
+T_design_rpm: 50000 #(RPM) Amanjyoti Mridha
+T_rotor_radius: 2 #(in) Amanjyoti Mridha
+T_blade_height: 5 #(mm) Amanjyoti Mridha
+T_blade_solidity: (1/0.8) #(unitless) Amanjyoti Mridha
+T_degree_of_reaction: 0 #(unitless) Amanjyoti Mridha comments: pure impulse turbine
+T_num_blades: 40 #(unitless) Amanjyoti Mridha
+T_chord: 1 #(cm) Amanjyoti Mridha
 
+
+T_dynamic_viscosity: 5.5522e-5 #(Pa-s) Amanjyoti Mridha
+T_c_p: ((10.8660+11.6259+12.9042)/3 * 0.238845896632776) #(Btu/(lb*degF)) Amanjyoti Mridha
 
 # Turbine (OUTPUTS)
 
 #turbine_efficiency: ------------------------------------------------------- #(Unitless) Amanjyoti Mridha
 
+##############################
+###### UNIT CONVERSIONS ######
+##############################
+
+lbm_to_kg: 0.45359237 #(kg/lbm) 
+hp_to_watt: 745.7 #(W/HP) 
+rpm_to_rad_per_sec: (2*3.141592653589793/60) #(rad/s)/(RPM) 
+cm_to_m: 0.01 #(m/cm) 
+mm_to_m: 0.001 #(m/mm)
+bar_to_pa: 100000 #(Pa/bar)
+psi_to_pa: 6894.75729 #(Pa/psi)
+in_to_cm: 2.54 #(cm/in)
+in_to_m: 0.0254 #(m/in)
+kw_to_hp: 1.34102209 #(hp/kw)
+lbft_to_nm: 1.3558179483 #(Nm/lbft)

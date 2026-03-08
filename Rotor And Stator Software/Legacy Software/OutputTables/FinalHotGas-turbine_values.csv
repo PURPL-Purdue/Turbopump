@@ -1,0 +1,23 @@
+Variable,Value,Units,Description
+rotor_radius,0.0508,m,Rotor radius
+hub_radius,0.0458,m,Hub radius
+mass_flow,0.5669904625,kg/s,Mass flow rate
+shaft_power,450,kW,Shaft power
+turbine_rpm,50000,rpm,Turbine RPM
+radius,0.0483,m,Average radius
+horse_power,450,HP,Horsepower
+torque,64.086757956,N*m,Torque
+degree_of_reaction,0,-,Degree of reaction
+num_blades,35,-,Number of blades
+chord,0.01,m,Blade chord length
+blade_spacing,0.008221996773395,m,Blade spacing
+min_blade_thickness,0.002,m,Minimum blade thickness
+inlet_area,0.0025,m²,Inlet area
+V_in,1666.5847,m/s,Inlet absolute velocity
+V_out,1262.48183519964,m/s,Outlet absolute velocity
+W_in,1456.61421430707,m/s,Inlet relative velocity
+W_out,1456.61421430707,m/s,Outlet relative velocity
+a_in,58.6305744683663,°,Inlet absolute angle
+a_out,43.4069940581477,°,Outlet absolute angle
+Beta,53.4451690013005,°,Blade angle (Beta)
+u,252.898208613978,m/s,Turbine velocity
