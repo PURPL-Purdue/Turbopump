@@ -56,7 +56,7 @@ kg_to_lbm = 2.20462
 #################################
 
 #Importing yaml file containing TCA parameters
-with open(r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml') as file:
+with open(r'TCA/TCA Sizing Code Files/TCA_Bigg.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #VARIABLES
@@ -160,7 +160,7 @@ data = [
 #Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/Dimensions CSV/dimensions.csv'
 #Other Path: 
 ##################################
-output_file_path = r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA Sizing Code Files\Dimensions CSV/dimensions.csv'
+output_file_path = r'TCA/TCA Sizing Code Files/Dimensions CSV/dimensions.csv'
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)

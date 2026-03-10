@@ -738,7 +738,7 @@ if __name__=="__main__":
 	#Other Path: 
 	#################################
 
-	with open(r'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml') as file: ##CHANGED FOR DANIEL
+	with open(r'TCA/TCA Sizing Code Files/TCA_Bigg.yaml') as file: ##CHANGED FOR DANIEL
 		tca_params = yaml.safe_load(file)
 
 	l_percent = tca_params['bell_nozzle_l_percent']	# nozzle length percntage
