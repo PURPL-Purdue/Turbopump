@@ -17,7 +17,7 @@ np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues
 ##################################
 
 #Define CEA Object as C
-C = CEA_Obj( oxName='LOX', fuelName='RP1')
+C = CEA_Obj( oxName='LOX', fuelName='Isopropanol')
 
 ##################################
 #Define Global Conversion Factors
@@ -56,7 +56,7 @@ kg_to_lbm = 2.20462
 #################################
 
 #Importing yaml file containing TCA parameters
-with open(r'TCA/TCA Sizing Code Files/TCA_Bigg.yaml') as file:
+with open(r'TCA/TCA_params.yaml') as file:
 	tca_params = yaml.safe_load(file)
 
 #VARIABLES
@@ -85,6 +85,8 @@ mdot = tca_params['turbopump_mdot']
 #Chosen chamber diameter to match pipe (inches)
 Dc_in = tca_params['tca_chamber_diameter']
 
+mdot_ipa = mdot/(1+mr)
+mdot_lox = mdot*mr/(1+mr)
 ##################################
 #Calculations
 ##################################
@@ -97,10 +99,12 @@ cf_arr = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps)
 cf = cf_arr[0] * ef_cf                                                 #Calculates coefficient of thrust, with efficiency factor
 isp = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen=0, frozenAtThroat=0)   #calculates isp in seconds
 
+
 At = ((mdot / kg_to_lbm) * Cstar) / (pc * psi_to_pa)           #Calculates area of throat in m^2
 At_in = At * ((m_in) ** 2)             #Converts area of throat to in^2
 At_cm = At * (mcm ** 2)                #Converts area of throat to cm^2
 Dt_in = 2 * np.sqrt(At_in / np.pi)     #Calculates throat diameter in inches
+
 
 Ae_in = At_in * Eps                    #Calculates exit area in in^2
 De_in = 2 * np.sqrt(Ae_in / np.pi)     #Calculates exit diameter in inches
@@ -153,6 +157,9 @@ data = [
  round(Eps, 3), round(mdot,3)]
 ]
 
+print(f'Calculated Thrust is {At_in*pc*cf:.3f} lbf')
+print(f'Calculated Mass Flow Rate for IPA is {mdot_ipa:.3f} lbm/s')
+print(f'Calculated Mass Flow Rate for LOX is {mdot_lox:.3f} lbm/s')
 ##################################
 #REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
 

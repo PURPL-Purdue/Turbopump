@@ -29,36 +29,44 @@
 #                                                                                                 #
 ###################################################################################################
 
+#PROPELLANTS
+oxidizer: LOX  #Daniel Lysenko Dudnyk
+fuel: Isopropanol  #Daniel Lysenko Dudnyk
+
 #Thrust Chamber Assembly Design Setpoints
-thrust: 5000  #(lbf) Devin Morris
-tca_chamber_pressure: 500  #(psi) Devin Morris
-oxidizer_fuel_ratio: 2.1  #(Unitless) Devin Morris
-turbopump_mdot: 20.0   #(lbm/s) Devin Morris
+thrust: 5000  #(lbf) #Daniel Lysenko Dudnyk ???
+tca_chamber_pressure: 500  #(psi) #Daniel Lysenko Dudnyk
+oxidizer_fuel_ratio: 1.5  #(Unitless) #Daniel Lysenko Dudnyk
+turbopump_mdot: 24.0   #(lbm/s) #Daniel Lysenko Dudnyk
+
 
 #Assumed efficiies 
 c_star_efficiency: 0.875  #(Unitless) Devin Morris
 thrust_coefficient_efficiency: 0.875  #(Unitless) Devin Morris
 
 #Combustion chamber Design Parameters
-characteristic_length: 45  #(in) Devin Morris // Daniel Lysenko Dudnyk
+characteristic_length: 30  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_contraction_ratio: 3.298  #(Unitless) Devin Morris // Daniel Lysenko Dudnyk
 tca_convergent_half_angle: 45  #(degrees) Devin Morris
 bell_nozzle_l_percent: 80  #(%) Devin Morris
 ambient_pressure: 14.7  #(psi) Devin Morris
 tca_exit_pressure: 12.0  #(psi) Devin Morris
 
+
 #Thrust Chamber Assembly Calculated Design Parameters
 tca_chamber_diameter: 5.189  #(in) Devin Morris // Daniel Lysenko Dudnyk
-tca_throat_diameter: 2.857  #(in) Devin Morris
-tca_exit_diameter: 7.102  #(in) Devin Morris
-tca_chamber_length: 13.575  #(in) Devin Morris // Daniel Lysenko Dudnyk
+tca_throat_diameter: 2.821  #(in) Daniel Lysenko Dudnyk
+tca_exit_diameter: 6.993  #(in) Daniel Lysenko Dudnyk
+tca_chamber_length: 8.799  #(in) Devin Morris // Daniel Lysenko Dudnyk
 tca_expansion_ratio: 6.178  #(Unitless) Devin Morris
 
-estimated_isp: 274.789   #(s) Devin Morris
-chamber_molecular_weight: 21.250 #(lbm/lbmole) Devin Morris
-chamber_specific_heat_ratio: 1.072 #(Unitless) Devin Morris
-chamber_thermal_conductivity: 2.628 #(mcal/cm-K-s) Devin Morris
+estimated_isp: 267.364   #(s) Daniel Lysenko Dudnyk
+chamber_molecular_weight: 21.017 #(lbm/lbmole) Devin Morris
+chamber_specific_heat_ratio: 1.774 #(Unitless) Devin Morris
+chamber_thermal_conductivity: 3.728 #(mcal/cm-K-s) Devin Morris
 
+
+#CHANGE!!!!!
 #Injector Plate Design Parameters 
 injector_plate_thickness_rp1: 0.005  #(m) Daniel Lysenko Dudnyk
 injector_plate_thickness_ox: 0.009  #(m) Daniel Lysenko Dudnyk
