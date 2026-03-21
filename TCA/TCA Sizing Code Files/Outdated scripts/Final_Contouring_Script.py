@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import yaml
+import os
 import ezdxf
 
 from itertools import chain
@@ -528,7 +529,7 @@ def plot_nozzle_inches(contour, angles, dia_t, dia_c, dia_e, len_c, Rad2, cangle
 	plt.axis('equal')
 	fig2.tight_layout(rect=[0, 0.03, 1, 0.95])
 	
-	plt.savefig(r"TCA\Countour Exports\nozzle_contour_inches_plot.png")
+	plt.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'CSV_DXF_OUTPUTS', 'nozzle_contour_inches_plot.png'))
 
 	plt.show()
 	return
@@ -631,7 +632,7 @@ def plot(title, throat_radius, angles, contour):
 	# show
 	fig1.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-	plt.savefig(r"TCA\Countour Exports\nozzle_contour_plot.png")
+	plt.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'CSV_DXF_OUTPUTS', 'nozzle_contour_plot.png'))
 
 	plt.show()
 	return
@@ -725,21 +726,16 @@ def export_nozzle_dxf(contour):
 	#Other Path: 
 	#################################
 
-    doc.saveas(r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\Countour Exports\nozzle_contour_new.dxf")
+    _here = os.path.dirname(os.path.abspath(__file__))
+    doc.saveas(os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour_new.dxf'))
     return()
 
 # __main method__
 if __name__=="__main__":
-	
-	##################################
-	#REPLACE PATH WITH PATH YOU NEED FOR YOUR OWN COMPUTER
-	#Devin Path: 'C:\Users\igoto\Downloads\GH\Turbopump\TCA\TCA_params.yaml'
-	#Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/TCA_params.yaml'
-	#Other Path: 
-	#################################
 
-	with open(r'TCA/TCA Sizing Code Files/TCA_Bigg.yaml') as file: ##CHANGED FOR DANIEL
-		tca_params = yaml.safe_load(file)
+	_here = os.path.dirname(os.path.abspath(__file__))
+	with open(os.path.join(_here, '..', 'TCA_params.yaml')) as f:
+		tca_params = yaml.safe_load(f)
 
 	l_percent = tca_params['bell_nozzle_l_percent']	# nozzle length percntage
 
@@ -762,7 +758,7 @@ if __name__=="__main__":
 	#Other Path: 
 	#################################
 
-	export_nozzle_csv(contour, filename=r"C:\Users\igoto\Downloads\GH\Turbopump\TCA\Countour Exports\nozzle_contour.csv")
+	export_nozzle_csv(contour, filename=os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour.csv'))
 	export_nozzle_dxf(contour)
 	plot(title, throat_radius, angles, contour)
 

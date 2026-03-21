@@ -8,6 +8,7 @@
 import numpy as np
 import csv
 import yaml
+import os
 from rocketcea.cea_obj import CEA_Obj
 
 np.set_printoptions(legacy='1.25')    #Fix for some numpy float printing isssues that happened
@@ -56,7 +57,8 @@ kg_to_lbm = 2.20462
 #################################
 
 #Importing yaml file containing TCA parameters
-with open(r'TCA/TCA_params.yaml') as file:
+_here = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_here, '..', 'TCA_params.yaml')) as file:
 	tca_params = yaml.safe_load(file)
 
 #VARIABLES
@@ -80,13 +82,10 @@ L_star_in = tca_params['characteristic_length']
 L_star_cm = L_star_in / 12 * ft_to_m * mcm
 #Convergent Half-Angle (degrees)
 a = tca_params['tca_convergent_half_angle']
-#System Mass Flow Rate (lbm/s)
-mdot = tca_params['turbopump_mdot']
 #Chosen chamber diameter to match pipe (inches)
 Dc_in = tca_params['tca_chamber_diameter']
 
-mdot_ipa = mdot/(1+mr)
-mdot_lox = mdot*mr/(1+mr)
+
 ##################################
 #Calculations
 ##################################
@@ -97,8 +96,12 @@ Tc_F = C.get_Tcomb(Pc = pc, MR = mr) + rankineToF                   #Calculates 
 Cstar = C.get_Cstar(Pc = pc, MR = mr) * ft_to_m * ef_cstar          #Calculates characteristic velocity in m/s, with efficiency factor
 cf_arr = C.get_PambCf(Pamb = pamb, Pc = pc, MR = mr, eps = Eps)     
 cf = cf_arr[0] * ef_cf                                                 #Calculates coefficient of thrust, with efficiency factor
-isp = C.estimate_Ambient_Isp(Pc = pc, MR = mr, eps = Eps, Pamb = pamb, frozen=0, frozenAtThroat=0)   #calculates isp in seconds
+isp = cf*Cstar/9.80665   #calculates isp in seconds
 
+mdot = Ft / (cf * Cstar) * kg_to_lbm     #Calculates mass flow rate in lbm/s, using calculated thrust, coefficient of thrust, and characteristic velocity, and converting from kg/s to lbm/s
+
+mdot_ipa = mdot/(1+mr)
+mdot_lox = mdot*mr/(1+mr)
 
 At = ((mdot / kg_to_lbm) * Cstar) / (pc * psi_to_pa)           #Calculates area of throat in m^2
 At_in = At * ((m_in) ** 2)             #Converts area of throat to in^2
@@ -112,8 +115,8 @@ De_in = 2 * np.sqrt(Ae_in / np.pi)     #Calculates exit diameter in inches
 MW_t, gam_t = C.get_Throat_MolWt_gamma(Pc = pc, MR = mr, eps = Eps, frozen=0)    #Outputs Molecular Weight at the throat
 R_comb = Ru_m / MW_t                                                             #Calculates gas constant for our combination
 Tc_1, Tt, Te = C.get_Temperatures(Pc = pc, MR = mr, eps = Eps, frozen=0, frozenAtThroat=0) #Outputs throat temps @ chamber, throat, exit
-Tt_K = Tt * rankineToKelvin                #Converts the throat temperature to Kelvin
-Tt_F = Tt + rankineToF                     #Converts the throat temperature to Fahrenheit
+Tt_K = Tt * rankineToKelvin                #Converts the throat temperature to Kelvin     
+Tc_K =   Tc_1*rankineToKelvin         #Converts the throat temperature to Fahrenheit
 
 #Calculates the mass flow rate for choked flow at the throat
 #choked_mdot = (At * pc * psi_to_pa / (Tt_K**0.5)) * ((gam_t / R_comb)**0.5) * (((gam_t + 1.0)/2.0) ** (-(gam_t + 1.0)/(2.0*(gam_t - 1.0)))) * kg_to_lbm
@@ -127,14 +130,15 @@ Lc = (L_star_cm - (1.0/3.0) * np.sqrt(At_cm / np.pi) * (1 / np.tan(np.deg2rad(a)
 Lc_in = Lc / 100 / ft_to_m * 12     #Converts chamber length to inches
 
 #CEA Calcs for extra parameters
-k = C.get_HeatCapacities
-MW, gamma = C.get_Chamber_MolWt_gamma(Pc = pc, MR = mr, eps = Eps)
-gamma, viscosity, k, Pnum = C.get_Chamber_Transport(Pc = pc, MR = 2.1, eps = Eps, frozen=0)
+MW, gamma_thermo = C.get_Chamber_MolWt_gamma(Pc = pc, MR = mr, eps = Eps)
+gamma, viscosity, k, Pnum = C.get_Chamber_Transport(Pc = pc, MR = mr, eps = Eps, frozen=0)
 
 #Printing our outputs
 print('\nGiven these inputs:')
-print(f'Theoretical specific impulse is {isp[0]: .3f} seconds')
-print(f'The temperature of combustion is {Tc_F: .3f} degrees Fahrenheit')
+print(f'C* is {Cstar: .3f} m/s')
+print(f'Coefficient of thrust is {cf: .3f}')
+print(f'Specific impulse is {isp: .3f} seconds')
+print(f'The temperature of combustion is {Tc_K: .3f} degrees Kelvin')
 print(f'\nTheoretically maximum mass flow rate (choked at throat) is {mdot: .3f} lmb/s')
 print(f'\nThe throat diameter should be {Dt_in: .3f} inches')
 print(f'The throat radius should be {(Dt_in / 2): .3f} inches')
@@ -167,7 +171,7 @@ print(f'Calculated Mass Flow Rate for LOX is {mdot_lox:.3f} lbm/s')
 #Dani Path: '/Users/dl/Documents/GitHub/Turbopump/TCA/Dimensions CSV/dimensions.csv'
 #Other Path: 
 ##################################
-output_file_path = r'TCA/TCA Sizing Code Files/Dimensions CSV/dimensions.csv'
+output_file_path = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'dimensions.csv')
 
 with open(output_file_path, 'w', newline='') as csvfile:
   csv_writer = csv.writer(csvfile)
