@@ -84,8 +84,8 @@ discharge_coefficient_film: 0.8  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_ipa: 80  #(Unitless) Daniel Lysenko Dudnyk
 injector_number_of_holes_lox: 80  #(Unitless) Daniel Lysenko Dudnyk
 
-injector_hole_diameter_ipa: 0.0595  #(in) Daniel Lysenko Dudnyk #53 drill = 0.0595" = 1.5113 mm
-injector_hole_diameter_lox: 0.0670  #(in) Daniel Lysenko Dudnyk #51 drill = 0.0670" = 1.7018 mm
+injector_hole_diameter_ipa: 0.0595  #(in) #53 drill = 0.0595" = 1.5113 mm Daniel Lysenko Dudnyk
+injector_hole_diameter_lox: 0.0670  #(in) #51 drill = 0.0670" = 1.7018 mm Daniel Lysenko Dudnyk 
 ipa_manifold_diameter: 5.0  # 5.0 mm  #(mm) Daniel Lysenko Dudnyk
 lox_countersink_diameter: 3.048 #31 drill = 0.1200 in = 3.048 mm  #(mm) Daniel Lysenko Dudnyk
 

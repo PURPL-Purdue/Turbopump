@@ -14,12 +14,11 @@ kg_into_lbm         = 2.20462
 # ─────────────────────────────────────────────
 # DESIGN PARAMETERS  (edit these)
 # ─────────────────────────────────────────────
-mdot_total   = 9.0          # Total propellant mass flow [kg/s]
-OF_Ratio     = 2.1          # O/F ratio
+mdot_total   = 10.72          # Total propellant mass flow [kg/s]
+OF_Ratio     = 1.6          # O/F ratio
 mdot_kero    = mdot_total / (1 + OF_Ratio)   # Fuel mass flow [kg/s]
-
-rho_rp1      = 810.0        # RP-1 density [kg/m³]
-P_in_psi     = 710.12       # Inlet pressure [psi]
+rho_f      = 786        # Fuel density [kg/m³]
+P_in_psi     = 618.96       # Inlet pressure [psi]
 
 # Injector element layout
 n_type1      = 8            # mini-manifolds with 6 holes each
@@ -34,18 +33,18 @@ R_outer      = 80*10**-3        # Outer circle radius [m]  ← fixed
 h_manifold   = 19*10**-3    # Manifold height (axial depth) [m]  ← constant
 
 # Dynamic pressure assumption (sets velocity)
-dyn_pressure_fraction = 0.005
+dyn_pressure_fraction = 0.01
 
 # ─────────────────────────────────────────────
 # DERIVED FLOW QUANTITIES
 # ─────────────────────────────────────────────
 dyn_pressure = dyn_pressure_fraction * P_in_psi * psi_into_pa
-v_manifold   = np.sqrt(2 * dyn_pressure / rho_rp1)
+v_manifold   = np.sqrt(2 * dyn_pressure / rho_f)
 
 print(v_manifold)
 
 mdot_branch  = mdot_kero / 2.0
-A_inlet      = mdot_branch / (rho_rp1 * v_manifold)
+A_inlet      = mdot_branch / (rho_f * v_manifold)
 width_inlet  = A_inlet / h_manifold
 
 print("=" * 55)
@@ -73,7 +72,7 @@ areas_required  = []
 mdot_at_station = []
 
 for i, n_holes in enumerate(holes_per_step):
-    areas_required.append(mdot_remaining / (rho_rp1 * v_manifold))
+    areas_required.append(mdot_remaining / (rho_f * v_manifold))
     mdot_at_station.append(mdot_remaining)
     mdot_remaining -= n_holes * mdot_per_hole
 
