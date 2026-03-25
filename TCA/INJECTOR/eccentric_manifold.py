@@ -33,7 +33,7 @@ R_outer      = 80*10**-3        # Outer circle radius [m]  ← fixed
 h_manifold   = 19*10**-3    # Manifold height (axial depth) [m]  ← constant
 
 # Dynamic pressure assumption (sets velocity)
-dyn_pressure_fraction = 0.007
+dyn_pressure_fraction = 0.01
 
 # ─────────────────────────────────────────────
 # DERIVED FLOW QUANTITIES
