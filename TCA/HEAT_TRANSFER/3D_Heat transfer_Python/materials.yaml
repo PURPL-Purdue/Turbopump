@@ -63,3 +63,32 @@ materials:
     cp_poly:  [900.0,  0.0, 0.0, 0.0]   # J/kg·K
     T_max:    755.15   # K  (solidus ~855 K for 6061)
     T_melt:   855.0    # K  solidus (~582 °C, ASM handbook)
+
+# ---------- index 4 : Steel 4130 ------------------------------------------
+  - name:        "Steel 4130"
+    description: ""
+    source:      ""
+    k_poly:   [42.69,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [7850.00, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [470.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:   1705    # K  ()
+    T_melt:  1705     # K  solidus ()
+
+    # ---------- index 5 : Aluminum 7075 ------------------------------------------
+  - name:        "Aluminum 7075"
+    description: "Aluminum alloy 7075 — constant properties"
+    source:      "https://files.engineering.com/files/3a2ca894-d799-4283-956f-af40af534692/7075_Data_Sheet.pdf"
+    k_poly:   [130.0,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [2810.0, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [960.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:    750.0   # K  
+    T_melt:   750.0    # K  
+  # ---------- index 6 : Aluminum 1100 ------------------------------------------
+  - name:        "Aluminum 1100"
+    description: "Aluminum alloy 1100 — constant properties"
+    source:      "https://www.matweb.com/search/datasheet_print.aspx?matguid=db0307742df14c8f817bd8d62207368e"
+    k_poly:   [222.0,  0.0, 0.0, 0.0]   # W/m·K
+    rho_poly: [2710.0, 0.0, 0.0, 0.0]   # kg/m³
+    cp_poly:  [904.0,  0.0, 0.0, 0.0]   # J/kg·K
+    T_max:    916.0   # K  
+    T_melt:   916.0    # K  
