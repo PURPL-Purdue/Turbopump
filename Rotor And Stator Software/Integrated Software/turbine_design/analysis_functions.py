@@ -1,3 +1,8 @@
+"""
+Functions for further turbine analysis and calculations
+Author: Amanjyoti Mridha
+"""
+
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
@@ -69,7 +74,8 @@ def rotor_back_calculate(RPM, torque, mass_flow, beta, radius, V_in):
 
 
 def plot_velocity_triangles(
-    v1, v2, u, w1, w2, chord_length, inclination_angle, beta1, beta2, alpha1, alpha2
+    v1, v2, u, w1, w2, chord_length, inclination_angle, beta1, beta2, alpha1, alpha2,
+    PLOT_AT_ONCE=False
 ):
     """Plot velocity triangles with angles."""
     plt.figure()
@@ -177,7 +183,8 @@ def plot_velocity_triangles(
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.title("Velocity Triangles with Chord Inclination")
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
 
 def velocity_triangles_forward_calculate(V_in, alpha1, beta, radius, mass_flow_rate):
     """Forward-calculate rotor parameters given inlet conditions."""
@@ -239,7 +246,7 @@ def calculate_mach_pressure_distribution(area_vec, gamma, R, T_inlet, P_inlet, M
 
 
 # Plot Mach and Pressure distributions
-def plot_mach_pressure_distributions(Mach_vec, P_vec):
+def plot_mach_pressure_distributions(Mach_vec, P_vec, PLOT_AT_ONCE=False, PLOT_WINDOW=None):
     x = np.arange(1, len(Mach_vec) + 1)
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 8))
@@ -258,7 +265,10 @@ def plot_mach_pressure_distributions(Mach_vec, P_vec):
     axs[1].set_title("Pressure Distribution along Pressure Surface")
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Mach and Pressure Distributions", plt.gcf())
 
 # Kantrowitz limit
 def kantrowitz_limit(M0, gamma):

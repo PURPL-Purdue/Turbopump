@@ -1,3 +1,8 @@
+"""
+Functions for core turbine design calculations
+Author: Amanjyoti Mridha
+"""
+
 import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
@@ -86,7 +91,8 @@ def add_angle_annotation(ax, origin, angle1, angle2, radius, label):
 
 
 def plot_velocity_triangles(
-    v1, v2, u, w1, w2, chord_length, inclination_angle, beta1, beta2, alpha1, alpha2
+    v1, v2, u, w1, w2, chord_length, inclination_angle, beta1, beta2, alpha1, alpha2,
+    PLOT_AT_ONCE=False, PLOT_WINDOW=None
 ):
     """Plot velocity triangles with angles + arc annotations."""
     fig, ax = plt.subplots()
@@ -161,16 +167,16 @@ def plot_velocity_triangles(
         label=f"v2 = {v2:.3f} m/s"
     )
 
-        # === ANGLE ANNOTATIONS ===
+    # add angle annotations
     arc_radius = 0.4 * chord_length
 
-    # Leading edge: α1 (absolute) and β1 (relative)
+    # leading edge: alpha1 (absolute) and beta1 (relative)
     add_angle_annotation(ax, origin=(0, 0), angle1=0, angle2=alpha1,
                          radius=arc_radius, label=r"$\alpha_1$")
     add_angle_annotation(ax, origin=(0, 0), angle1=0, angle2=beta1,
                          radius=arc_radius * 0.5, label=r"$\beta_1$")
 
-    # Trailing edge: α2 and β2 relative to chord
+    # trailing edge: alpha2 and beta2 relative to chord
     add_angle_annotation(ax, origin=tuple(chord_end),
                          angle1=inclination_angle,
                          angle2=inclination_angle + alpha2,
@@ -180,11 +186,11 @@ def plot_velocity_triangles(
                          angle2=inclination_angle + beta2,
                          radius=arc_radius * 0.5, label=r"$\beta_2$")
 
-    # === ORIGINAL LEGEND ===
+    # get original legend handle
     leg1 = ax.legend(loc="upper left", title="Velocities")
     ax.add_artist(leg1)
 
-    # === NEW ANGLE LEGEND USING PROXY PATCH ===
+    # add additional angle legend as proxy patch
     angle_info = (
         r"$\alpha_1$ = " + f"{np.degrees(alpha1):.1f}°\n"
         r"$\beta_1$ = " + f"{np.degrees(beta1):.1f}°\n"
@@ -192,20 +198,23 @@ def plot_velocity_triangles(
         r"$\beta_2$ = " + f"{np.degrees(beta2):.1f}°"
     )
 
-    # Create a dummy invisible patch to attach the label
+    # create a dummy invisible patch to attach the label
     proxy = Patch(facecolor='none', edgecolor='none', label=angle_info)
 
     leg2 = ax.legend(handles=[proxy], loc="lower center", title="Angles", frameon=True, borderpad=1.2)
     ax.add_artist(leg2)
 
-    # Keep ticks, hide labels & numbers
+    # keep ticks, hide labels & numbers
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_xlabel("")
     ax.set_ylabel("")
 
     ax.set_title("Velocity Triangles")
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Velocity Triangles", plt.gcf())
 
 
 def calculate_blade_efficiency(mass_flow_rate, C1, C2, W1, W2, beta1, beta2, alpha1):
@@ -236,11 +245,11 @@ def curvature_function(y2, m, x1, x2, y1):
     )
 
 
-def generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness):
+def generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness, PLOT_AT_ONCE=False):
     theta_l = np.radians(beta)
     num_points = 100
 
-    # Lower Surface
+    # lower Surface
     x1 = np.linspace(0, c / 2, num_points)
     bottom_curve1 = np.tan(theta_l) * x1
     x2 = np.linspace(c / 2, c, num_points)
@@ -259,13 +268,13 @@ def generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness):
     x_lower = np.concatenate([x1, x2, x3])
     y_lower = np.concatenate([curve_DC_1, curve_CC, curve_DC_2])
 
-    # Upper Surface Guide Curves
+    # upper Surface Guide Curves
     x_upper1 = np.linspace(0, A_inlet * np.cos(theta_l), num_points)
     upper_curve1 = -1 / np.tan(theta_l) * x_upper1
     x_upper2 = np.linspace(c - A_inlet * np.cos(theta_l), c, num_points)
     upper_curve2 = 1 / np.tan(theta_l) * (x_upper2 - c)
 
-    # Bézier Curve
+    # bezier Curve
     x1 = A_inlet * np.cos(theta_l)
     y1 = -1 / np.tan(theta_l) * x1
     x2 = c / 2
@@ -287,7 +296,7 @@ def generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness):
     x_upper = np.concatenate([x_upper1, B1, np.flip(c - B1), x_upper2])
     y_upper = np.concatenate([upper_curve1, B2, np.flip(B2), upper_curve2]) + B_spacing
 
-    # Plot
+    # plot
     plt.figure()
     plt.plot(x_lower, y_lower, "k-", linewidth=2)
     plt.plot(x_upper, y_upper, "k-", linewidth=2)
@@ -296,13 +305,14 @@ def generate_blade_geom(c, beta, A_inlet, B_spacing, blade_thickness):
     plt.title("Blade Geometry Parametric Curves")
     plt.grid(True)
     plt.axis("equal")
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
 
     return max_thickness, x_lower, y_lower, x_upper, y_upper
 
 
-def generate_blade_geom_constant_area_v2(c, beta, A_inlet, B_spacing, blade_thickness):
-    theta_l = np.radians(beta)  # Convert to radians
+def generate_blade_geom_constant_area_v2(c, beta, A_inlet, B_spacing, blade_thickness, PLOT_AT_ONCE=False):
+    theta_l = np.radians(beta)  # convert to radians
 
     num_points = 100
 
@@ -343,7 +353,7 @@ def generate_blade_geom_constant_area_v2(c, beta, A_inlet, B_spacing, blade_thic
     result = minimize(calc_sq_err_min_dist, initial_guess, method="Nelder-Mead")
     optimal_x1, optimal_y2 = result.x
 
-    # Parametric Bézier Curve
+    # Parametric Bezier Curve
     t = np.linspace(0, 1, num_points)
     B1 = (1 - t) ** 2 * optimal_x1 + 2 * (1 - t) * t * x_m + t**2 * x2[-1]
     B2 = (
@@ -369,7 +379,8 @@ def generate_blade_geom_constant_area_v2(c, beta, A_inlet, B_spacing, blade_thic
     plt.title("Blade Geometry Parametric Curves")
     plt.grid()
     plt.axis("equal")
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
 
     # Calculate cross-sectional area
     cross_sectional_area = np.trapz(y_upper - y_lower, x_upper)
@@ -426,7 +437,7 @@ def calc_sq_err_min_dist(x_lower, y_lower, x0, y0, x1, slope, x2, y2, A_inlet, d
         x0 = x_lower[i]
         y0 = y_lower[i]
 
-        # Approx tangent with finite differences
+        # Approx tangent (finite diff)
         if i < len(x_lower) - 1:
             dx = x_lower[i + 1] - x0
             dy = y_lower[i + 1] - y0
@@ -484,7 +495,7 @@ def calc_sq_err_min_dist(x_lower, y_lower, x0, y0, x1, slope, x2, y2, A_inlet, d
     return err
 
 
-def calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet):
+def calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet, PLOT_AT_ONCE=False):
     sample_size = round(0.3 * len(x_lower))
     sample_indices = np.sort(np.random.choice(len(x_lower), sample_size, replace=False))
     x_lower = x_lower[sample_indices]
@@ -508,7 +519,7 @@ def calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet):
         x0 = x_lower[i]
         y0 = y_lower[i]
 
-        # Approx tangent with finite differences
+        # Approx tangent (finite diff)
         if i < len(x_lower) - 1:
             dx = x_lower[i + 1] - x0
             dy = y_lower[i + 1] - y0
@@ -562,12 +573,13 @@ def calc_and_plot_min_dist(x_lower, y_lower, x_upper, y_upper, A_inlet):
     plt.title('Minimum Distance from Upper Surface to Lower Surface')
     plt.grid(True)
 
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
 
     return min_distances
 
 
-def calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper):
+def calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper, PLOT_AT_ONCE=False):
     plt.figure()
     plt.plot(x_lower, y_lower, 'k-', linewidth=2, label='Lower Surface')
     plt.plot(x_upper, y_upper, 'k-', linewidth=2, label='Upper Surface')
@@ -612,7 +624,8 @@ def calc_cross_sectional_area(x_lower, y_lower, x_upper, y_upper):
     plt.legend(loc='best')
     plt.grid(True)
     plt.axis('equal')
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
 
     return cross_sectional_area
 
@@ -632,7 +645,7 @@ def plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, cho
     r2 = blade_radius
     fig = go.Figure()
 
-    # --- Hub (cylinder) ---
+    # Hub (cylinder)
     theta, Z = np.meshgrid(np.linspace(0, 2*np.pi, 60),
                            np.linspace(0, chord, 30))
     X_cyl = r1 * np.cos(theta)
@@ -642,7 +655,7 @@ def plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, cho
                     colorscale="Greys", showscale=False,
                     opacity=0.3)
 
-    # --- Caps (top and bottom) ---
+    # Cylinder ends/Hub surfaces (top and bottom)
     theta_cap = np.linspace(0, 2*np.pi, 60)
     X_cap = r1 * np.cos(theta_cap)
     Y_cap = r1 * np.sin(theta_cap)
@@ -656,7 +669,7 @@ def plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, cho
         color="blue", opacity=0.5, alphahull=0, showscale=False
     ))
 
-    # --- Blade geometry ---
+    # Blade geometry
     x = np.concatenate([x_lower, np.flip(x_upper)])
     y = np.concatenate([y_lower, np.flip(y_upper)]) - offset
     z = np.linspace(r1 - r2/4, r1 + r2, 60)
@@ -676,7 +689,7 @@ def plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, cho
                         colorscale="Blues", showscale=False,
                         opacity=0.9)
 
-    # --- Layout ---
+    # Layout
     fig.update_layout(
         scene=dict(
             xaxis_title="X [m]",

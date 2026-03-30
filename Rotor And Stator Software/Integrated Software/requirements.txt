@@ -9,3 +9,4 @@ sympy
 openpyxl
 plotly
 pyvista
+PyQt5

@@ -1,3 +1,8 @@
+"""
+Functions for estimating structural loads
+Authors: TJ Mareachen, Andrew Fontanetta
+"""
+
 import math
 
 def calc_radius_turbine(height_blade, radius_hub):

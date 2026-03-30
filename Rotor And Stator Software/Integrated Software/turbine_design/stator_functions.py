@@ -1,3 +1,8 @@
+"""
+Functions for stator (nozzle) design and calcs
+Author: Andrew Fontanetta, Amanjyoti Mridha
+"""
+
 import math
 
 def calc_R_S(R, m_m):  # [J/(kg*K)] (Specific Gas Constant)
@@ -97,7 +102,7 @@ import matplotlib.pyplot as plt
 def exp_scale(x):
     return (np.exp(x) - 1) / (np.exp(1) - 1)
 
-def plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len):
+def plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len, PLOT_AT_ONCE=False, PLOT_WINDOW=None):
     num_points = 100
     r_inlet = np.sqrt(A_inlet / np.pi)
     r_throat = np.sqrt(A_throat / np.pi)
@@ -131,7 +136,10 @@ def plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len):
     ax.set_zlabel("height [m]")
     ax.set_title("Plot of nozzle geometry")
     plt.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Nozzle Geometry Surface", plt.gcf())
 
     minZ = np.min(Z)
     maxZ = np.max(Z)
@@ -140,7 +148,10 @@ def plot_nozzle(A_inlet, A_throat, A_exit, inlet_len, outlet_len):
     plt.xlabel("length [m]")
     plt.ylabel("width [m]")
     plt.title("Contour Plot for nozzle")
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Nozzle Geometry Contour", plt.gcf())
 
     return X, Y, Z
 

@@ -1,5 +1,10 @@
-import pandas as pd
+"""
+Functions for utilities
+Author: Amanjyoti Mridha
+"""
 
+import pandas as pd
+from PyQt5.QtWidgets import QMessageBox
 
 def export_parameters_to_excel(file_name, configurations, parameters):
     """
@@ -97,3 +102,16 @@ def import_parameters_from_csv(file_name):
     parameters = {col: df.iloc[2:, i].tolist() for i, col in enumerate(df.iloc[1, 1:], start=1)}
 
     return configurations, parameters
+
+# yes no checkbox
+def ask_yes_no(question, parent):
+    reply = QMessageBox.question(
+        parent,  # parent window
+        "Confirm",
+        question,
+        QMessageBox.Yes | QMessageBox.No
+    )
+
+    if reply == QMessageBox.Yes:
+        return True # yes I know this is verbose
+    return False

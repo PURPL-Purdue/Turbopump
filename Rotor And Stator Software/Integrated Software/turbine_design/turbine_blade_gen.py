@@ -1,3 +1,8 @@
+"""
+Functions for core turbine blade generation
+Author: Amanjyoti Mridha
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize, fsolve, fmin
@@ -21,26 +26,26 @@ def solve_for_x1(c1, c2, r, y2, x2):
     """
     # print(c1, c2, r, y2, x2)
 
-    # Define the equation as the squared difference to minimize
+    # define the equation as the squared difference to minimize
     def equation(x):
         if np.abs(x + c1) >= r:
-            return np.inf  # Ensure we don't evaluate outside the circle
+            return np.inf  # ensure we don't evaluate outside the circle
         
-        # Compute the terms
+        # compute the terms
         left = - (x + c1) / np.sqrt(r**2 - (x + c1)**2)
         right = (y2 - (c2 + np.sqrt(r**2 - (x + c1)**2))) / (x2 - x)
         
-        # Return squared difference
+        # return squared difference
         return (left - right)**2
 
-    # Set the initial guess and search range
+    # set initial guess and search range
     initial_guess = -c1 - r
     bounds = (-c1 - r, -c1)
 
-    # Minimize the equation
+    # minimize the equation
     solution = fmin(equation, initial_guess, disp=False)
 
-    # Calculate y1 based on the solution for x1
+    # calculate y1 based on the solution for x1
     x1 = solution[0]
     y1 = np.sqrt(r**2 - (x1 + c1)**2) + c2
 
@@ -238,13 +243,14 @@ def optimize_upper_surface(x_lower, y_lower, target_distance, blade_spacing, rad
 
     return result.x
 
-def compute_distances_and_plot(x_lower, y_lower, upper_curve, target_distance, blade_spacing) -> tuple[float, list[float]]:
+def compute_distances_and_plot(x_lower, y_lower, upper_curve, target_distance, blade_spacing, 
+                               PLOT_AT_ONCE=False, PLOT_WINDOW=None) -> tuple[float, list[float]]:
     
-    # ---- Create figure with 2 rows of subplots ----
+    # fig with 2 rows for subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 10), height_ratios=[2, 1])
     plt.subplots_adjust(hspace=0.35)
 
-    # ---- Plot upper & lower surfaces on ax1 ----
+    # plot upper and lower surf on ax1
     ax1.plot(x_lower, y_lower, 'b-', label='Lower Surface')
     ax1.plot(upper_curve[:, 0], upper_curve[:, 1], 'r-', label='Upper Surface')
     ax1.plot(x_lower, y_lower + blade_spacing, 'b--', label='Lower Surface Guide')
@@ -254,7 +260,7 @@ def compute_distances_and_plot(x_lower, y_lower, upper_curve, target_distance, b
     ax1.set_ylabel('Y/C')
     ax1.legend()
 
-    # ---- compute distances ----
+    # compute distances
     y_lower = y_lower + blade_spacing
     num_points = len(x_lower)
     sampled_indices = np.linspace(0, num_points - 1, min(40, num_points), dtype=int)
@@ -297,7 +303,7 @@ def compute_distances_and_plot(x_lower, y_lower, upper_curve, target_distance, b
         distances.append(min_distance)
         sse += (min_distance - target_distance) ** 2
 
-    # ---- Plot distances on ax2 ----
+    # plot distances in ax2
     ax2.plot(x_lower[sampled_indices], distances, 'ko-', label='Computed Distances')
     ax2.axhline(target_distance, color='r', linestyle='--', label='Target Distance')
     ax2.set_xlabel('X/C (Lower Surface)')
@@ -305,7 +311,10 @@ def compute_distances_and_plot(x_lower, y_lower, upper_curve, target_distance, b
     ax2.legend()
     ax2.grid(True)
 
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Distance Visualization", plt.gcf())
 
     return sse, distances
 
@@ -338,7 +347,7 @@ def plot_geometry_with_sliders(num_points = 1000, beta = np.deg2rad(60)):
     upper_surface_filtered = full_upper[full_upper[:, 0] > 0]
     len_upper_surf = upper_surface_filtered.shape[0]
 
-    sse, distances = compute_distances_and_plot(x_lower[:num_points // 2], y_lower[:num_points // 2], upper_surface_filtered[:len_upper_surf // 2, :], initial_target_distance * initial_blade_spacing, initial_blade_spacing, ax)
+    sse, distances = compute_distances_and_plot(x_lower[:num_points // 2], y_lower[:num_points // 2], upper_surface_filtered[:len_upper_surf // 2, :], initial_target_distance * initial_blade_spacing, initial_blade_spacing, ax, PLOT_AT_ONCE=False)
 
 
     ax.axis('equal')
@@ -463,7 +472,7 @@ def compute_geometry(chord, beta, target_distance, blade_spacing, rounds, num_po
     return x_lower, y_lower, x_upper, y_upper, distances, dist_plot_params
 
 
-def plot_blade_geometry(x_lower, y_lower, x_upper, y_upper):
+def plot_blade_geometry(x_lower, y_lower, x_upper, y_upper, PLOT_AT_ONCE=False, PLOT_WINDOW=None):
     fig, ax = plt.subplots()
     ax.plot(x_lower, y_lower, 'b-', label='Lower Surface')
     ax.plot(x_upper, y_upper, 'r-', label='Upper Surface')
@@ -472,9 +481,12 @@ def plot_blade_geometry(x_lower, y_lower, x_upper, y_upper):
     ax.set_xlabel('X/C')
     ax.set_ylabel('Y/C')
     ax.legend()
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Blade Geometry", plt.gcf())
 
-def plot_distance_distribution(x_lower, distances):
+def plot_distance_distribution(x_lower, distances, PLOT_AT_ONCE=False, PLOT_WINDOW=None):
     fig, ax = plt.subplots()
     ax.plot(x_lower[:len(distances)], distances, 'g-', label='Distance Distribution')
     ax.axhline(y=np.mean(distances), color='r', linestyle='--', label='Mean Distance')
@@ -483,4 +495,7 @@ def plot_distance_distribution(x_lower, distances):
     ax.set_xlabel('X')
     ax.set_ylabel('Distance to Upper Surface')
     ax.legend()
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        PLOT_WINDOW.addPlot("Distance Distribution", plt.gcf())

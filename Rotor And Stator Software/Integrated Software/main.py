@@ -1,3 +1,8 @@
+"""
+Core Turbine Generation Script
+Author: Amanjyoti Mridha
+"""
+
 import numpy as np
 import yaml
 import matplotlib.pyplot as plt
@@ -5,13 +10,19 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import os
 import pickle
-
+import json
 
 import turbine_design.structure_functions as sf
 import turbine_design.stator_functions as stf
 import turbine_design.analysis_functions as af
 import turbine_design.turbine_blade_gen as tbg
 import turbine_design.turbine_functions as tf
+import turbine_design.isentropic_relations as isentropic
+
+import turbine_design.tabbed_figures as tabbed_figures
+import turbine_design.helpers as helpers
+
+## OVVERALL CONFIGURATION
 
 yaml_path = "../../params.yaml"
 output_table_path = "output_tables/"
@@ -21,6 +32,15 @@ with open(yaml_path, 'r') as file:
 
 if os.path.exists(output_table_path) == False:
     os.makedirs(output_table_path)
+
+PLOT_AT_ONCE = True # plot all together (True) or sequentially as individual windows
+if PLOT_AT_ONCE:
+    pw = tabbed_figures.plotWindow()
+    window_parent = pw.MainWindow
+else:
+    pw = None
+
+USE_INPUT_GUI = True # use terminal or qt for input questions
 
 ## HOT GAS CONSTANTS
 
@@ -68,7 +88,7 @@ P_nozzle_out_total = P_e * (1 + (gamma - 1) / 2 * M_e**2) ** (gamma / (gamma - 1
 
 ## PLOT NOZZLE GEOMETRY
 
-[X, Y, Z] = stf.plot_nozzle(A_e, A_throat, A_e, dist_n, dist_n)
+[X, Y, Z] = stf.plot_nozzle(A_e, A_throat, A_e, dist_n, dist_n, PLOT_AT_ONCE=PLOT_AT_ONCE, PLOT_WINDOW=pw)
 
 ## NOZZLE TABLE
 
@@ -174,7 +194,7 @@ alpha2 = np.mod(alpha2, 2 * np.pi) # ensure alpha2 is between 0 and 2pi
 print(f"v1: {v1:.1f} m/s, v2: {v2:.1f} m/s, w: {w:.1f} m/s, u: {u:.1f} m/s, alpha1: {np.rad2deg(alpha1):.1f} deg, alpha2: {np.rad2deg(alpha2):.1f} deg, beta: {np.rad2deg(beta):.1f} deg")
 
 print(type(blade_solidity))
-tf.plot_velocity_triangles(v1, v2, u, w, w, chord, 0, beta, -beta, alpha1, -alpha2)
+tf.plot_velocity_triangles(v1, v2, u, w, w, chord, 0, beta, -beta, alpha1, -alpha2, PLOT_AT_ONCE=PLOT_AT_ONCE, PLOT_WINDOW=pw)
 
 # Zweifel loading coefficient
 zweifel_coeff = af.calc_zweifel_loading_coefficient(blade_solidity, np.deg2rad(beta), np.deg2rad(beta), w, w)
@@ -193,11 +213,11 @@ x_lower, y_lower, x_upper, y_upper, distances, dist_plot_params = tbg.compute_ge
     output_excel=True, 
     output_path=f"{output_table_path}design_table.xlsx"
 )
-tbg.plot_blade_geometry(x_lower, y_lower, x_upper, y_upper)
+tbg.plot_blade_geometry(x_lower, y_lower, x_upper, y_upper, PLOT_AT_ONCE=PLOT_AT_ONCE, PLOT_WINDOW=pw)
 
 # plot the distances along the blade
 print("Plotting distances along the blade...")
-tbg.compute_distances_and_plot(*dist_plot_params)
+tbg.compute_distances_and_plot(*dist_plot_params, PLOT_AT_ONCE=PLOT_AT_ONCE, PLOT_WINDOW=pw)
 
 
 # efficiency calculations
@@ -215,7 +235,7 @@ REYNOLDS_NUM = rho_e * w * chord / params['T_dynamic_viscosity'] # [unitless]
 RH_RT = hub_radius / rotor_radius # [unitless]
 PRESSURE_RATIO = 1 # [unitless] 
 R_INLET = 733.98 # [J/(kg*K)] specific gas constant
-P_INLET = 2.0684e+05 # [Pa]
+P_INLET = 2.0684e+05 # [Pa] 
 
 n_total, expected_hp = af.calculate_blade_design_efficiency(
     distances, 
@@ -252,12 +272,17 @@ areas = np.concatenate([distances, np.flip(distances)])
 a_star = distances[0] / af.area_mach_relation(M_inlet_rel, gamma)
 print(f"A* = {a_star:.6f}")
 M_vec, P_vec = af.calculate_mach_pressure_distribution(areas, gamma, R, T_e, P_e, M_inlet_rel, M_inlet_rel, a_star)
-af.plot_mach_pressure_distributions(M_vec, P_vec)
+af.plot_mach_pressure_distributions(M_vec, P_vec, PLOT_AT_ONCE=PLOT_AT_ONCE, PLOT_WINDOW=pw)
 
 # 3D plots
-plot_turbine = input("Plot 3D turbine model? (y/n): ")
-if plot_turbine.lower() == 'y':
-    tf.plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, min_blade_thickness)
+if not USE_INPUT_GUI:
+    plot_turbine = input("Plot 3D turbine model? (y/n): ")
+    if plot_turbine.lower() == 'y':
+        tf.plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, min_blade_thickness)
+else:
+    plot_turbine = helpers.ask_yes_no("Plot 3D turbine model?", window_parent)
+    if plot_turbine:
+        tf.plot_turbine(x_lower, y_lower, x_upper, y_upper, num_blades, hub_radius, chord, rotor_radius - hub_radius, min_blade_thickness)
 
 # write turbine results to csv
 turbine_table = pd.DataFrame({
@@ -470,7 +495,11 @@ ax.set_ylabel('Turbine RPM (RPM)')
 ax.set_zlabel('Turbine Power (HP)')
 ax.set_title('Off-Design Turbine Performance')
 ax.legend()
-plt.show()
+if not PLOT_AT_ONCE:
+    plt.show()
+else:
+    pw.addPlot("Off-Design Turbine Performance", fig)
+
 # save fig to png
 fig.savefig(f"{output_table_path}off_design_turbine_performance.png")
 
@@ -485,7 +514,10 @@ ax.set_ylabel('Turbine RPM (RPM)')
 ax.set_zlabel('Turbine Power (HP)')
 ax.set_title('Off-Design Turbine Performance (HP >= 100)')
 ax.legend()
-plt.show()
+if not PLOT_AT_ONCE:
+    plt.show()
+else:
+    pw.addPlot("Off-Design Turbine Performance (HP >= 100)", fig)
 # save fig to png
 fig.savefig(f"{output_table_path}off_design_turbine_performance_hp100.png")
 # save corresponding data to csv
@@ -505,7 +537,10 @@ ax.set_ylabel('Turbine Efficiency (unitless)')
 ax.set_title('Off-Design Turbine Efficiency')
 ax.grid(True)
 ax.set_ylim(0, 1)
-plt.show()
+if not PLOT_AT_ONCE:
+    plt.show()
+else:
+    pw.addPlot("Off-Design Turbine Efficiency", fig)
 # save fig to png
 fig.savefig(f"{output_table_path}off_design_turbine_efficiency.png")
 
@@ -517,7 +552,10 @@ ax.set_xlabel('Mass Flow Rate (lbm/s)')
 ax.set_ylabel('Turbine Torque (Nm)')
 ax.set_title('Off-Design Turbine Torque')
 ax.grid(True)
-plt.show()
+if not PLOT_AT_ONCE:
+    plt.show()
+else:
+    pw.addPlot("Off-Design Turbine Torque", fig)
 # save fig to png
 fig.savefig(f"{output_table_path}off_design_turbine_torque.png")
 
@@ -538,9 +576,12 @@ rpm_range = np.linspace(0.5 * turbine_rpm, 1.5 * turbine_rpm, 50)
 np.savetxt(f"{output_table_path}off_design_mdot_range.csv", m_dot_range, delimiter=",")
 np.savetxt(f"{output_table_path}off_design_rpm_range.csv", rpm_range, delimiter=",")
 
-create_meshgrid = input("Create meshgrid for mass flow rate and rpm? (y/n): ")
+if not USE_INPUT_GUI:
+    create_meshgrid = input("Create meshgrid for mass flow rate and rpm? (y/n): ").lower() == 'y'
+else:
+    create_meshgrid = helpers.ask_yes_no("Create meshgrid for mass flow rate and rpm?", window_parent)
 
-if create_meshgrid.lower() == 'y':
+if create_meshgrid:
 
     M_DOT, RPM = np.meshgrid(m_dot_range, rpm_range)
 
@@ -635,7 +676,10 @@ if create_meshgrid.lower() == 'y':
     ax.set_zlabel("Horsepower")
     ax.set_title("Off-Design Horsepower Surface")
 
-    plt.show()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        pw.addPlot("Off-Design Horsepower Surface", fig)
 
     # save data
     m_dot_surface_lbm = M_DOT / params['lbm_to_kg']
@@ -684,5 +728,262 @@ if create_meshgrid.lower() == 'y':
 
 
 ## Nitrogen Cold Gas Calculations
-gamma_N = 1.4
-R_N = 296.8 # J/(kg*K)
+def calc_cold_gas_performance():
+    # put in func so that variables are local scope as I don't want to 
+    # mess with the hot gas variables above
+    gamma_N = 1.4
+    R_N = 296.8 # J/(kg*K)
+    rho_N = 1.2506 # kg/m^3
+
+    # Upstream_Temperature = 300 # K
+    num_points = 100
+
+    # estmate the inlet area from hot gas calculations
+    A_ratio = isentropic.calc_A_ratio(0.01, gamma)
+    A_inlet = A_throat / A_ratio
+
+    # calculate mach numbers for cold gas
+    # A_crit = A_inlet / isentropic.calc_A_ratio(0.01, gamma_N)
+    # if A_crit <= A_throat:
+    #     M_inlet = 1
+    # else:
+    #     M_inlet = iserntropic.calc_M_from_A_ratio(A_inlet / )
+    M_throat = isentropic.calc_M_from_A_ratio(A_throat / A_inlet, gamma_N, M1=0.01)
+    M_exit = isentropic.calc_M_from_A_ratio(A_e / A_throat, gamma_N, M1=M_throat)
+
+  
+    tescom_coeff_file = "./component_data/tescom26_1100_polyfit_coefficients.json"
+    try:
+        with open(tescom_coeff_file, 'r') as f:
+            tescom_data = json.load(f)
+            tescom_coeffs = tescom_data['Coefficients']
+            tescom_pressure_range_psi = tescom_data['Static Pressure Range (Gauge)']
+            tescom_flow_rate_range_scfm = tescom_data['Flow Rate Range (SCFM)']
+            tescom_outlet_area_in2 = tescom_data['Outlet Area (in^2)']
+    except Exception as e:
+        print(f"Error loading Tescom data: {e}\n Go to component_data and run the processing script")
+        return
+
+    # calculate Mach number at throat and exit for cold gas
+    A_tescom = tescom_outlet_area_in2 * params['in_to_m']**2
+    flow_rate_scfm = np.linspace(tescom_flow_rate_range_scfm[0], tescom_flow_rate_range_scfm[1], num_points)
+    flow_rate_m3_s = flow_rate_scfm * params['scfm_to_m3ps']
+    tescom_pressures_psig = np.polyval(tescom_coeffs, flow_rate_scfm)
+    tescom_pressures_pa = tescom_pressures_psig * params['psi_to_pa'] + params['P_atm_pa']
+    mass_flow_rate = flow_rate_m3_s * rho_N
+    velocity_tescom = mass_flow_rate / (rho_N * A_tescom)
+    rho_0 = [rho_N * isentropic.calc_rho0_rho_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
+    # T0 = [Upstream_Temperature * isentropic.calc_T0_T_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
+    T0 = [tescom_pressures_pa[i] / (rho_0[i] * R_N) for i in range(num_points)] 
+    P_0 = [tescom_pressures_pa[i] * isentropic.calc_P0_P_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
+    M_tescom = [velocity_tescom / np.sqrt(gamma_N * R_N * T0[i]) for i in range(num_points)]
+
+    # plot tescom data
+    plt.figure(figsize=(8, 5))
+    plt.plot(flow_rate_m3_s, M_tescom, label='Tescom Data')
+    plt.xlabel('Flow Rate (m^3/s)')
+    plt.ylabel('Mach Number')
+    plt.title('Tescom 26-1100 Mach Number vs Flow Rate')
+    plt.grid()
+    plt.legend()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        pw.addPlot("Tescom 26-1100 Mach Number vs Flow Rate", plt.gcf())
+
+    # calculate mach numbers
+    # at throat
+    M_throat = [isentropic.calc_M_from_A_ratio(A_tescom / A_throat, gamma_N, M1=M_tescom[i]) for i in range(num_points)]
+    # at stator exit
+    M_exit = [isentropic.calc_M_from_A_ratio(A_throat / A_e, gamma_N, M1=M_throat[i]) for i in range(num_points)]
+    rho_exit = [rho_0[i] * isentropic.calc_rho_rho0_ratio(M_exit[i], gamma_N) for i in range(num_points)]
+    T_e = [T0[i] * isentropic.calc_T_T0_ratio(M_exit[i], gamma_N) for i in range(num_points)]    
+    P_e = [P_0[i] * isentropic.calc_P_P0_ratio(M_exit[i], gamma_N) for i in range(num_points)]
+    V_exit = [M_exit[i] * np.sqrt(gamma_N * R_N * T_e[i]) for i in range(num_points)]
+
+    # plot mach numbers
+    plt.figure(figsize=(8, 5))
+    plt.plot(flow_rate_m3_s, M_throat, label='Throat Mach Number')
+    plt.plot(flow_rate_m3_s, M_exit, label='Exit Mach Number')
+    plt.xlabel('Flow Rate (m^3/s)')
+    plt.ylabel('Mach Number')
+    plt.title('Mach Number at Throat and Exit vs Flow Rate')
+    plt.grid()
+    plt.legend()
+    if not PLOT_AT_ONCE:
+        plt.show()
+    else:
+        pw.addPlot("Mach Number at Throat and Exit vs Flow Rate", plt.gcf())
+
+
+    turbine_rpm = params['T_design_rpm'] # [RPM]
+    rpm_range = np.linspace(0.5 * turbine_rpm, 1.5 * turbine_rpm, 50)
+
+    # save mdot range and rpm range np arrays
+    np.savetxt(f"{output_table_path}off_design_mdot_range_n2.csv", mass_flow_rate, delimiter=",")
+    np.savetxt(f"{output_table_path}off_design_rpm_range_n2.csv", rpm_range, delimiter=",")
+
+    if not USE_INPUT_GUI:
+        create_meshgrid = input("Create meshgrid for mass flow rate and rpm? (y/n): ").lower() == 'y'
+    else:
+        create_meshgrid = helpers.ask_yes_no("Create meshgrid for mass flow rate and rpm?", window_parent)
+
+    if create_meshgrid:
+
+        M_DOT, RPM = np.meshgrid(mass_flow_rate, rpm_range)
+
+        V_IN = np.meshgrid(V_exit, rpm_range)[0] # just repeat the exit velocity across the rpm range
+        U = RPM * 2 * np.pi * mean_radius / 60
+        T_e_mesh = np.meshgrid(T_e, rpm_range)[0] # repeat exit temperature across rpm range
+
+        torque_surface = np.zeros_like(M_DOT)
+        hp_surface = np.zeros_like(M_DOT)
+        alpha2_surface = np.zeros_like(M_DOT)
+        w_surface = np.zeros_like(M_DOT)
+
+        for i in range(M_DOT.shape[0]):
+            for j in range(M_DOT.shape[1]):
+
+                v_in = V_IN[i, j]
+                rpm_val = RPM[i, j]
+                u_val = U[i, j]
+                mdot_val = M_DOT[i, j]
+
+                v2, alpha2, w1, U_calc, torque = af.velocity_triangles_unsteady_forward_calculate(
+                    v_in,
+                    alpha1,
+                    beta,
+                    mean_radius,
+                    mdot_val,
+                    rpm_val,
+                    u_val
+                )
+
+                alpha2_surface[i, j] = alpha2
+                w_surface[i, j] = w1
+                torque_surface[i, j] = torque
+
+                hp_surface[i, j] = torque * rpm_val / 5252 / params['lbft_to_nm']
+
+
+        eff_surface = np.zeros_like(M_DOT)
+        expected_hp_surface = np.zeros_like(M_DOT)
+
+        for i in range(M_DOT.shape[0]):
+            for j in range(M_DOT.shape[1]):
+
+                try:
+                    M_inlet_rel = w_surface[i, j] / np.sqrt(gamma_N * R_N * T_e_mesh[i, j])
+                    n2_total_pressure_ratio = isentropic.calc_total_pressure_ratio(M_inlet_rel, gamma_N)
+
+                    n_total, expected_hp = af.calculate_blade_design_efficiency(
+                        distances,
+                        target_distance,
+                        chord,
+                        blade_height,
+                        pitch,
+                        alpha1,
+                        alpha2_surface[i, j],
+                        beta,
+                        C_p,
+                        hp_surface[i, j],
+                        M_DOT[i, j],
+                        gamma_N,
+                        TOTAL_PRESSURE_RATIO,
+                        Q_FREESTREAM,
+                        REYNOLDS_NUM,
+                        RH_RT,
+                        PRESSURE_RATIO,
+                        R_N,
+                        T_e_mesh[i, j],
+                        T_stator_inlet_imperial,
+                        P_INLET,
+                        M_inlet_rel,
+                        M_inlet_rel,
+                        kacker_okapuu_data,
+                        use_print=False
+                    )
+
+                except Exception:
+                    n_total = 0
+                    expected_hp = 0
+
+                if np.isnan(n_total):
+                    n_total = 0
+                    expected_hp = 0
+
+                eff_surface[i, j] = n_total
+                expected_hp_surface[i, j] = expected_hp
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.plot_surface(RPM, M_DOT / params['lbm_to_kg'], hp_surface)
+
+        ax.set_xlabel("RPM")
+        ax.set_ylabel("Mass Flow (lbm/s)")
+        ax.set_zlabel("Horsepower")
+        ax.set_title("Off-Design Horsepower Surface")
+
+        if not PLOT_AT_ONCE:
+            plt.show()
+        else:
+            pw.addPlot("Off-Design Horsepower Surface (N2)", fig)
+
+        # save data
+        m_dot_surface_lbm = M_DOT / params['lbm_to_kg']
+
+        rpm_flat = RPM.flatten()
+        mdot_flat = m_dot_surface_lbm.flatten()
+        hp_flat = hp_surface.flatten()
+        expected_hp_flat = expected_hp_surface.flatten()
+        eff_flat = eff_surface.flatten()
+        alpha2_flat = alpha2_surface.flatten()
+        w_flat = w_surface.flatten()
+        torque_flat = torque_surface.flatten()
+
+        mask = np.isfinite(hp_flat) & (hp_flat > 0)
+
+        off_design_data = pd.DataFrame({
+            "Mass Flow Rate (lbm/s)": mdot_flat[mask],
+            "Turbine RPM (RPM)": rpm_flat[mask],
+            "Torque (Nm)": torque_flat[mask],
+            "Horsepower (HP)": hp_flat[mask],
+            "Expected Horsepower (HP)": expected_hp_flat[mask],
+            "Efficiency": eff_flat[mask],
+            "Alpha2 (rad)": alpha2_flat[mask],
+            "Relative Velocity W1 (m/s)": w_flat[mask]
+        })
+        off_design_data.to_csv(
+            f"{output_table_path}off_design_turbine_performance_surface_n2.csv",
+            index=False
+        )
+
+        np.savetxt(f"{output_table_path}hp_surface_n2.csv", hp_surface, delimiter=",")
+        np.savetxt(f"{output_table_path}eff_surface_n2.csv", eff_surface, delimiter=",")
+
+        # create a 2D matrix of data and save to csv
+        out = np.empty((len(rpm_range) + 1, len(m_dot_range) + 1))
+        out[:] = np.nan
+
+        # Fill headers
+        out[0, 1:] = m_dot_range / params['lbm_to_kg'] # lbm/s
+        out[1:, 0] = rpm_range
+
+        # Fill z values
+        out[1:, 1:] = hp_surface
+
+        np.savetxt(f"{output_table_path}horsepower_surface_n2.csv", out, delimiter=",")
+
+if not USE_INPUT_GUI:
+    run_n2_calcs = input("Run nitrogen cold gas performance calculations? (y/n): ").lower() == 'y'
+else:
+    run_n2_calcs = helpers.ask_yes_no("Run nitrogen cold gas performance calculations?", window_parent)
+
+if run_n2_calcs:
+    calc_cold_gas_performance()
+
+
+if PLOT_AT_ONCE:
+    # plt.show()
+    pw.show()
