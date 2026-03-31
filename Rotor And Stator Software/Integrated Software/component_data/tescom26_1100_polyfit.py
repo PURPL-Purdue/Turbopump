@@ -43,7 +43,8 @@ if save_fit.lower() == 'y':
         "Static Pressure Range (Gauge)": (min(static_pressure_gauge), max(static_pressure_gauge)),
         "Outlet Area (in^2)": A_outlet,
         "Outlet Diameter (in)": D_outlet,
-        "R-squared": np.corrcoef(static_pressure_gauge, poly_fit(flow_rate_scfm))[0, 1] ** 2
+        "R-squared": np.corrcoef(static_pressure_gauge, poly_fit(flow_rate_scfm))[0, 1] ** 2,
+        "Raw Data Points": list(zip(flow_rate_scfm.tolist(), static_pressure_gauge.tolist()))
     }
     with open(coeff_file + ".json", 'w') as f:
         json.dump(data_dict, f, indent=4)

@@ -16,11 +16,11 @@ import matplotlib.pyplot as plt
 import sys
 
 class plotWindow():
-    def __init__(self, parent=None):
+    def __init__(self, window_title="plot window", parent=None):
         self.app = QApplication(sys.argv)
         self.MainWindow = QMainWindow()
         self.MainWindow.__init__()
-        self.MainWindow.setWindowTitle("plot window")
+        self.MainWindow.setWindowTitle(window_title)
         self.canvases = []
         self.figure_handles = []
         self.toolbar_handles = []

@@ -4,6 +4,7 @@ Author: Amanjyoti Mridha
 """
 
 import numpy as np
+from scipy.optimize import fsolve, least_squares, minimize
 
 def calc_A_ratio(M, gamma):
     """
@@ -14,19 +15,25 @@ def calc_A_ratio(M, gamma):
 def calc_M_from_A_star_ratio(A_ratio, gamma, subsonic=True):
     """
     Calculates M for given A/A* and gamma for istentropic flow
+    If solution not found, returns 1
     """
-    from scipy.optimize import fsolve
     
     def equation(M):
         return calc_A_ratio(M, gamma) - A_ratio
     
     if subsonic:
         M_initial_guess = 0.5
+        bounds = (0, 1)
     else:
         M_initial_guess = 2.0
-        
-    M_solution, = fsolve(equation, M_initial_guess)
-    return M_solution
+        bounds = (1, np.inf)
+    
+    # M_solution, = fsolve(equation, M_initial_guess)
+    result = least_squares(equation, M_initial_guess, bounds=bounds)
+    if not result.success:
+        print("Warning: Could not find a solution for M from A/A* ratio. Check inputs.")
+        return 1
+    return result.x[0]
 
 def calc_M_from_A_ratio(A_ratio, gamma, M1):
     """
@@ -35,11 +42,11 @@ def calc_M_from_A_ratio(A_ratio, gamma, M1):
     if M1 == 1:
         if A_ratio == 1:
             return 1;
-        elif A_ratio > 1: # expanding so supersonic
-            return calc_M_from_A_star_ratio(A_ratio, gamma, subsonic=False)
-        else:
-            # going from choked back to subsonic (not likely)
+        elif A_ratio > 1: # converging (A1>A2) -> subsonic (not very realistic case)
             return calc_M_from_A_star_ratio(A_ratio, gamma, subsonic=True)
+        else: # A1 < A2 -> diverging -> supersonic
+            # going from choked up to supersonic
+            return calc_M_from_A_star_ratio(A_ratio, gamma, subsonic=False)
     
     A1_A_star = calc_A_ratio(M1, gamma)
     if M1 < 1 and A1_A_star <= A_ratio: # A* > A2 => A1/A* < A1/A2

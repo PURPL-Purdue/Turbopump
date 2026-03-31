@@ -35,7 +35,7 @@ if os.path.exists(output_table_path) == False:
 
 PLOT_AT_ONCE = True # plot all together (True) or sequentially as individual windows
 if PLOT_AT_ONCE:
-    pw = tabbed_figures.plotWindow()
+    pw = tabbed_figures.plotWindow("Turbine Design Plots")
     window_parent = pw.MainWindow
 else:
     pw = None
@@ -739,8 +739,8 @@ def calc_cold_gas_performance():
     num_points = 100
 
     # estmate the inlet area from hot gas calculations
-    A_ratio = isentropic.calc_A_ratio(0.01, gamma)
-    A_inlet = A_throat / A_ratio
+    # A_ratio = isentropic.calc_A_ratio(0.01, gamma)
+    # A_inlet = A_throat / A_ratio
 
     # calculate mach numbers for cold gas
     # A_crit = A_inlet / isentropic.calc_A_ratio(0.01, gamma_N)
@@ -748,8 +748,8 @@ def calc_cold_gas_performance():
     #     M_inlet = 1
     # else:
     #     M_inlet = iserntropic.calc_M_from_A_ratio(A_inlet / )
-    M_throat = isentropic.calc_M_from_A_ratio(A_throat / A_inlet, gamma_N, M1=0.01)
-    M_exit = isentropic.calc_M_from_A_ratio(A_e / A_throat, gamma_N, M1=M_throat)
+    # M_throat = isentropic.calc_M_from_A_ratio(A_throat / A_inlet, gamma_N, M1=0.01)
+    # M_exit = isentropic.calc_M_from_A_ratio(A_e / A_throat, gamma_N, M1=M_throat)
 
   
     tescom_coeff_file = "./component_data/tescom26_1100_polyfit_coefficients.json"
@@ -760,6 +760,7 @@ def calc_cold_gas_performance():
             tescom_pressure_range_psi = tescom_data['Static Pressure Range (Gauge)']
             tescom_flow_rate_range_scfm = tescom_data['Flow Rate Range (SCFM)']
             tescom_outlet_area_in2 = tescom_data['Outlet Area (in^2)']
+            tescom_raw_data = tescom_data['Raw Data Points']
     except Exception as e:
         print(f"Error loading Tescom data: {e}\n Go to component_data and run the processing script")
         return
@@ -770,20 +771,45 @@ def calc_cold_gas_performance():
     flow_rate_m3_s = flow_rate_scfm * params['scfm_to_m3ps']
     tescom_pressures_psig = np.polyval(tescom_coeffs, flow_rate_scfm)
     tescom_pressures_pa = tescom_pressures_psig * params['psi_to_pa'] + params['P_atm_pa']
-    mass_flow_rate = flow_rate_m3_s * rho_N
+    mass_flow_rate = flow_rate_m3_s * rho_N # kg/s
     velocity_tescom = mass_flow_rate / (rho_N * A_tescom)
+    T_tescom = [tescom_pressures_pa[i] / (rho_N * R_N) for i in range(num_points)] # ideal gas law
+    M_tescom = [velocity_tescom[i] / np.sqrt(gamma_N * R_N * T_tescom[i]) for i in range(num_points)]
     rho_0 = [rho_N * isentropic.calc_rho0_rho_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
     # T0 = [Upstream_Temperature * isentropic.calc_T0_T_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
     T0 = [tescom_pressures_pa[i] / (rho_0[i] * R_N) for i in range(num_points)] 
     P_0 = [tescom_pressures_pa[i] * isentropic.calc_P0_P_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
-    M_tescom = [velocity_tescom / np.sqrt(gamma_N * R_N * T0[i]) for i in range(num_points)]
+
+    # plot raw tescom data with polynomial fit
+    # plt.figure(figsize=(8, 5))
+    # plt.plot(flow_rate_scfm, tescom_pressures_psig, label='Tescom Static Pressure (Gauge)', color='orange')
+    # plt.scatter(
+    #     [point[0] for point in tescom_raw_data],
+    #     [point[1] for point in tescom_raw_data],
+    #     label='Tescom Raw Data Points',
+    #     color='red',
+    #     marker='x'
+    # )    
+    # plt.xlabel('Flow Rate (SCFM)')
+    # plt.ylabel('Static Pressure (psig)')
+    # plt.title('Tescom 26-1100 Static Pressure vs Flow Rate')
+    # plt.grid()
+    # plt.legend()
+    # if not PLOT_AT_ONCE:
+    #     plt.show()
+    # else:
+    #     pw.addPlot("Tescom 26-1100 Static Pressure vs Flow Rate", plt.gcf())
 
     # plot tescom data
     plt.figure(figsize=(8, 5))
-    plt.plot(flow_rate_m3_s, M_tescom, label='Tescom Data')
+    plt.plot(flow_rate_m3_s, M_tescom, label='Tescom Mach Number')
     plt.xlabel('Flow Rate (m^3/s)')
     plt.ylabel('Mach Number')
-    plt.title('Tescom 26-1100 Mach Number vs Flow Rate')
+    plt.legend()
+    plt.title('Tescom 26-1100 Mach Number & Static Pressure vs Flow Rate')
+    plt.twinx()
+    plt.plot(flow_rate_m3_s, tescom_pressures_pa, label='Tescom Static Pressure', color='orange')
+    plt.ylabel('Static Pressure (Pa)')
     plt.grid()
     plt.legend()
     if not PLOT_AT_ONCE:
@@ -831,10 +857,13 @@ def calc_cold_gas_performance():
     if create_meshgrid:
 
         M_DOT, RPM = np.meshgrid(mass_flow_rate, rpm_range)
+        # print("M_DOT shape:", M_DOT.shape)
+        # print("RPM shape:", RPM.shape)
 
         V_IN = np.meshgrid(V_exit, rpm_range)[0] # just repeat the exit velocity across the rpm range
         U = RPM * 2 * np.pi * mean_radius / 60
         T_e_mesh = np.meshgrid(T_e, rpm_range)[0] # repeat exit temperature across rpm range
+        P_turbine_inlet_mesh = np.meshgrid(P_e, rpm_range)[0] # repeat exit pressure across rpm range
 
         torque_surface = np.zeros_like(M_DOT)
         hp_surface = np.zeros_like(M_DOT)
@@ -889,7 +918,7 @@ def calc_cold_gas_performance():
                         hp_surface[i, j],
                         M_DOT[i, j],
                         gamma_N,
-                        TOTAL_PRESSURE_RATIO,
+                        n2_total_pressure_ratio,
                         Q_FREESTREAM,
                         REYNOLDS_NUM,
                         RH_RT,
@@ -897,7 +926,7 @@ def calc_cold_gas_performance():
                         R_N,
                         T_e_mesh[i, j],
                         T_stator_inlet_imperial,
-                        P_INLET,
+                        P_turbine_inlet_mesh[i, j],
                         M_inlet_rel,
                         M_inlet_rel,
                         kacker_okapuu_data,
@@ -929,6 +958,18 @@ def calc_cold_gas_performance():
             plt.show()
         else:
             pw.addPlot("Off-Design Horsepower Surface (N2)", fig)
+            
+        # hp contour
+        plt.figure()
+        cp = plt.contourf(RPM, M_DOT / params['lbm_to_kg'], hp_surface, levels=50, cmap='viridis')
+        plt.colorbar(cp)
+        plt.xlabel("RPM")
+        plt.ylabel("Mass Flow (lbm/s)")
+        plt.title("Off-Design Horsepower Contour (N2)")
+        if not PLOT_AT_ONCE:
+            plt.show()
+        else:
+            pw.addPlot("Off-Design Horsepower Contour (N2)", plt.gcf())
 
         # save data
         m_dot_surface_lbm = M_DOT / params['lbm_to_kg']
@@ -963,17 +1004,18 @@ def calc_cold_gas_performance():
         np.savetxt(f"{output_table_path}eff_surface_n2.csv", eff_surface, delimiter=",")
 
         # create a 2D matrix of data and save to csv
-        out = np.empty((len(rpm_range) + 1, len(m_dot_range) + 1))
+        out = np.empty((len(rpm_range) + 1, len(mass_flow_rate) + 1))
         out[:] = np.nan
 
         # Fill headers
-        out[0, 1:] = m_dot_range / params['lbm_to_kg'] # lbm/s
+        out[0, 1:] = mass_flow_rate / params['lbm_to_kg'] # lbm/s
         out[1:, 0] = rpm_range
 
         # Fill z values
         out[1:, 1:] = hp_surface
 
         np.savetxt(f"{output_table_path}horsepower_surface_n2.csv", out, delimiter=",")
+
 
 if not USE_INPUT_GUI:
     run_n2_calcs = input("Run nitrogen cold gas performance calculations? (y/n): ").lower() == 'y'
