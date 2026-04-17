@@ -135,7 +135,7 @@ in_to_cm: 2.54 #(cm/in)
 in_to_m: 0.0254 #(m/in)
 kw_to_hp: 1.34102209 #(hp/kw)
 lbft_to_nm: 1.3558179483 #(Nm/lbft)
-scfm_to_m3ps: 0.000471947 #(m^3/s)/SCFM
+cfm_to_m3ps: 0.000471947 #(m^3/s)/SCFM
 
 ##############################
 ######     Constants    ######

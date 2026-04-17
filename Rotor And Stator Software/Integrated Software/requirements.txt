@@ -10,3 +10,4 @@ openpyxl
 plotly
 pyvista
 PyQt5
+pyyaml

@@ -735,8 +735,11 @@ def calc_cold_gas_performance():
     R_N = 296.8 # J/(kg*K)
     rho_N = 1.2506 # kg/m^3
 
-    # Upstream_Temperature = 300 # K
+    Upstream_Temperature = 300 # K
     num_points = 100
+
+    n2_standard_temp = 298; # K
+    n2_standard_pressure = 101325; # Pa
 
     # estmate the inlet area from hot gas calculations
     # A_ratio = isentropic.calc_A_ratio(0.01, gamma)
@@ -768,14 +771,21 @@ def calc_cold_gas_performance():
     # calculate Mach number at throat and exit for cold gas
     A_tescom = tescom_outlet_area_in2 * params['in_to_m']**2
     flow_rate_scfm = np.linspace(tescom_flow_rate_range_scfm[0], tescom_flow_rate_range_scfm[1], num_points)
-    flow_rate_m3_s = flow_rate_scfm * params['scfm_to_m3ps']
     tescom_pressures_psig = np.polyval(tescom_coeffs, flow_rate_scfm)
     tescom_pressures_pa = tescom_pressures_psig * params['psi_to_pa'] + params['P_atm_pa']
-    mass_flow_rate = flow_rate_m3_s * rho_N # kg/s
-    velocity_tescom = mass_flow_rate / (rho_N * A_tescom)
-    T_tescom = [tescom_pressures_pa[i] / (rho_N * R_N) for i in range(num_points)] # ideal gas law
+    flow_rate_acfm = flow_rate_scfm / (tescom_pressures_pa / n2_standard_pressure) / (n2_standard_temp / Upstream_Temperature)
+    flow_rate_m3_s = flow_rate_acfm * params['cfm_to_m3ps']
+    
+    # assuming upstream temperature, calculate density
+    density_N2 = tescom_pressures_pa / (R_N * Upstream_Temperature) # ideal gas law
+
+    mass_flow_rate = flow_rate_m3_s * density_N2 # kg/s
+    mass_flow_rate_lbm_s = mass_flow_rate / params['lbm_to_kg'] # lbm/s
+    velocity_tescom = mass_flow_rate / (density_N2 * A_tescom)
+    # T_tescom = [tescom_pressures_pa[i] / (rho_N * R_N) for i in range(num_points)] # ideal gas law
+    T_tescom = [Upstream_Temperature for i in range(num_points)] # assume constant temperature
     M_tescom = [velocity_tescom[i] / np.sqrt(gamma_N * R_N * T_tescom[i]) for i in range(num_points)]
-    rho_0 = [rho_N * isentropic.calc_rho0_rho_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
+    rho_0 = [density_N2[i] * isentropic.calc_rho0_rho_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
     # T0 = [Upstream_Temperature * isentropic.calc_T0_T_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
     T0 = [tescom_pressures_pa[i] / (rho_0[i] * R_N) for i in range(num_points)] 
     P_0 = [tescom_pressures_pa[i] * isentropic.calc_P0_P_ratio(M_tescom[i], gamma_N) for i in range(num_points)]
@@ -802,20 +812,20 @@ def calc_cold_gas_performance():
 
     # plot tescom data
     plt.figure(figsize=(8, 5))
-    plt.plot(flow_rate_m3_s, M_tescom, label='Tescom Mach Number')
-    plt.xlabel('Flow Rate (m^3/s)')
+    plt.plot(mass_flow_rate_lbm_s, M_tescom, label='Tescom Mach Number')
+    plt.xlabel('Mass Flow Rate (lbm/s)')
     plt.ylabel('Mach Number')
     plt.legend()
-    plt.title('Tescom 26-1100 Mach Number & Static Pressure vs Flow Rate')
+    plt.title('Tescom 26-1100 Mach Number & Static Pressure vs Mass FLow Rate')
     plt.twinx()
-    plt.plot(flow_rate_m3_s, tescom_pressures_pa, label='Tescom Static Pressure', color='orange')
+    plt.plot(mass_flow_rate_lbm_s, tescom_pressures_pa, label='Tescom Static Pressure', color='orange')
     plt.ylabel('Static Pressure (Pa)')
     plt.grid()
     plt.legend()
     if not PLOT_AT_ONCE:
         plt.show()
     else:
-        pw.addPlot("Tescom 26-1100 Mach Number vs Flow Rate", plt.gcf())
+        pw.addPlot("Tescom 26-1100 Mach Number vs Mass Flow Rate", plt.gcf())
 
     # calculate mach numbers
     # at throat
@@ -829,17 +839,17 @@ def calc_cold_gas_performance():
 
     # plot mach numbers
     plt.figure(figsize=(8, 5))
-    plt.plot(flow_rate_m3_s, M_throat, label='Throat Mach Number')
-    plt.plot(flow_rate_m3_s, M_exit, label='Exit Mach Number')
-    plt.xlabel('Flow Rate (m^3/s)')
+    plt.plot(mass_flow_rate_lbm_s, M_throat, label='Throat Mach Number')
+    plt.plot(mass_flow_rate_lbm_s, M_exit, label='Exit Mach Number')
+    plt.xlabel('Mass Flow Rate (lbm/s)')
     plt.ylabel('Mach Number')
-    plt.title('Mach Number at Throat and Exit vs Flow Rate')
+    plt.title('Mach Number at Throat and Exit vs Mass Flow Rate')
     plt.grid()
     plt.legend()
     if not PLOT_AT_ONCE:
         plt.show()
     else:
-        pw.addPlot("Mach Number at Throat and Exit vs Flow Rate", plt.gcf())
+        pw.addPlot("Mach Number at Throat and Exit vs Mass Flow Rate", plt.gcf())
 
 
     turbine_rpm = params['T_design_rpm'] # [RPM]
@@ -936,6 +946,7 @@ def calc_cold_gas_performance():
                 except Exception:
                     n_total = 0
                     expected_hp = 0
+
 
                 if np.isnan(n_total):
                     n_total = 0
