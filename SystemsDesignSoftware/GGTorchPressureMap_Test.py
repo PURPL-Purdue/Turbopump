@@ -169,8 +169,8 @@ if __name__ == "__main__":
     # Example inputs (edit to your engine)
     min_OF = 0.5
     max_OF = 6
-    max_pc = 167 # psi
-    resolution = 167
+    max_pc = 240 # psi
+    resolution = 120
     cstar_eff = 0.9 # Assume 0.9
 
     throat_area = (0.125 * 0.0254) ** 2 * np.pi / 4 # Diameter 0.125 [in]
