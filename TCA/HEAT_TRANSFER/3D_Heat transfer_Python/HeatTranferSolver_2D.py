@@ -211,10 +211,10 @@ def run(ht_params, tca_params, props_csv_path, script_dir):
     # =========================================================================
 
     contour_tbl    = pd.read_csv(contour_path)
-    x_raw_unsorted = (contour_tbl['x'].values - contour_tbl['x'].min()) / 1000.0
+    x_raw_unsorted = (contour_tbl['x_mm'].values - contour_tbl['x_mm'].min()) / 1000.0
     I              = np.argsort(x_raw_unsorted)
     x_raw          = x_raw_unsorted[I]
-    r_raw          = contour_tbl['y'].values[I] / 1000.0
+    r_raw          = contour_tbl['y_mm'].values[I] / 1000.0
 
     idx_unique = uniquetol(x_raw, 1e-12)
     x_contour  = x_raw[idx_unique]
