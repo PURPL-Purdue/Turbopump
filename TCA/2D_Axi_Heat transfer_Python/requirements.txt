@@ -1,0 +1,9 @@
+PyYAML
+numpy
+pandas
+matplotlib
+scipy
+rocketcea
+numba
+tqdm
+imageio[ffmpeg]
