@@ -52,8 +52,8 @@ T_ambient:   300.0  # [K]      ambient and initial wall temperature
 
 # ---- Input file paths (relative paths resolved against this yaml's directory) ----
 contour_csv:      "contour.csv"          # nozzle wall contour (x [mm], r [mm])
-tca_params_path:  "../../TCA_params.yaml"          # engine-level params; absolute path also OK
-bartz_module_dir: "../../TCA Sizing Code Files"    # directory containing Bartz_Values.py (this script's local copy is used as fallback)
+tca_params_path:  "../TCA_params.yaml"          # engine-level params; absolute path also OK
+bartz_module_dir: "../TCA Sizing Code Files"    # directory containing Bartz_Values.py (this script's local copy is used as fallback)
 
 # ---- Live visualization / video ----
 plot_interval:  0       # 0 = auto (~200 frames over the run); set a positive int to override

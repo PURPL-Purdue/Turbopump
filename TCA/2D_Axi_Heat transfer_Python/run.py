@@ -48,7 +48,7 @@ with open(HT_YAML) as f:
     ht_params = yaml.safe_load(f) or {}
 
 # TCA params — path comes from heat_transfer.yaml, default fallback if absent
-TCA_REL    = ht_params.get('tca_params_path', '../../TCA_params.yaml')
+TCA_REL    = ht_params.get('tca_params_path', '../TCA_params.yaml')
 TCA_YAML   = _resolve(TCA_REL, SCRIPT_DIR)
 if not os.path.exists(TCA_YAML):
     _alt = os.path.join(os.getcwd(), 'TCA_params.yaml')
@@ -66,7 +66,7 @@ with open(TCA_YAML) as f:
     tca_params = yaml.safe_load(f) or {}
 
 # Bartz module location
-BARTZ_REL = ht_params.get('bartz_module_dir', '../../TCA Sizing Code Files')
+BARTZ_REL = ht_params.get('bartz_module_dir', '../TCA Sizing Code Files')
 BARTZ_DIR = _resolve(BARTZ_REL, SCRIPT_DIR)
 if not BARTZ_DIR or not os.path.isdir(BARTZ_DIR):
     # Fall back to the local copy that ships with this repo
