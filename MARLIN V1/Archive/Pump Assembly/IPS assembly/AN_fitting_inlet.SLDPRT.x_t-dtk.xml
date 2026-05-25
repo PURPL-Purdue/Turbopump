@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="C:\Program Files\Siemens\NX 12.0\ugii\SWschema\dtk_xsl\dtk_181.xsl"?>
+<Log>
+<DtkApiVersion>181</DtkApiVersion>
+<DtkDllVersion>20171215</DtkDllVersion>
+<ProductMode>Psk</ProductMode>
+<InputFormat>SOLIDWORKS</InputFormat>
+<OutputFormat>PARASOLID</OutputFormat>
+<HealingFlag>0</HealingFlag>
+<ConfigFile>Error Loading Config File</ConfigFile>
+<FileName><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT]]></FileName>
+<FileVersion>Warning unknown version</FileVersion>
+<OutPutFileName><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT.x_t]]></OutPutFileName>
+<OutPutFileSize>2230</OutPutFileSize>
+<bill_of_materials>
+<component_root><path><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT]]></path><type>Part</type><name><![CDATA[AN_fitting_inlet]]></name><status>dtkNoError</status><size>128034</size><unit>Millimeters</unit><version></version></component_root>
+</bill_of_materials>
+<components_info>
+<component>
+<path><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT]]></path>
+<name><![CDATA[AN_fitting_inlet]]></name>
+<meta>
+<count>48</count>
+<property><title>SW-File Name</title><value><![CDATA[AN_fitting_inlet]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-BOM Part Number</title><value><![CDATA[AN_fitting_inlet]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Folder Name</title><value><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Short Date</title><value><![CDATA[11/21/2024]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Long Date</title><value><![CDATA[Thursday, November 21, 2024]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Configuration Name</title><value><![CDATA[Default]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Author</title><value><![CDATA[]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Keywords</title><value><![CDATA[]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Comments</title><value><![CDATA[]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Title</title><value><![CDATA[]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Subject</title><value><![CDATA[]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Created Date</title><value><![CDATA[Thursday, November 21, 2024 11:07:47 AM]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Last Saved Date</title><value><![CDATA[Thursday, November 21, 2024 12:39:56 PM]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-Last Saved By</title><value><![CDATA[bobch]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-File Title</title><value><![CDATA[AN_fitting_inlet]]></value><type>TypeFileProperty</type></property>
+<property><title>SW-HasDesignTable</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>IsCPReArchEnabled</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitSystem</title><value><![CDATA[3]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinear</title><value><![CDATA[3]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinearDecimalDisplay</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinearDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinearFractionDenominator</title><value><![CDATA[8]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinear</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsTimeUnits</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsPowerUnits</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsEnergyUnits</title><value><![CDATA[3]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinearDecimalDisplay</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinearDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinearFractionDenominator</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsAngular</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsAngularDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsMassPropLength</title><value><![CDATA[3]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsMassPropDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsMassPropMass</title><value><![CDATA[4]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsMassPropVolume</title><value><![CDATA[9]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsTimeDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsForce</title><value><![CDATA[6]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsForceDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsPowerDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsEnergyDecimalPlaces</title><value><![CDATA[2]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDecimalRounding</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinearFeetAndInchesFormat</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsLinearRoundToNearestFraction</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinearRoundToNearestFraction</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>SW_UnitsDualLinearFeetAndInchesFormat</title><value><![CDATA[1]]></value><type>TypeFileProperty</type></property>
+<property><title>Component Type</title><value><![CDATA[0]]></value><type>TypeFileProperty</type></property>
+<property><title>CREATED</title><value><![CDATA[Thursday, November 21, 2024 11:07:47 AM]]></value><type>TypeFileProperty</type></property>
+<property><title>LAST_RECORD</title><value><![CDATA[Thursday, November 21, 2024 12:39:56 PM]]></value><type>TypeFileProperty</type></property>
+</meta>
+<warnings>
+<warning><message><![CDATA[Warning : Missing configuration (null) into file C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT]]></message><type><![CDATA[Configuration]]></type></warning>
+</warnings>
+</component>
+</components_info>
+<output_files_written>
+<file><path><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT.x_t]]></path><size>2230</size></file>
+</output_files_written>
+<inventory_writer>
+<output_file>
+<path><![CDATA[C:\Users\bobch\Turbopump\Pump Assembly\IPS assembly\AN_fitting_inlet.SLDPRT.x_t]]></path>
+<inventory>
+<entity><count>1</count><type>10 : ASSEMBLY</type></entity>
+<entity><count>2</count><type>11 : INSTANCE</type></entity>
+<entity><count>2</count><type>12 : BODY</type></entity>
+<entity><count>2</count><type>13 : SHELL</type></entity>
+<entity><count>2</count><type>18 : VERTEX</type></entity>
+<entity><count>2</count><type>19 : REGION</type></entity>
+<entity><count>2</count><type>29 : POINT</type></entity>
+<entity><count>10</count><type>DTK_PUBLICATION</type></entity>
+<entity><count>23</count><type>TOTAL</type></entity>
+</inventory>
+</output_file>
+</inventory_writer>
+<information>
+<info><message><![CDATA[PsKernel version used:28.0.197]]></message><type><![CDATA[Version]]></type></info>
+<info><message><![CDATA[OK Find Schema : C:\Program Files\Siemens\NX 12.0\ugii\SWschema\sch_10004.s_t]]></message><type><![CDATA[Schema]]></type></info>
+</information>
+<Conversion>
+<Start>  16:32:17</Start>
+<End>  16:32:18</End>
+<Duration>1 sec</Duration>
+</Conversion>
+</Log>

@@ -1,0 +1,9 @@
+Variable,Value,Units,Description
+P_0,3447378.6466,N/m^2,Total pressure (500 psi)
+P_e,101352.93221,N/m^2,Exit pressure (14.7 psi)
+P_A,101352.93221,N/m^2,Ambient pressure
+m_dot,0.25,kg/s,Mass flow rate
+T_0,293,K,Total temperature
+gamma,1.4,-,Specific heat ratio
+R,8.3145,J/(mol*K),Universal gas constant
+m_m,28.02,g/mol,Molar mass

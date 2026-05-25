@@ -1,0 +1,1 @@
+﻿"shaft_diameter"= 17mm'main diameter of the shaft (determined by bearing inner diameter)

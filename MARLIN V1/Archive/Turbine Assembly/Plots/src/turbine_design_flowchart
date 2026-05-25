@@ -1,0 +1,64 @@
+digraph "Turbine Design Flowchart" {
+	graph [fontcolor="#2D3436" fontname="Sans-Serif" fontsize=15 label="Turbine Design Flowchart" nodesep=0.60 pad=2.0 rankdir=LR ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	subgraph "cluster_Define Constants and Parameters" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Define Constants and Parameters" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"858cfeebab5147a99c868a574736f278" [label="Set Inlet Total Pressure, Temperature, Gas Properties" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"18efcf45e33a4698848325d3705be1bc" [label="Initialize Mass Flow and Turbine RPM" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		cf984a5d87fe4691ae7b44b892ee1f73 [label="Define Chord Length, Blade Spacing, Hub, and Rotor Radius" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph "cluster_Calculate Turbine Geometry" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Calculate Turbine Geometry" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"4ead0a650da948a58fd2d3e21d4148ca" [label="Calculate Throat Properties" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"28bac8b11380435aa2189585b5d253d4" [label="calc_P_throat - Throat Pressure" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		be07b8f5ff4f456689321364b9feec95 [label="calc_rho_throat - Throat Density" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"37af65d11a8e4398b0abb9bc75c62f26" [label="calc_v_throat - Throat Velocity" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"761edeaae4af49a2a5c758bfcb89b5b9" [label="calc_A_throat - Throat Area" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph "cluster_Back-Calculate Rotor Velocities" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Back-Calculate Rotor Velocities" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"01b4a48b4316420fa85098ecd2033ec2" [label="Use rotorBackCalculate for Velocities, Angles" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		cf936c31df6d43fcba0abf898f665b57 [label="Calculate Relative and Absolute Velocities: v1, v2, w" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"53442fc8c81442249b639a9cf82a28a9" [label="Determine Flow Angles: a1, a2, b" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"79d17f7f67574ed59e7e97b743ecf6be" [label="plot_velocity_triangles_angles - Visualize Velocity Triangles" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph "cluster_Generate Blade Geometry" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Generate Blade Geometry" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"434c03dbbe50407fb2776f3c00fe5213" [label="calculate_blade_efficiency - Blade Efficiency" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"9d32c6009f2e4d7d94b8c579c702d757" [label="generate_blade_geom - Define x/y Blade Profiles" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"0bf0924e0a8e4521a1b2a27b67814315" [label="Obtain Cross-Sectional Area, Max Thickness" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		def230b905a34bc9a2ebe731802116ae [label="plot_turbine - Plot Blade Geometry" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph "cluster_Calculate Mach and Pressure Distribution" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Calculate Mach and Pressure Distribution" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		f65c5774e7e04947afc0d7c38fed38d7 [label="calculateMachPressureDistribution - Mach/Pressure" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		"2d7cd68593c54d9aa19fee09932415ae" [label="Distribute Along Blade Surface" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		a881af563ee749ebb63544700877e5df [label="plotMachPressureDistributions - Visualize Distributions" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	subgraph "cluster_Plot Turbine Geometry and Distributions" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Plot Turbine Geometry and Distributions" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"3f990803639c4c80bb420f4ce0d92cb7" [label="Generate Complete Turbine Visualization" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+		f6030fced2ec427887069d669a280148 [label="Overlay Mach/Pressure Results" height=1.9 image="C:\Users\amanj\miniconda3\envs\hackathons\Lib\site-packages\resources/generic/blank\blank.png" shape=none]
+	}
+	"858cfeebab5147a99c868a574736f278" -> "18efcf45e33a4698848325d3705be1bc" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"18efcf45e33a4698848325d3705be1bc" -> cf984a5d87fe4691ae7b44b892ee1f73 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"4ead0a650da948a58fd2d3e21d4148ca" -> "28bac8b11380435aa2189585b5d253d4" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"28bac8b11380435aa2189585b5d253d4" -> be07b8f5ff4f456689321364b9feec95 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	be07b8f5ff4f456689321364b9feec95 -> "37af65d11a8e4398b0abb9bc75c62f26" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"37af65d11a8e4398b0abb9bc75c62f26" -> "761edeaae4af49a2a5c758bfcb89b5b9" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"01b4a48b4316420fa85098ecd2033ec2" -> cf936c31df6d43fcba0abf898f665b57 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	cf936c31df6d43fcba0abf898f665b57 -> "53442fc8c81442249b639a9cf82a28a9" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"53442fc8c81442249b639a9cf82a28a9" -> "79d17f7f67574ed59e7e97b743ecf6be" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"434c03dbbe50407fb2776f3c00fe5213" -> "9d32c6009f2e4d7d94b8c579c702d757" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"9d32c6009f2e4d7d94b8c579c702d757" -> "0bf0924e0a8e4521a1b2a27b67814315" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"0bf0924e0a8e4521a1b2a27b67814315" -> def230b905a34bc9a2ebe731802116ae [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	f65c5774e7e04947afc0d7c38fed38d7 -> "2d7cd68593c54d9aa19fee09932415ae" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2d7cd68593c54d9aa19fee09932415ae" -> a881af563ee749ebb63544700877e5df [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"3f990803639c4c80bb420f4ce0d92cb7" -> f6030fced2ec427887069d669a280148 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	cf984a5d87fe4691ae7b44b892ee1f73 -> "4ead0a650da948a58fd2d3e21d4148ca" [label=Next dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"761edeaae4af49a2a5c758bfcb89b5b9" -> "01b4a48b4316420fa85098ecd2033ec2" [label=Next dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"79d17f7f67574ed59e7e97b743ecf6be" -> "434c03dbbe50407fb2776f3c00fe5213" [label=Next dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	def230b905a34bc9a2ebe731802116ae -> f65c5774e7e04947afc0d7c38fed38d7 [label=Next dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a881af563ee749ebb63544700877e5df -> "3f990803639c4c80bb420f4ce0d92cb7" [label=Next dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+}

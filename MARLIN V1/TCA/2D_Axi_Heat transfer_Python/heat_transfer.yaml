@@ -1,0 +1,72 @@
+# =============================================================================
+#  heat_transfer.yaml  —  Heat Transfer Solver Settings
+# =============================================================================
+#  Controls HeatTransferSolver_2D.py.
+#  Engine-level inputs (O/F, Pc, mdot, etc.) are read from TCA_params.yaml.
+#  All relative paths below are resolved against this file's directory.
+# =============================================================================
+
+# ---- Time integration ----
+dt:      5e-3   # [s]  time step  (implicit scheme -> stable for any dt)
+runtime: 2      # [s]  engine firing duration
+tf:      5      # [s]  total simulation time (firing + cooling). Must be >= runtime.
+
+# ---- Spatial discretization ----
+n_radial: 50      # number of radial control volumes (>= 5)
+                  # axial count is set automatically from the contour
+
+# ---- Wall materials (index into materials.yaml) ----
+#   0 = Copper CuCrZr          (polynomial k/rho/cp vs T)
+#   1 = Steel AISI 8630        (constant props)
+#   2 = Graphite               (constant props)
+#   3 = Aluminum 6061          (constant props)
+#   4 = Steel 4130             (constant props)
+#   5 = Aluminum 7075          (constant props)
+#   6 = Aluminum 1100          (constant props)
+# The resolved material *names* are printed at the start of every run —
+# always confirm them in the terminal banner before trusting results.
+wall_material:   1    # base wall
+insert_material: 0    # throat insert (Cu or Graphite are the typical choices)
+al_material:     3    # exit section
+
+# ---- Insert geometry ----
+insert_x_start:    0.28685   # [m]  axial start position from injector face
+insert_length:     0.1016    # [m]  axial length of the insert
+insert_thickness:  0.037211  # [m]  radial thickness measured from throat radius
+
+# ---- Aluminum exit section ----
+# Axial:  starts at (insert_x_start + insert_length), ends at nozzle exit
+# Radial: same principle as graphite — measured from inner wall surface outward
+al_thickness:    0.110506   # [m]  radial thickness of the aluminum exit section
+steel_thickness: 0.084156   # [m]  radial wall thickness of the steel body
+
+# ---- Boundary conditions ----
+h_nat_outer: 5.0    # [W/m²K]  outer-wall natural convection coefficient
+h_nat_inner: 10.0   # [W/m²K]  inner-wall natural convection (post-firing cooling)
+T_ambient:   300.0  # [K]      ambient and initial wall temperature
+
+# ---- Wall section thicknesses ----
+# Each section has a constant (cylindrical) outer radius, stepped at boundaries.
+#   Steel body   : r_outer = r_CC + steel_thickness  (covers CC, convergent, throat, steel divergent)
+#   Aluminum exit: r_outer = r(al_x_start) + al_thickness  (from insert end to nozzle exit)
+
+# ---- Input file paths (relative paths resolved against this yaml's directory) ----
+contour_csv:      "contour.csv"          # nozzle wall contour (x [mm], r [mm])
+tca_params_path:  "../TCA_params.yaml"          # engine-level params; absolute path also OK
+bartz_module_dir: "../TCA Sizing Code Files"    # directory containing Bartz_Values.py (this script's local copy is used as fallback)
+
+# ---- Live visualization / video ----
+plot_interval:  0       # 0 = auto (~200 frames over the run); set a positive int to override
+record_video:   True    # set to false to skip MP4 output (faster runs)
+video_filename: "nozzle_heat_transfer.mp4"
+video_fps:      15
+video_quality:  8       # imageio quality 0–10 (10 = best)
+show_live_plot: True    # set to false to disable the live matplotlib window (much faster)
+
+# ---- Results file ----
+results_filename: "results.npz"      # written after the run; load with view_results.py
+results_snapshots: 200               # number of time snapshots to save in T_history
+
+# ---- Line-by-line TDMA solver ----
+solver_tolerance:      1.0e-6   # relative residual: max|R| < tol * max|B|
+solver_max_iterations: 50       # outer TDMA iterations per time step (3-5 typically suffice)
