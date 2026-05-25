@@ -1,0 +1,53 @@
+# GG Hardware Definition
+# Last Updated: May 25th, 2026
+# Last updated by: Miles Cohen
+
+# Injector Hardware Definition
+LOx_Cda:  0                   # (m^2) Assumed Cd of 1.0 
+                              # Last updated: May 25th, 2026 by Miles Cohen
+
+fuel_Cda: 0                   # (m^2) Assumed Cd of 1.0
+                              # Last updated: May 25th, 2026 by Miles Cohen
+
+# Stator Hardware Definition
+stator_throat_area: 0         # (m^2) Assumed to be the same as the injector area
+                              # Last updated: May 25th, 2026 by Miles Cohen
+
+stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
+                              # Last updated: May 25th, 2026 by Miles Cohen
+
+stator_eff_combustion_volume: 0   # (m^3) This is the volume of the HGM that is effectivly used for combustion.
+                                  # Last updated: May 25th, 2026 by Miles Cohen
+
+# Combustion Chamber Hardware Definition
+combustion_chamber_volume: 0   # (m^3) This is the total volume of the combustion chamber.
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+combustion_chamber_length: 0   # (m) This is the internal length of the combustion chamber.
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+combustion_chamber_diameter: 0 # (m) This is the iternal diameter of the combustion chamber.
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+
+# Torch Hardware Definitions
+CH4_Cda: 0                     # (m^2) Assumed Cd of 1.0
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+GOx_Cda: 0                     # (m^2) Assumed Cd of 1.0
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+torch_cstar_efficiency: 1.0    # (dimensionless) Assumed to be 1.0
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+torch_combustion_volume: 0     # (m^3) This is the volume of the torch that is used for combustion.
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+torch_throat_area: 0           # (m^2) This is the area of the torch throat.
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch throat, accounting for any losses.
+                               # Efficiency is assumed to be 1.0
+                               # Last updated: May 25th, 2026 by Miles Cohen
+
+torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
