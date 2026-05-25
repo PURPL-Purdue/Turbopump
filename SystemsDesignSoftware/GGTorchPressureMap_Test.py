@@ -39,7 +39,7 @@ def finite_minmax(a):
     return float(np.min(a[m])), float(np.max(a[m]))
 
 def plot_pc_heatmap_with_of_contours(fu_p_map, ox_p_map, PC_pfpo, OF_pfpo,
-                                     of_levels=None, pc_vmin=None, pc_vmax=None):
+                                     of_levels=None, pc_levels = None, pc_vmin=None, pc_vmax=None):
     """
     Plots a separate figure in (p_fu, p_ox) space:
       - heatmap: Pc (psi) from PC_pfpo
@@ -75,6 +75,8 @@ def plot_pc_heatmap_with_of_contours(fu_p_map, ox_p_map, PC_pfpo, OF_pfpo,
         else:
             of_levels = np.linspace(min_OF, max_OF, 5)
 
+
+
     fig, ax = plt.subplots(figsize=(9, 7), constrained_layout=True)
 
     # Heatmap of Pc (psi)
@@ -98,21 +100,23 @@ def plot_pc_heatmap_with_of_contours(fu_p_map, ox_p_map, PC_pfpo, OF_pfpo,
     )
     ax.clabel(cs, fmt=lambda v: f"OF={v:.2f}", inline=True, fontsize=9)
 
+
+
     # PC equipotential contour 
     ps = ax.contour(
         PO, PF, PC_pfpo,
-        levels=np.linspace(250,250,1),
+        levels=pc_levels,
         colors="k",
         linewidths=1.0
     )
-    ax.clabel(ps, fmt=lambda v: f"Chamber Pressure = {v:.2f}", inline=True, fontsize=9)
+    ax.clabel(ps, fmt=lambda v: f"Chamber Pressure = {v:.0f}", inline=True, fontsize=9)
 
     ax.set_xlabel("Ox Feed Pressure (psi)")
     ax.set_ylabel("Hydrogen Feed Pressure (psi)")
     ax.set_title("Chamber Pressure Heatmap with OF contours in feed pressure space")
-    H2 = np.array([590, 640, 700, 770, 860, 1000, 1170, 1470, 2000])
-    O2 = np.array([570, 550, 530, 515, 500, 475, 450, 420, 380])
-    ax.scatter(O2, H2, s=52, c="red")
+    #H2 = np.array([590, 640, 700, 770, 860, 1000, 1170, 1470, 2000])
+    #O2 = np.array([570, 550, 530, 515, 500, 475, 450, 420, 380])
+    #ax.scatter(O2, H2, s=52, c="red")
 
     plt.show()
 
@@ -170,13 +174,13 @@ if __name__ == "__main__":
     min_OF = 0.5
     max_OF = 6
     max_pc = 167 # psi
-    resolution = 167
-    cstar_eff = 0.9 # Assume 0.9
+    resolution = 84
+    cstar_eff = 1 # Assume 0.9
 
     throat_area = (0.125 * 0.0254) ** 2 * np.pi / 4 # Diameter 0.125 [in]
-    fuel_CdA = 0.7 * ((0.028 * 0.0254)** 2 * np.pi / 4) # Diameter 0.028 [in], assuming Cd of 0.7
-    ox_CdA = 0.7 * ((0.032 * 0.0254) ** 2 * np.pi / 4) # Diameter 0.032 [in], assuming Cd of 0.7
-    rho_fuel = Fluid(FluidsList.Ethanol).with_state(Input.pressure(300 * psi_to_pa), Input.temperature(20)).density # NOT IMPORTANT RN
+    fuel_CdA = 1 * ((0.028 * 0.0254)** 2 * np.pi / 4) # Diameter 0.028 [in], assuming Cd of 0.7
+    ox_CdA = 1 * ((0.032 * 0.0254) ** 2 * np.pi / 4) # Diameter 0.032 [in], assuming Cd of 0.7
+    rho_fuel = Fluid(FluidsList.Hydrogen).with_state(Input.pressure(500 * psi_to_pa), Input.temperature(20)).density # NOT IMPORTANT RN
 
     pc_scale, OF_scale, fu_p_map, ox_p_map, PC_pfpo, OF_pfpo = pressure_map(
         minOF=min_OF,
@@ -195,6 +199,7 @@ if __name__ == "__main__":
     PC_pfpo=PC_pfpo,
     OF_pfpo=OF_pfpo,
     of_levels=[1,1.5, 2,2.5, 3,3.5, 4,4.5, 5],
+    pc_levels=[max_pc - 2],
     pc_vmin=0,
     pc_vmax=max_pc)
 
