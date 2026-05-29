@@ -1,0 +1,14 @@
+### TCA Setpoints ###
+
+Thrust_target: 5000   # Thrust (lbf)
+Chamber_pressure: 500   # Chamber pressure (psi)
+Exit_pressure: 12  # Exit pressure (psi)
+
+cstar_efficiency: 0.875  # C* efficiency
+cf_efficiency: 0.875  # Cf efficiency
+
+L_star: 40  # Characteristic length (m)
+alpha_divergence: 45.0     # Divergence half-angle (degrees)
+contraction_ratio: 2.848 #Contraction ratio (Ac/At)
+
+of_ratio: 1.6  # O/F ratio 
