@@ -14,7 +14,7 @@ rho=0.79
 add_new_fuel('Acetone', acetone_card)
 #####
 
-Fuel = 'JetA' 
+Fuel = 'Isopropanol' 
 rho_fuel = 790  # kg/m^3 (0.79 g/cm^3 acetone density)
 rho_ox = 1141  # kg/m^3 (LOX density)
 Ox = 'LOX'
