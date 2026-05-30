@@ -2,6 +2,7 @@ import numpy as np
 import cea
 from pint import UnitRegistry
 import yaml
+import contour_script_revised as cs
 
 ureg = UnitRegistry()
 with open('TCA_params_test.yaml') as f:
@@ -9,7 +10,7 @@ with open('TCA_params_test.yaml') as f:
 
 ### Engine Parameters/Inputs
 
-#### COMMENT: Is there a way to define the unit from the YAML?? and not define it in the code as bellow.
+csv_dxf_output = 'CSV_DXF_OUTPUTS/nozzle_contour3.csv ' # Output file for nozzle contour data (CSV)
 
 F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
 pc    = p['Chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
@@ -94,6 +95,10 @@ V_cyl    = Vc_total - V_cone                               # subtract cone
 
 Lc = V_cyl / Ac.to(ureg.m**2)                              # cylindrical length (m)
 Ltotal = Lc + L_cone                                       # Total chamber length (m)
+
+
+##Run contour script - Export csv and dxf files.
+angles, contour = cs.contour_script(80, ae_at[-1], ac_at, alpha, Lc.to(ureg.mm).magnitude, dt.to(ureg.mm).magnitude/2, csv_dxf_output)
 
 
 

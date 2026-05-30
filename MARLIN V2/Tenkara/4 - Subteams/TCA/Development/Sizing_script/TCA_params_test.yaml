@@ -1,4 +1,4 @@
-### TCA Setpoints ###
+### TCA Setpoints - Used by Sizing Script ###
 
 Thrust_target: 5000   # Thrust (lbf)
 Chamber_pressure: 500   # Chamber pressure (psi)
