@@ -31,8 +31,7 @@ import csv
 
 import numpy as np
 import matplotlib.pyplot as plt
-import yaml
-import ezdxf
+#import ezdxf
 
 from bisect import bisect_left
 from matplotlib.patches import Arc
@@ -521,45 +520,6 @@ def export_nozzle_csv(contour, filename=None):
     return filename
 
 
-def export_nozzle_dxf(contour):
-    """
-    Write nozzle contour to DXF (splines, inches).
-
-    [F1] fixed: now divides by 25.4 (mm→in) instead of 1000 (was treating mm as m).
-    [F5] fixed: upstream segments reversed so all splines run throat→exit,
-                matching the CSV export direction.
-    """
-    def _to_in(arr):
-        return list(np.array(arr) / 25.4)
-
-    xecc,  yecc  = _to_in(contour[12]), _to_in(contour[13])
-    xeca,  yeca  = _to_in(contour[9]),  _to_in(contour[10])
-    xed,   yed   = _to_in(contour[6]),  _to_in(contour[7])
-    xe,    ye    = _to_in(contour[0]),  _to_in(contour[1])
-    xe2,   ye2   = _to_in(contour[3]),  _to_in(contour[4])
-    xbell, ybell = _to_in(contour[15]), _to_in(contour[16])
-
-    # [F5] reverse upstream segments so all splines run throat→exit
-    sections = [
-        (list(reversed(xecc)),  list(reversed(yecc))),   # chamber wall
-        (list(reversed(xeca)),  list(reversed(yeca))),   # convergent arc
-        (list(reversed(xed)),   list(reversed(yed))),    # convergent diagonal
-        (xe,    ye),                                      # throat entrant
-        (xe2,   ye2),                                     # throat exit
-        (xbell, ybell),                                   # bell
-    ]
-
-    doc = ezdxf.new('R2010')
-    msp = doc.modelspace()
-    for xs, ys in sections:
-        pts = list(zip(xs, ys))
-        if len(pts) >= 3:
-            msp.add_spline(pts, degree=3)
-
-    _here = os.path.dirname(os.path.abspath(__file__))
-    out   = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour.dxf')
-    doc.saveas(out)
-    print(f"Saved DXF → {out}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -567,19 +527,14 @@ def export_nozzle_dxf(contour):
 # ──────────────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    _here = os.path.dirname(os.path.abspath(__file__))
-    yaml_path = os.path.join(_here, '..', 'TCA_params.yaml')
-
-    with open(yaml_path) as f:
-        p = yaml.safe_load(f)
 
     # ── Read inputs from YAML ──────────────────────────────────────────────────
-    l_percent     = p['bell_nozzle_l_percent']         # 60 / 80 / 90
-    aratio        = p['tca_expansion_ratio']            # Ae / At
-    cratio        = p['tca_contraction_ratio']          # Ac / At
-    cangle        = p['tca_convergent_half_angle']      # degrees
-    Lc_mm         = p['tca_chamber_length'] * 25.4      # in → mm
-    throat_radius = p['tca_throat_diameter'] * 25.4 / 2 # in → mm
+    l_percent     = 80         # 60 / 80 / 90
+    aratio        = 5            # Ae / At
+    cratio        = 3         # Ac / At
+    cangle        = 45      # degrees
+    Lc_mm         = 12 * 25.4      # in → mm
+    throat_radius = 3 * 25.4 / 2 # in → mm
 
     # ── Generate contour (all in mm) ──────────────────────────────────────────
     angles, contour, R2 = bell_nozzle(
@@ -592,27 +547,13 @@ if __name__ == '__main__':
              f'L% = {l_percent}%]')
 
     # ── Exports ───────────────────────────────────────────────────────────────
-    os.makedirs(os.path.join(_here, 'CSV_DXF_OUTPUTS'), exist_ok=True)
     export_nozzle_csv(contour)
-    export_nozzle_dxf(contour)
 
     # ── Plots ─────────────────────────────────────────────────────────────────
     plot_overview(title, throat_radius, angles, contour)
 
-    Dt_in = p['tca_throat_diameter']
-    Dc_in = p['tca_chamber_diameter']
-    De_in = p['tca_exit_diameter']
-    Lc_in = p['tca_chamber_length']
+    Dt_in = 3  # in
+    Dc_in = 6  # in
+    De_in = 9  # in
+    Lc_in = 12  # in
     plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, R2, cangle)
-
-def contour_script(lpercent, aratio, cratio, cangle, Lc_mm, throat_radius):
-    angles, contour, R2 = bell_nozzle(aratio, throat_radius, lpercent, cratio, cangle, Lc_mm)
-    title = (f'Bell Nozzle\n'
-             f'[ε = {round(aratio, 1)}, '
-             f'Rt = {round(throat_radius, 2)} mm, '
-             f'L% = {lpercent}%]')
-    
-    plot_overview(title, throat_radius, angles, contour)
-    return angles, contour
-
-    

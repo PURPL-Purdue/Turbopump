@@ -2,7 +2,7 @@ import numpy as np
 import cea
 from pint import UnitRegistry
 import yaml
-import contour_script_revised as cs
+import Contour_Script as cs
 
 ureg = UnitRegistry()
 with open('TCA_params_test.yaml') as f:
@@ -97,9 +97,13 @@ Lc = V_cyl / Ac.to(ureg.m**2)                              # cylindrical length 
 Ltotal = Lc + L_cone                                       # Total chamber length (m)
 
 
-##Run contour script - Export csv and dxf files.
-angles, contour = cs.contour_script(80, ae_at[-1], ac_at, alpha, Lc.to(ureg.mm).magnitude, dt.to(ureg.mm).magnitude/2, csv_dxf_output)
-
+angles, contour, R2 = cs.bell_nozzle(ae_at, dt.to(ureg.mm).magnitude/2, 80, ac_at, alpha, Lc.to(ureg.mm).magnitude)
+title = (f'Bell Nozzle\n'
+        f'[ε = {round(ae_at[-1], 1)}, '
+        f'Rt = {round(dt.to(ureg.mm).magnitude/2, 2)} mm, '
+        f'L% = {80}%]')
+    
+cs.plot_overview(title, dt.to(ureg.mm).magnitude/2, angles, contour)
 
 
 print()
