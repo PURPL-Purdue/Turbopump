@@ -10,17 +10,20 @@ ureg = pint.UnitRegistry()
 of_range = (0.55, 6.0)
 Pc_range = (15, 60)  * ureg.bar # bar
 Pamb = 1.01325 *ureg.bar # bar
-Pexit = 18 * ureg.psi
-rho_ox = 1141 * ureg.kg / ureg.m**3
-rho_f = 786 * ureg.kg / ureg.m**3
+Pexit = 18 * ureg.psi # currently unused: see later note on pressure ratio
+rho_ox = 1141 * ureg.kg / ureg.m**3 # LOX density
+rho_f = 786 * ureg.kg / ureg.m**3 #IPA and ethanol density
 
 ### CEA Setup ### 
 
-reac_names = ["C3H8O,2propanol", "O2(L)"]
+#reac_names = ["C3H8O,2propanol", "O2(L)"]
+reac_names = ["C2H5OH(L)", "O2(L)"]
 reac_temps = np.array([298.15, 90.17]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
-Prat = (Pc_range / Pamb).to_base_units().magnitude
+Prat = (Pc_range / Pamb).to_base_units().magnitude # currently unused:
+# perfect expansion assumed for parity with initial code. will want to change in design consideration
+# need to implement the heatmap function to calculate pressure ratio for every case, just have to pick a design exit pressure 
 cont_ratio = 1.8
 
 
@@ -62,9 +65,6 @@ axes[2].set_xlabel('Chamber Pressure (bar)')
 axes[2].set_ylabel('O/F Ratio')
 axes[2].set_title(f'Isp Density Heatmap ({reac_names[0]} / {reac_names[1]})')
 axes[2].legend()
-
-
-
 
 plt.show()
 
