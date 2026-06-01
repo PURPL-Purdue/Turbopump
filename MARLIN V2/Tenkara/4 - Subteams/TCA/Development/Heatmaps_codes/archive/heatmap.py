@@ -1,7 +1,7 @@
 from rocketcea.cea_obj import add_new_fuel
 import matplotlib.pyplot as plt
-from funct import get_isp_heatmap
-from funct import get_tempstar_heatmap
+from heatmap_functions import get_isp_heatmap
+from heatmap_functions import get_tempstar_heatmap
 
 
 ##### To add acetone - https://atct.anl.gov/Thermochemical%20Data/version%201.130/species/?species_number=54 for Enthalpy and https://pubchem.ncbi.nlm.nih.gov/compound/Acetone for density

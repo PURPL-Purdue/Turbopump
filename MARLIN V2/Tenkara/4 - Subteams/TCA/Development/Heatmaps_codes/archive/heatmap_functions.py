@@ -16,12 +16,12 @@ def get_isp_heatmap(Fuel, Ox, mr_range, p_range, pamb, rho_fuel, rho_ox):
         density_units="kg/m^3",
         isp_units="sec",
     )
-    Mr = np.arange(mr_range[0], mr_range[1], 0.1)
+    mr = np.arange(mr_range[0], mr_range[1], 0.1)
     Pin = np.arange(p_range[0], p_range[1], 1)
-    isp_grid = np.zeros((len(Mr), len(Pin)))
-    density = np.zeros(len(Mr))
+    isp_grid = np.zeros((len(mr), len(Pin)))
+    density = np.zeros(len(mr))
 
-    for i, mr in enumerate(Mr):
+    for i, mr in enumerate(mr):
         density[i] = _mixture_density(mr, rho_fuel, rho_ox)
         for j, pc in enumerate(Pin):
             Eps = CEA.get_eps_at_PcOvPe(Pc=pc, MR=mr, PcOvPe=(pc / pamb))
@@ -29,7 +29,7 @@ def get_isp_heatmap(Fuel, Ox, mr_range, p_range, pamb, rho_fuel, rho_ox):
             mr_stoich = CEA.getMRforER(ERphi=1.0)
             isp_grid[i, j] = isp[0]
 
-    return Mr, Pin, isp_grid, mr_stoich,density
+    return mr, Pin, isp_grid, mr_stoich, density
 
 
 def get_tempstar_heatmap(Fuel, Ox, mr_range, p_range, pamb):
@@ -43,17 +43,17 @@ def get_tempstar_heatmap(Fuel, Ox, mr_range, p_range, pamb):
         density_units="kg/m^3",
         isp_units="sec",
     )
-    Mr = np.arange(mr_range[0], mr_range[1], 0.1)
+    mr = np.arange(mr_range[0], mr_range[1], 0.1)
     Pin = np.arange(p_range[0], p_range[1], 1)
-    tempstar_grid = np.zeros((len(Mr), len(Pin)))
+    tempstar_grid = np.zeros((len(mr), len(Pin)))
 
-    for i in range(len(Mr)):
+    for i in range(len(mr)):
         for j in range(len(Pin)):
-            mr = Mr[i]
+            of = mr[i]
             pc = Pin[j]
-            Eps = CEA.get_eps_at_PcOvPe(Pc=pc, MR=mr, PcOvPe=(pc / pamb))
-            tempstar = CEA.get_Temperatures(Pc=pc, MR=mr, eps=Eps)
+            Eps = CEA.get_eps_at_PcOvPe(Pc=pc, MR=of, PcOvPe=(pc / pamb))
+            tempstar = CEA.get_Temperatures(Pc=pc, MR=of, eps=Eps)
             mr_stoich = CEA.getMRforER(ERphi=1.0)
             tempstar_grid[i, j] = tempstar[1]
 
-    return Mr, Pin, tempstar_grid, mr_stoich
+    return mr, Pin, tempstar_grid, mr_stoich
