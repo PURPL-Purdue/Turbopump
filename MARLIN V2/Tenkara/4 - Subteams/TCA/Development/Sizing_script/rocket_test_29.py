@@ -1,8 +1,10 @@
+import os
 import numpy as np
 import cea
 from pint import UnitRegistry
 import yaml
 import Contour_Script as cs
+
 
 ureg = UnitRegistry()
 with open('TCA_params_test.yaml') as f:
@@ -10,7 +12,7 @@ with open('TCA_params_test.yaml') as f:
 
 ### Engine Parameters/Inputs
 
-csv_dxf_output = 'CSV_DXF_OUTPUTS/nozzle_contour3.csv ' # Output file for nozzle contour data (CSV)
+output_filename = 'CSV_DXF_OUTPUTS/nozzle_contour4k' # Output file for nozzle contour data
 
 F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
 pc    = p['Chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
@@ -23,7 +25,8 @@ eta_cf = p['cf_efficiency']                 # Cf efficiency
 
 L_star = p['L_star'] * ureg.inch             # Characteristic length (in)
 alpha = p['alpha_divergence'] * ureg.deg     # Divergence half-angle (degrees)
-ac_at = p['contraction_ratio']               #Contraction ratio (Ac/At)
+Dc = p['chamber_diameter'] * ureg.inch       # Chamber diameter (in)
+
 
 of_ratio = p['of_ratio']
 
@@ -37,7 +40,7 @@ oxidant_weights = np.array([0.0, 1.0])
 reac = cea.Mixture(reac_names)
 prod = cea.Mixture(reac_names, products_from_reactants=True)
 
-solver = cea.RocketSolver(prod, reactants=reac)
+solver = cea.RocketSolver(prod, reactants=reac, transport=True)
 solution = cea.RocketSolution(solver)
 
 weights = reac.of_ratio_to_weights(oxidant_weights, fuel_weights, of_ratio) #Convert OF to weights.
@@ -45,6 +48,21 @@ weights = reac.of_ratio_to_weights(oxidant_weights, fuel_weights, of_ratio) #Con
 #Compute chamber enthalpy. Normalized.
 hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant.to(ureg.kelvin).magnitude)/cea.R
 #Solve the rocket problem for given inputs. Normalized.
+
+# IAC run to get C* and Cf for this pc
+solver.solve(solution, weights, pc.to(ureg.bar).magnitude, pi_p, iac=True, hc=hc)
+Cf    = solution.coefficient_of_thrust[-1] * eta_cf
+cstar = solution.c_star[-1] * eta_cstar * ureg.m/ureg.s # m/s
+
+#Obtain throat area from mass flow rate, C*, and chamber pressure.
+mdot  = F.to(ureg.N) / (Cf * cstar)                  # kg/s
+At    = (mdot * cstar) / pc.to(ureg.Pa)              # m²
+
+#Obtain the required contraction ratio.
+A_c   = np.pi / 4 * Dc.to(ureg.m)**2              # m²
+ac_at = A_c.magnitude / At.magnitude
+
+#Running the solver with the obtained contraction ratio.
 solver.solve(solution, weights, pc.to(ureg.bar).magnitude, pi_p, ac_at=ac_at ,iac=False, hc=hc)
 
 #### CEA OUTPUTS ####
@@ -52,14 +70,12 @@ solver.solve(solution, weights, pc.to(ureg.bar).magnitude, pi_p, ac_at=ac_at ,ia
 num_pts = solution.num_pts
 
 ae_at = solution.ae_at                  # Expansion ratio (Ae/At)
-Isp_i = solution.Isp                    # Specific impulse at sea level (s)
-Isp_vac = solution.Isp_vacuum           # Specific impulse in vacuum (s)
 Cf_i = solution.coefficient_of_thrust   # Coefficient of thrust
 cstar_i  = solution.c_star              # Characteristic velocity (m/s)
 gamma = solution.gamma_s                # Specific heat ratio
-Cp = solution.cp                        # Specific heat at constant pressure (J/kg-K)
-MW = solution.MW                        # Molecular weight (kg/kmol)
-k = solution.conductivity_eq            # Thermal conductivity (W/m-K). ####NEEEDS FIXING
+Cp = solution.cp * ureg.kJ / (ureg.kg * ureg.K)  # Specific heat at constant pressure (KJ/kg-K)
+MW = solution.MW * ureg.kg / ureg.kmol           # Molecular weight (kg/kmol)
+k = solution.conductivity_eq * (ureg.uW / (ureg.cm * ureg.K))  # Thermal conductivity (uW/cm-K).
 
 T = solution.T #Temperature (K)
 P = solution.P #Pressure (bar)
@@ -68,6 +84,7 @@ P = solution.P #Pressure (bar)
 
 cstar = cstar_i[-1] * eta_cstar *ureg.m/ureg.s  # Adjusted characteristic velocity (m/s)
 Cf = Cf_i[-1] * eta_cf                          # Adjusted coefficient of thrust
+Isp = Cf * cstar.to(ureg.m/ureg.s) / ureg.g0         # Specific impulse at sea level (s)
 
 ### Output Results ###
 
@@ -96,22 +113,36 @@ V_cyl    = Vc_total - V_cone                               # subtract cone
 Lc = V_cyl / Ac.to(ureg.m**2)                              # cylindrical length (m)
 Ltotal = Lc + L_cone                                       # Total chamber length (m)
 
+#### Nozzle Contour Generation and Plotting ###
+angles, contour, R2 = cs.bell_nozzle(ae_at[-1], dt.to(ureg.mm).magnitude/2, 80, ac_at, alpha.to(ureg.deg).magnitude, Lc.to(ureg.mm).magnitude)
 
-angles, contour, R2 = cs.bell_nozzle(ae_at, dt.to(ureg.mm).magnitude/2, 80, ac_at, alpha, Lc.to(ureg.mm).magnitude)
+# Plot the engine overview contour #
 title = (f'Bell Nozzle\n'
         f'[ε = {round(ae_at[-1], 1)}, '
         f'Rt = {round(dt.to(ureg.mm).magnitude/2, 2)} mm, '
-        f'L% = {80}%]')
-    
-cs.plot_overview(title, dt.to(ureg.mm).magnitude/2, angles, contour)
+        f'L% = {80}%]')    
+cs.plot_overview(title, dt.to(ureg.mm).magnitude/2, angles, contour,output_filename) 
 
+# Export the contour in csv and dxf #
+if output_filename:
+    base     = os.path.splitext(output_filename)[0]
+    csv_file = base + '.csv'
+    dxf_file = base + '.dxf'
+else:
+    csv_file = None
+    dxf_file = None
+
+cs.export_nozzle_csv(contour, filename=csv_file)
+cs.export_nozzle_dxf(contour, filename=dxf_file)
+
+### Output performance parameters ###
 
 print()
 print("PERFORMANCE PARAMETERS")
 print()
 
 
-def format_values(values, skip_index=1, width=10, precision=3):
+def format_values(values, skip_index=1, width=10, precision=5):
     return " ".join(
         f"{float(values[i]):{width}.{precision}f}"
         for i in range(len(values))
@@ -119,30 +150,31 @@ def format_values(values, skip_index=1, width=10, precision=3):
     )
 
 print(f"{'Ae/At':<15}{format_values(ae_at)}")
-print(f"{'Isp_SL[m/s]':<15}{format_values(Isp_i)}")
-print(f"{'Isp_vac[m/s]':<15}{format_values(Isp_vac)}")
 print(f"{'Cf':<15}{format_values(Cf_i)}")
 print(f"{'C*[m/s]':<15}{format_values(cstar_i)}")
 print(f"{'T[K]':<15}{format_values(T)}")
 print(f"{'P[bar]':<15}{format_values(P)}")
 print(f"{'gamma':<15}{format_values(gamma)}")
-print(f"{'Cp[J/kg-K]':<15}{format_values(Cp)}")
-print(f"{'k[mW/m-K]':<15}{format_values(k)}") ###NEEDS FIXING.
-print(f"{'MW[kg/kmol]':<15}{format_values(MW)}")
+print(f"{'Cp[J/kg-K]':<15}{format_values(Cp.to(ureg.J / (ureg.kg * ureg.K)).magnitude)}")
+print(f"{'k[uW/cm-K]':<15}{format_values(k.to(ureg.uW / (ureg.cm * ureg.K)).magnitude)}") 
+print(f"{'MW[kg/kmol]':<15}{format_values(MW.magnitude)}")
 
 
 print()
 print(f"Ac/At: {ac_at:.4f}")
 print(f"Ae/At: {ae_at[-1]:.4f}")
-print(f"Mass flow rate (lbm/s): {mdot.to(ureg.lb/ureg.s):.4f}")
+print(f"Cstar (m/s): {cstar.to(ureg.m/ureg.s):.2f}")
+print(f"Cf: {Cf:.4f}")
+print(f"Isp (s): {Isp.to(ureg.s):.2f}")
+print(f"Mass flow rate (kg/s): {mdot.to(ureg.kg/ureg.s):.4f}")
 print(f"Throat area (m²): {At.to(ureg.m**2):.6f}")
 print(f"Throat diameter (m): {dt.to(ureg.inch):.4f}")
 print(f"Exit area (m²): {Ae.to(ureg.m**2):.6f}")
-print(f"Exit diameter (m): {de.to(ureg.inch):.4f}")
+print(f"Exit diameter (in): {de.to(ureg.inch):.4f}")
 print()
 print("CHAMBER GEOMETRY")
 print(f"Chamber diameter (in): {dc.to(ureg.inch):.4f}")
-print(f"Cylindrical length (in): {Lc.to(ureg.inch):.4f}")
+print(f"Cylindrical length (in): {Lc.to(ureg.m):.4f}")
 print(f"Conical length (in): {L_cone.to(ureg.inch):.4f}")
 print(f"Total chamber length (in): {Ltotal.to(ureg.inch):.4f}")
 

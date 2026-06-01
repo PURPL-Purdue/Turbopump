@@ -9,6 +9,7 @@ cf_efficiency: 0.875  # Cf efficiency
 
 L_star: 40  # Characteristic length (m)
 alpha_divergence: 45.0     # Divergence half-angle (degrees)
-contraction_ratio: 2.848 #Contraction ratio (Ac/At)
+chamber_diameter: 4.0  # Chamber diameter (in)
 
 of_ratio: 1.6  # O/F ratio 
+

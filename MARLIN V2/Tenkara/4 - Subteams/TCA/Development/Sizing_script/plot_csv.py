@@ -5,15 +5,6 @@ import os
 
 
 def plot_contours(*csv_files):
-    """
-    Plot one or more nozzle contour CSV files on the same axes.
-
-    Each CSV must have columns: x_mm, y_mm (and optionally 'segment').
-    Each file is drawn as a single continuous line, colored and labeled by filename.
-
-    Usage:
-        plot_contours("nozzle_contour1.csv", "nozzle_contour2.csv", ...)
-    """
     if not csv_files:
         print("No CSV files provided.")
         return
@@ -39,10 +30,10 @@ def plot_contours(*csv_files):
     plt.show()
 
 
-# ── CLI usage: python plot_nozzle_contours.py file1.csv file2.csv ... ──────────
+# python plot_csv.py file1.csv file2.csv ...
 if __name__ == "__main__":
     files = sys.argv[1:]
     if not files:
-        print("Usage: python plot_nozzle_contours.py <file1.csv> [file2.csv ...]")
+        print("Usage: python plot_csv.py <file1.csv> [file2.csv ...]")
         sys.exit(1)
     plot_contours(*files)

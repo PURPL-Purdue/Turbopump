@@ -6,23 +6,6 @@ Thrust-optimised parabolic (TOP) nozzle contour.
 Reference:
     "The Thrust Optimised Parabolic Nozzle"
     http://www.aspirespace.org.uk/downloads/Thrust%20optimised%20parabolic%20nozzle.pdf
-
-Unit convention (internal):
-    All geometry is computed in MILLIMETRES.
-    Conversion to inches happens only at plot / export time.
-
-Fixes applied vs. original script
------------------------------------
-  [F1] export_nozzle_dxf divided by 1000 (treated mm as m) → changed to /25.4 (mm→in)
-  [F2] find_wall_angles used len(x_index) on a scalar     → changed to len(aratio)
-  [F3] bell_nozzle called find_wall_angles(... throat_radius ...) using the
-       global variable instead of the local parameter Rt  → now passes Rt
-  [F4] export_nozzle_csv had a hardcoded Windows path as default → uses _here
-  [F5] DXF segments reversed but CSV segments not reversed → both now consistently
-       oriented throat→exit (chamber wall reversed, others forward)
-  [F6] con_len labelled as "chamber length" but is the cylindrical-only length
-       → label updated in the plot
-  [F7] l_percent fallback was silent → now prints a warning
 """
 
 import math
@@ -150,9 +133,6 @@ def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc):
     angles  : (Ln, theta_n, theta_e)
     contour : tuple of 18 lists (x, y, -y) × 6 segments
     R2      : float — convergent-arc radius [mm]
-
-    [F3] fixed: now passes Rt (local parameter) to find_wall_angles,
-         not the global variable throat_radius
     """
     # [F3] was: find_wall_angles(aratio, throat_radius, l_percent)
     angles = find_wall_angles(aratio, Rt, l_percent)
@@ -326,11 +306,6 @@ def plot3d(ax, contour):
 
 
 def plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, R2_mm, cangle):
-    """
-    Clean engineering drawing in inches.
-
-    [F6] fixed: dimension label now says 'Cyl. chamber length' not 'Chamber length'
-    """
     theta_n, theta_e = angles[1], angles[2]
     R2_in = R2_mm / 25.4
 
@@ -371,7 +346,6 @@ def plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, R2_mm, cangl
 
     dim_y = 1.25 * ybell[-1]
 
-    # [F6] cylindrical chamber length (not total chamber length)
     cyl_len = Lc_in - abs(xecc[0])
     ax.annotate('', [xecc[-1] - 0.05, 1.2*ybell[-1]],
                     [xecc[0]  + 0.05, 1.2*ybell[-1]],
@@ -457,7 +431,7 @@ def plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, R2_mm, cangl
     plt.show()
 
 
-def plot_overview(title, throat_radius, angles, contour):
+def plot_overview(title, throat_radius, angles, contour,filename):
     """Side-by-side 2-D + 3-D overview figure."""
     fig = plt.figure(1, figsize=(14, 9))
     ax1 = fig.add_subplot(121)
@@ -466,10 +440,10 @@ def plot_overview(title, throat_radius, angles, contour):
     plot3d(ax2, contour)
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    _here = os.path.dirname(os.path.abspath(__file__))
-    out   = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour_plot.png')
-    fig.savefig(out)
-    print(f"Saved overview plot → {out}")
+    #_here = os.path.dirname(os.path.abspath(__file__))
+    #out   = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour_plot.png')
+    #fig.savefig(out)
+    #print(f"Saved overview plot → {out}")
     plt.show()
 
 
@@ -477,17 +451,9 @@ def plot_overview(title, throat_radius, angles, contour):
 # Export helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-def export_nozzle_csv(contour, filename=None):
+def export_nozzle_csv(contour, filename):
     """
     Write all contour segments to a single CSV (mm units).
-
-    Segment order: chamber_wall → convergent_arc → convergent_diagonal
-                   → throat_entrant → throat_exit → bell
-
-    [F4] fixed: no longer has a hardcoded Windows path as default argument.
-    [F5] fixed: segment orientation now matches the DXF (throat→exit).
-                Chamber wall, convergent arc, and convergent diagonal are
-                reversed here to be consistent.
     """
     if filename is None:
         _here    = os.path.dirname(os.path.abspath(__file__))
@@ -500,7 +466,6 @@ def export_nozzle_csv(contour, filename=None):
     xe2,   ye2   = contour[3],  contour[4]
     xbell, ybell = contour[15], contour[16]
 
-    # [F5] reverse upstream segments so all run throat→exit
     segments = [
         ('chamber_wall',          list(reversed(xecc)),  list(reversed(yecc))),
         ('convergent_arc',        list(reversed(xeca)),  list(reversed(yeca))),
@@ -521,25 +486,15 @@ def export_nozzle_csv(contour, filename=None):
     return filename
 
 
-def export_nozzle_dxf(contour):
-    """
-    Write nozzle contour to DXF (splines, inches).
+def export_nozzle_dxf(contour,filename):
+    """Exorts the dxf contour in SI (m)"""
+    xecc,  yecc  = contour[12], contour[13]
+    xeca,  yeca  = contour[9],  contour[10]
+    xed,   yed   = contour[6],  contour[7]
+    xe,    ye    = contour[0],  contour[1]
+    xe2,   ye2   = contour[3],  contour[4]
+    xbell, ybell = contour[15], contour[16]
 
-    [F1] fixed: now divides by 25.4 (mm→in) instead of 1000 (was treating mm as m).
-    [F5] fixed: upstream segments reversed so all splines run throat→exit,
-                matching the CSV export direction.
-    """
-    def _to_in(arr):
-        return list(np.array(arr) / 25.4)
-
-    xecc,  yecc  = _to_in(contour[12]), _to_in(contour[13])
-    xeca,  yeca  = _to_in(contour[9]),  _to_in(contour[10])
-    xed,   yed   = _to_in(contour[6]),  _to_in(contour[7])
-    xe,    ye    = _to_in(contour[0]),  _to_in(contour[1])
-    xe2,   ye2   = _to_in(contour[3]),  _to_in(contour[4])
-    xbell, ybell = _to_in(contour[15]), _to_in(contour[16])
-
-    # [F5] reverse upstream segments so all splines run throat→exit
     sections = [
         (list(reversed(xecc)),  list(reversed(yecc))),   # chamber wall
         (list(reversed(xeca)),  list(reversed(yeca))),   # convergent arc
@@ -550,69 +505,17 @@ def export_nozzle_dxf(contour):
     ]
 
     doc = ezdxf.new('R2010')
+    doc.header['$INSUNITS'] = 6  # 6 = meters
     msp = doc.modelspace()
+
     for xs, ys in sections:
-        pts = list(zip(xs, ys))
+        pts = [(x/1000, y/1000) for x, y in zip(xs, ys)]
         if len(pts) >= 3:
             msp.add_spline(pts, degree=3)
 
-    _here = os.path.dirname(os.path.abspath(__file__))
-    out   = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour.dxf')
-    doc.saveas(out)
-    print(f"Saved DXF → {out}")
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Entry point
-# ──────────────────────────────────────────────────────────────────────────────
-
-if __name__ == '__main__':
-    _here = os.path.dirname(os.path.abspath(__file__))
-    yaml_path = os.path.join(_here, '..', 'TCA_params.yaml')
-
-    with open(yaml_path) as f:
-        p = yaml.safe_load(f)
-
-    # ── Read inputs from YAML ──────────────────────────────────────────────────
-    l_percent     = p['bell_nozzle_l_percent']         # 60 / 80 / 90
-    aratio        = p['tca_expansion_ratio']            # Ae / At
-    cratio        = p['tca_contraction_ratio']          # Ac / At
-    cangle        = p['tca_convergent_half_angle']      # degrees
-    Lc_mm         = p['tca_chamber_length'] * 25.4      # in → mm
-    throat_radius = p['tca_throat_diameter'] * 25.4 / 2 # in → mm
-
-    # ── Generate contour (all in mm) ──────────────────────────────────────────
-    angles, contour, R2 = bell_nozzle(
-        aratio, throat_radius, l_percent, cratio, cangle, Lc_mm
-    )
-
-    title = (f'Bell Nozzle\n'
-             f'[ε = {round(aratio, 1)}, '
-             f'Rt = {round(throat_radius, 2)} mm, '
-             f'L% = {l_percent}%]')
-
-    # ── Exports ───────────────────────────────────────────────────────────────
-    os.makedirs(os.path.join(_here, 'CSV_DXF_OUTPUTS'), exist_ok=True)
-    export_nozzle_csv(contour)
-    export_nozzle_dxf(contour)
-
-    # ── Plots ─────────────────────────────────────────────────────────────────
-    plot_overview(title, throat_radius, angles, contour)
-
-    Dt_in = p['tca_throat_diameter']
-    Dc_in = p['tca_chamber_diameter']
-    De_in = p['tca_exit_diameter']
-    Lc_in = p['tca_chamber_length']
-    plot_nozzle_inches(contour, angles, Dt_in, Dc_in, De_in, Lc_in, R2, cangle)
-
-def contour_script(lpercent, aratio, cratio, cangle, Lc_mm, throat_radius):
-    angles, contour, R2 = bell_nozzle(aratio, throat_radius, lpercent, cratio, cangle, Lc_mm)
-    title = (f'Bell Nozzle\n'
-             f'[ε = {round(aratio, 1)}, '
-             f'Rt = {round(throat_radius, 2)} mm, '
-             f'L% = {lpercent}%]')
-    
-    plot_overview(title, throat_radius, angles, contour)
-    return angles, contour
-
-    
+    if not filename:
+        _here    = os.path.dirname(os.path.abspath(__file__))
+        filename = os.path.join(_here, 'CSV_DXF_OUTPUTS', 'nozzle_contour.dxf')
+    doc.saveas(filename)
+    print(f"Saved DXF → {filename}")
+    return filename

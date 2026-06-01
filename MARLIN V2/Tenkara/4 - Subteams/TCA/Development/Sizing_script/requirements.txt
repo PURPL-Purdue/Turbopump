@@ -2,3 +2,7 @@ cea
 pint
 numpy
 yaml
+scipy
+pandas
+openpyxl
+
