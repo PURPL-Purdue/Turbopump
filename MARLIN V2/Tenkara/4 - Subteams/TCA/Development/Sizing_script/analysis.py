@@ -100,9 +100,9 @@ for pc in pc_array:
 df = pd.DataFrame(designs)
 
 # Size thresholds
-max_Lc_m   = 0.4   # meters
-min_Lc_m   = 0.1   # meters
-max_De_in  = 6   # inches
+max_Lc_m   = 0.6   # meters
+min_Lc_m   = 0.3   # meters
+max_De_in  = 7   # inches
 
 # Filter out designs exceeding thresholds
 df = df[(df['Lc_m'] <= max_Lc_m) & (df['Lc_m'] >= min_Lc_m) & (df['De_in'] <= max_De_in)]

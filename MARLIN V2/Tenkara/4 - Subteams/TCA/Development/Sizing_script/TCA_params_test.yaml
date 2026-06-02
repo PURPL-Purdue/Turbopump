@@ -2,12 +2,13 @@
 
 Thrust_target: 5000   # Thrust (lbf)
 Chamber_pressure: 500   # Chamber pressure (psi)
+
 Exit_pressure: 12  # Exit pressure (psi)
 
 cstar_efficiency: 0.875  # C* efficiency
 cf_efficiency: 0.875  # Cf efficiency
 
-L_star: 40  # Characteristic length (m)
+L_star: 40  # Characteristic length (in)
 alpha_divergence: 45.0     # Divergence half-angle (degrees)
 chamber_diameter: 4.0  # Chamber diameter (in)
 
