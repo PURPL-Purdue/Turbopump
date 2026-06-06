@@ -5,6 +5,7 @@ import numpy as np
 import CoolProp as CoolProp
 
 from cea_setup import cea_setup
+import gamma_from_of
 
 def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, k):
 
@@ -48,7 +49,7 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
     i = 1
     error = 1
     while (error > 1/1000):
-        print(f"Iteration {i} | Wall Temp: {Tw}")
+        print(f"Iteration {i} | Wall Temp: {round(Tw.magnitude, 3)} K")
         Tam = (Tinf + Tw) / 2
         RhoamqRhoinf = Tinf / Tam
 
@@ -69,11 +70,18 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
 
 
         # Internal flow of coolant in channels
-        MaCool = 0.1
-        Tcool = 100 * ureg.K
-        Pcool = 10 * ureg.MPa
-        Dh = 4 * ureg.mm
+        #channel geometry
+        AR = 0.8
+        height = 0.2 * ureg.inch
+        width = AR*height
+        perim = 2*width + 2*height
+        Acool = width * height
+        Dh = 4*Acool/perim
 
+        MaCool = 0.3
+        Tcool = 150 * ureg.K
+        Pcool = 850 * ureg.psi
+        
         RhoCool = CoolProp.CoolProp.PropsSI("D", "T", Tcool.magnitude, "P", Pcool.to(ureg.Pa).magnitude, "H2") * ureg.kg / ureg.m**3
         KCool = CoolProp.CoolProp.PropsSI("L", "T", Tcool.magnitude, "P", Pcool.to(ureg.Pa).magnitude, "H2") * ureg.W /(ureg.m * ureg.K)
         MuCool = CoolProp.CoolProp.PropsSI("V", "T", Tcool.magnitude, "P", Pcool.to(ureg.Pa).magnitude, "H2") * ureg.Pa * ureg.s
@@ -85,7 +93,7 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
         hl = ((KCool/Dh) * (0.026*ReCool**0.8 * PrCool**0.4)).to(ureg.W / (ureg.m**2 * ureg.K)) # McAdams convection coorelation
 
 
-        gam = 1.1655 ### ###
+        gam = gamma_from_of.gamma_lookup("1D Cooling Study\Gamma_Lookup.xlsx", of_ratio.round(1), reac_names)
         r = PrInf**(1/3)
         Tr = (1 + (gam-1)/2*Ma[1]**2*r)*Tinf
         qdot = (Tr - Tcool) / (1/hg + (L/k).to_base_units() + 1/hl)
@@ -95,7 +103,13 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
         error = np.abs((Tw_new - Tw)/Tw)
         Tw = Tw_new
         i += 1
+
+
+    mdotCool = RhoCool*Vcool*Acool
+    print(f"Dh: {round(Dh.magnitude, 2)} {Dh.units}")
+    print(f"Coolant mdot: {round(mdotCool.to(ureg.kg / ureg.s).magnitude, 3)} kg/s")
     return Tw
+
 ## channel size for a temp, just sweep some params, maybe heat map. 
 # stay time code for L*
 # 
@@ -119,7 +133,7 @@ def combustion_temp_sweep(ureg, reac_names, reac_temps, Pc, of_range):
 
     tempMax = np.max(temps)
     ofMax = ofs[np.argmax(temps)]
-    print(f"Max Tc: {tempMax} at OF: {ofMax}")
+    print(f"Max Tc: {tempMax:0.3f} at OF: {ofMax:0.2f}")
     return temps, ofs, tempMax, ofMax
 
 def main():
