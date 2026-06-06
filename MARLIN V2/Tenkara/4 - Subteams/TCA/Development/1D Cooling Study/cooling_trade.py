@@ -79,8 +79,8 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
         Dh = 4*Acool/perim
 
         MaCool = 0.3
-        Tcool = 150 * ureg.K
-        Pcool = 850 * ureg.psi
+        Tcool = 298 * ureg.K
+        Pcool = 1000 * ureg.psi
         
         RhoCool = CoolProp.CoolProp.PropsSI("D", "T", Tcool.magnitude, "P", Pcool.to(ureg.Pa).magnitude, "H2") * ureg.kg / ureg.m**3
         KCool = CoolProp.CoolProp.PropsSI("L", "T", Tcool.magnitude, "P", Pcool.to(ureg.Pa).magnitude, "H2") * ureg.W /(ureg.m * ureg.K)
@@ -93,7 +93,7 @@ def steady_state_throat_temp(ureg, reac_names, reac_temps, of_ratio, Dt, Pc, L, 
         hl = ((KCool/Dh) * (0.026*ReCool**0.8 * PrCool**0.4)).to(ureg.W / (ureg.m**2 * ureg.K)) # McAdams convection coorelation
 
 
-        gam = gamma_from_of.gamma_lookup("1D Cooling Study\Gamma_Lookup.xlsx", of_ratio.round(1), reac_names)
+        gam = gamma_from_of.gamma_lookup("/Users/louis/Desktop/Turbopump_GIT/MARLIN V2/Tenkara/4 - Subteams/TCA/Development/1D Cooling Study/Gamma_Lookup.xlsx", of_ratio.round(1), reac_names)
         r = PrInf**(1/3)
         Tr = (1 + (gam-1)/2*Ma[1]**2*r)*Tinf
         qdot = (Tr - Tcool) / (1/hg + (L/k).to_base_units() + 1/hl)
