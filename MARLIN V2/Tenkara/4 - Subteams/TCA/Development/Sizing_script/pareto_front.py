@@ -41,16 +41,18 @@ rest   = df[~mask]
 
 print(f"Total designs:  {len(df)}")
 print(f"Pareto optimal: {mask.sum()}")
-print(pareto[['F_lbf', 'pc_psi', 'sigma_vM_MPa', 'Isp_s', 'D_chamber_in', 'Lc_m']].sort_values('F_lbf').to_string(index=False))
+print(pareto[['F_lbf', 'pc_psi', 'sigma_vM_MPa', 'Isp_s', 'D_chamber_in', 'total_length_mm']].sort_values('F_lbf').to_string(index=False))
 
 # ── Plot: 2D projections of the Pareto front ──────────────────────────────────
-fig, axes = plt.subplots(1, 4, figsize=(15, 5))
+fig, axes = plt.subplots(1, 5, figsize=(20, 5))
 
 pairs = [
     ('F_lbf',  'Isp_s',        'Thrust (lbf)', 'Isp (s)'),
     ('pc_psi', 'Isp_s',        'Pc (psi)',      'Isp (s)'),
     ('pc_psi', 'sigma_vM_MPa', 'Pc (psi)',      'Von Mises Stress (MPa)'),
     ('pc_psi', 'D_chamber_in', 'Pc (psi)',      'D_chamber_in (in)'),
+    ('pc_psi', 'F_lbf', 'Pc (psi)',      'Thrust (lbf)'),
+
 ]
 
 for ax, (x_col, y_col, x_label, y_label) in zip(axes, pairs):

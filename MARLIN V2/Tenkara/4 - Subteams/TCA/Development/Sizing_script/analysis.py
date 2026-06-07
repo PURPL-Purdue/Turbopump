@@ -1,9 +1,12 @@
 import os
+from matplotlib import contour
 import numpy as np
 import cea
 from pint import UnitRegistry
 import yaml
 import pandas as pd
+from Contour_Script import contour_length_mm
+from Contour_Script import bell_nozzle
 
 ureg = UnitRegistry()
 with open('TCA_params_test.yaml') as f:
@@ -11,21 +14,22 @@ with open('TCA_params_test.yaml') as f:
 
 ### Engine Parameters/Inputs
 F                  = np.arange(1000, 6000, 200) * ureg.lbf
-pc_array           = np.arange(400, 900, 20) * ureg.psi
+pc_array           = np.arange(300, 900, 20) * ureg.psi
 
 ### https://usaindustries.com/piping-isolation-testing-products/pipe-schedule-chart/ ###
 chamber_diameters  = np.array([4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897]) * ureg.inch
 chamber_thickness = np.array([.375,.500,.625,.750,.432,.562,.719,.864]) * ureg.inch 
 
-pe                 = p['Exit_pressure'] * ureg.psi #Target exit pressure
+pe = p['Exit_pressure'] * ureg.psi #Target exit pressure
 
 eta_cstar = p['cstar_efficiency']
 eta_cf    = p['cf_efficiency']
-L_star    = p['L_star'] * ureg.inch
+L_star    = p['L_star'] * ureg.m
 alpha     = p['alpha_divergence'] * ureg.deg
 of_ratio  = p['of_ratio']
 
 ### CEA Setup ###
+# "C2H5OH(L)" -> Ethanol 
 reac_names      = ["C3H8O,2propanol", "O2(L)"]
 T_reactant      = np.array([298.15, 90.17])   # plain floats, K
 fuel_weights    = np.array([1.0, 0.0])
@@ -84,6 +88,9 @@ for pc in pc_array:
             sigma_ax = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (4 * t_c.to(ureg.m)*0.6)  # axial stress - Weld coefficient of 0.6 for welded joints
             sigma_vM = np.sqrt(sigma_th**2 + sigma_ax**2 - sigma_th * sigma_ax)  # von Mises stress
 
+            angles, contour, R2 = bell_nozzle(solution.ae_at[-1],Dt.to(ureg.mm).magnitude/2, 80,ac_at,alpha.to(ureg.deg).magnitude,Lc.to(ureg.mm).magnitude)
+            total_length_mm = contour_length_mm(contour)
+
 
             designs.append({
                 'F_lbf'        : F_target.to(ureg.lbf).magnitude,
@@ -101,17 +108,18 @@ for pc in pc_array:
                 'Isp_s'        : Isp.to(ureg.s).magnitude,       # s
                 'T_chamber_K'  : solution.T[0],
                 'sigma_vM_MPa'  : sigma_vM.to(ureg.MPa).magnitude, # MPa
+                'total_length_mm' : total_length_mm,
             })
 
 df = pd.DataFrame(designs)
 
 # Size thresholds
-max_Lc_m   = 0.6   # meters
-min_Lc_m   = 0.3   # meters
-max_De_in  = 7   # inches
+max_L_m   = 0.5 * ureg.m   # meters
+min_L_m   = 0.3 * ureg.m   # meters
+max_De_in  = 0.4 * ureg.m   # inches
 
 # Filter out designs exceeding thresholds
-df = df[(df['Lc_m'] <= max_Lc_m) & (df['Lc_m'] >= min_Lc_m) & (df['De_in'] <= max_De_in)]
+df = df[(df['total_length_mm'] <= max_L_m.to(ureg.mm).magnitude) & (df['total_length_mm'] >= min_L_m.to(ureg.mm).magnitude) & (df['De_in'] <= max_De_in.to(ureg.inch).magnitude)]
 
 print(f"Designs after filtering: {len(df)}")
 print(df.to_string())

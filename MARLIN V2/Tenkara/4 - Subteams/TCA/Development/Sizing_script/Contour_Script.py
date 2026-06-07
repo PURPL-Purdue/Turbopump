@@ -519,3 +519,28 @@ def export_nozzle_dxf(contour,filename):
     doc.saveas(filename)
     print(f"Saved DXF → {filename}")
     return filename
+
+def contour_length_mm(contour) -> float:
+    """
+    Compute the total wall contour length (upper half only, mm)
+    from the chamber inlet to the nozzle exit.
+    """
+    # Pair up (x, y) for the upper-half segments in flow order
+    segments = [
+        (contour[12], contour[13]),   # chamber cylinder  (reversed inside)
+        (contour[9],  contour[10]),   # convergent arc
+        (contour[6],  contour[7]),    # convergent diagonal
+        (contour[0],  contour[1]),    # throat entrant arc
+        (contour[3],  contour[4]),    # throat exit arc
+        (contour[15], contour[16]),   # bell
+    ]
+
+    total = 0.0
+    for xs, ys in segments:
+        xs = np.asarray(xs)
+        ys = np.asarray(ys)
+        dx = np.diff(xs)
+        dy = np.diff(ys)
+        total += np.sum(np.sqrt(dx**2 + dy**2))
+
+    return total

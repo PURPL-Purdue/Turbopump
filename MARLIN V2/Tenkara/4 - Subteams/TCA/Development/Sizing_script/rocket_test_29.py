@@ -23,7 +23,7 @@ pi_p = [pc / pe]                            # Pressure ratio chamber to exit
 eta_cstar = p['cstar_efficiency']           # C* efficiency
 eta_cf = p['cf_efficiency']                 # Cf efficiency
 
-L_star = p['L_star'] * ureg.inch             # Characteristic length (in)
+L_star = p['L_star'] * ureg.m             # Characteristic length (m)
 alpha = p['alpha_divergence'] * ureg.deg     # Divergence half-angle (degrees)
 Dc = p['chamber_diameter'] * ureg.inch       # Chamber diameter (in)
 

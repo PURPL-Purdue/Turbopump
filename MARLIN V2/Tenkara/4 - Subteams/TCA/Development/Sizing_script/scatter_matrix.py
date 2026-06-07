@@ -10,7 +10,7 @@ df = pd.read_excel('designs.xlsx')
 input_cols  = ['F_lbf', 'pc_psi', 'D_chamber_in', 't_chamber_in']
 
 # Outputs
-output_cols = ['Isp_s', 'Lc_m', 'De_in']
+output_cols = ['Isp_s', 'total_length_mm', 'De_in']
 
 # Combined
 cols = input_cols + output_cols
@@ -22,7 +22,7 @@ rename = {
     'D_chamber_in': 'D chamber (in)',
     't_chamber_in': 'thickness (in)',
     'Isp_s':        'Isp (s)',
-    'Lc_m':         'L chamber (m)',
+    'total_length_mm': 'L_total (mm)',
     'De_in':        'D exit (in)',
 }
 

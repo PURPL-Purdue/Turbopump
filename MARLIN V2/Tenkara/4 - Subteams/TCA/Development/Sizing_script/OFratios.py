@@ -13,7 +13,7 @@ pi_p = [pc / pe]
 of_ratio = np.arange(0.5, 5.0, 0.01)
 
 # CEA setup
-reac_names = ["C3H8O,2propanol", "O2(L)"]
+reac_names = ["C2H5OH(L)", "O2(L)"]
 T_reactant = np.array([298.15, 90.17]) * ureg.K
 
 fuel_weights   = np.array([1.0, 0.0])

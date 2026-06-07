@@ -1,16 +1,16 @@
 ### TCA Setpoints - Used by Sizing Script ###
 
-Thrust_target: 5000   # Thrust (lbf)
-Chamber_pressure: 500   # Chamber pressure (psi)
+Thrust_target: 3000   # Thrust (lbf)
+Chamber_pressure: 700   # Chamber pressure (psi)
 
 Exit_pressure: 12  # Exit pressure (psi)
 
 cstar_efficiency: 0.875  # C* efficiency
 cf_efficiency: 0.875  # Cf efficiency
 
-L_star: 40  # Characteristic length (in)
+L_star: 1  # Characteristic length (m)
 alpha_divergence: 45.0     # Divergence half-angle (degrees)
-chamber_diameter: 2.063  # Chamber diameter (in)
+chamber_diameter: 4.063  # Chamber diameter (in)
 
-of_ratio: 1.6  # O/F ratio 
+of_ratio: 1.2  # O/F ratio 
 
