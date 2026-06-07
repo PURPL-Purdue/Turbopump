@@ -23,6 +23,7 @@ def plot_contours(*csv_files):
     ax.set_xlabel("x (mm)")
     ax.set_ylabel("y (mm)")
     ax.set_title("Nozzle Contour(s)")
+    ax.set_ylim(bottom=0)  # Ensure y-axis starts at 0
     ax.legend()
     ax.set_aspect("equal")
     ax.grid(True, linestyle="--", alpha=0.5)

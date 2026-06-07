@@ -17,8 +17,8 @@ F                  = np.arange(1000, 6000, 200) * ureg.lbf
 pc_array           = np.arange(300, 900, 20) * ureg.psi
 
 ### https://usaindustries.com/piping-isolation-testing-products/pipe-schedule-chart/ ###
-chamber_diameters  = np.array([4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897]) * ureg.inch
-chamber_thickness = np.array([.375,.500,.625,.750,.432,.562,.719,.864]) * ureg.inch 
+chamber_diameters  = np.array([4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897,3.826]) * ureg.inch
+chamber_thickness = np.array([.375,.500,.625,.750,.432,.562,.719,.864,.337]) * ureg.inch 
 
 pe = p['Exit_pressure'] * ureg.psi #Target exit pressure
 
@@ -93,8 +93,8 @@ for pc in pc_array:
 
 
             designs.append({
-                'F_lbf'        : F_target.to(ureg.lbf).magnitude,
-                'pc_psi'       : pc.to(ureg.psi).magnitude,
+                'F_kN'        : F_target.to(ureg.kN).magnitude,
+                'pc_bar'       : pc.to(ureg.bar).magnitude,
                 'D_chamber_in' : D_c.to(ureg.inch).magnitude,
                 't_chamber_in' : t_c.to(ureg.inch).magnitude,
                 'Lc_m'         : Lc.to(ureg.m).magnitude,

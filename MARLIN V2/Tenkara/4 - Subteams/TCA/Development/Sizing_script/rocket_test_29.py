@@ -12,7 +12,7 @@ with open('TCA_params_test.yaml') as f:
 
 ### Engine Parameters/Inputs
 
-output_filename = 'CSV_DXF_OUTPUTS/nozzle_contour4k' # Output file for nozzle contour data
+output_filename = 'CSV_DXF_OUTPUTS/nozzle_contour2600-500psi' # Output file for nozzle contour data
 
 F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
 pc    = p['Chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
