@@ -174,7 +174,7 @@ print(f"Exit diameter (in): {de.to(ureg.inch):.4f}")
 print()
 print("CHAMBER GEOMETRY")
 print(f"Chamber diameter (in): {dc.to(ureg.inch):.4f}")
-print(f"Cylindrical length (in): {Lc.to(ureg.m):.4f}")
+print(f"Cylindrical length (m): {Lc.to(ureg.m):.4f}")
 print(f"Conical length (in): {L_cone.to(ureg.inch):.4f}")
 print(f"Total chamber length (in): {Ltotal.to(ureg.inch):.4f}")
 

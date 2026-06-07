@@ -28,7 +28,7 @@ def is_pareto(df, objectives):
 
 # ── Define objectives ──────────────────────────────────────────────────────────
 objectives = {
-    't_chamber_in': 'max',   # maximize thickness
+    'sigma_vM_MPa': 'min',   # minimize von Mises stress
     'Isp_s':        'max',   # maximize Isp
     'F_lbf':        'max',   # maximize thrust
     'pc_psi':       'min',   # minimize chamber pressure
@@ -41,15 +41,16 @@ rest   = df[~mask]
 
 print(f"Total designs:  {len(df)}")
 print(f"Pareto optimal: {mask.sum()}")
-print(pareto[['F_lbf', 'pc_psi', 't_chamber_in', 'Isp_s', 'D_chamber_in', 'Lc_m']].sort_values('F_lbf').to_string(index=False))
+print(pareto[['F_lbf', 'pc_psi', 'sigma_vM_MPa', 'Isp_s', 'D_chamber_in', 'Lc_m']].sort_values('F_lbf').to_string(index=False))
 
 # ── Plot: 2D projections of the Pareto front ──────────────────────────────────
-fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+fig, axes = plt.subplots(1, 4, figsize=(15, 5))
 
 pairs = [
     ('F_lbf',  'Isp_s',        'Thrust (lbf)', 'Isp (s)'),
     ('pc_psi', 'Isp_s',        'Pc (psi)',      'Isp (s)'),
-    ('pc_psi', 't_chamber_in', 'Pc (psi)',      'Thickness (in)'),
+    ('pc_psi', 'sigma_vM_MPa', 'Pc (psi)',      'Von Mises Stress (MPa)'),
+    ('pc_psi', 'D_chamber_in', 'Pc (psi)',      'D_chamber_in (in)'),
 ]
 
 for ax, (x_col, y_col, x_label, y_label) in zip(axes, pairs):
@@ -61,7 +62,7 @@ for ax, (x_col, y_col, x_label, y_label) in zip(axes, pairs):
     ax.legend(fontsize=7)
     ax.grid(True, alpha=0.3)
 
-plt.suptitle('Pareto Front — Maximize Thickness, Isp, Thrust / Minimize Pc', fontsize=11, y=1.02)
+plt.suptitle('Pareto Front — Minimize Von Mises Stress, Maximize Isp, Thrust / Minimize Pc', fontsize=11, y=1.02)
 plt.tight_layout()
 plt.savefig('pareto_front.png', dpi=150, bbox_inches='tight')
 plt.show()

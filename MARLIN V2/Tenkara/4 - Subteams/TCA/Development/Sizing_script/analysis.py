@@ -44,7 +44,6 @@ designs = []
 
 for pc in pc_array:
     pi_p    = [pc.to(ureg.psi).magnitude / pe.to(ureg.psi).magnitude]
-
     pc  = pc.to(ureg.bar)
 
     # IAC run to get C* and Cf for this pc
@@ -80,6 +79,12 @@ for pc in pc_array:
             Lc = V_cyl / A_c.to(ureg.m**2)                              # cylindrical length (m)
             Ltotal = Lc + L_cone                                       # Total chamber length (m)
             
+            #Von Mises stress calculations#
+            sigma_th = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (2 * t_c.to(ureg.m))  # hoop stress - Seamless Pipe
+            sigma_ax = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (4 * t_c.to(ureg.m)*0.6)  # axial stress - Weld coefficient of 0.6 for welded joints
+            sigma_vM = np.sqrt(sigma_th**2 + sigma_ax**2 - sigma_th * sigma_ax)  # von Mises stress
+
+
             designs.append({
                 'F_lbf'        : F_target.to(ureg.lbf).magnitude,
                 'pc_psi'       : pc.to(ureg.psi).magnitude,
@@ -95,6 +100,7 @@ for pc in pc_array:
                 'Cf'           : Cf,
                 'Isp_s'        : Isp.to(ureg.s).magnitude,       # s
                 'T_chamber_K'  : solution.T[0],
+                'sigma_vM_MPa'  : sigma_vM.to(ureg.MPa).magnitude, # MPa
             })
 
 df = pd.DataFrame(designs)
