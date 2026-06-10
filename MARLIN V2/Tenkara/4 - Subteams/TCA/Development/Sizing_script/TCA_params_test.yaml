@@ -21,21 +21,21 @@ alpha_divergence: 45.0     # Divergence half-angle (degrees)
 
 chamber_diameter: 3.826  # Chamber diameter (in)
 chamber_thickness: 0.337  # Chamber wall thickness (in)
-throat_diameter: 2.026367  # Throat diameter (in)
-exit_diameter: 5.155206  # Exit diameter (in)
+throat_diameter: 2.0219  # Throat diameter (in)
+exit_diameter: 5.2316  # Exit diameter (in)
 
-chamber_length: 0.266718  # Chamber length (m)
+chamber_length: 0.2650  # Chamber length (m)
 ox_distance: 3  # Distance between LOX holes to the fuel hole in a O-F-O configuration (mm)
 impinge_percentage: 0.02  # % of impingement relative to chamber length
 
-contraction_ratio: 3.564951  # Contraction ratio
-expansion_ratio: 6.472256  # Expansion ratio
+contraction_ratio: 3.5860  # Contraction ratio
+expansion_ratio: 6.6952  # Expansion ratio
 
-cstar: 1459.63833  # C* (m/s)
-cf: 1.34368  # Cf
-isp: 199.9956  # Specific impulse (s)
+cstar: 1461.58  # C* (m/s)
+cf: 1.3497  # Cf
+isp: 201.15  # Specific impulse (s)
 
-tp_mdot: 5.89683013  # Mass flow rate (kg/s)
+tp_mdot: 5.8629  # Mass flow rate (kg/s)
 of_ratio: 1.2  # O/F ratio 
 
 discharge_coeff:

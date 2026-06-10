@@ -30,7 +30,7 @@ of_ratio  = p['of_ratio']
 
 ### CEA Setup ###
 # "C2H5OH(L)" -> Ethanol 
-reac_names      = ["C3H8O,2propanol", "O2(L)"]
+reac_names      = ["C2H5OH(L)", "O2(L)"]
 T_reactant      = np.array([298.15, 90.17])   # plain floats, K
 fuel_weights    = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])

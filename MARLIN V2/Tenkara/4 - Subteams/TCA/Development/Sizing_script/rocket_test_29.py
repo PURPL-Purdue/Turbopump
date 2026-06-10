@@ -32,7 +32,7 @@ of_ratio = p['of_ratio']
 
 ### CEA Setup ###
 
-reac_names = ["C3H8O,2propanol", "O2(L)"]
+reac_names = ["C2H5OH(L)", "O2(L)"]
 T_reactant = np.array([298.15, 90.17]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
@@ -76,7 +76,7 @@ gamma = solution.gamma_s                # Specific heat ratio Frozen?
 Cp = solution.cp * ureg.kJ / (ureg.kg * ureg.K)  # Specific heat at constant pressure (KJ/kg-K)
 MW = solution.MW * ureg.kg / ureg.kmol           # Molecular weight (kg/kmol)
 k = solution.conductivity_eq * (ureg.uW / (ureg.cm * ureg.K))  # Thermal conductivity (uW/cm-K).
-R = 8.314 * ureg.kJ / (ureg.kmol * ureg.K) / MW.to(ureg.kg/ureg.kmol)  # Specific gas constant (kJ/kg-K)
+R = 8.31446261815324 * ureg.kJ / (ureg.kmol * ureg.K) / MW.to(ureg.kg/ureg.kmol)  # Specific gas constant (kJ/kg-K)
 gamma2 = Cp / (Cp - R)                                # Specific heat ratio from Cp and R
 
 T = solution.T #Temperature (K)
@@ -123,7 +123,7 @@ title = (f'Bell Nozzle\n'
         f'[ε = {round(ae_at[-1], 1)}, '
         f'Rt = {round(dt.to(ureg.mm).magnitude/2, 2)} mm, '
         f'L% = {80}%]')    
-cs.plot_overview(title, dt.to(ureg.mm).magnitude/2, angles, contour,output_filename) 
+#cs.plot_overview(title, dt.to(ureg.mm).magnitude/2, angles, contour,output_filename) 
 
 # Export the contour in csv and dxf #
 if output_filename:
@@ -180,6 +180,14 @@ print(f"Chamber diameter (in): {dc.to(ureg.inch):.4f}")
 print(f"Cylindrical length (m): {Lc.to(ureg.m):.4f}")
 print(f"Conical length (in): {L_cone.to(ureg.inch):.4f}")
 print(f"Total chamber length (in): {Ltotal.to(ureg.inch):.4f}")
+
+ox, fuel = weights
+total = ox + fuel
+x_ox = ox / total
+x_fuel = fuel / total
+
+print(f"Oxidizer fraction: {x_ox:.6f}")
+print(f"Fuel fraction: {x_fuel:.6f}")
 
 
 
