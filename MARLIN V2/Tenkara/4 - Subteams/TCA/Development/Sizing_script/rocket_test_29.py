@@ -12,7 +12,7 @@ with open('TCA_params_test.yaml') as f:
 
 ### Engine Parameters/Inputs
 
-output_filename = 'CSV_DXF_OUTPUTS/nozzle_contour2600-500psi' # Output file for nozzle contour data
+output_filename = 'CSV_DXF_OUTPUTS/nozzle_contour2600-600psi' # Output file for nozzle contour data
 
 F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
 pc    = p['Chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
@@ -72,10 +72,12 @@ num_pts = solution.num_pts
 ae_at = solution.ae_at                  # Expansion ratio (Ae/At)
 Cf_i = solution.coefficient_of_thrust   # Coefficient of thrust
 cstar_i  = solution.c_star              # Characteristic velocity (m/s)
-gamma = solution.gamma_s                # Specific heat ratio
+gamma = solution.gamma_s                # Specific heat ratio Frozen?
 Cp = solution.cp * ureg.kJ / (ureg.kg * ureg.K)  # Specific heat at constant pressure (KJ/kg-K)
 MW = solution.MW * ureg.kg / ureg.kmol           # Molecular weight (kg/kmol)
 k = solution.conductivity_eq * (ureg.uW / (ureg.cm * ureg.K))  # Thermal conductivity (uW/cm-K).
+R = 8.314 * ureg.kJ / (ureg.kmol * ureg.K) / MW.to(ureg.kg/ureg.kmol)  # Specific gas constant (kJ/kg-K)
+gamma2 = Cp / (Cp - R)                                # Specific heat ratio from Cp and R
 
 T = solution.T #Temperature (K)
 P = solution.P #Pressure (bar)
@@ -155,6 +157,7 @@ print(f"{'C*[m/s]':<15}{format_values(cstar_i)}")
 print(f"{'T[K]':<15}{format_values(T)}")
 print(f"{'P[bar]':<15}{format_values(P)}")
 print(f"{'gamma':<15}{format_values(gamma)}")
+print(f"{'gamma2':<15}{format_values(gamma2)}")
 print(f"{'Cp[J/kg-K]':<15}{format_values(Cp.to(ureg.J / (ureg.kg * ureg.K)).magnitude)}")
 print(f"{'k[uW/cm-K]':<15}{format_values(k.to(ureg.uW / (ureg.cm * ureg.K)).magnitude)}") 
 print(f"{'MW[kg/kmol]':<15}{format_values(MW.magnitude)}")

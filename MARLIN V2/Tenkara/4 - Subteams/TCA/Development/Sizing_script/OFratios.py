@@ -6,7 +6,7 @@ from pint import UnitRegistry
 ureg = UnitRegistry()
 
 # Inputs
-pc = 800 * ureg.psi
+pc = 600 * ureg.psi
 pe = 12 * ureg.psi
 pi_p = [pc / pe]
 

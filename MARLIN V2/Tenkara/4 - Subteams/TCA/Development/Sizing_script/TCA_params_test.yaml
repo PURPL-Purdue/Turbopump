@@ -1,7 +1,15 @@
 ### TCA Setpoints - Used by Sizing Script ###
 
+propellants:
+  fuel: Ethanol
+  oxidizer: LOX
+
+densities:
+  fuel: 789  # Density of Ethanol (kg/m^3)
+  oxidizer: 1141  # Density of LOX (kg/m^3)
+
 Thrust_target: 2600   # Thrust (lbf)
-Chamber_pressure: 500   # Chamber pressure (psi)
+Chamber_pressure: 600   # Chamber pressure (psi)
 
 Exit_pressure: 12  # Exit pressure (psi)
 
@@ -10,7 +18,40 @@ cf_efficiency: 0.875  # Cf efficiency
 
 L_star: 1  # Characteristic length (m)
 alpha_divergence: 45.0     # Divergence half-angle (degrees)
-chamber_diameter: 3.826  # Chamber diameter (in)
 
+chamber_diameter: 3.826  # Chamber diameter (in)
+chamber_thickness: 0.337  # Chamber wall thickness (in)
+throat_diameter: 2.026367  # Throat diameter (in)
+exit_diameter: 5.155206  # Exit diameter (in)
+
+chamber_length: 0.266718  # Chamber length (m)
+ox_distance: 3  # Distance between LOX holes to the fuel hole in a O-F-O configuration (mm)
+impinge_percentage: 0.02  # % of impingement relative to chamber length
+
+contraction_ratio: 3.564951  # Contraction ratio
+expansion_ratio: 6.472256  # Expansion ratio
+
+cstar: 1459.63833  # C* (m/s)
+cf: 1.34368  # Cf
+isp: 199.9956  # Specific impulse (s)
+
+tp_mdot: 5.89683013  # Mass flow rate (kg/s)
 of_ratio: 1.2  # O/F ratio 
+
+discharge_coeff:
+  oxidizer: 0.8  # Discharge coefficient for LOX
+  fuel: 0.8  # Discharge coefficient for fuel
+
+hole_number:
+  oxidizer: 60  # Number of holes for LOX
+  fuel: 30  # Number of holes for fuel
+
+hole_diameters:
+  oxidizer: 1.3  # Orifice diameter for LOX (mm)
+  fuel: 1.8  # Orifice diameter for fuel (mm)
+
+wall_thickness:
+  fuel: 6  # Wall thickness for fuel holes (mm)
+  oxidizer: 9  # Wall thickness for oxidizer holes (mm)
+
 
