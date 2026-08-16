@@ -43,12 +43,12 @@ discharge_coeff:
   fuel: 0.8  # Discharge coefficient for fuel
 
 hole_number:
-  oxidizer: 60  # Number of holes for LOX
-  fuel: 30  # Number of holes for fuel
+  oxidizer: 72  # Number of holes for LOX
+  fuel: 36  # Number of holes for fuel
 
 hole_diameters:
-  oxidizer: 1.3  # Orifice diameter for LOX (mm)
-  fuel: 1.8  # Orifice diameter for fuel (mm)
+  oxidizer: 1.2  # Orifice diameter for LOX (mm)
+  fuel: 1.7  # Orifice diameter for fuel (mm)
 
 wall_thickness:
   fuel: 6  # Wall thickness for fuel holes (mm)

@@ -66,11 +66,11 @@ mdot_fuel_inj, mdot_ipa_inj_per_hole = mdot_prop(mdot_fuel, num_holes_fuel_inj)
 mdot_ox_inj, mdot_lox_inj_per_hole = mdot_prop(mdot_ox, num_holes_ox_inj)
 
 print(f"#### Mass Flow Distribution ####")
-print(f"IPA total mass flow: {mdot_fuel_inj:.3f}")
-print(f"LOX total mass flow: {mdot_ox_inj:.3f}")
+print(f"Fuel total mass flow: {mdot_fuel_inj:.3f}")
+print(f"Oxidizer total mass flow: {mdot_ox_inj:.3f}")
 print(f"\nPer-hole mass flows:")
-print(f"IPA per-hole mass flow: {mdot_ipa_inj_per_hole:.5f}")
-print(f"LOX per-hole mass flow: {mdot_lox_inj_per_hole:.5f}")
+print(f"Fuel per-hole mass flow: {mdot_ipa_inj_per_hole:.5f}")
+print(f"Oxidizer per-hole mass flow: {mdot_lox_inj_per_hole:.5f}")
 
 ### Orifice Sizing ###
 

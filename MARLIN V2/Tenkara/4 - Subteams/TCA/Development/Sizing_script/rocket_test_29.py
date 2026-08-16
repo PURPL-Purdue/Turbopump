@@ -4,6 +4,7 @@ import cea
 from pint import UnitRegistry
 import yaml
 import Contour_Script as cs
+import pandas as pd
 
 
 ureg = UnitRegistry()
@@ -78,6 +79,8 @@ MW = solution.MW * ureg.kg / ureg.kmol           # Molecular weight (kg/kmol)
 k = solution.conductivity_eq * (ureg.uW / (ureg.cm * ureg.K))  # Thermal conductivity (uW/cm-K).
 R = 8.31446261815324 * ureg.kJ / (ureg.kmol * ureg.K) / MW.to(ureg.kg/ureg.kmol)  # Specific gas constant (kJ/kg-K)
 gamma2 = Cp / (Cp - R)                                # Specific heat ratio from Cp and R
+mass_fractions = solution.mass_fractions           # Mass fractions of species in the flow
+
 
 T = solution.T #Temperature (K)
 P = solution.P #Pressure (bar)
@@ -134,8 +137,8 @@ else:
     csv_file = None
     dxf_file = None
 
-cs.export_nozzle_csv(contour, filename=csv_file)
-cs.export_nozzle_dxf(contour, filename=dxf_file)
+#cs.export_nozzle_csv(contour, filename=csv_file)
+#cs.export_nozzle_dxf(contour, filename=dxf_file)
 
 ### Output performance parameters ###
 
@@ -144,7 +147,7 @@ print("PERFORMANCE PARAMETERS")
 print()
 
 
-def format_values(values, skip_index=1, width=10, precision=5):
+def format_values(values, skip_index=0, width=10, precision=5):
     return " ".join(
         f"{float(values[i]):{width}.{precision}f}"
         for i in range(len(values))
@@ -189,7 +192,13 @@ x_fuel = fuel / total
 print(f"Oxidizer fraction: {x_ox:.6f}")
 print(f"Fuel fraction: {x_fuel:.6f}")
 
+mf_df = pd.DataFrame(mass_fractions)
+print("\nMass Fractions of Species in the Flow:")
+print(mf_df)
+# Save to Excel
+mf_df.to_excel("mass_fractions.xlsx", index=True)
 
+print( T)
 
 
 
