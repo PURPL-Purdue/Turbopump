@@ -6,7 +6,7 @@ import csv
 import pint
 
 # Load configuration file
-with open(r'../Sizing_script/TCA_params_test.yaml') as file:
+with open(r'Inputs/TCA_params.yaml') as file:
     tca_params = yaml.safe_load(file)
 
 ureg = pint.UnitRegistry()
@@ -22,7 +22,7 @@ rho_IPA = tca_params['densities']['fuel'] * ureg.kg/ureg.m**3  # Ethanol Density
 rho_lox = tca_params['densities']['oxidizer'] * ureg.kg/ureg.m**3  # LOX Density [kg/m^3] at injector conditions
 
 # Pressures
-Pc = tca_params['Chamber_pressure'] * ureg.psi  # Chamber pressure 
+Pc = tca_params['chamber_pressure'] * ureg.psi  # Chamber pressure 
 
 # Discharge coefficients
 Cd_ox = tca_params['discharge_coeff']['oxidizer']  # Discharge coefficient for LOX

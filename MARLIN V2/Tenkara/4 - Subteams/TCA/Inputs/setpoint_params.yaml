@@ -1,0 +1,38 @@
+### TCA Setpoints ###
+### THIS YAML FILE CONTAINS THE ARRAYS WHITCH ARE CALLED IN SETPOINT.PY ###
+### THESE VALUES ARE PRELIMINARY - THE FINAL VALUES ARE FOUND IN TCA_PARAMS.YAML ###
+
+output_directory: Outputs/designs.csv                                                   # Output directory for designs.csv
+
+propellants:
+  fuel: C2H5OH(L)                                                                    # Ethanol
+  oxidizer: O2(L)                                                                    # LOx
+
+reactant_T:                                                                          # Reactant Temperatures (K)
+  fuel: 298.15
+  oxidizer: 90.17
+
+Thrust_array :                                                                       #Target Thrust Array (lbf)
+  Min: 2000
+  Max: 3000
+  Step: 200
+
+Chamber_pressure_array:                                                               #Pressure Array (psi)
+  Min: 580
+  Max: 640
+  Step: 20
+
+# https://usaindustries.com/piping-isolation-testing-products/pipe-schedule-chart/ 
+Chamber_diameters_in: [4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897,3.826]         #Chamber diameters (in)
+Chamber_thicknesses_in: [.375,.500,.625,.750,.432,.562,.719,.864,.337]                #Chamber thicknesses (in)
+
+exit_pressure: 12                                                                     # Exit pressure (psi)
+cstar_efficiency: 0.875                                                               # C* efficiency
+cf_efficiency: 0.875                                                                  # Cf efficiency
+L_star: 1                                                                             # Characteristic length (m)
+alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
+of_ratio: 1.2                                                                         # O/F ratio 
+
+max_L : 0.5                                                                           # Maximum length (m)
+min_L : 0.3                                                                           # Minimum length (m)
+max_D : 0.5                                                                           # Maximum diameter (m)

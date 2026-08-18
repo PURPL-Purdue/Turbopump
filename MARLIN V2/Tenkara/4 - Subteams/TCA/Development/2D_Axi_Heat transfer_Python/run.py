@@ -83,21 +83,21 @@ if not BARTZ_DIR or not os.path.isdir(BARTZ_DIR):
 # Validate critical inputs early
 # ---------------------------------------------------------------------------
 _problems = []
-for _k in ('oxidizer_fuel_ratio', 'tca_chamber_pressure', 'turbopump_mdot'):
+for _k in ('of_ratio', 'chamber_pressure', 'tp_mdot'):
     if _k not in tca_params:
         _problems.append(f'TCA_params.yaml missing required key: {_k}')
-if tca_params.get('tca_chamber_pressure', 0) <= 0:
-    _problems.append(f'tca_chamber_pressure must be > 0 (got {tca_params.get("tca_chamber_pressure")})')
-if tca_params.get('turbopump_mdot', 0) <= 0:
-    _problems.append(f'turbopump_mdot must be > 0 (got {tca_params.get("turbopump_mdot")})')
-if tca_params.get('oxidizer_fuel_ratio', 0) <= 0:
-    _problems.append(f'oxidizer_fuel_ratio must be > 0 (got {tca_params.get("oxidizer_fuel_ratio")})')
+if tca_params.get('chamber_pressure', 0) <= 0:
+    _problems.append(f'chamber_pressure must be > 0 (got {tca_params.get("chamber_pressure")})')
+if tca_params.get('tp_mdot', 0) <= 0:
+    _problems.append(f'tp_mdot must be > 0 (got {tca_params.get("tp_mdot")})')
+if tca_params.get('of_ratio', 0) <= 0:
+    _problems.append(f'of_ratio must be > 0 (got {tca_params.get("of_ratio")})')
 if _problems:
     raise ValueError('Invalid TCA_params.yaml settings:\n  - ' + '\n  - '.join(_problems))
 
-print(f"  O/F ratio         : {tca_params['oxidizer_fuel_ratio']}")
-print(f"  Chamber pressure  : {tca_params['tca_chamber_pressure']} psia")
-print(f"  Mass flow         : {tca_params['turbopump_mdot']} lbm/s")
+print(f"  O/F ratio         : {tca_params['of_ratio']}")
+print(f"  Chamber pressure  : {tca_params['chamber_pressure']} psia")
+print(f"  Mass flow         : {tca_params['tp_mdot']} lbm/s")
 print('=' * 60)
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 cea
 pint
 numpy
-yaml
+PyYaml
 scipy
 pandas
 openpyxl
-
+matplotlib
+ezdxf
+coolprop

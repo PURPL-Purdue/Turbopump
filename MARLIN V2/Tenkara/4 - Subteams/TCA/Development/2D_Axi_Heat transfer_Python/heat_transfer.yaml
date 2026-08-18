@@ -30,15 +30,15 @@ insert_material: 0    # throat insert (Cu or Graphite are the typical choices)
 al_material:     3    # exit section
 
 # ---- Insert geometry ----
-insert_x_start:    0.28685   # [m]  axial start position from injector face
-insert_length:     0.1016    # [m]  axial length of the insert
-insert_thickness:  0.037211  # [m]  radial thickness measured from throat radius
+insert_x_start:    0.222932   # [m]  axial start position from injector face
+insert_length:     0.0762    # [m]  axial length of the insert
+insert_thickness:  0.05461  # [m]  radial thickness measured from throat radius 
 
 # ---- Aluminum exit section ----
 # Axial:  starts at (insert_x_start + insert_length), ends at nozzle exit
 # Radial: same principle as graphite — measured from inner wall surface outward
-al_thickness:    0.110506   # [m]  radial thickness of the aluminum exit section
-steel_thickness: 0.084156   # [m]  radial wall thickness of the steel body
+al_thickness:    0.086299   # [m]  radial thickness of the aluminum exit section
+steel_thickness: 0.05985   # [m]  radial wall thickness of the steel body
 
 # ---- Boundary conditions ----
 h_nat_outer: 5.0    # [W/m²K]  outer-wall natural convection coefficient

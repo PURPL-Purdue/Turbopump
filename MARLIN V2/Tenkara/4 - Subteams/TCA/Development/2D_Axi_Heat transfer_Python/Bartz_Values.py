@@ -73,17 +73,17 @@ def run(tca_params, output_dir):
         Absolute path to the written turbopump_properties.csv.
     """
     # --- Unpack inputs ---
-    mr = float(tca_params['oxidizer_fuel_ratio'])
-    pc = float(tca_params['tca_chamber_pressure'])   # psia
-    pe = float(tca_params.get('tca_exit_pressure', 14.7))   # psia
+    mr = float(tca_params['of_ratio'])
+    pc = float(tca_params['chamber_pressure'])   # psia
+    pe = float(tca_params.get('exit_pressure'))   # psia
 
-    contraction_ratio = float(tca_params.get('tca_contraction_ratio', 10.0))
+    contraction_ratio = float(tca_params.get('contraction_ratio'))
     c_siconv  = float(tca_params.get('cp_conversion',   _DEFAULT_C_SICONV))
     tc_siconv = float(tca_params.get('tc_conversion',   _DEFAULT_TC_SICONV))
     vis_siconv = float(tca_params.get('visc_conversion', _DEFAULT_VIS_SICONV))
 
     # --- CEA object (LOX / RP-1) ---
-    C = CEA_Obj(oxName='LOX', fuelName='RP1')
+    C = CEA_Obj(oxName=(tca_params['propellants']['oxidizer']), fuelName=(tca_params['propellants']['fuel']))
 
     # --- Output containers ---
     properties_header = [

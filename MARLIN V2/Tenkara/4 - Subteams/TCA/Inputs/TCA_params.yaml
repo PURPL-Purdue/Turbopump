@@ -1,0 +1,84 @@
+### TCA Setpoints — Used by Sizing Script ###
+### YAML Owner: DANIEL LYSENKO DUDNYK
+### Modification permitted only by the YAML owner or an authorized representative. ###
+
+#######################################################################################
+# Propellants @ OF and Propreties
+# =====================================================================================
+
+propellants:
+  fuel: C2H5OH(L)                                                                    # Ethanol
+  oxidizer: O2(L)                                                                    # LOx
+
+densities:
+  fuel: 789                                                                          # Density of Ethanol (kg/m^3)
+  oxidizer: 1141                                                                     # Density of LOX (kg/m^3)
+
+of_ratio: 1.2                                                                        # O/F ratio 
+tp_mdot: 5.8544                                                                      # Resultant mdot to achieve target thrust (kg/s)
+
+
+#######################################################################################
+# Engine Setpoints
+# =====================================================================================
+
+Thrust_target: 2600                                                                   # Thrust (lbf) ### Change to N
+chamber_pressure: 600                                                                 # Chamber pressure (psi) ### Change to bar
+
+exit_pressure: 12                                                                     # Exit pressure (psi) ### Change to bar
+
+cstar_efficiency: 0.875                                                               # C* efficiency
+cf_efficiency: 0.875                                                                  # Cf efficiency
+
+L_star: 1                                                                             # Characteristic length (m) 
+l_percent: 80                                                                         # (60/80/90)
+alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
+
+
+#######################################################################################
+# Efficiency metrics
+# =====================================================================================
+
+cstar: 1461.60                                                                         # C* (m/s)
+cf: 1.3515                                                                             # Cf
+isp: 201.44                                                                            # Specific impulse (s)
+
+
+#######################################################################################
+# Engine Contour Sizing
+# =====================================================================================
+
+chamber_diameter: 3.826                                                               # Chamber diameter (in) ### Change to m
+chamber_thickness: 0.337                                                              # Chamber wall thickness (in) ### Change to m
+throat_diameter: 2.0204                                                               # Throat diameter (in) ### Change to m
+exit_diameter: 5.2279                                                                 # Exit diameter (in) ### Change to m
+chamber_length: 0.2651                                                                # Chamber length (m) 
+
+contraction_ratio: 3.58595                                                            # Contraction ratio
+expansion_ratio: 6.6952                                                               # Expansion ratio
+
+#######################################################################################
+# Injector Sizing
+# =====================================================================================
+
+discharge_coeff:
+  oxidizer: 0.8                                                                       # Discharge coefficient for LOX
+  fuel: 0.8                                                                           # Discharge coefficient for fuel
+
+hole_number:
+  oxidizer: 72                                                                        # Number of holes for LOX
+  fuel: 36                                                                            # Number of holes for fuel
+
+hole_diameters:
+  oxidizer: 1.2                                                                       # Orifice diameter for LOX (mm)
+  fuel: 1.7                                                                           # Orifice diameter for fuel (mm)
+
+ox_distance: 3                                                                        # Distance between LOX holes to the fuel hole in a O-F-O configuration (mm)
+impinge_percentage: 0.02                                                              # % of impingement relative to chamber length
+ox_angle_impingement: 29.51                                                           # Angle of impingement for LOX (degrees)
+
+wall_thickness:
+  fuel: 6                                                                             # Wall thickness for fuel holes (mm)
+  oxidizer: 9                                                                         # Wall thickness for oxidizer holes (mm)
+
+
