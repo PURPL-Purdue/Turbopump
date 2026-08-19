@@ -82,6 +82,7 @@ def get_positional_areas(csv_files):
 
 with open('Inputs/TCA_params.yaml') as f:
     p = yaml.safe_load(f)
+    
 ureg = UnitRegistry()
 
 
@@ -101,7 +102,7 @@ of_ratio = p['of_ratio']
 
 x, y = get_positional_areas(["Outputs/contour.csv"])
 rt = np.interp(0.0, x, y) * ureg.m
-ae_at = np.array((y / rt.magnitude)**2)
+ae_at = np.array((y**2 / (rt.magnitude**2)))
 
 # =====================================================================================
 # CEA Setup
@@ -126,6 +127,7 @@ hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant.to(ureg.kelvin).magnit
 # =====================================================================================
 
 properties = []
+positions = [x,y]
 
 throat_i = np.where(ae_at == ae_at.min())[0]
 
@@ -144,6 +146,7 @@ for xpos, subar in zip(x_before, areas_before_throat):
     print(solution.P)
     properties.append({
         'x_m': xpos,
+        'y_m': y[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
         'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
@@ -152,7 +155,9 @@ for xpos, subar in zip(x_before, areas_before_throat):
         'T_chamber [K]'  : solution.T[-1],
         'P_chamber [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
-        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude
+        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
+        'Prandtl Number': solution.Pr_eq[-1],
+        'Mach': solution.Mach[-1]
         })
 
 for xpos, supar in zip(x_after, areas_after_throat):
@@ -160,6 +165,7 @@ for xpos, supar in zip(x_after, areas_after_throat):
 
     properties.append({
         'x_m': xpos,
+        'y_m': y[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
         'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
@@ -168,7 +174,9 @@ for xpos, supar in zip(x_after, areas_after_throat):
         'T_chamber [K]'  : solution.T[-1],
         'P_chamber [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
-        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude
+        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
+        'Prandtl Number': solution.Pr_eq[-1],
+        'Mach': solution.Mach[-1]
         })
 
 # =====================================================================================
@@ -178,10 +186,15 @@ for xpos, supar in zip(x_after, areas_after_throat):
 df = pd.DataFrame(properties)
 df.to_csv('Outputs/properties.csv', index=False)
 
-generate_poly_coeffs_csv(
+df = pd.DataFrame(positions)
+df.to_csv('Outputs/positions.csv', index=False)
+
+"""generate_poly_coeffs_csv(
     properties_df=df,
     of_ratio=of_ratio,
     pc_psia=pc.magnitude,
     output_path='Outputs/turbopump_poly_coeffs.csv',
     degree=2
-)
+)"""
+
+print(rt**2*np.pi)

@@ -15,7 +15,7 @@ densities:
   oxidizer: 1141                                                                     # Density of LOX (kg/m^3)
 
 of_ratio: 1.2                                                                        # O/F ratio 
-tp_mdot: 5.8544                                                                      # Resultant mdot to achieve target thrust (kg/s)
+tp_mdot: 5.854417204                                                                      # Resultant mdot to achieve target thrust (kg/s)
 
 
 #######################################################################################
