@@ -1,0 +1,31 @@
+File Header
+
+"""
+This file contains 
+
+Index:
+ - 
+
+Author: 
+Created: 
+Last Modified: 
+"""
+
+
+
+Functions Header
+
+    """
+    Description: Determine mach from area.
+
+    Methods: Isentropic Flow Area-Mach
+
+    Arguments:
+
+        area (float) Local area 
+        gam (float) Specific heat ratio of working fluid
+
+    Returns: 
+
+        mach (float) Local mach number
+    """
