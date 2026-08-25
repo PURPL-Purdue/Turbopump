@@ -10,61 +10,6 @@ import yaml
 # =====================================================================================
 
 # =====================================================================================
-# Fit a degree-N polynomial (property vs. temperature)
-# =====================================================================================
-
-def generate_poly_coeffs_csv(properties_df, of_ratio, pc_psia,
-                              output_path, degree):
-    property_map = {
-        'Gamma':                            ('gamma', 1.0),
-        'Cp_KJ_kgK':                        ('Cp [(KJ/kg-K)]', 1.0),   
-        'Thermal_Conductivity_W_mK':        ('k [W/m-K]', 1.0),
-        'Viscosity_Pa_s':                   ('Viscosity [Pa*s]', 1.0),     
-        'Molecular_Weight_kg_kmol':         ('MW [kg/kmol]', 1.0),
-    }
-
-    T_all = properties_df['T_chamber [K]'].astype(float).values
-    T_unique, unique_idx = np.unique(T_all, return_index=True)
-
-    n_pts = len(T_unique)
-    if n_pts < degree + 1:
-        raise ValueError(
-            f"Only {n_pts} unique temperature points available but degree={degree} "
-            f"needs at least {degree + 1}. Lower the degree or add more CEA solve points."
-        )
-
-    T_points = [float(t) for t in T_unique]
-
-    csv_rows = []
-    for prop_name, (col, factor) in property_map.items():
-        if col not in properties_df.columns:
-            print(f"Warning: column '{col}' not found in properties_df, skipping '{prop_name}'")
-            continue
-
-        Y_all = properties_df[col].astype(float).values * factor
-        Y_unique = Y_all[unique_idx]
-
-        coeffs = np.polyfit(T_unique, Y_unique, degree)  # high -> low
-        coeffs = [float(c) for c in coeffs]              # strip np.float64
-
-        Y_points = [float(y) for y in Y_unique]
-
-        csv_rows.append({
-            'O/F': of_ratio,
-            'Pc_psia': pc_psia,
-            'Property': prop_name,
-            'Degree': degree,
-            'Coefficients_high->low': coeffs,
-            'T_points_K': T_points,
-            'Y_points': Y_points,
-        })
-
-    out_df = pd.DataFrame(csv_rows)
-    out_df.to_csv(output_path, index=False)
-    return out_df
-
-
-# =====================================================================================
 # Function to get positional areas from CSV files
 # =====================================================================================
 
@@ -80,11 +25,15 @@ def get_positional_areas(csv_files):
         y = df["y_mm"].values * ureg.mm  
     return x.to(ureg.m).magnitude, y.to(ureg.m).magnitude
 
+
+#######################################################################################
+# Initialize stuff
+# =====================================================================================
+
 with open('Inputs/TCA_params.yaml') as f:
     p = yaml.safe_load(f)
-    
-ureg = UnitRegistry()
 
+ureg = UnitRegistry()
 
 #######################################################################################
 # ENGINE PAREMETERS/INPUTS
@@ -185,16 +134,3 @@ for xpos, supar in zip(x_after, areas_after_throat):
 
 df = pd.DataFrame(properties)
 df.to_csv('Outputs/properties.csv', index=False)
-
-df = pd.DataFrame(positions)
-df.to_csv('Outputs/positions.csv', index=False)
-
-"""generate_poly_coeffs_csv(
-    properties_df=df,
-    of_ratio=of_ratio,
-    pc_psia=pc.magnitude,
-    output_path='Outputs/turbopump_poly_coeffs.csv',
-    degree=2
-)"""
-
-print(rt**2*np.pi)

@@ -152,8 +152,8 @@ for pc in pc_array:
             total_length_mm = contour_length_mm(contour)
 
             designs.append({
-                'F_kN'             : F_target.to(ureg.kN).magnitude,
-                'pc_bar'           : pc.to(ureg.bar).magnitude,
+                'F_lbf'             : F_target.to(ureg.lbf).magnitude,
+                'pc_psi'           : pc.to(ureg.psi).magnitude,
                 'D_chamber_in'     : D_c.to(ureg.inch).magnitude,
                 't_chamber_in'     : t_c.to(ureg.inch).magnitude,
                 'Lc_m'             : Lc.to(ureg.m).magnitude,

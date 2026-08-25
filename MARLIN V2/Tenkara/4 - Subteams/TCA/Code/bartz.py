@@ -51,7 +51,7 @@ B = 1 + (gamma - 1) / 2 * M ** 2
 sigma = 1/((0.5*Tw/T*B + 0.5)**(0.8-w/5)*B**(w/5))
 hg = (0.026/Dt**0.2)*(mu**0.2*Cp.to(ureg.joule/(ureg.kilogram*ureg.kelvin))/Pr**0.6)*(P.to(ureg.pascal)/cstar)**0.8*(Dt/rc)**0.1*(At/A)**0.9*sigma
 
-Tr = T * (1 + (gamma - 1) / 2 * Pr**(1/3) * M ** 2)
+Tr = T * (1 + ((gamma - 1) / 2 * Pr**(1/3) * M ** 2))
 
 #print(Tr.to(ureg.kelvin))
 #print(hg.to(ureg.watt/(ureg.meter**2*ureg.kelvin)))
@@ -114,7 +114,7 @@ hg_ansys = spline1(x_ansys)
 Tr_ansys = spline2(x_ansys)
 
 np.savetxt(
-    "Outputs/hg_profile.csv",
+    "Outputs/ansys_input2.csv",
     np.column_stack((x_ansys, hg_ansys,Tr_ansys)),
     delimiter=","
 )

@@ -2,7 +2,7 @@
 ### THIS YAML FILE CONTAINS THE ARRAYS WHITCH ARE CALLED IN SETPOINT.PY ###
 ### THESE VALUES ARE PRELIMINARY - THE FINAL VALUES ARE FOUND IN TCA_PARAMS.YAML ###
 
-output_directory: Outputs/designs.csv                                                   # Output directory for designs.csv
+output_directory: Outputs/designs.csv                                                # Output directory for designs.csv
 
 propellants:
   fuel: C2H5OH(L)                                                                    # Ethanol
@@ -13,9 +13,9 @@ reactant_T:                                                                     
   oxidizer: 90.17
 
 Thrust_array :                                                                       #Target Thrust Array (lbf)
-  Min: 2000
-  Max: 3000
-  Step: 200
+  Min: 2600
+  Max: 2700
+  Step: 100
 
 Chamber_pressure_array:                                                               #Pressure Array (psi)
   Min: 580
@@ -26,7 +26,7 @@ Chamber_pressure_array:                                                         
 Chamber_diameters_in: [4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897,3.826]         #Chamber diameters (in)
 Chamber_thicknesses_in: [.375,.500,.625,.750,.432,.562,.719,.864,.337]                #Chamber thicknesses (in)
 
-exit_pressure: 12                                                                     # Exit pressure (psi)
+exit_pressure: 18                                                                     # Exit pressure (psi)
 cstar_efficiency: 0.875                                                               # C* efficiency
 cf_efficiency: 0.875                                                                  # Cf efficiency
 L_star: 1                                                                             # Characteristic length (m)
