@@ -13,18 +13,18 @@ reactant_T:                                                                     
   oxidizer: 90.17
 
 Thrust_array :                                                                       #Target Thrust Array (lbf)
-  Min: 2600
-  Max: 2700
+  Min: 1000
+  Max: 2500
   Step: 100
 
 Chamber_pressure_array:                                                               #Pressure Array (psi)
-  Min: 580
-  Max: 640
+  Min: 300
+  Max: 700
   Step: 20
 
 # https://usaindustries.com/piping-isolation-testing-products/pipe-schedule-chart/ 
-Chamber_diameters_in: [4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897,3.826]         #Chamber diameters (in)
-Chamber_thicknesses_in: [.375,.500,.625,.750,.432,.562,.719,.864,.337]                #Chamber thicknesses (in)
+Chamber_diameters_in: [2.900,4.026,5.047,4.813,4.563,4.313,4.063,5.761,5.501,5.189,4.897,3.826]         #Chamber diameters (in)
+Chamber_thicknesses_in: [0.3,.237,.258,.375,.500,.625,.750,.432,.562,.719,.864,.337]                #Chamber thicknesses (in)
 
 exit_pressure: 18                                                                     # Exit pressure (psi)
 cstar_efficiency: 0.875                                                               # C* efficiency

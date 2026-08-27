@@ -23,10 +23,10 @@ ureg = UnitRegistry()
 
 # Inputs
 pc = 600 * ureg.psi   # chamber pressure
-pe = 12 * ureg.psi    # exit pressure
+pe = 17 * ureg.psi    # exit pressure
 pi_p = [pc / pe]       # chamber/exit pressure ratio, passed to CEA
 
-of_ratio = np.arange(0.5, 5.0, 0.01)   # O/F mixture ratio sweep
+of_ratio = np.arange(0.5, 2, 0.01)   # O/F mixture ratio sweep
 
 
 # --------------------------------------------------------------------------- #
