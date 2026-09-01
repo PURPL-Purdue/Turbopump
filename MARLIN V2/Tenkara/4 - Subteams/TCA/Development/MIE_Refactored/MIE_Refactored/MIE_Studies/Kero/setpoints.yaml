@@ -1,0 +1,27 @@
+mech_MCA: "A2NTC_skeletal.yaml"
+MCA_inlet: {"POSF10325":298, "O2":90}
+CEA_fuel: "JetA"
+CEA_ox: "O2"
+
+# Igniter Properties and Mechanism
+mech_torch: "h2_sandiego.yaml"
+torch_fuel: "H2"
+torch_ox: "O2"
+pc_torch: 300 #psi
+
+OF_torch: 1
+OF_sweep: True
+OF_min: 1
+OF_max: 50
+
+#for non coolprop fluids (MCA)
+cp_flag_fuel: True # True if using coolprop for enthalpies, false if manual inputs
+cp_fuel: "n-Dodecane"
+h1_f:   
+h2_f: 
+
+cp_flag_ox: True
+cp_ox: "oxygen"
+h1_ox: 
+h2_ox:
+
