@@ -317,10 +317,12 @@ class FlangeSizer:
 
         #check if stresses allow for valid configuration 
         validFlag = True
-        for stress in [SH, SR, ST]:
+        for stress in [SR, ST]:
             if stress > self.Sf:
                 validFlag = False
                 break
+        if SH > 1.5 * self.Sf:
+            validFlag = False
         if (SH + SR)/2 > self.Sf:
             validFlag = False
         if (SH + ST)/2 > self.Sf:
