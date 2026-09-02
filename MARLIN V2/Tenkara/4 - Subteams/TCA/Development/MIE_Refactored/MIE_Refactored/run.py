@@ -39,6 +39,8 @@ import warnings
 import os
 warnings.filterwarnings("ignore")
 
+print(ct.__file__)
+
 IN2M = 0.0254
 FT2IN = 12
 
@@ -57,16 +59,20 @@ def load_config(config_path):
         config_data = yaml.safe_load(f)
     return config_data
 
-# Parse Setpoints From YAML
-TCA_config = load_config('TCA_params.yaml')
+main_dir = os.getcwd()
+params_path = os.path.join(main_dir, "MARLIN V2", "Tenakra", "4 - Subteams", "TCA", "Inputs", "TCA_params.yaml")
+params_path = main_dir + r"MARLIN V2\Tenkara\4 - Subteams\TCA\Development\MIE_Refactored\MIE_Refactored\TCA_params.yaml"
 
-OF = TCA_config['oxidizer_fuel_ratio']
-mdot_main = TCA_config['turbopump_mdot']
-Pc_main = TCA_config['tca_chamber_pressure']
-lstar = TCA_config['characteristic_length']
-Dt = TCA_config['tca_throat_diameter']
-expansion_ratio = TCA_config['tca_expansion_ratio']
-eta_cstar = TCA_config['c_star_efficiency']
+# Parse Setpoints From YAML
+TCA_config = load_config(r"Inputs\TCA_params.yaml")
+
+OF = TCA_config['of_ratio']
+mdot_main = TCA_config['tp_mdot']
+Pc_main = TCA_config['chamber_pressure']
+lstar = TCA_config['L_star']
+Dt = TCA_config['throat_diameter']
+expansion_ratio = TCA_config['expansion_ratio']
+eta_cstar = TCA_config['cstar_efficiency']
 
 # read in simulation configs
 sim_config_path = sys.argv[1]
@@ -96,7 +102,6 @@ At = np.pi * (Dt/2)**2
 Vc = lstar * At
 ts = Vc * rho_main / mdot_main
 print(f"Stay Time [s]: {ts:0.5f}")
-
 
 # Well Stirred Reactor Model to Find AIT of Propellants for Chamber conditions:
 # Stay Time, Chamber Pressure, OF Ratio
