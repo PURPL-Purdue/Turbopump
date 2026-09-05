@@ -66,8 +66,8 @@ class FlangeSizer:
         self.b = b_mm / 1000
         
         #bolt related
-        self.Sa = Sa / safetyFactor # Allowable stress for bolt at atmospheric temp [Pa]
-        self.Sb = Sb / safetyFactor# Allowable stress for bolt at design temp [Pa]
+        self.Sa = Sa # Allowable stress for bolt at atmospheric temp [Pa]
+        self.Sb = Sb # Allowable stress for bolt at design temp [Pa]
 
         # flange related
         self.t = t # flange thickness [m]
@@ -98,7 +98,7 @@ class FlangeSizer:
         for config in validBolts:
             Mo = self.flange_moments(config)
             C = config["bolt_circle_diam"]
-            A = C + config["diameter"]*1.5 # flange OD [m]
+            A = C + config["diameter"]*1.75 # flange OD [m]
             [SH, SR, ST], validFlag = self.flange_stress(Mo, A)
 
             # Outputs
@@ -109,7 +109,7 @@ class FlangeSizer:
                 print(f"   Bolt Circle: {C / IN2M:.3f}")
                 print(int(Mo), int(SH/PSI2PA), int(SR/PSI2PA), int(ST/PSI2PA))
                 maxStress = max(SH, SR, ST)
-                SFmargin = margins(1.5, self.Sf, maxStress)
+                SFmargin = margins(self.safetyFactor, self.Sf, maxStress)
                 self.plot_geometry(A, self.B, C, config["count"], config["diameter"], config["name"], self.g0, self.bo, SFmargin)
         return        
 
@@ -204,7 +204,7 @@ class FlangeSizer:
             maxSpacing = self.bolt_spacing(boltDiam)
 
             # Determine bolt circle circumference
-            C = self.B + self.g0 + self.bo + bolt_clearance_diam*1.5
+            C = self.B + self.g0 + self.bo + bolt_clearance_diam*1.5 # bolt circle diameter
             circum = np.pi * C
 
             # Number required by bolt area
@@ -342,9 +342,17 @@ class FlangeSizer:
             # Bolts
             ax.add_patch(Circle((x, y), boltDiam / 2, fill=False, color="tab:blue", linewidth=1.5))
 
-        ax.add_patch(Circle((0, 0), B / 2, fill=False, color="black", linewidth=2))
-        ax.add_patch(Circle((0, 0), A / 2, fill=False, color="black", linewidth=2))
-        ax.add_patch(Circle((0, 0), C / 2, fill=False, color="gray", linewidth=1.5))
+        ax.add_patch(Circle((0, 0), B / 2,
+                    fill=False, linewidth=2, label="B: flange ID"))
+
+        ax.add_patch(Circle((0, 0), self.G / 2,
+                            fill=False, linewidth=2, label="G: gasket reaction diameter"))
+
+        ax.add_patch(Circle((0, 0), C / 2,
+                            fill=False, linewidth=2, label="C: bolt circle"))
+
+        ax.add_patch(Circle((0, 0), A / 2,
+                            fill=False, linewidth=2, label="A: flange OD"))
 
 
         # Gasket
@@ -377,28 +385,28 @@ class FlangeSizer:
 
 def main():
     
-    #Flange Geometry
+    # Flange Geometry
     B = 3.826 * IN2M # Flange ID (Chamber ID) [m]
-    #Flange Thicknesses  
+    # Flange Thicknesses  
     g0 = 0.337 * IN2M # [m]
     g1 = g0 #equal for straight integral flange
 
-    # proof pressure: 1.5x chamber pressure 
-    P = 440 * PSI2PA * 1.5 # [Pa]
+    # working chamber pressure 
+    P = 440 * PSI2PA # [Pa]
     
-    # gasket properties: vermiculite (Thermiculute 715 - coreless)
+    # gasket properties: vermiculite (Thermiculute 715 - coreless) 
     m = 3.0 # gasket factor []
     y = 1500  * PSI2PA # design seating stress [Pa]
 
     # gasket seating width
-    bo = 1 * IN2M # [m]
+    bo = 0.5 * IN2M # [m]
 
     # bolt yield stress
     Sa = 30000 * PSI2PA # Yield stress for bolt at atmospheric temp [Pa]
-    Sb = Sa * 0.65 # Allowable stress for bolt at design temp [Pa]
+    Sb = Sa # Allowable stress for bolt at design temp [Pa]
 
-    t = 2 * IN2M # flange thickness [m]
-    Sf = 15000 * PSI2PA # flange yield at temp [Pa]
+    t = 0.5 * IN2M # flange thickness [m]
+    Sf = 36000 * PSI2PA # flange yield at temp [Pa]
     
     flange = FlangeSizer(B, P, m, y, bo, Sa, Sb, t, g0, g1, Sf, safetyFactor=2)
     flange.solve()
