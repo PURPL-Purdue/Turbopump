@@ -5,7 +5,7 @@
 output_directory: Outputs/designs.csv                                                # Output directory for designs.csv
 
 propellants:
-  fuel: C2H5OH(L)                                                                    # Ethanol
+  fuel: C3H8O,2propanol                                                                  # IPA
   oxidizer: O2(L)                                                                    # LOx
 
 reactant_T:                                                                          # Reactant Temperatures (K)
@@ -31,7 +31,7 @@ cstar_efficiency: 0.875                                                         
 cf_efficiency: 0.875                                                                  # Cf efficiency
 L_star: 1                                                                             # Characteristic length (m)
 alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
-of_ratio: 1.2                                                                         # O/F ratio 
+of_ratio: 1                                                                         # O/F ratio 
 
 max_L : 0.5                                                                           # Maximum length (m)
 min_L : 0.3                                                                           # Minimum length (m)

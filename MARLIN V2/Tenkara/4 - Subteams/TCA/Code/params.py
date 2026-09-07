@@ -94,16 +94,16 @@ V_cone = (np.pi / 3) * ((Dc.to(ureg.m) / 2) ** 2+ Dc.to(ureg.m) / 2 * Dt.to(ureg
 Vc_total = L_star.to(ureg.m) * At.to(ureg.m ** 2)  # total required chamber volume
 V_cyl    = Vc_total - V_cone                       # remaining volume -> cylindrical section
 
-Lc     = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
-Ltotal = Lc + L_cone                   # total chamber length, m
+Lcyl = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
+Lc = Lcyl + L_cone                   # total chamber length, m (includes converging section for Lstar)
 
 values = {
     'F_lbf': F.to(ureg.lbf).magnitude,
     'pc_psi': pc.to(ureg.psi).magnitude,
     'D_chamber_in': Dc.to(ureg.inch).magnitude,
     't_chamber_in': tc.to(ureg.inch).magnitude,
+    'Lcyl_m': Lcyl.to(ureg.m).magnitude,
     'Lc_m': Lc.to(ureg.m).magnitude,
-    'Ltotal_m': Ltotal.to(ureg.m).magnitude,
     'ac_at': ac_at.magnitude,
     'ae_at': solution.ae_at[-1],
     'mdot_kg/s': mdot.to(ureg.kg / ureg.s).magnitude,

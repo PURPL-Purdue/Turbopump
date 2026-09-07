@@ -132,15 +132,15 @@ for pc in pc_array:
             Vc_total = L_star.to(ureg.m) * At.to(ureg.m ** 2)  # total required chamber volume
             V_cyl    = Vc_total - V_cone                       # remaining volume -> cylindrical section
 
-            Lc     = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
-            Ltotal = Lc + L_cone                   # total chamber length, m
+            Lcyl = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
+            Lc = Lcyl + L_cone                   # total chamber length, m (includes converging section for Lstar)
 
             # --- Thin-wall pressure vessel stress check (von Mises) ---
             sigma_th = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (2 * t_c.to(ureg.m))          # hoop stress (seamless pipe)
             sigma_ax = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (4 * t_c.to(ureg.m) * 0.6)    # axial stress (weld coeff. 0.6)
             sigma_vM = np.sqrt(sigma_th ** 2 + sigma_ax ** 2 - sigma_th * sigma_ax)      # von Mises stress
 
-            # --- Bell nozzle contour + total engine length ---
+            # --- Bell nozzle contour + cylindrical chamber length ---
             angles, contour, R2 = bell_nozzle(
                 solution.ae_at[-1],
                 Dt.to(ureg.mm).magnitude / 2,
