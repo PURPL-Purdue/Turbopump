@@ -7,7 +7,7 @@
 # =====================================================================================
 
 propellants:
-  fuel: C2H5OH(L)                                                                    # Ethanol
+  fuel: Isopropanol(L)                                                               # IPA
   oxidizer: O2(L)                                                                    # LOx
 
 densities:

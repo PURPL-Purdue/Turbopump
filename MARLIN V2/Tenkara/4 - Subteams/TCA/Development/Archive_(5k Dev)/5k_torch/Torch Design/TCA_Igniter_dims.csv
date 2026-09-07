@@ -1,0 +1,16 @@
+Conv_Angle,deg,45.000deg
+Ox_Angle,deg,45.000deg
+Fuel_Angle,deg,22.257deg
+d_t,m,0.006m
+d_ox,m,0.001m
+d_f,m,0.002m
+d_c,m,0.008m
+L_c,m,0.060m
+L_conv,m,0.002m
+d_man,m,0.002m
+h_man,m,0.014m
+t_wall,in,0.350in
+l_ox,m,0.006m
+l_f,m,0.002m
+t_inj,m,0.004m
+D_imp,m,0.006m
