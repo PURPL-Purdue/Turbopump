@@ -7,11 +7,11 @@
 # =====================================================================================
 
 propellants:
-  fuel: C2H5OH(L)                                                                    # Ethanol
+  fuel: C3H8O,2propanol                                                              # IPA
   oxidizer: O2(L)                                                                    # LOx
 
 densities:
-  fuel: 789                                                                          # Density of Ethanol (kg/m^3)
+  fuel: 786                                                                          # Density of Isopropanol (kg/m^3)
   oxidizer: 1141                                                                     # Density of LOX (kg/m^3)
 
 reactant_T:                                                                          # Reactant Temperatures (K)
@@ -19,51 +19,50 @@ reactant_T:                                                                     
   oxidizer: 90.17
 
 of_ratio: 1                                                                          # O/F ratio 
-tp_mdot: 3.86497                                                                     # Resultant mdot to achieve target thrust (kg/s)
+tp_mdot: 3.63078                                                                     # Resultant mdot to achieve target thrust (kg/s)
 
 
 #######################################################################################
 # Engine Setpoints
 # =====================================================================================
-
+ 
 Thrust_target: 1500                                                                   # Thrust (lbf) ### Change to N
 chamber_pressure: 440                                                                 # Chamber pressure (psi) 
-
+ 
 exit_pressure: 18                                                                     # Exit pressure (psi) 
-
+ 
 cstar_efficiency: 0.875                                                               # C* efficiency
 cf_efficiency: 0.875                                                                  # Cf efficiency
-
+ 
 L_star: 1                                                                             # Characteristic length (m) 
 l_percent: 80                                                                         # (60/80/90)
 alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
-
-
+ 
+ 
 #######################################################################################
 # Efficiency metrics
 # =====================================================================================
-
-cstar: 1378.5616457                                                                    # C* (m/s)
-cf: 1.2522909                                                                          # Cf
-isp: 176.0397493                                                                       # Specific impulse (s)
-
-
+ 
+cstar: 1362.415                                                                        # C* (m/s)
+cf: 1.248                                                                              # Cf
+isp: 173.387                                                                           # Specific impulse (s)
+ 
+ 
 #######################################################################################
 # Engine Contour Sizing
 # =====================================================================================
-
+ 
 chamber_diameter: 3.826                                                                # Chamber diameter (in) 
 chamber_thickness: 0.337                                                               # Chamber wall thickness (in) 
-throat_diameter: 1.8618                                                                # Throat diameter (in) 
-exit_diameter: 3.6821                                                                  # Exit diameter (in) 
-chamber_length: 0.22245                                                                # Chamber length (m) 
-total_length: 0.2474                                                                   # Total Engine length (m)
-
-contraction_ratio: 4.2232467                                                           # Contraction ratio
-expansion_ratio: 3.9116115                                                             # Expansion ratio
-
-chamber_Temperature: 2355.446                                                          #Adiabatic flame temperature @ chamber [K]
-
+throat_diameter: 1.865                                                                # Throat diameter (in) 
+exit_diameter: 3.644                                                                  # Exit diameter (in) 
+chamber_length: 0.223                                                                # Chamber length (m) (CYLINDRICAL SECTION)
+total_length: 0.248                                                                   # Total Engine length (m)
+ 
+contraction_ratio: 4.209                                                          # Contraction ratio
+expansion_ratio: 3.819                                                             # Expansion ratio
+ 
+chamber_Temperature: 2174.245                                                       # Adiabatic flame temperature @ chamber [K]
 #######################################################################################
 # Injector Sizing #### RERUN RUN ####
 # =====================================================================================
