@@ -135,6 +135,8 @@ for pc in pc_array:
             Lcyl = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
             Lc = Lcyl + L_cone                   # total chamber length, m (includes converging section for Lstar)
 
+            
+
             # --- Thin-wall pressure vessel stress check (von Mises) ---
             sigma_th = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (2 * t_c.to(ureg.m))          # hoop stress (seamless pipe)
             sigma_ax = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (4 * t_c.to(ureg.m) * 0.6)    # axial stress (weld coeff. 0.6)

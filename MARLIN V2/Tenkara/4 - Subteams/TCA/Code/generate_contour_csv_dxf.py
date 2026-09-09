@@ -20,10 +20,10 @@ Rt = p['throat_diameter']/2 * ureg.inch
 l_percent = p['l_percent'] 
 cratio = p['contraction_ratio']
 alpha = p['alpha_divergence'] * ureg.deg
-Lcyl = p['chamber_length'] * ureg.m
+Lc = p['chamber_length'] * ureg.m
 
 
 
-angles, contour, R2 = bell_nozzle(eratio, Rt.to(ureg.mm).magnitude, l_percent, cratio, alpha.magnitude, Lcyl.to(ureg.mm).magnitude)
+angles, contour, R2 = bell_nozzle(eratio, Rt.to(ureg.mm).magnitude, l_percent, cratio, alpha.magnitude, Lc.to(ureg.mm).magnitude)
 export_nozzle_csv(contour, 'Outputs/contour.csv')
 export_nozzle_dxf(contour, 'Outputs/contour.dxf')
