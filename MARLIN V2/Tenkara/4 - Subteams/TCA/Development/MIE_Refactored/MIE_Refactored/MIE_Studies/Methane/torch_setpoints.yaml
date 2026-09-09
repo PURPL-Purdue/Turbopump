@@ -11,7 +11,7 @@ WSR_bisection: 25
 mech_torch: "CH4_grimech30.yaml"
 torch_fuel: "CH4"
 torch_ox: "O2"
-pc_torch: 300 #psi
+pc_torch: 100 #psi
 
 OF_torch: 2.5 # only used if OF_sweep is false [single run]
 OF_sweep: False
