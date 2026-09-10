@@ -22,6 +22,9 @@ lbm2kg = 0.453592   #[lbm/kg]
 ft2m = 0.3048       # [ft/m]
 m2in = 39.3701      # [m/in]
 
+bar2psi = 14.503773773    # [psi/bar]
+bar2pa = 100000           # [pa/bar]
+
 R2K = 0.555556      # [R/K] (5/9)
 
 # Constants
@@ -132,13 +135,13 @@ def main():
 
     mDot_main = 9.5                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
-    mDot_torch = 0.01765            #kg/s MDOT @ 20% heat transfer efficiency, 300psi pc
+    mDot_torch = 0.01765            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
     p_c = 300 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
 
-    #Variable Set Points
-    mdot_main = 0.01765    #kg/s MDOT @ 20% heat transfer efficiency, 300psi pc
+    #Variable Set Points For Reference
+    #mdot_main = 0.01765    #kg/s MDOT @ 20% heat transfer efficiency, 300psi pc
 
     #mdot_300psi =  0.01765    #kg/s MDOT @ 20% heat transfer efficiency, 300psi pc
     #mdot =  0.00353    #kg/s MDOT @ 100% heat transfer efficiency, 300psi pc
@@ -208,7 +211,8 @@ def main():
     fuel_weights = np.array([1.0, 0.0])
     ox_weights = np.array([0.0, 1.0])
     OF = 2.5
-    p_c = 300 * cea.units.psi
+    p_c = p_c / bar2pa
+
     reac = cea.Mixture(reac_names)
     prod = cea.Mixture(reac_names, products_from_reactants=True)
     solver = cea.RocketSolver(prod, reactants=reac)
@@ -219,17 +223,19 @@ def main():
 
     solver.solve(solution, weights, p_c, hc=hc, iac=True)
 
-    isp = solution.Isp
-    rho_c = solution.density      #unknown units
-    gamma_s = solution.gamma_s
+    isp = solution.Isp[1] / G0
+    rho_c = solution.density[0]      #unknown units
+    k_c = solution.gamma_s[0]
 
-    thrust = mDot_torch * isp * G0                           # [N]
+    thrust = mDot_torch * isp                           # [N]
     cstar = solution.c_star           # UNKNOWN UNITS
-    T_comb = solution.T
+    Ts = solution.T
+    T_comb = Ts[0]
+    Cf = solution.coefficient_of_thrust
     ## End of Fluid Properties ##
 
     # Assume Cd and cstar efficiency are unity to provide margin for choked flow
-    A_t = throat_area(mDot_torch, Cd, gamma_s, rho_c, p_c)                  # Throat Area [m^2]
+    A_t = throat_area(mDot_torch, Cd, k_c, rho_c, (p_c * bar2pa))                  # Throat Area [m^2]
     #A_t = mDot_torch * cstar / (p_c)                                   # Throat Area [m^2]
 
     if choked:
@@ -263,11 +269,15 @@ def main():
 
     #chamber volume -> dimensions
     conv_angle = 45 # convergent angle [deg]
-    r_contraction = 8 # contraction ratio
+    D_c_in = 0.5 # Chamber diameter setpoint[in]
+    D_c = 0.5 * ft2m / 12   #Chamber diameter [m]
+    
+    A1 = diameter_to_area(D_c)
+    r_contraction = A1 / A_t # contraction ratio
 
-    A1 = r_contraction * A_t                                                # chamber area [m^2]
-    D_c = area_to_diameter(A1)                                              # chamber diameter [m]
-    D_c = 21/64 / m2in     #CHANGE
+    #A1 = r_contraction * A_t                                                # chamber area [m^2]
+    #D_c = area_to_diameter(A1)                                              # chamber diameter [m]
+    #D_c = 21/64 / m2in     #CHANGE
     L_conv = (D_c/2 - D_t/2) / np.sin(np.deg2rad(conv_angle))               # convergent length[m]
     L1 = ( V_chamber - A1*L_conv * (1 + np.sqrt(A_t/A1) + A_t/A1) ) / A1    # chamber length [m]
 
@@ -321,7 +331,7 @@ def main():
     V_manifold = 5 * V_orifice
 
     #circle shaped manifolds
-    D_manifold = 1/4 * D_c
+    D_manifold = 1/4 * D_c            #WHAT IS THIS
     A_manifold = diameter_to_area(D_manifold)    #area of each manifold
     h_manifold = V_manifold/A_manifold            #height of each manifold
 
