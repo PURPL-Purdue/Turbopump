@@ -19,14 +19,14 @@ reactant_T:                                                                     
   oxidizer: 90.17
 
 of_ratio: 1                                                                          # O/F ratio 
-tp_mdot: 3.63078                                                                     # Resultant mdot to achieve target thrust (kg/s)
+tp_mdot: 3.9241                                                                      # Resultant mdot to achieve target thrust (kg/s) CHANGED
 
 
 #######################################################################################
 # Engine Setpoints
 # =====================================================================================
  
-Thrust_target: 1500                                                                   # Thrust (lbf) ### Change to N
+Thrust_target: 1500                                                                   # Thrust (lbf) 
 chamber_pressure: 440                                                                 # Chamber pressure (psi) 
  
 exit_pressure: 18                                                                     # Exit pressure (psi) 
@@ -54,15 +54,14 @@ isp: 173.387                                                                    
  
 chamber_diameter: 3.826                                                                # Chamber diameter (in) 
 chamber_thickness: 0.337                                                               # Chamber wall thickness (in) 
-throat_diameter: 1.865                                                                # Throat diameter (in) 
-exit_diameter: 3.644                                                                  # Exit diameter (in) 
-chamber_length: 0.223                                                                # Chamber length (m) (CYLINDRICAL SECTION)
-total_length: 0.248                                                                   # Total Engine length (m)
+throat_diameter: 1.865                                                                 # Throat diameter (in) CHECKED
+exit_diameter: 3.6446                                                                  # Exit diameter (in) CHECKED
+chamber_length: 0.2482                                                                 # Chamber length (m) (FROM INJECTOR TO THROAT) CHECKED
  
-contraction_ratio: 4.209                                                          # Contraction ratio
-expansion_ratio: 3.819                                                             # Expansion ratio
+contraction_ratio: 4.209                                                               # Contraction ratio
+expansion_ratio: 3.819                                                                 # Expansion ratio
  
-chamber_Temperature: 2174.245                                                       # Adiabatic flame temperature @ chamber [K]
+chamber_Temperature: 2174.245                                                          # Adiabatic flame temperature @ chamber [K]
 #######################################################################################
 # Injector Sizing #### RERUN RUN ####
 # =====================================================================================
