@@ -136,7 +136,7 @@ def main():
     mDot_main = 9.5                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
     mDot_torch = 0.01765            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
-    p_c = 300 * psi2Pa              # torch chamber pressure [psi->Pa]
+    p_c = 200 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
 
@@ -174,10 +174,9 @@ def main():
     print(f' Fuel Mass Flow [kg/s]: {mDot_f:0.5f}')
     print('\n')
 
-
     """ Orifice/Throat Areas"""
     # Calculate Line Pressures based on chosen stiffness (uniform stiffness)
-    stiffness = 0.4                    # deltaP / p_c [--]    (MINIMUM 20% !!!!)
+    stiffness = 0.3                    # deltaP / p_c [--]    (MINIMUM 20% !!!!)
 
     #define pressure ratio and line pressure
     if (choked):
@@ -258,7 +257,7 @@ def main():
     # Additional Outputs
     print("\nMisc")
     print(f" Thrust [N]: {thrust:0.3f} ")
-    print(f" Tcomb  [C]: {T_comb + 273:0.3f} ")
+    print(f" Tcomb  [K]: {T_comb:0.3f} ")
     print("\n")
 
     """Chamber Dimensions""" 
