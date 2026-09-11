@@ -19,6 +19,7 @@ n2lbf = 4.44822     # [N/lbf]
 psi2Pa = 6894.76    # [psi/Pa]
 
 lbm2kg = 0.453592   #[lbm/kg]
+
 ft2m = 0.3048       # [ft/m]
 m2in = 39.3701      # [m/in]
 
