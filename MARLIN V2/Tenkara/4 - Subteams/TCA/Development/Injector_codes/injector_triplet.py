@@ -1,8 +1,6 @@
 import numpy as np
 import yaml
-import matplotlib.pyplot as plt
 from CoolProp.CoolProp import PropsSI
-import csv
 import pint
 
 # Load configuration file

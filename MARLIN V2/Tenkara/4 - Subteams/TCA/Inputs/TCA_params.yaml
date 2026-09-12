@@ -63,7 +63,7 @@ expansion_ratio: 3.819                                                          
  
 chamber_Temperature: 2174.245                                                          # Adiabatic flame temperature @ chamber [K]
 #######################################################################################
-# Injector Sizing #### RERUN RUN ####
+# Injector Sizing
 # =====================================================================================
 
 discharge_coeff:
@@ -75,15 +75,19 @@ hole_number:
   fuel: 36                                                                            # Number of holes for fuel
 
 hole_diameters:
-  oxidizer: 1.2                                                                       # Orifice diameter for LOX (mm)
-  fuel: 1.7                                                                           # Orifice diameter for fuel (mm)
+  oxidizer: 1.041                                                                     # Orifice diameter for LOX (mm)
+  fuel: 1.5                                                                           # Orifice diameter for fuel (mm)
 
 ox_distance: 3                                                                        # Distance between LOX holes to the fuel hole in a O-F-O configuration (mm)
+ox_ offset: 5.44                                                                      # Distance of the Ox hole to generate the impingement angle at given thickness (mm)
+
 impinge_percentage: 0.02                                                              # % of impingement relative to chamber length
-ox_angle_impingement: 29.51                                                           # Angle of impingement for LOX (degrees)
+ox_angle_impingement: 31.15                                                           # Angle of impingement for LOX (degrees)
 
 wall_thickness:
   fuel: 6                                                                             # Wall thickness for fuel holes (mm)
   oxidizer: 9                                                                         # Wall thickness for oxidizer holes (mm)
 
-
+stifness:
+  fuel: 23.1                                                                           # Stiffness for fuel (%)
+  oxidizer: 31.2                                                                       # Stiffness for oxidizer (%)
