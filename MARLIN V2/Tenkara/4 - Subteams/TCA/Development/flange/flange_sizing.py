@@ -479,11 +479,11 @@ def main():
     P = 440 * PSI2PA # [Pa]
 
     # gasket properties: vermiculite vermiculite with SS insert
-    m = 2.0 # gasket factor []
-    y = 2500  * PSI2PA # design seating stress [Pa]
+    m = 6.5 # gasket factor []
+    y = 26000  * PSI2PA # design seating stress [Pa]
 
     # physical gasket contact width, facing sketch (1a) per Table 2-5.2
-    N = 3/8 * IN2M # [m]
+    N = 1/8 * IN2M # [m]
     facing_sketch = "1a"
     column = "II"
 

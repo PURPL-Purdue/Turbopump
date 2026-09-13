@@ -183,10 +183,10 @@ def main():
 
     # Flange geometry (from drawing)
     B = 3.826 * IN2M   # Flange ID [m]
-    N = 3/8 * IN2M      # Gasket width [m]
-    G = 4.326 * IN2M    # Gasket reaction diameter [m]
-    C = 5.5 * IN2M    # Bolt circle diameter [m]
-    A = 6.25 * IN2M    # Flange OD [m]
+    N = 1/8 * IN2M      # Gasket width [m]
+    G = 4.076 * IN2M    # Gasket reaction diameter [m]
+    C = 4.715 * IN2M    # Bolt circle diameter [m]
+    A = 5.340 * IN2M    # Flange OD [m]
     t = 3/8 * IN2M       # Flange thickness [m]
 
     # Hub thicknesses
@@ -194,16 +194,16 @@ def main():
     g1 = g0 # equal for straight integral flange
 
     # Bolts
-    bolt_name = "1/4"
-    bolt_count = 16
+    bolt_name = "3/8"
+    bolt_count = 20
     thread_type = "UNF"
 
     # working chamber pressure
     P = 440 * PSI2PA
 
     # gasket properties: vermiculite with SS insert
-    m = 2.0
-    y = 2500 * PSI2PA
+    m = 6.5
+    y = 26000 * PSI2PA
 
     # bolt yield stress
     Sa = 30000 * PSI2PA
