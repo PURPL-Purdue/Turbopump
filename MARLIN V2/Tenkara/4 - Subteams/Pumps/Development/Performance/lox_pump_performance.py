@@ -88,7 +88,7 @@ ax1.plot(Q_sweep.to('L/s').magnitude, H_theoretical.to('m').magnitude,
          '--', color='gray', label='Theoretical Euler')
 
 ax1.plot(Q_sweep.to('L/s').magnitude, H_predict,
-         '-', color='red', label=f"Empirical prediction ({100*n_hyd_BEP:.2f}% @BEP)")
+         '-', color='red', label=f"Empirical prediction ({100*n_hyd_BEP:.0f}% @BEP)")
 
 ax1.set_xlabel('Volumetric flow rate [L/s]')
 ax1.set_ylabel('Head [m]')
