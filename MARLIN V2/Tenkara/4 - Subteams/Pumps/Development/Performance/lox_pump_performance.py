@@ -4,45 +4,55 @@ import matplotlib.pyplot as plt
 import EmpiricalRelations as emp
 
 # ------------------------------------------------------------------
+# Physical constants
+g = Q_(9.81, 'm/s^2')           # gravitational acceleration
+
+# ------------------------------------------------------------------
 # Design point parameters
-g = Q_(9.81, 'm/s^2')                   # gravitational acceleration
-opt_m_dot = Q_(1.94, 'kg/s')            # mass flow rate at BEP
-rho = Q_(1141, 'kg/m^3')                # fluid density
-opt_flow_rate = opt_m_dot / rho         # volumetric flow rate at BEP
-opt_pressure_rise = Q_(488, 'psi')      # total pressure rise at BEP
-opt_H = (opt_pressure_rise / (g * rho)) # developed head at BEP
-N_shaft = Q_(40000, 'rpm')              # shaft speed
-omega = N_shaft.to('rad/s')
+opt_m_dot = Q_(1.94, 'kg/s')    # mass flow rate at BEP
+rho = Q_(1141, 'kg/m^3')        # fluid density
+opt_Q = opt_m_dot / rho         # volumetric flow rate at BEP
+opt_dP = Q_(488, 'psi')         # total pressure rise at BEP
+opt_H = (opt_dP / (g * rho))    # developed head at BEP
+N_shaft = Q_(40000, 'rpm')      # shaft speed
+Ns = (                          # imperial specific speed       
+        N_shaft * np.sqrt(opt_Q.to('gal/min')) / opt_H.to('ft')**(3/4)
+    ).magnitude
+
+print("\n--- Design point parameters ---")
+print(f"Flowrate (Q)             = {opt_Q.to("L/s"):.2f}")
+print(f"Headrise (ΔH)            = {opt_H.to('m'):.1f}")
+print(f"Shaft Speed (N)         =  {N_shaft:.0f}")
+print(f"Specific speed (imperial)   = {Ns:.0f}")
 
 # ------------------------------------------------------------------
 # Basic impeller parameters
 Z = 6                           # number of impeller blades
-beta2b = Q_(25,'deg').to('rad') # blade backsweep angle at outlet (from tangent)
-head_coeff = 0.45               # head coefficient  gH/U2^2  at BEP
-flow_coeff = 0.1                # flow coefficient  Cm2/U2   at BEP (~0.08-0.13 typ.)
-n_hyd_BEP = 0.5                 # Hydraulic efficiency at BEP
+beta2b = Q_(10,'deg').to('rad') # blade backsweep angle at outlet (from tangent)
+D2 = Q_(2.2, 'in')              # impeller outlet diameter
+b2 = Q_(0.1, 'in')              # impeller outlet height
+n_hyd_BEP = 0.5                 # Hydraulic efficiency at BEP, empirically chosen prediction
 
-# Wiesner slip factor
-# https://manual.cfturbo.com/en/bl_te_wiesner.html
-sigma = 1 - np.sqrt(np.sin(beta2b)) / Z**0.7
-#print(sigma)
-# Solve for outlet tip speed U2 and diameter D2 from the design point
-U2 = np.sqrt(g * opt_H / head_coeff).to('m/s')
-D2 = (2 * U2 / omega).to('in')
+# ------------------------------------------------------------------
+# Derived impeller characteristics
 
-# Outlet meridional velocity & blade width from continuity at BEP
-Cm2_design = Q_(flow_coeff * U2, 'm/s')           
-Area2 = opt_flow_rate / Cm2_design      # Q / C_m2
-b2 = (Area2 / (np.pi * D2)).to('in')    # blade height at exit
+sigma = 1 - np.sqrt(np.sin(beta2b)) / Z**0.7 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
+U2 = (N_shaft * D2/2).to('m/s')   # outlet tip speed
+Area2 = (np.pi * D2 * b2).to('in^2')    # Outlet area, continuity TODO: account for metal blockage
+C_m2_design = (opt_Q / Area2)   # Meridional flow velocity at design point
 
-print("=== Derived impeller geometry / design parameters ===")
-print(f"Slip factor sigma   = {sigma:.3f}")
-print(f"Outlet tip speed U2 = {U2:.2f}")
-print(f"Impeller OD  D2     = {D2:.2f}")
-print(f"Outlet width b2     = {b2:.3f}")
+head_coeff = (g*opt_H/n_hyd_BEP/U2**2).to('dimensionless')  # head coefficient / stage loading
+flow_coeff = (C_m2_design / U2).to('dimensionless')         # flow coefficient / flow factor
 
+print("\n--- Derived impeller characteristics ---")
+print(f"Slip factor (σ)             = {sigma:.4f}")
+print(f"Outlet tip speed (U₂)       = {U2.to('m/s'):.3f}")
+print(f"Outlet area (A₂)            = {Area2.to('in^2'):.3f}")
+print(f"Meridional velocity (Cm₂)   = {C_m2_design.to('m/s'):.3f}")
+print(f"Head coefficient (ψ)        = {head_coeff:.4f}")
+print(f"Flow coefficient (ϕ)        = {flow_coeff:.4f}")
 
-Q_sweep = Q_(np.linspace(0, 2.0 * opt_flow_rate.to('L/s').magnitude, 200), 'L/s')
+Q_sweep = Q_(np.linspace(0, 2.0 * opt_Q.to('L/s').magnitude, 200), 'L/s')
 
 # https://ntrs.nasa.gov/api/citations/19950013379/downloads/19950013379.pdf
 # page 4 and 5
@@ -50,13 +60,11 @@ Q_sweep = Q_(np.linspace(0, 2.0 * opt_flow_rate.to('L/s').magnitude, 200), 'L/s'
 # Theoretical Euler head as a function of Q
 #   H_theoretical(Q) = U2^2/g - [U2 / (g*Area2*tan(beta2b))] * Q
 #       Or
-#   H_theoretical(Q) = U2^2/g - [omega*cot(beta2b)/(2*pi*b2*g)] * Q
+#   H_theoretical(Q) = U2^2/g - [N_shaft*cot(beta2b)/(2*pi*b2*g)] * Q
 #   https://youtu.be/H7XfYO_-cEg?t=2705
 
 def H_euler(Q):
-    return sigma*U2**2/g - omega/np.tan(beta2b)/(2*np.pi*b2*g) * Q
-
-print(f"Theoretical shutoff head H0 = {H_euler(Q_(0, 'L/s')):.2f}")
+    return sigma*U2**2/g - N_shaft/np.tan(beta2b)/(2*np.pi*b2*g) * Q
 
 H_theoretical = H_euler(Q_sweep)
 
@@ -67,7 +75,7 @@ for q in Q_sweep:
     flowrate = Q_(q, 'm^3/s')
 
     f = emp.FlowSpeedRatio(
-        flowrate, N_shaft, opt_flow_rate.to('m^3/s'), N_shaft
+        flowrate, N_shaft, opt_Q.to('m^3/s'), N_shaft
         )
 
     C_m2 = flowrate / Area2
@@ -76,6 +84,8 @@ for q in Q_sweep:
     C_u2 = (U2 - W_u2)
 
     h_euler = (C_u2 * U2 / g).to('m')
+
+    # empirical prediction, valid for 0 < f < 2
     n_hydraulic = emp.HydraulicEfficiency(f) * n_hyd_BEP
 
     H_predict.append((h_euler * n_hydraulic).to('m').magnitude)

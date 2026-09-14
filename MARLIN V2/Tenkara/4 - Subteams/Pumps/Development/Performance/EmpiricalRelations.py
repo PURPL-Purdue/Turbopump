@@ -1,4 +1,4 @@
-def FlowSpeedRatio(Q_now: float, N_now: float, Q_design: float, N_design: float) -> float:
+def FlowSpeedRatio(Q_now, N_now, Q_design, N_design) -> float:
     return (Q_now/N_now) / (Q_design/N_design)
 
 # PUMPA pg 10, eq. 35
