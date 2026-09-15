@@ -1,3 +1,6 @@
+"""
+Empirical bullshit
+"""
 from pint import Quantity as Q_
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,26 +23,28 @@ Ns = (                          # imperial specific speed
     ).magnitude
 
 print("\n--- Design point parameters ---")
-print(f"Flowrate (Q)             = {opt_Q.to("L/s"):.2f}")
-print(f"Headrise (ΔH)            = {opt_H.to('m'):.1f}")
-print(f"Shaft Speed (N)         =  {N_shaft:.0f}")
+print(f"Flowrate (Q)                = {opt_Q.to("L/s"):.2f}")
+print(f"Headrise (ΔH)               = {opt_H.to('m'):.1f}")
+print(f"Shaft Speed (N)             =  {N_shaft:.0f}")
 print(f"Specific speed (imperial)   = {Ns:.0f}")
 
 # ------------------------------------------------------------------
 # Basic impeller parameters
 Z = 6                           # number of impeller blades
 beta2b = Q_(10,'deg').to('rad') # blade backsweep angle at outlet (from tangent)
-D2 = Q_(2.2, 'in')              # impeller outlet diameter
-b2 = Q_(0.1, 'in')              # impeller outlet height
+D2 = Q_(2, 'in')                # impeller outlet diameter
+b2 = Q_(0.15, 'in')             # impeller outlet height
+thk2 = Q_(0.04, 'in')           # blade thickness at exit
 n_hyd_BEP = 0.5                 # Hydraulic efficiency at BEP, empirically chosen prediction
 
 # ------------------------------------------------------------------
 # Derived impeller characteristics
 
-sigma = 1 - np.sqrt(np.sin(beta2b)) / Z**0.7 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
-U2_opt = (N_shaft * D2/2).to('m/s')   # outlet tip speed
-Area2 = (np.pi * D2 * b2).to('in^2')    # Outlet area, continuity TODO: account for metal blockage
-C_m2_design = (opt_Q / Area2)   # Meridional flow velocity at design point
+sigma = 1 - np.sqrt(np.sin(beta2b)) / Z**0.7    # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
+U2_opt = (N_shaft * D2/2).to('m/s')             # outlet tip speed
+Bk2 = thk2 * b2 * Z / np.sin(beta2b)            # blade blockage area
+Area2 = (np.pi * D2 * b2 - Bk2)                 # Outlet area, continuity TODO: account for metal blockage
+C_m2_design = (opt_Q / Area2)                   # Meridional flow velocity at design point
 
 head_coeff = (g*opt_H/n_hyd_BEP/U2_opt**2).to('dimensionless')  # head coefficient / stage loading
 flow_coeff = (C_m2_design / U2_opt).to('dimensionless')         # flow coefficient / flow factor
@@ -47,20 +52,11 @@ flow_coeff = (C_m2_design / U2_opt).to('dimensionless')         # flow coefficie
 print("\n--- Derived impeller characteristics ---")
 print(f"Slip factor (σ)             = {sigma:.4f}")
 print(f"Outlet tip speed (U₂)       = {U2_opt.to('m/s'):.3f}")
+print(f"Blade blockage area (Bk₂)   = {Bk2.to('in^2'): .3f}")
 print(f"Outlet area (A₂)            = {Area2.to('in^2'):.3f}")
 print(f"Meridional velocity (Cm₂)   = {C_m2_design.to('m/s'):.3f}")
 print(f"Head coefficient (ψ)        = {head_coeff:.4f}")
 print(f"Flow coefficient (ϕ)        = {flow_coeff:.4f}")
-
-# ------------------------------------------------------------------
-# Ideal geometry parameters
-
-print("\n--- Ideal geometry parameters ---")
-# Compute impeller diameter at derived head coefficient
-D2_opt = 2 * (np.sqrt(g*opt_H / head_coeff) / N_shaft).to('in')
-print(f"Ideal outlet diameter:      = {D2_opt:.3f}")
-
-Q_sweep = Q_(np.linspace(0, 2.0 * opt_Q.to('L/s').magnitude, 50), 'L/s')
 
 # https://ntrs.nasa.gov/api/citations/19950013379/downloads/19950013379.pdf
 # page 4 and 5
@@ -73,6 +69,8 @@ Q_sweep = Q_(np.linspace(0, 2.0 * opt_Q.to('L/s').magnitude, 50), 'L/s')
 
 def H_euler(Q):
     return sigma*U2_opt**2/g - N_shaft/np.tan(beta2b)/(2*np.pi*b2*g) * Q
+
+Q_sweep = Q_(np.linspace(0, 2.0 * opt_Q.to('L/s').magnitude, 50), 'L/s')
 
 H_theoretical = H_euler(Q_sweep)
 
