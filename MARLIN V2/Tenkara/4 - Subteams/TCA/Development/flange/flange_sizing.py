@@ -476,14 +476,14 @@ def main():
     g1 = g0 #equal for straight integral flange
 
     # working chamber pressure
-    P = 440 * PSI2PA # [Pa]
+    P = 440 * 1.5 * PSI2PA # [Pa]
 
     # gasket properties: vermiculite vermiculite with SS insert
-    m = 6.5 # gasket factor []
-    y = 26000  * PSI2PA # design seating stress [Pa]
+    m = 2 # gasket factor []
+    y = 2500  * PSI2PA # design seating stress [Pa]
 
     # physical gasket contact width, facing sketch (1a) per Table 2-5.2
-    N = 1/8 * IN2M # [m]
+    N = 3/8 * IN2M # [m]
     facing_sketch = "1a"
     column = "II"
 
@@ -491,13 +491,13 @@ def main():
     Sa = 30000 * PSI2PA # Yield stress for bolt at atmospheric temp [Pa]
     Sb = Sa # Allowable stress for bolt at design temp [Pa]
 
-    t = 0.5 * IN2M # flange thickness [m]
+    t = 3/8 * IN2M # flange thickness [m]
     Sf = 36000 * PSI2PA # flange yield at temp [Pa]
 
     # modulus of elasticity of flange material at design temperature
     E = 29e6 * PSI2PA # [Pa]
 
-    flange = FlangeSizer(B, P, m, y, N, Sa, Sb, t, g0, g1, Sf, E, safetyFactor=1.5,
+    flange = FlangeSizer(B, P, m, y, N, Sa, Sb, t, g0, g1, Sf, E, safetyFactor=1,
                           facing_sketch=facing_sketch, column=column)
     flange.solve()
     return
