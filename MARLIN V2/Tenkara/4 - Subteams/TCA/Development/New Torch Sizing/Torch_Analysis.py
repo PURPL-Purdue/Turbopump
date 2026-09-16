@@ -8,7 +8,7 @@ R = 8.314 # Gas constant
 ## Fixed torch parameters
 A_t = 1    # Throat area
 Df = 1     # Fuel injector diameter
-Do = 1     # Oxidizer injector diameter
+Dox = 1     # Oxidizer injector diameter
 Tc = 1     # Chamber temperature
 Tox = 1     # Oxidizer line temperature
 Tf = 1      # Fuel line temperature
@@ -34,3 +34,6 @@ mdot_ox = mdot * (of_ratio)/(of_ratio + 1)
 mdot_f = mdot - mdot_ox
 
 Pc = chamber_pressure(A_t, k, mdot, Tc)
+Pox = chamber_pressure(diameter_to_area(Dox), k, mdot_ox, Tox)
+Pf = chamber_pressure(area_to_diameter(Df), k, mdot_f, Tf)
+
