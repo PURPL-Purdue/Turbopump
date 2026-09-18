@@ -5,7 +5,7 @@
 output_directory: Outputs/designs.csv                                                # Output directory for designs.csv
 
 propellants:
-  fuel: C3H8O,2propanol                                                                  # IPA
+  fuel: C3H8O,2propanol                                                              # IPA
   oxidizer: O2(L)                                                                    # LOx
 
 reactant_T:                                                                          # Reactant Temperatures (K)

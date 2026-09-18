@@ -86,7 +86,7 @@ def analyze_flange(B, N, G, C, A, bolt_name, bolt_count, t, g0, g1,
     hT = (R + g1 + hG) / 2
     MT = HT * hT
 
-    W = (Am + Ab) * Sa_used / 2
+    W = Am * Sa_used / 2  # Set to
     Mseating = W * (C - G) / 2
 
     Moperating = MD + MT + MG
@@ -194,8 +194,8 @@ def main():
     g1 = g0 # equal for straight integral flange
 
     # Bolts
-    bolt_name = "1/4"
-    bolt_count = 18
+    bolt_name = "5/16"
+    bolt_count = 14
     thread_type = "UNF"
 
     # working chamber pressure
