@@ -18,7 +18,7 @@ opt_Q = opt_m_dot / rho         # volumetric flow rate at BEP
 opt_dP = Q_(33, 'bar')          # total pressure rise at BEP
 opt_H = (opt_dP / (g * rho))    # developed head at BEP
 N_shaft = Q_(40000, 'rpm')      # shaft speed
-Ns = (                          # imperial specific speed       
+Ns = (                          # imperial specific speed
         N_shaft * np.sqrt(opt_Q.to('gal/min')) / opt_H.to('ft')**(3/4)
     ).magnitude
 
@@ -41,17 +41,17 @@ n_hyd_BEP = 0.5                 # Hydraulic efficiency at BEP, empirically chose
 # Derived impeller characteristics
 
 sigma = 1 - np.sqrt(np.sin(beta2b)) / Z**0.7    # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
-U2_opt = (N_shaft * D2/2).to('m/s')             # outlet tip speed
+U2_design = (N_shaft * D2/2).to('m/s')          # outlet tip speed
 Bk2 = thk2 * b2 * Z / np.sin(beta2b)            # blade blockage area
-Area2 = (np.pi * D2 * b2 - Bk2)                 # Outlet area, continuity TODO: account for metal blockage
-C_m2_design = (opt_Q / Area2)                   # Meridional flow velocity at design point
+Area2 = (np.pi * D2 * b2 - Bk2).to('in^2')      # Outlet area, continuity TODO: account for metal blockage
+C_m2_design = (opt_Q / Area2).to('m/s')         # Meridional flow velocity at design point
 
-head_coeff = (g*opt_H/n_hyd_BEP/U2_opt**2).to('dimensionless')  # head coefficient / stage loading
-flow_coeff = (C_m2_design / U2_opt).to('dimensionless')         # flow coefficient / flow factor
+head_coeff = (g*opt_H/n_hyd_BEP/U2_design**2).to('dimensionless')  # head coefficient / stage loading
+flow_coeff = (C_m2_design / U2_design).to('dimensionless')         # flow coefficient / flow factor
 
 print("\n--- Derived impeller characteristics ---")
 print(f"Slip factor (σ)             = {sigma:.4f}")
-print(f"Outlet tip speed (U₂)       = {U2_opt.to('m/s'):.3f}")
+print(f"Outlet tip speed (U₂)       = {U2_design.to('m/s'):.3f}")
 print(f"Blade blockage area (Bk₂)   = {Bk2.to('in^2'): .3f}")
 print(f"Outlet area (A₂)            = {Area2.to('in^2'):.3f}")
 print(f"Meridional velocity (Cm₂)   = {C_m2_design.to('m/s'):.3f}")
@@ -68,7 +68,7 @@ print(f"Flow coefficient (ϕ)        = {flow_coeff:.4f}")
 #   https://youtu.be/H7XfYO_-cEg?t=2705
 
 def H_euler(Q):
-    return sigma*U2_opt**2/g - N_shaft/np.tan(beta2b)/(2*np.pi*b2*g) * Q
+    return sigma*U2_design**2/g - N_shaft/np.tan(beta2b)/(2*np.pi*b2*g) * Q
 
 Q_sweep = Q_(np.linspace(0, 2.0 * opt_Q.to('L/s').magnitude, 50), 'L/s')
 
@@ -85,13 +85,13 @@ for shaft_speed in N_sweep:
 
     head_trace = []
     flow_trace = []
-    
+
     for flowrate in Q_sweep:
 
         f = emp.FlowSpeedRatio(
             flowrate.to('m^3/s'), shaft_speed,
             opt_Q.to('m^3/s'), N_shaft
-            )
+            ).magnitude
         if f > 2: continue
 
         U2 = shaft_speed * D2/2
@@ -110,35 +110,141 @@ for shaft_speed in N_sweep:
 
     H_predict.append(head_trace)
     Q_predict.append(flow_trace)
-    
 
-fig, ax1 = plt.subplots(figsize=(6, 4.5))
+
+# ------------------------------------------------------------------
+# Figure 1: H-Q Curve (opens its own window)
+plt.figure(1, figsize=(6, 4.5))
 
 # Plot theoretical Euler (linear)
-ax1.plot(Q_sweep.to('L/s').magnitude, H_theoretical.to('m').magnitude,
+plt.plot(Q_sweep.to('L/s').magnitude, H_theoretical.to('m').magnitude,
          '--', color='gray', label='Theoretical Euler')
 
 # Plot RPM swept traces
 for i in range(len(H_predict)):
 
-    ax1.plot(Q_predict[i], H_predict[i],
-         '-', color='red', label = 'Empircal prediction' if i == 0 else None)
-    ax1.annotate(f"{N_sweep[i].magnitude:.0f} RPM",
-                     xy=(Q_predict[i][-1], H_predict[i][-1]),
-                     xytext=(4, 0), textcoords='offset points',
-                     fontsize=8, va='center')
+    plt.plot(Q_predict[i], H_predict[i],
+             '-', color='red', label='Empircal prediction' if i == 0 else None)
+    plt.annotate(f"{N_sweep[i].magnitude:.0f} RPM",
+                 xy=(Q_predict[i][-1], H_predict[i][-1]),
+                 xytext=(4, 0), textcoords='offset points',
+                 fontsize=8, va='center')
 
 # Plot design point head and flowrate
-ax1.plot(opt_Q.to('L/s').magnitude, opt_H.to('m').magnitude,
-         'o', color='black', markersize=4, label=f'Design point',
+plt.plot(opt_Q.to('L/s').magnitude, opt_H.to('m').magnitude,
+         'o', color='black', markersize=4, label='Design point',
          zorder=5)
 
-ax1.set_xlabel('Volumetric flow rate [L/s]')
-ax1.set_ylabel('Head [m]')
-ax1.set_title('H-Q Curve')
-ax1.set_ylim(ymin=0)
-ax1.legend()
-ax1.grid(True, alpha=0.3)
- 
+plt.xlabel('Volumetric flow rate [L/s]')
+plt.ylabel('Head [m]')
+plt.title('H-Q Curve')
+plt.ylim(ymin=0)
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# ------------------------------------------------------------------
+# Design-point velocity triangle
+
+slip_design = U2_design * (1 - sigma)
+W_u2_design = (C_m2_design / np.tan(beta2b) + slip_design).to('m/s')
+C_u2_design = (U2_design - W_u2_design).to('m/s')
+
+# Figure 2: Velocity triangle (opens a second, separate window)
+plt.figure(2)
+
+# ------------------------------------------------------------------
+# Design-point velocity triangle
+
+C_2_design = np.sqrt(
+    C_m2_design**2 +
+    C_u2_design**2
+).to('m/s')
+
+W_2_design = np.sqrt(
+    C_m2_design**2 +
+    W_u2_design**2
+).to('m/s')
+
+# ------------------------------------------------------------------
+# Plot velocity triangle
+
+plt.plot(
+    [0, C_u2_design.magnitude],
+    [0, C_m2_design.magnitude],
+    linewidth=2,
+    label=rf'$C_2$ = {C_2_design.magnitude:.1f} m/s'
+)
+
+plt.plot(
+    [0, U2_design.magnitude],
+    [0, 0],
+    linewidth=2,
+    label=rf'$U_2$ = {U2_design.magnitude:.1f} m/s'
+)
+
+plt.plot(
+    [U2_design.magnitude, C_u2_design.magnitude],
+    [0, C_m2_design.magnitude],
+    linewidth=2,
+    label=rf'$W_2$ = {W_2_design.magnitude:.1f} m/s'
+)
+
+# C_m2 component
+plt.plot(
+    [C_u2_design.magnitude, C_u2_design.magnitude],
+    [0, C_m2_design.magnitude],
+    label=rf'$C_{{m2}}$ = {C_m2_design.to("m/s").magnitude:.1f} m/s',
+    linewidth=2
+)
+
+# ------------------------------------------------------------------
+# Labels
+
+plt.text(
+    C_u2_design.magnitude / 2,
+    C_m2_design.magnitude / 2,
+    r'$C_2$',
+    fontsize=11,
+)
+
+plt.text(
+    U2_design.magnitude / 2,
+    -0.04 * C_m2_design.magnitude,
+    r'$U_2$',
+    fontsize=11,
+    ha='center'
+)
+
+plt.text(
+    (U2_design.magnitude + C_u2_design.magnitude) / 2,
+    C_m2_design.magnitude / 2,
+    r'$W_2$',
+    fontsize=11
+)
+
+plt.text(
+    C_u2_design.magnitude,
+    C_m2_design.magnitude / 2,
+    r'$C_{{m2}}$',
+    fontsize=11,
+    ha='left',
+    va='center'
+)
+
+# ------------------------------------------------------------------
+# Formatting
+
+plt.axhline(0, linewidth=0.8)
+plt.axvline(0, linewidth=0.8)
+
+plt.xlabel('Tangential velocity [m/s]')
+plt.ylabel('Meridional velocity [m/s]')
+plt.title('Design-Point Outlet Velocity Triangle')
+
+plt.axis('equal')
+plt.grid(True, alpha=0.2)
+plt.legend()
+
 plt.tight_layout()
+
 plt.show()
