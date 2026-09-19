@@ -12,12 +12,12 @@ opt_dP = Q_(33, 'bar')				# total pressure rise at BEP
 design_point: DesignPoint = DesignPoint(
 	Q = opt_m_dot/rho,
 	H = (opt_dP / (g * rho)),    	# developed head at BEP
-	N_shaft = Q_(40000, 'rpm'),   	# shaft speed
+	N_shaft = Q_(35000, 'rpm'),   	# shaft speed
 	n_hyd_BEP = 0.5
 )
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
-	Beta2B = Q_(10,'deg').to('rad'),
+	Beta2B = Q_(20,'deg').to('rad'),
 	D2 = Q_(2, 'in'),				# impeller outlet diameter
 	b2 = Q_(0.15, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
@@ -49,7 +49,7 @@ power_consumption = (opt_m_dot * specific_work)
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)
