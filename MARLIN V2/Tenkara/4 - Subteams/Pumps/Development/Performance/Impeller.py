@@ -9,24 +9,24 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InputGeometry:
-	Z_blade: int            # number of impeller blades
-	Beta2B: Q_[float]       # blade backsweep angle at outlet (from tangent)
-	D2: Q_[float]          # impeller outlet diameter
-	b2: Q_[float]          # impeller outlet height
-	thk2: Q_[float]        # blade thickness at exit
+	Z_blade: int			# number of impeller blades
+	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
+	D2: Q_[float]			# impeller outlet diameter
+	b2: Q_[float]			# impeller outlet height
+	thk2: Q_[float]			# blade thickness at exit
 
 @dataclass
 class Geometry(InputGeometry):
 	WiesnerSlip: float
-	#Bk2: Q_[float]          # blade blockage area
-	Area2: Q_[float]        # exit area
+	#Bk2: Q_[float]			# blade blockage area
+	Area2: Q_[float]		# exit area
 
 @dataclass
 class DesignPoint:
-	Q: Q_[float]            # volumetric flowrate
-	N_shaft: Q_[float]      # shaft rotating speed
-	H: Q_[float]            # headrise, developed head
-	n_hyd_BEP: float        # hydraulic efficiency at BEP
+	Q: Q_[float]			# volumetric flowrate
+	N_shaft: Q_[float]		# shaft rotating speed
+	H: Q_[float]			# headrise, developed head
+	n_hyd_BEP: float		# hydraulic efficiency at BEP
 
 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
 def GetWiesnerSlipRatio(beta2b: float | Q_[float], Z: int) -> float:
@@ -110,6 +110,25 @@ class Impeller:
 			w=W_u2
 		), f
 
+	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float]]:
+		if speed_N is None:
+			speed_N = self.DP.N_shaft
+		if flow_Q is None:
+			flow_Q = self.DP.Q
+
+		#vels: VelocityTriangle
+		#f: float
+		vels, f = self.GetOutletVelocities(flow_Q, speed_N)
+		# Euler turbomachinery equation
+		work_consumed = (vels.c_u * vels.u).to('kJ/kg')
+
+		# empirical prediction, valid for 0 < f < 2
+		n_hydraulic = emp.HydraulicEfficiency(f) * self.DP.n_hyd_BEP
+
+		fluid_work = work_consumed * n_hydraulic
+
+		return work_consumed, fluid_work, f
+		
 	def PlotPerformanceHQ(self, rpm_sweep: Q_[list[float]]=None) -> None:
 		N_sweep = rpm_sweep if rpm_sweep is not None else Q_([self.DP.N_shaft])
 		Q_sweep = Q_(np.linspace(0, 2.0 * self.DP.Q.to('L/s').magnitude, 50), 'L/s')
@@ -117,25 +136,20 @@ class Impeller:
 		H_predict = []
 		Q_predict = []
 
-		for speedN in N_sweep:
+		for speed_N in N_sweep:
 
 			head_trace = []
 			flow_trace = []
 
-			for flowQ in Q_sweep:
-			
-				vels: VelocityTriangle
-				f: float
-				vels, f = self.GetOutletVelocities(flowQ, speedN)
-				if f > 2: continue
+			for flow_Q in Q_sweep:
 				
-				h_euler = (vels.c_u * vels.u / g).to('m')
+				_, fluid_work, f = self.GetSpecificWork(speed_N=speed_N, flow_Q=flow_Q)
+				if f > 2: continue
+
+				headrise = fluid_work / g
 		
-				# empirical prediction, valid for 0 < f < 2
-				n_hydraulic = emp.HydraulicEfficiency(f) * self.DP.n_hyd_BEP
-		
-				head_trace.append((h_euler * n_hydraulic).to('m').magnitude)
-				flow_trace.append(flowQ.to('L/s').magnitude)
+				head_trace.append(headrise.to('m').magnitude)
+				flow_trace.append(flow_Q.to('L/s').magnitude)
 		
 			H_predict.append(head_trace)
 			Q_predict.append(flow_trace)
@@ -150,7 +164,7 @@ class Impeller:
 		for i in range(len(H_predict)):
 
 			plt.plot(Q_predict[i], H_predict[i],
-					'-', color='red', label='Empircal prediction' if i == 0 else None)
+					'-', color='red', label='Empirical prediction' if i == 0 else None)
 			
 			plt.annotate(f"{N_sweep[i].magnitude:.0f} RPM",
 						xy=(Q_predict[i][-1], H_predict[i][-1]),
