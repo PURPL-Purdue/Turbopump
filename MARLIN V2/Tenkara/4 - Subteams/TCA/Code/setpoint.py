@@ -9,7 +9,6 @@ diameters/wall thicknesses, this script:
   6. Writes the surviving designs to Outputs/designs.csv.
 """
 
-from matplotlib import contour
 import numpy as np
 import cea
 from pint import UnitRegistry
@@ -19,7 +18,35 @@ import pandas as pd
 from contour_script import contour_length_mm
 from contour_script import bell_nozzle
 
+
+def build_reactant(spec, T_default):
+    """
+    spec: either
+      - a str  -> library species name, used as-is
+      - a dict -> custom card, converted to a cea.Reactant. Expected keys:
+            name, formula (dict of element: atom count), molecular_weight (g/mol),
+            enthalpy, enthalpy_units (e.g. "kJ/mol", "J/kg"), temperature (K, optional)
+    T_default: fallback reactant temperature (K) if spec doesn't specify one
+    """
+    if isinstance(spec, str):
+        return spec
+
+    return cea.Reactant(
+        name=spec["name"],
+        formula=spec["formula"],
+        molecular_weight=spec.get("molecular_weight"),
+        enthalpy=spec["enthalpy"],
+        enthalpy_units=spec["enthalpy_units"],
+        temperature=spec.get("temperature", T_default),
+    )
+
+
 ureg = UnitRegistry()
+
+# Explicit standard-gravity constant. Not relying on ureg.g0 / ureg.standard_gravity /
+# ureg.gravity, since the exact alias pint exposes varies by version -- this way it
+# can't silently break if your installed pint doesn't define the alias you'd guess.
+g0 = 9.80665 * ureg.m / ureg.s ** 2
 
 
 # --------------------------------------------------------------------------- #
@@ -64,12 +91,23 @@ of_ratio  = p['of_ratio']              # Oxidizer/fuel mixture ratio
 
 ### CEA Setup ###
 
-reac_names      = [p['propellants']['fuel'], p['propellants']['oxidizer']]
+fuel_spec = p['propellants']['fuel']
+ox_spec   = p['propellants']['oxidizer']
+
+reac_names = [
+    build_reactant(fuel_spec, p['reactant_T']['fuel']),
+    build_reactant(ox_spec,   p['reactant_T']['oxidizer']),
+]
+
 T_reactant      = np.array([p['reactant_T']['fuel'], p['reactant_T']['oxidizer']])
 fuel_weights    = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
 
 reac = cea.Mixture(reac_names)
+# Sanity check: confirm both reactants resolved to what you expect before trusting
+# anything downstream (especially the custom fuel card).
+print("Reactant species resolved:", reac.species_names)
+
 prod = cea.Mixture(reac_names, products_from_reactants=True)
 solver   = cea.RocketSolver(prod, reactants=reac, transport=True)
 solution = cea.RocketSolution(solver)
@@ -77,7 +115,7 @@ solution = cea.RocketSolution(solver)
 # Mass fractions for the target O/F ratio, and reactant enthalpy (mixed,
 # non-dimensionalized by the gas constant) needed for the CEA solve calls.
 weights = reac.of_ratio_to_weights(oxidant_weights, fuel_weights, of_ratio)
-hc      = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R  # plain float
+hc      = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R # plain float
 
 
 # --------------------------------------------------------------------------- #
@@ -98,7 +136,7 @@ for pc in pc_array:
 
     Cf    = solution.coefficient_of_thrust[-1] * eta_cf
     cstar = solution.c_star[-1] * eta_cstar * ureg.m / ureg.s  # m/s
-    Isp   = cstar * Cf / ureg.g0
+    Isp   = cstar * Cf / g0
 
     for F_target in F:
         # --- Throat sizing from thrust, C*, and Cf ---
@@ -135,15 +173,13 @@ for pc in pc_array:
             Lcyl = V_cyl / A_c.to(ureg.m ** 2)   # cylindrical section length, m
             Lc = Lcyl + L_cone                   # total chamber length, m (includes converging section for Lstar)
 
-            
-
             # --- Thin-wall pressure vessel stress check (von Mises) ---
             sigma_th = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (2 * t_c.to(ureg.m))          # hoop stress (seamless pipe)
             sigma_ax = (pc.to(ureg.Pa) * D_c.to(ureg.m)) / (4 * t_c.to(ureg.m) * 0.6)    # axial stress (weld coeff. 0.6)
             sigma_vM = np.sqrt(sigma_th ** 2 + sigma_ax ** 2 - sigma_th * sigma_ax)      # von Mises stress
 
             # --- Bell nozzle contour + cylindrical chamber length ---
-            angles, contour, R2 = bell_nozzle(
+            angles, nozzle_contour, R2 = bell_nozzle(
                 solution.ae_at[-1],
                 Dt.to(ureg.mm).magnitude / 2,
                 80,
@@ -151,7 +187,7 @@ for pc in pc_array:
                 alpha.to(ureg.deg).magnitude,
                 Lc.to(ureg.mm).magnitude,
             )
-            total_length_mm = contour_length_mm(contour)
+            total_length_mm = contour_length_mm(nozzle_contour)
 
             designs.append({
                 'F_lbf'             : F_target.to(ureg.lbf).magnitude,
