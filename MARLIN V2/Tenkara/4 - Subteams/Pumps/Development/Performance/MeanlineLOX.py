@@ -45,6 +45,6 @@ print(f"Flow coefficient (ϕ)        = {imp.FlowCoeff:.4f}")
 imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
 vel, _ = imp.GetOutletVelocities()
 
-vel.plot(unit='m/s', station=2)
+vel.Plot(unit='m/s', station=2)
 
 plt.show()
