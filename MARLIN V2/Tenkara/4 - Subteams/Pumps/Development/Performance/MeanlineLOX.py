@@ -26,21 +26,28 @@ lox_geometry: InputGeometry = InputGeometry(
 lox_imp = Impeller(lox_geometry, design_point)
 
 print("\n--- Design point parameters ---")
-print(f"Flowrate (Q)				= {lox_imp.DP.Q.to("L/s"):.2f}")
-print(f"Headrise (ΔH)				= {lox_imp.DP.H.to('m'):.1f}")
-print(f"Shaft Speed (N)				= {lox_imp.DP.N_shaft:.0f}")
-print(f"Specific speed (imperial)	= {lox_imp.SpecificSpeed:.0f}")
+print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
+print(f"Headrise (ΔH)               = {lox_imp.DP.H.to('m'):.1f}")
+print(f"Shaft Speed (N)             = {lox_imp.DP.N_shaft:.0f}")
+print(f"Specific speed (imperial)   = {lox_imp.SpecificSpeed:.0f}")
 
 # ------------------------------------------------------------------
 # Derived impeller characteristics
 
 print("\n--- Derived impeller characteristics ---")
-print(f"Slip factor (σ)				= {lox_imp.GEOM.WiesnerSlip:.4f}")
-print(f"Outlet tip speed (U₂)		= {lox_imp.U_2_design.to('m/s'):.3f}")
-print(f"Outlet area (A₂)			= {lox_imp.GEOM.Area2.to('in^2'):.3f}")
-print(f"Meridional velocity (Cm₂)	= {lox_imp.C_m2_design.to('m/s'):.3f}")
-print(f"Head coefficient (ψ)		= {lox_imp.HeadCoeff:.4f}")
-print(f"Flow coefficient (ϕ)		= {lox_imp.FlowCoeff:.4f}")
+print(f"Slip factor (σ)             = {lox_imp.GEOM.WiesnerSlip:.4f}")
+print(f"Outlet tip speed (U₂)       = {lox_imp.U_2_design.to('m/s'):.3f}")
+print(f"Outlet area (A₂)            = {lox_imp.GEOM.Area2.to('in^2'):.3f}")
+print(f"Meridional velocity (Cm₂)   = {lox_imp.C_m2_design.to('m/s'):.3f}")
+print(f"Head coefficient (ψ)        = {lox_imp.HeadCoeff:.4f}")
+print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
+
+# ------------------------------------------------------------------
+# Performance
+specific_work, _, _ = lox_imp.GetSpecificWork()
+power_consumption = (opt_m_dot * specific_work)
+print("\n--- Performance characteristics ---")
+print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
 
 lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
