@@ -68,11 +68,11 @@ p_inlet = Q_(
 	'Pa')
 
 NPSH_i = (p_inlet - p_vapor_LO2) / rho / g
-NPSH_a = feed_pressure / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
+NPSH_a = (feed_pressure - p_vapor_LO2) / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
 
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
-print(f"NPSH at inception           = {NPSH_i.to('m'):.0f}")
+print(f"NPSH @ inception           = {NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 
 lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
