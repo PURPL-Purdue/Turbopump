@@ -63,16 +63,23 @@ inlet_diameter = Q_(1, 'in')		# impeller inlet diam TODO: make it an attriubte o
 
 # cavitation_num = (p_i - p_vapor) / [1/2 * rho * U^2]
 u_i = inlet_diameter/2 * lox_imp.DP.N_shaft # TODO: It is more accurate to use the relative velocity w_i rather than tip velocity if there is significant preswhirl (there is with an inducer)
-p_inlet = Q_(
+p_min = Q_(
     SAFE_CAVITATION_NUMBER * 1/2 * rho * u_i**2 + p_vapor_LO2,
 	'Pa')
 
-NPSH_i = (p_inlet - p_vapor_LO2) / rho / g
-NPSH_a = (feed_pressure - p_vapor_LO2) / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
+NPSH_i = (p_min - p_vapor_LO2) / rho / g
+
+inlet_area = (np.pi / 4 * inlet_diameter**2).to('m^2')
+inlet_vel = (lox_imp.DP.Q / inlet_area).to('m/s')
+p_inlet_static = feed_pressure - 1/2 * rho * inlet_vel**2
+print(lox_imp.DP.Q)
+print(inlet_area)
+print(inlet_vel)
+NPSH_a = (p_inlet_static - p_vapor_LO2) / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
 
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
-print(f"NPSH @ inception           = {NPSH_i.to('m'):.0f}")
+print(f"NPSH @ inception            = {NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 
 lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
