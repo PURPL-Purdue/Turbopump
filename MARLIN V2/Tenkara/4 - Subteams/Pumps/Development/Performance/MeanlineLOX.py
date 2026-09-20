@@ -6,21 +6,21 @@ import CoolProp.CoolProp as CP
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 
-opt_m_dot = Q_(1.94, 'kg/s')		# mass flow rate at BEP
+opt_m_dot = Q_(2.03, 'kg/s')		# mass flow rate at BEP
 rho = Q_(1141, 'kg/m^3')			# fluid density
 opt_dP = Q_(33, 'bar')				# total pressure rise at BEP
 
 design_point: DesignPoint = DesignPoint(
-	Q = opt_m_dot/rho,
+	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
 	H = (opt_dP / (g * rho)),    	# developed head at BEP
-	N_shaft = Q_(35000, 'rpm'),   	# shaft speed
+	N_shaft = Q_(40000, 'rpm'),   	# shaft speed
 	n_hyd_BEP = 0.5
 )
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
-	Beta2B = Q_(20,'deg').to('rad'),
+	Beta2B = Q_(15,'deg').to('rad'),# blade angle at exit, relative to tangent
 	D2 = Q_(2, 'in'),				# impeller outlet diameter
-	b2 = Q_(0.15, 'in'),			# impeller outlet height
+	b2 = Q_(0.1, 'in'),				# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
 )
 
@@ -31,6 +31,7 @@ print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
 print(f"Headrise (ΔH)               = {lox_imp.DP.H.to('m'):.1f}")
 print(f"Shaft Speed (N)             = {lox_imp.DP.N_shaft:.0f}")
 print(f"Specific speed (imperial)   = {lox_imp.SpecificSpeed:.0f}")
+print(f"Specific speed (metric)     = {lox_imp.SpecificSpeedMetric:.1f}")
 
 # ------------------------------------------------------------------
 # Derived impeller characteristics
@@ -59,17 +60,16 @@ LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmosp
 p_vapor_LO2 = Q_(					# vapor pressure at inlet (pressurized)
     CP.PropsSI('P', 'T', LO2_temp.magnitude, 'Q', 0, 'Oxygen'), 'Pa')
 
-inlet_diameter = Q_(1, 'in')		# impeller inlet diam TODO: make it an attriubte of impeller class
+inlet_diam = Q_(1, 'in')			# impeller inlet diam TODO: make it an attriubte of impeller class
+inlet_hub_diam = Q_(0.5, 'in')
 
 # cavitation_num = (p_i - p_vapor) / [1/2 * rho * U^2]
-u_i = inlet_diameter/2 * lox_imp.DP.N_shaft # TODO: It is more accurate to use the relative velocity w_i rather than tip velocity if there is significant preswhirl (there is with an inducer)
-p_min = Q_(
-    SAFE_CAVITATION_NUMBER * 1/2 * rho * u_i**2 + p_vapor_LO2,
-	'Pa')
+# NPSH = (p_i - p_vapor) / (rho * g) 
+# 	   = 1/2 * cavitation_num * U^2 / g
+u_i = inlet_diam/2 * lox_imp.DP.N_shaft # TODO: It is more accurate to use the relative velocity w_i rather than tip velocity if there is significant preswhirl (there is with an inducer)
+NPSH_i = (1/2* SAFE_CAVITATION_NUMBER * u_i**2 / g)
 
-NPSH_i = (p_min - p_vapor_LO2) / rho / g
-
-inlet_area = (np.pi / 4 * inlet_diameter**2).to('m^2')
+inlet_area = (np.pi / 4 * (inlet_diam)**2 - inlet_hub_diam**2).to('m^2')
 inlet_vel = (lox_imp.DP.Q / inlet_area).to('m/s')
 p_inlet_static = feed_pressure - 1/2 * rho * inlet_vel**2
 
@@ -80,7 +80,7 @@ print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
 print(f"NPSH @ inception            = {NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)

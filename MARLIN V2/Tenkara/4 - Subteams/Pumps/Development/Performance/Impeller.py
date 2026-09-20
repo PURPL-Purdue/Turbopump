@@ -18,7 +18,6 @@ class InputGeometry:
 @dataclass
 class Geometry(InputGeometry):
 	WiesnerSlip: float
-	#Bk2: Q_[float]			# blade blockage area
 	Area2: Q_[float]		# exit area
 
 @dataclass
@@ -60,15 +59,29 @@ class Impeller:
 			self.DP.H.to('ft')**0.75
 			).magnitude
 
+		self.SpecificSpeedMetric: float = (
+			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
+			self.DP.H.to('m')**0.75
+			).magnitude
+
 		# exit tip velocity at design point
 		self.U_2_design = (self.DP.N_shaft * self.GEOM.D2/2).to('m/s')
 		# meridional exit flow velocity at design point
 		self.C_m2_design = (self.DP.Q / self.GEOM.Area2).to('m/s')
 
-		# AKA Stage loading: Δh / u^2
-		self.HeadCoeff: float = (g*self.DP.H/self.DP.n_hyd_BEP/self.U_2_design**2).to('dimensionless').magnitude
+		#headco = g * H / u^2
+		#u^2 = g * H * 2
+		#omega * r = sqrt(g*H / headco)
+		#d2 = 2 / omega
+		#self.GEOM.D2 = (2/self.DP.N_shaft * np.sqrt(g * self.DP.H / 0.5)).to('in')
+		#print(self.GEOM.D2)
+		# AKA Stage loading: Δh / u^2 = g*H / u^2
+		_, enthalpy, _ = self.GetSpecificWork()
+		self.HeadCoeff: float = (enthalpy/self.U_2_design**2).to('dimensionless').magnitude
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
+
+
 
 	def H_euler(self, Q):
 		"""
