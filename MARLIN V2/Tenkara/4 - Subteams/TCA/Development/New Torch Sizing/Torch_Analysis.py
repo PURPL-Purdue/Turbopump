@@ -30,7 +30,6 @@ def get_k(p_c, OF):
 
     reac_names = ["CH4", "O2"]
     T_reactant = np.array([T_AMB_KELVIN, T_AMB_KELVIN])
-
     fuel_weights = np.array([1.0, 0.0])
     ox_weights = np.array([0.0, 1.0])
     p_c = p_c / BAR_TO_PA
@@ -55,18 +54,15 @@ def critical_pressure(k):
 def solve_chamber_pressure(throatArea, massflow, chamberTemp, OF, k):
 
     for i in range(100):
-
         p_c = chamber_pressure(throatArea, k, massflow, chamberTemp)
-
         k_new = get_k(p_c, OF)
 
-        # Check convergence
         if abs(k_new - k) < 1e-5:
             k = k_new
             break
 
         k = k_new
-
+        
     return p_c, k
 
 def main():
