@@ -48,7 +48,9 @@ print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
 specific_work, _, _ = lox_imp.GetSpecificWork()
 power_consumption = (opt_m_dot * specific_work)
 
-SAFE_CAVITATION_NUMBER = 1.5
+# cavitation criteria: p_inlet <= p_vapor
+# although in reality, vaporization can be delayed 
+SAFE_CAVITATION_NUMBER = 1
 feed_pressure = Q_(150, 'psi')		# inlet feed pressure, from tank pressure
 atm_press = Q_(1, 'atm')			# atmospheric pressure
 LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmospheric pressure
