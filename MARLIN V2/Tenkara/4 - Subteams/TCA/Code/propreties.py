@@ -10,6 +10,32 @@ import yaml
 # =====================================================================================
 
 # =====================================================================================
+# Function to build a reactant (library name or custom card) from yaml spec
+# =====================================================================================
+
+def build_reactant(spec, T_default):
+    """
+    spec: either
+      - a str  -> library species name, used as-is
+      - a dict -> custom card, converted to a cea.Reactant. Expected keys:
+            name, formula (dict of element: atom count), molecular_weight (g/mol),
+            enthalpy, enthalpy_units (e.g. "kJ/mol", "J/kg"), temperature (K, optional)
+    T_default: fallback reactant temperature (K) if spec doesn't specify one
+    """
+    if isinstance(spec, str):
+        return spec
+
+    return cea.Reactant(
+        name=spec["name"],
+        formula=spec["formula"],
+        molecular_weight=spec.get("molecular_weight"),
+        enthalpy=spec["enthalpy"],
+        enthalpy_units=spec["enthalpy_units"],
+        temperature=spec.get("temperature", T_default),
+    )
+
+
+# =====================================================================================
 # Function to get positional areas from CSV files
 # =====================================================================================
 
@@ -57,8 +83,11 @@ ae_at = (y / rt)**2
 # CEA Setup
 # =====================================================================================
 
-reac_names = [p['propellants']['fuel'], p['propellants']['oxidizer']]
-T_reactant = np.array([298.15, 90.17]) * ureg.K
+reac_names = [
+    build_reactant(p['propellants']['fuel'], p['reactant_T']['fuel']),
+    build_reactant(p['propellants']['oxidizer'], p['reactant_T']['oxidizer']),
+]
+T_reactant = np.array([p['reactant_T']['fuel'], p['reactant_T']['oxidizer']]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
 

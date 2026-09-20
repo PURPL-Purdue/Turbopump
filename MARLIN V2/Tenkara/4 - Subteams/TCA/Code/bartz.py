@@ -53,23 +53,23 @@ hg = (0.026/Dt**0.2)*(mu**0.2*Cp.to(ureg.joule/(ureg.kilogram*ureg.kelvin))/Pr**
 
 Tr = T * (1 + ((gamma - 1) / 2 * Pr**(1/3) * M ** 2))
 
-#print(Tr.to(ureg.kelvin))
-#print(hg.to(ureg.watt/(ureg.meter**2*ureg.kelvin)))
+print(Tr.to(ureg.kelvin))
+print(hg.to(ureg.watt/(ureg.meter**2*ureg.kelvin)))
 
 
-#plt.plot(x.magnitude, hg.magnitude)
+plt.plot(x.magnitude, hg.magnitude)
 
-#plt.xlabel("Axial position, x [m]")
-#plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
-#plt.grid(True)
-#plt.show()
+plt.xlabel("Axial position, x [m]")
+plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
+plt.grid(True)
+plt.show()
 
-#plt.plot(x.magnitude, Tr.magnitude)
+plt.plot(x.magnitude, Tr.magnitude)
 
-#plt.xlabel("Axial position, x [m]")
-#plt.ylabel("Recovery Temperature, $T_r$ [K]")
-#plt.grid(True)
-#plt.show()
+plt.xlabel("Axial position, x [m]")
+plt.ylabel("Recovery Temperature, $T_r$ [K]")
+plt.grid(True)
+plt.show()
 
 #######################################################################################
 # Fit heat transfer coefficient and recovery temperature to a spline
@@ -114,7 +114,7 @@ hg_ansys = spline1(x_ansys)
 Tr_ansys = spline2(x_ansys)
 
 np.savetxt(
-    "Outputs/ansys_input2.csv",
-    np.column_stack((x_ansys, hg_ansys,Tr_ansys)),
+    "Outputs/ansys_input_zeros.csv",
+    np.column_stack((x_ansys, hg_ansys*0,Tr_ansys*0)),
     delimiter=","
 )

@@ -86,7 +86,7 @@ def analyze_flange(B, N, G, C, A, bolt_name, bolt_count, t, g0, g1,
     hT = (R + g1 + hG) / 2
     MT = HT * hT
 
-    W = Am * Sa_used / 2  # Set to
+    W = max(Wm1, Wm2)  # Set to
     Mseating = W * (C - G) / 2
 
     Moperating = MD + MT + MG
@@ -185,8 +185,8 @@ def main():
     B = 3.826 * IN2M   # Flange ID [m]
     N = 3/8 * IN2M      # Gasket width [m]
     G = 4.326 * IN2M    # Gasket reaction diameter [m]
-    C = 5.5 * IN2M    # Bolt circle diameter [m]
-    A = 6.5 * IN2M    # Flange OD [m]
+    C = 5.45 * IN2M    # Bolt circle diameter [m]
+    A = 6.25 * IN2M    # Flange OD [m]
     t = 3/8 * IN2M       # Flange thickness [m]
 
     # Hub thicknesses

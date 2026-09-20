@@ -1,0 +1,2 @@
+Bartz Coefficient calculated assuming wall temp was constant 1000K=1340.33F. 
+
