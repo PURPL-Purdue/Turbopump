@@ -72,10 +72,8 @@ NPSH_i = (p_min - p_vapor_LO2) / rho / g
 inlet_area = (np.pi / 4 * inlet_diameter**2).to('m^2')
 inlet_vel = (lox_imp.DP.Q / inlet_area).to('m/s')
 p_inlet_static = feed_pressure - 1/2 * rho * inlet_vel**2
-print(lox_imp.DP.Q)
-print(inlet_area)
-print(inlet_vel)
-NPSH_a = (p_inlet_static - p_vapor_LO2) / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
+
+NPSH_a = (p_inlet_static - p_vapor_LO2) / rho / g
 
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
