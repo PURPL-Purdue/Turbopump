@@ -2,6 +2,7 @@ import numpy as np
 from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
 from matplotlib import pyplot as plt
+import CoolProp.CoolProp as CP
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 
@@ -46,8 +47,31 @@ print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
 # Performance
 specific_work, _, _ = lox_imp.GetSpecificWork()
 power_consumption = (opt_m_dot * specific_work)
+
+SAFE_CAVITATION_NUMBER = 1.5
+feed_pressure = Q_(150, 'psi')		# inlet feed pressure, from tank pressure
+atm_press = Q_(1, 'atm')			# atmospheric pressure
+LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmospheric pressure
+    CP.PropsSI('T', 'P', atm_press.to('Pa').magnitude, 'Q', 0, 'Oxygen'), 'K')
+
+p_vapor_LO2 = Q_(					# vapor pressure at inlet (pressurized)
+    CP.PropsSI('P', 'T', LO2_temp.magnitude, 'Q', 0, 'Oxygen'), 'Pa')
+
+inlet_diameter = Q_(1, 'in')		# impeller inlet diam TODO: make it an attriubte of impeller class
+
+# cavitation_num = (p_i - p_vapor) / [1/2 * rho * U^2]
+u_i = inlet_diameter/2 * lox_imp.DP.N_shaft # TODO: It is more accurate to use the relative velocity w_i rather than tip velocity if there is significant preswhirl (there is with an inducer)
+p_inlet = Q_(
+    SAFE_CAVITATION_NUMBER * 1/2 * rho * u_i**2 + p_vapor_LO2,
+	'Pa')
+
+NPSH_i = (p_inlet - p_vapor_LO2) / rho / g
+NPSH_a = feed_pressure / rho / g # TODO: add penalty due to dynamic pressure using inlet velocity (continuity)
+
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
+print(f"NPSH at inception           = {NPSH_i.to('m'):.0f}")
+print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 
 lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
