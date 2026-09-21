@@ -7,8 +7,8 @@ import CoolProp.CoolProp as CP
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 
 opt_m_dot = Q_(2.15, 'kg/s')		# mass flow rate at BEP
-rho = Q_(786, 'kg/m^3')			# fluid density
-opt_dP = Q_(44.63, 'bar')				# total pressure rise at BEP
+rho = Q_(786, 'kg/m^3')				# fluid density
+opt_dP = Q_(44.63, 'bar')			# total pressure rise at BEP
 
 design_point: DesignPoint = DesignPoint(
 	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
@@ -19,10 +19,10 @@ design_point: DesignPoint = DesignPoint(
 ipa_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
-	d_2 = Q_(2.5, 'in'),				# impeller outlet diameter
+	d_2 = Q_(2.5, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.15, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
-    d_hub=Q_(1, 'in')
+    d_hub=Q_(0.6, 'in')				# hub diameter
 )
 
 ipa_imp = Impeller(ipa_geometry, design_point)

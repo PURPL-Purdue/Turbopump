@@ -71,7 +71,6 @@ class Impeller:
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
 		
 		# TODO: Optimize for inlet diameter d_1
-		# Gulich, Centrifugal Pumps, pg. 285, eq 6.13
 		self.d_1 = Q_(1, 'in')
 
 	@property
@@ -93,7 +92,7 @@ class Impeller:
 
 		# Gulich, Centrifugal Pumps, chap. 6
 		gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
-		gamma_w = 1.5	# NPSH coefficient for excess velocity due to flow around leading edge
+		gamma_w = 1.0	# NPSH coefficient for excess velocity due to flow around leading edge
 		
 		c_1m = self.DP.Q / self.Area1	# meridional velocity at inlet
 		w_1 = np.sqrt(					# relative velocity of flow at leading edge

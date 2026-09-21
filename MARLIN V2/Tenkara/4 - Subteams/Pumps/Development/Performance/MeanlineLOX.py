@@ -22,7 +22,7 @@ lox_geometry: InputGeometry = InputGeometry(
 	d_2 = Q_(2.2, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.07, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
-    d_hub=Q_(0.5, 'in')
+    d_hub=Q_(0.6, 'in')				# hub diameter
 )
 
 lox_imp = Impeller(lox_geometry, design_point)
@@ -49,10 +49,14 @@ print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
 # Performance
 specific_work, _, _ = lox_imp.GetSpecificWork()
 power_consumption = (opt_m_dot * specific_work)
-
+shaft_torque = power_consumption / lox_imp.DP.N_shaft
+shaft_diam = Q_(0.5, 'in')
+shear_stress = shaft_torque * shaft_diam / 2 / (np.pi/32 * shaft_diam**4)
 
 print("\n--- Performance characteristics ---")
 print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
+print(f"Shaft torque, nominal       = {shaft_torque.to('N*m'):.1f}")
+print(f"Shear stress                = {shear_stress.to('MPa'):.1f}")
 
 feed_pressure = Q_(150, 'psi')		# inlet feed pressure, from tank pressure
 atm_press = Q_(1, 'atm')			# atmospheric pressure
@@ -69,7 +73,7 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)
