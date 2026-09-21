@@ -11,14 +11,10 @@ g = Q_(9.81, 'm/s^2')
 class InputGeometry:
 	Z_blade: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
-	D2: Q_[float]			# impeller outlet diameter
-	b2: Q_[float]			# impeller outlet height
+	d_2: Q_[float]			# impeller outlet diameter
+	b_2: Q_[float]			# impeller outlet height
 	thk2: Q_[float]			# blade thickness at exit
-
-@dataclass
-class Geometry(InputGeometry):
-	WiesnerSlip: float
-	Area2: Q_[float]		# exit area
+	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
 
 @dataclass
 class DesignPoint:
@@ -34,23 +30,25 @@ def GetWiesnerSlipRatio(beta2b: float | Q_[float], Z: int) -> float:
 def GetBladeBlockage(beta2b: float, Z: int, thick: float, b2: float) -> float:
 	return thick * b2 * Z / np.sin(beta2b)
 
+gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
+gamma_w = 1.0	# NPSH coefficient for excess velocity due to flow around leading edge
+
 class Impeller:
 
 	def __init__(self, geometry: InputGeometry, design_point: DesignPoint):
 
-		exit_area: Q_[float] = (np.pi * geometry.D2 * geometry.b2 - GetBladeBlockage(
-			geometry.Beta2B, geometry.Z_blade, geometry.thk2, geometry.b2
+		exit_area: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2 - GetBladeBlockage(
+			geometry.Beta2B, geometry.Z_blade, geometry.thk2, geometry.b_2
 		))
 
-		self.GEOM: Geometry = Geometry(
-			Z_blade=geometry.Z_blade,
-			Beta2B=geometry.Beta2B,
-			D2=geometry.D2,
-			b2=geometry.b2,
-			thk2=geometry.thk2,
-			WiesnerSlip=GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade),
-			Area2=exit_area
-		)
+		self.Z_blade = geometry.Z_blade
+		self.Beta2B = geometry.Beta2B
+		self.d_2 = geometry.d_2
+		self.b_2 = geometry.b_2
+		self.thk2 = geometry.thk2
+		self.d_hub = geometry.d_hub
+		self.WiesnerSlip = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
+		self.Area2 = exit_area
 
 		self.DP: DesignPoint = design_point
 
@@ -65,22 +63,16 @@ class Impeller:
 			).magnitude
 
 		# exit tip velocity at design point
-		self.U_2_design = (self.DP.N_shaft * self.GEOM.D2/2).to('m/s')
+		self.U_2_design = (self.DP.N_shaft * self.d_2/2).to('m/s')
 		# meridional exit flow velocity at design point
-		self.C_m2_design = (self.DP.Q / self.GEOM.Area2).to('m/s')
+		self.C_m2_design = (self.DP.Q / self.Area2).to('m/s')
 
-		#headco = g * H / u^2
-		#u^2 = g * H * 2
-		#omega * r = sqrt(g*H / headco)
-		#d2 = 2 / omega
-		#self.GEOM.D2 = (2/self.DP.N_shaft * np.sqrt(g * self.DP.H / 0.5)).to('in')
-		#print(self.GEOM.D2)
-		# AKA Stage loading: Δh / u^2 = g*H / u^2
 		_, enthalpy, _ = self.GetSpecificWork()
+		# AKA Stage loading: Δh / u^2 = g*H / u^2
 		self.HeadCoeff: float = (enthalpy/self.U_2_design**2).to('dimensionless').magnitude
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
-
+		
 
 
 	def H_euler(self, Q):
@@ -94,11 +86,11 @@ class Impeller:
 		H_theoretical(Q) = U_2^2/g - [N_shaft*cot(beta2b)/(2*pi*b2*g)] * Q
 		https://youtu.be/H7XfYO_-cEg?t=2705
 		"""
-		sigma = self.GEOM.WiesnerSlip
+		sigma = self.WiesnerSlip
 		U_2_design = self.U_2_design
 		N = self.DP.N_shaft
-		beta2b = self.GEOM.Beta2B
-		b2 = self.GEOM.b2
+		beta2b = self.Beta2B
+		b2 = self.b_2
 
 		return sigma * U_2_design**2/g - N/np.tan(beta2b)/(2*np.pi*b2*g) * Q
 
@@ -110,17 +102,18 @@ class Impeller:
 				self.DP.Q, self.DP.N_shaft
 				).to('dimensionless').magnitude
 		
-		U_2 = speed * self.GEOM.D2/2
-		C_m2 = flow / self.GEOM.Area2
-		slip = U_2 * (1 - self.GEOM.WiesnerSlip)
-		W_u2 = C_m2 / np.tan(self.GEOM.Beta2B) + slip
+		U_2 = speed * self.d_2/2
+		C_m2 = flow / self.Area2
+		slip = U_2 * (1 - self.WiesnerSlip)
+		W_u2 = C_m2 / np.tan(self.Beta2B) + slip
+		W_2 = np.sqrt(C_m2**2 + W_u2**2)
 		C_u2 = (U_2 - W_u2)
-		  
+		
 		return VelocityTriangle(
 			u=U_2,
 			c_m=C_m2,
 			c_u=C_u2,
-			w=W_u2
+			w=W_2
 		), f
 
 	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float]]:
@@ -193,5 +186,5 @@ class Impeller:
 		plt.ylabel('Head [m]')
 		plt.title('H-Q Curve')
 		plt.ylim(ymin=0)
-		plt.legend()
+		plt.legend(loc='upper right')
 		plt.grid(True, alpha=0.3)

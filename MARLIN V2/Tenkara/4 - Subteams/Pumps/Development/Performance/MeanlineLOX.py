@@ -13,15 +13,16 @@ opt_dP = Q_(33, 'bar')				# total pressure rise at BEP
 design_point: DesignPoint = DesignPoint(
 	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
 	H = (opt_dP / (g * rho)),    	# developed head at BEP
-	N_shaft = Q_(40000, 'rpm'),   	# shaft speed
+	N_shaft = Q_(35000, 'rpm'),   	# shaft speed
 	n_hyd_BEP = 0.5
 )
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
-	Beta2B = Q_(15,'deg').to('rad'),# blade angle at exit, relative to tangent
-	D2 = Q_(2, 'in'),				# impeller outlet diameter
-	b2 = Q_(0.1, 'in'),				# impeller outlet height
+	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
+	d_2 = Q_(2, 'in'),				# impeller outlet diameter
+	b_2 = Q_(0.1, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
+    d_hub=Q_(0.5, 'in')
 )
 
 lox_imp = Impeller(lox_geometry, design_point)
@@ -37,9 +38,9 @@ print(f"Specific speed (metric)     = {lox_imp.SpecificSpeedMetric:.1f}")
 # Derived impeller characteristics
 
 print("\n--- Derived impeller characteristics ---")
-print(f"Slip factor (σ)             = {lox_imp.GEOM.WiesnerSlip:.4f}")
+print(f"Slip factor (σ)             = {lox_imp.WiesnerSlip:.4f}")
 print(f"Outlet tip speed (U₂)       = {lox_imp.U_2_design.to('m/s'):.3f}")
-print(f"Outlet area (A₂)            = {lox_imp.GEOM.Area2.to('in^2'):.3f}")
+print(f"Outlet area (A₂)            = {lox_imp.Area2.to('in^2'):.3f}")
 print(f"Meridional velocity (Cm₂)   = {lox_imp.C_m2_design.to('m/s'):.3f}")
 print(f"Head coefficient (ψ)        = {lox_imp.HeadCoeff:.4f}")
 print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
@@ -80,7 +81,7 @@ print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
 print(f"NPSH @ inception            = {NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)
