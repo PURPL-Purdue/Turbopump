@@ -30,17 +30,6 @@ def GetWiesnerSlipRatio(beta2b: float | Q_[float], Z: int) -> float:
 def GetBladeBlockage(beta2b: float, Z: int, thick: float, b2: float) -> float:
 	return thick * b2 * Z / np.sin(beta2b)
 
-# Gulich, Centrifugal Pumps, chap. 6
-gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
-gamma_w = 1.5	# NPSH coefficient for excess velocity due to flow around leading edge
-"""
-	NPSH = (gamma_c * 1/2 * c_m^2 + gamma_w * 1/2 * w^2) / g
-	The physical intuition for the NPSH coefficients is that if the coefficients were equal to 1,
-	then the drop in static pressure due to suction is merely the dynamic pressure due to
-	acceleration of the flow at the inlet due to inlet area reduction (c_m, merdional velocity)
-	and the acceleration of the flow over and around the blade leading edge (w, relative velocity)
-"""
-
 class Impeller:
 
 	def __init__(self, geometry: InputGeometry, design_point: DesignPoint):
@@ -91,13 +80,21 @@ class Impeller:
 	@property
 	def NPSH_i(self) -> Q_[float]:
 		"""
-			This method of calculating NPSH_i also accounts for inlet velocity and losses.
-			Total pressure should be used when calculating available NPSH.
+			This method of calculating NPSH_i accounts for inlet velocity and losses.
+			Therefore, when comparing with available NSPH, total pressure should be used for NPSH_a calculation
+			NPSH_i = (gamma_c * 1/2 * c_m^2 + gamma_w * 1/2 * w^2) / g
 
-			Gamma_w is actually just the cavitation number,
-			especially if ignoring the effects of inlet velocity.
-			Typically c_1m << w_1
+			The physical intuition for the NPSH coefficients is that if the coefficients were equal to 1,
+			then the drop in static pressure due to suction is merely the dynamic pressure due to
+			acceleration of the flow at the inlet due to inlet area reduction (c_m, merdional velocity)
+			and the acceleration of the flow over and around the blade leading edge (w, relative velocity)
+
 		"""
+
+		# Gulich, Centrifugal Pumps, chap. 6
+		gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
+		gamma_w = 1.5	# NPSH coefficient for excess velocity due to flow around leading edge
+		
 		c_1m = self.DP.Q / self.Area1	# meridional velocity at inlet
 		w_1 = np.sqrt(					# relative velocity of flow at leading edge
 			(self.DP.N_shaft * self.d_1/2)**2 + c_1m**2
