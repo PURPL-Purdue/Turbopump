@@ -19,8 +19,8 @@ design_point: DesignPoint = DesignPoint(
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
-	d_2 = Q_(2, 'in'),				# impeller outlet diameter
-	b_2 = Q_(0.1, 'in'),			# impeller outlet height
+	d_2 = Q_(2.2, 'in'),			# impeller outlet diameter
+	b_2 = Q_(0.07, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
     d_hub=Q_(0.5, 'in')
 )
@@ -69,7 +69,7 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000, 40000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)
