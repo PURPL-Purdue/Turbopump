@@ -30,8 +30,16 @@ def GetWiesnerSlipRatio(beta2b: float | Q_[float], Z: int) -> float:
 def GetBladeBlockage(beta2b: float, Z: int, thick: float, b2: float) -> float:
 	return thick * b2 * Z / np.sin(beta2b)
 
+# Gulich, Centrifugal Pumps, chap. 6
 gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
-gamma_w = 1.0	# NPSH coefficient for excess velocity due to flow around leading edge
+gamma_w = 1.5	# NPSH coefficient for excess velocity due to flow around leading edge
+"""
+	NPSH = (gamma_c * 1/2 * c_m^2 + gamma_w * 1/2 * w^2) / g
+	The physical intuition for the NPSH coefficients is that if the coefficients were equal to 1,
+	then the drop in static pressure due to suction is merely the dynamic pressure due to
+	acceleration of the flow at the inlet due to inlet area reduction (c_m, merdional velocity)
+	and the acceleration of the flow over and around the blade leading edge (w, relative velocity)
+"""
 
 class Impeller:
 
@@ -76,8 +84,10 @@ class Impeller:
 		# TODO: Optimize for inlet diameter d_1
 		# Gulich, Centrifugal Pumps, pg. 285, eq 6.13
 		self.d_1 = Q_(1, 'in')
-		self.Area1 = np.pi / 4 * (self.d_1**2 - self.d_hub**2) # TODO: blade blockage?
 
+	@property
+	def Area1(self) -> Q_[float]:
+		return np.pi / 4 * (self.d_1**2 - self.d_hub**2) # TODO: blade blockage?
 	@property
 	def NPSH_i(self) -> Q_[float]:
 		"""
