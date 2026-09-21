@@ -75,8 +75,9 @@ class Impeller:
 		
 		# TODO: Optimize for inlet diameter d_1
 		# Gulich, Centrifugal Pumps, pg. 285, eq 6.13
-		self.d_1 = Q_(1, 'in')
+		self.d_1 = Q_(self.d_hub + (2 * self.b_2), 'in') # constant blade height
 		self.Area1 = np.pi / 4 * (self.d_1**2 - self.d_hub**2) # TODO: blade blockage?
+		print(self.Area1)
 
 	@property
 	def NPSH_i(self) -> Q_[float]:
