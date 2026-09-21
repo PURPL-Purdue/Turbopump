@@ -74,4 +74,7 @@ vel, _ = lox_imp.GetOutletVelocities()
 
 vel.Plot(unit='m/s', station=2)
 
+vel1 = lox_imp.GetInletVelocities()
+vel1.Plot(unit='m/s', station=1)
+
 plt.show()

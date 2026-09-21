@@ -113,26 +113,40 @@ class Impeller:
 
 		return sigma * U_2_design**2/g - N/np.tan(beta2b)/(2*np.pi*b2*g) * Q
 
-	def GetOutletVelocities(self, flowQ: Q_[float]=None, speedN: Q_[float]=None) -> tuple[VelocityTriangle, float]:
-		flow = flowQ if not flowQ is None else self.DP.Q
-		speed = speedN if not speedN is None else self.DP.N_shaft
+	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
+		# no preswirl
+		flow_Q = flow_Q if not flow_Q is None else self.DP.Q
+		speed_N = speed_N if not speed_N is None else self.DP.N_shaft
+
+		c_m1 = flow_Q / self.Area1
+		c_u1 = Q_(0, 'm/s')
+		u_1 = speed_N * self.d_1/2
+		w_u1 = u_1 - c_u1
+		c = np.sqrt(c_m1**2 + c_u1**2)
+		w = np.sqrt(w_u1**2 + c_m1**2)
+
+		return VelocityTriangle(
+			u=u_1, c_m=c_m1, c_u=c_u1, w=w
+		)
+
+	def GetOutletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> tuple[VelocityTriangle, float]:
+		flow_Q = flow_Q if not flow_Q is None else self.DP.Q
+		speed_N = speed_N if not speed_N is None else self.DP.N_shaft
+		
 		f = emp.FlowSpeedRatio(
-				flow, speed,
+				flow_Q, speed_N,
 				self.DP.Q, self.DP.N_shaft
 				).to('dimensionless').magnitude
 		
-		U_2 = speed * self.d_2/2
-		C_m2 = flow / self.Area2
+		U_2 = speed_N * self.d_2/2
+		C_m2 = flow_Q / self.Area2
 		slip = U_2 * (1 - self.WiesnerSlip)
 		W_u2 = C_m2 / np.tan(self.Beta2B) + slip
 		W_2 = np.sqrt(C_m2**2 + W_u2**2)
 		C_u2 = (U_2 - W_u2)
 		
 		return VelocityTriangle(
-			u=U_2,
-			c_m=C_m2,
-			c_u=C_u2,
-			w=W_2
+			u=U_2, c_m=C_m2, c_u=C_u2, w=W_2
 		), f
 
 	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float], float]:
