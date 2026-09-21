@@ -32,7 +32,7 @@ print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
 print(f"Headrise (ΔH)               = {lox_imp.DP.H.to('m'):.1f}")
 print(f"Shaft Speed (N)             = {lox_imp.DP.N_shaft:.0f}")
 print(f"Specific speed (imperial)   = {lox_imp.SpecificSpeed:.0f}")
-print(f"Specific speed (metric)     = {lox_imp.SpecificSpeedMetric:.1f}")
+print(f"Specific speed (metric)     = {lox_imp.n_q:.1f}")
 
 # ------------------------------------------------------------------
 # Derived impeller characteristics
@@ -50,9 +50,10 @@ print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
 specific_work, _, _ = lox_imp.GetSpecificWork()
 power_consumption = (opt_m_dot * specific_work)
 
-# cavitation criteria: p_inlet <= p_vapor
-# although in reality, vaporization can be delayed 
-SAFE_CAVITATION_NUMBER = 1
+
+print("\n--- Performance characteristics ---")
+print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
+
 feed_pressure = Q_(150, 'psi')		# inlet feed pressure, from tank pressure
 atm_press = Q_(1, 'atm')			# atmospheric pressure
 LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmospheric pressure
@@ -61,25 +62,12 @@ LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmosp
 p_vapor_LO2 = Q_(					# vapor pressure at inlet (pressurized)
     CP.PropsSI('P', 'T', LO2_temp.magnitude, 'Q', 0, 'Oxygen'), 'Pa')
 
-inlet_diam = Q_(1, 'in')			# impeller inlet diam TODO: make it an attriubte of impeller class
-inlet_hub_diam = Q_(0.5, 'in')
+NPSH_a = (feed_pressure - p_vapor_LO2) / rho / g
 
-# cavitation_num = (p_i - p_vapor) / [1/2 * rho * U^2]
-# NPSH = (p_i - p_vapor) / (rho * g) 
-# 	   = 1/2 * cavitation_num * U^2 / g
-u_i = inlet_diam/2 * lox_imp.DP.N_shaft # TODO: It is more accurate to use the relative velocity w_i rather than tip velocity if there is significant preswhirl (there is with an inducer)
-NPSH_i = (1/2* SAFE_CAVITATION_NUMBER * u_i**2 / g)
-
-inlet_area = (np.pi / 4 * (inlet_diam)**2 - inlet_hub_diam**2).to('m^2')
-inlet_vel = (lox_imp.DP.Q / inlet_area).to('m/s')
-p_inlet_static = feed_pressure - 1/2 * rho * inlet_vel**2
-
-NPSH_a = (p_inlet_static - p_vapor_LO2) / rho / g
-
-print("\n--- Performance characteristics ---")
-print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
-print(f"NPSH @ inception            = {NPSH_i.to('m'):.0f}")
+print("\n--- Inlet conditions ---")
+print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
+print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
 lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()

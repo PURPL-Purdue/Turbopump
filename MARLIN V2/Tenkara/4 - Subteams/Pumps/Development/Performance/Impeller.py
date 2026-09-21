@@ -57,7 +57,7 @@ class Impeller:
 			self.DP.H.to('ft')**0.75
 			).magnitude
 
-		self.SpecificSpeedMetric: float = (
+		self.n_q: float = (
 			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
 			self.DP.H.to('m')**0.75
 			).magnitude
@@ -73,8 +73,27 @@ class Impeller:
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
 		
+		# TODO: Optimize for inlet diameter d_1
+		# Gulich, Centrifugal Pumps, pg. 285, eq 6.13
+		self.d_1 = Q_(1, 'in')
+		self.Area1 = np.pi / 4 * (self.d_1**2 - self.d_hub**2) # TODO: blade blockage?
 
+	@property
+	def NPSH_i(self) -> Q_[float]:
+		"""
+			This method of calculating NPSH_i also accounts for inlet velocity and losses.
+			Total pressure should be used when calculating available NPSH.
 
+			Gamma_w is actually just the cavitation number,
+			especially if ignoring the effects of inlet velocity.
+			Typically c_1m << w_1
+		"""
+		c_1m = self.DP.Q / self.Area1	# meridional velocity at inlet
+		w_1 = np.sqrt(					# relative velocity of flow at leading edge
+			(self.DP.N_shaft * self.d_1/2)**2 + c_1m**2
+			)
+		return (1/2 / g * (gamma_c * c_1m**2 + gamma_w * w_1**2)).to('m')
+	
 	def H_euler(self, Q):
 		"""
 		https://ntrs.nasa.gov/api/citations/19950013379/downloads/19950013379.pdf
@@ -116,7 +135,7 @@ class Impeller:
 			w=W_2
 		), f
 
-	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float]]:
+	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float], float]:
 		if speed_N is None:
 			speed_N = self.DP.N_shaft
 		if flow_Q is None:
