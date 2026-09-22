@@ -156,6 +156,12 @@ class Impeller:
 		), f
 
 	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float], float]:
+		"""
+			Returns
+			1. Brake work, work consumed by the impeller per unit mass of fluid
+			2. Fluid work, work done on the fluid per unit mass of fluid
+			3. flowspeed factor, non-dimensional number, low confidence of analysis if greater than 2
+		"""
 		if speed_N is None:
 			speed_N = self.DP.N_shaft
 		if flow_Q is None:
@@ -165,14 +171,14 @@ class Impeller:
 		#f: float
 		vels, f = self.GetOutletVelocities(flow_Q, speed_N)
 		# Euler turbomachinery equation
-		work_consumed = (vels.c_u * vels.u).to('kJ/kg')
+		brake_work = (vels.c_u * vels.u).to('kJ/kg')
 
 		# empirical prediction, valid for 0 < f < 2
 		n_hydraulic = emp.HydraulicEfficiency(f) * self.DP.n_hyd_BEP
 
-		fluid_work = work_consumed * n_hydraulic
+		fluid_work = brake_work * n_hydraulic
 
-		return work_consumed, fluid_work, f
+		return (brake_work, fluid_work, f)
 		
 	def PlotPerformanceHQ(self, rpm_sweep: Q_[list[float]]=None) -> None:
 		N_sweep = rpm_sweep if rpm_sweep is not None else Q_([self.DP.N_shaft])
