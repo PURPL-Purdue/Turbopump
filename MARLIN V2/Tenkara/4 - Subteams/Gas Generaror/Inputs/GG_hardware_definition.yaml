@@ -51,4 +51,3 @@ torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch t
                                # Last updated: May 25th, 2026 by Miles Cohen
 
 torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
-torch_
