@@ -1,0 +1,46 @@
+of_ratio: 0.5
+tp_mdot: 0.368               # lb/s
+chamber_pressure: 350                 # Psi
+L_star: 1.27                       # meters
+throat_diameter: .00003983           # m^2
+expansion_ratio: 2.3
+cstar_efficiency: .7
+
+
+## Sim setpoints
+# MCA_inlet = sim_config["MCA_inlet"]
+# mech_MCA = sim_config["mech_MCA"]
+# cea_fuel = sim_config["CEA_fuel"]
+# cea_ox = sim_config["CEA_ox"]
+
+# mech_torch = sim_config["mech_torch"]
+# fuel_torch = sim_config["torch_fuel"]
+# ox_torch = sim_config["torch_ox"]
+# OF_torch = sim_config["OF_torch"]
+# pc_torch = sim_config["pc_torch"]
+# bisect_count = sim_config["WSR_bisection"]
+MCA_inlet: {
+  IC3H7OH: 297,
+  O2: 90,
+  #CH4: 278
+}
+mech_MCA: "mech_PROCI_alcohols_371sp_commented.yaml"
+CEA_fuel: "Isopropanol"
+CEA_ox: "LO2"
+
+mech_torch: "CH4_grimech30.yaml"
+torch_fuel: "CH4"
+torch_ox: "O2"
+OF_torch: 1.4
+pc_torch: 220
+WSR_bisection: 10
+
+OF_sweep: true
+OF_min: 1
+OF_max: 3
+OF_step: 0.1
+
+cp_flag_fuel: false
+cp_fuel: 2.68
+cp_flag_ox: true
+cp_ox: 1.71

@@ -1,6 +1,6 @@
 ######################################################################################
-# Author: Louis DeSano
-# Latest Revision: April 7, 2026
+# Author: Louis DeSano (edited by Miles Cohen)
+# Latest Revision: September 23, 2026
 #
 # This set of functions determines:
 #   - Minimum ignition energy
@@ -21,7 +21,7 @@
 # Libraries
 #   - Cantera, Coolprop, Numpy, Matplotlib, RocketCEA
 # Files:
-# - MIE.py, WSR.py, TCA_params.yaml
+# - GGIE.py, WSR.py, GGIE_setpoints.yaml
 ######################################################################################
 
 # Import Dependent Libraries
@@ -46,7 +46,7 @@ FT2IN = 12
 
 # Import Combustion Codes
 from WSR import Auto_Igntition_Temp
-from MIE import chain_reaction_power, plot_OF_sweep
+from GGIE import chain_reaction_power, plot_OF_sweep
 
 #YOU WERE GETTING ENTHALPY FOR IPA AT EACH STATE FROM THE WEBSITE
 """
@@ -60,19 +60,20 @@ def load_config(config_path):
     return config_data
 
 main_dir = os.getcwd()
-params_path = os.path.join(main_dir, "MARLIN V2", "Tenakra", "4 - Subteams", "Gas Generator", "Inputs", "GG_hardware_definitions.yaml")
-#params_path = main_dir + r"MARLIN V2\Tenkara\4 - Subteams\TCA\Development\MIE_Refactored\MIE_Refactored\TCA_params.yaml"
+#params_path = os.path.join(main_dir, "MARLIN V2", "Tenkara", "4 - Subteams", "Gas Generator", "Development", "GGIE_Refactored", "GGIE_setpoints.yaml")
+params_path = main_dir + r"\MARLIN V2\Tenkara\4 - Subteams\Gas Generator\Development\GGIE_Refactored\GGIE_setpoints.yaml"
 
 # Parse Setpoints From YAML
-TCA_config = load_config(r"Inputs\TCA_params.yaml")
+#GG_config = load_config(r"Gas Generator\Inputs\GG_hardware_definition.yaml")
+GG_config = load_config("GGIE_setpoints.yaml")
 
-OF = TCA_config['of_ratio']
-mdot_main = TCA_config['tp_mdot']
-Pc_main = TCA_config['chamber_pressure']
-lstar = TCA_config['L_star']
-Dt = TCA_config['throat_diameter']
-expansion_ratio = TCA_config['expansion_ratio']
-eta_cstar = TCA_config['cstar_efficiency']
+OF = GG_config['of_ratio']
+mdot_main = GG_config['tp_mdot']
+Pc_main = GG_config['chamber_pressure']
+lstar = GG_config['L_star']
+Dt = GG_config['throat_diameter']
+expansion_ratio = GG_config['expansion_ratio']
+eta_cstar = GG_config['cstar_efficiency']
 
 # read in simulation configs
 sim_config_path = sys.argv[1]
@@ -95,6 +96,7 @@ bisect_count = sim_config["WSR_bisection"]
 
 # determine stay time for WSR model
 # get density of chamber 
+print(cea_fuel)
 cea = CEA_Obj(oxName=cea_ox, fuelName=cea_fuel)
 rho_main = cea.get_Chamber_Density(Pc=Pc_main, MR=OF, eps=1) / (12**3)
 cstar = cea.get_Cstar(Pc=Pc_main, MR=OF) * eta_cstar * FT2IN

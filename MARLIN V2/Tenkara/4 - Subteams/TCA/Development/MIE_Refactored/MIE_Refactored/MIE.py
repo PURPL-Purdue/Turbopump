@@ -44,8 +44,9 @@ def chain_reaction_power(config, T_ign, mech_torch, fuel_torch, ox_torch, OF_tor
 
     if config['cp_flag_fuel']: 
         cp_fuel_MCA = config['cp_fuel']
-        h1_f_MCA = cp.CoolProp.PropsSI("H", "T", T1_f, "P", pc_MCA, cp_fuel_MCA)
-        h2_f_MCA = cp.CoolProp.PropsSI("H", "T", T_ign, "P", pc_MCA, cp_fuel_MCA)
+        #cp_fuel_MCA = cp.CoolProp.PropsSI("C","T", (T_ign+T1_f)/2.0, "P", pc_MCA, cp_fuel_MCA )
+        h1_f_MCA = cp.CoolProp.PropsSI("H", "T", T1_f, "P", pc_MCA, MCA_fuel)
+        h2_f_MCA = cp.CoolProp.PropsSI("H", "T", T_ign, "P", pc_MCA, MCA_fuel)
     else:
         h1_f_MCA = config['h1_f']
         h2_f_MCA = config['h2_f']
@@ -53,8 +54,10 @@ def chain_reaction_power(config, T_ign, mech_torch, fuel_torch, ox_torch, OF_tor
 
     if config['cp_flag_ox']: 
         cp_ox_MCA = config['cp_ox']
-        h1_ox_MCA = cp.CoolProp.PropsSI("H", "T", T1_ox_MCA, "P", pc_MCA, cp_ox_MCA)
-        h2_ox_MCA = cp.CoolProp.PropsSI("H", "T", T_ign, "P", pc_MCA, cp_ox_MCA)
+        #cp_ox_MCA = cp.CoolProp.PropsSI("C", "T", T1_ox_MCA, "P", pc_MCA, cp_ox_MCA)
+        h1_ox_MCA = cp.CoolProp.PropsSI("H", "T", T1_ox_MCA, "P", pc_MCA, MCA_ox)
+
+        h2_ox_MCA = cp.CoolProp.PropsSI("H", "T", T_ign, "P", pc_MCA, MCA_ox)
     else:
         h1_ox_MCA = config['h1_ox']
         h2_ox_MCA = config['h2_ox']
