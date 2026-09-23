@@ -276,7 +276,7 @@ class FlangeSizer:
             maxSpacing = self.bolt_spacing(boltDiam)
 
             # bolt circle: gasket OD + clearance margin
-            C = self.gasket_OD + 2*bolt_clearance_diam #2x since we are adding to the diameter
+            C = self.gasket_OD + 2*bolt_clearance_diam*1.5 #2x since we are adding to the diameter, additional factor for room to add washer
             circum = np.pi * C
 
             # Number required by bolt area
@@ -331,7 +331,7 @@ class FlangeSizer:
 
         # seating moment: eq. (5) -- W = (Am + Ab)*Sa / 2, NOT Ab*Sa.
         Ab = boltArea * count # total area of bolts actually being used [m^2]
-        W = (self.Am + Ab) * self.Sa / 2 # flange design bolt load for gasket seating [N]
+        W = max(self.Wm1, self.Wm2) # flange design bolt load for gasket seating [N]
         Mseating = W * (C - self.G) / 2
 
         # operating condition moment

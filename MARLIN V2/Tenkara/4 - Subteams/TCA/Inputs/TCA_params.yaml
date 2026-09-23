@@ -7,9 +7,15 @@
 # =====================================================================================
 
 propellants:
-  fuel: C3H8O,2propanol                                                              # IPA
-  oxidizer: O2(L)                                                                    # LOx
-
+  fuel:
+    name: "IPA(L)"                                  # Liquid IPA — not in thermo.lib, so built as a custom card.
+    formula: {C: 3.0, H: 8.0, O: 1.0}
+    molecular_weight: 60.096                        # g/mol
+    enthalpy: -318.1                                 # kJ/mol, liquid, 298.15 K
+    enthalpy_units: "kJ/mol"                         # matches the documented cea.Reactant example exactly
+    temperature: 298.15
+  oxidizer: O2(L)                                    # LOx
+  
 densities:
   fuel: 786                                                                          # Density of Isopropanol (kg/m^3)
   oxidizer: 1141                                                                     # Density of LOX (kg/m^3)
@@ -18,16 +24,16 @@ reactant_T:                                                                     
   fuel: 298.15
   oxidizer: 90.17
 
-of_ratio: 1                                                                          # O/F ratio 
-tp_mdot: 3.9241                                                                      # Resultant mdot to achieve target thrust (kg/s) CHANGED
+of_ratio: 1                                                                          # O/F ratio
+tp_mdot: 3.8050                                                                      # Resultant mdot to achieve target thrust (kg/s) CHANGED
 
 
 #######################################################################################
 # Engine Setpoints
 # =====================================================================================
  
-Thrust_target: 1500                                                                   # Thrust (lbf) 
-chamber_pressure: 440                                                                 # Chamber pressure (psi) 
+Thrust_target: 1400                                                                   # Thrust (lbf)
+chamber_pressure: 440.0                                                               # Chamber pressure (psi)
  
 exit_pressure: 18                                                                     # Exit pressure (psi) 
  
@@ -43,25 +49,25 @@ alpha_divergence: 45.0                                                          
 # Efficiency metrics
 # =====================================================================================
  
-cstar: 1362.415                                                                        # C* (m/s)
-cf: 1.248                                                                              # Cf
-isp: 173.387                                                                           # Specific impulse (s)
+cstar: 1310.665                                                                        # C* (m/s)
+cf: 1.249                                                                              # Cf
+isp: 166.892                                                                           # Specific impulse (s)
  
  
 #######################################################################################
 # Engine Contour Sizing
 # =====================================================================================
  
-chamber_diameter: 3.826                                                                # Chamber diameter (in) 
-chamber_thickness: 0.337                                                               # Chamber wall thickness (in) 
-throat_diameter: 1.865                                                                 # Throat diameter (in) CHECKED
-exit_diameter: 3.6446                                                                  # Exit diameter (in) CHECKED
-chamber_length: 0.2482                                                                 # Chamber length (m) (FROM INJECTOR TO THROAT) CHECKED
- 
-contraction_ratio: 4.209                                                               # Contraction ratio
-expansion_ratio: 3.819                                                                 # Expansion ratio
- 
-chamber_Temperature: 2174.245                                                          # Adiabatic flame temperature @ chamber [K]
+chamber_diameter: 3.826                                                                # Chamber diameter (in)
+chamber_thickness: 0.337                                                               # Chamber wall thickness (in)
+throat_diameter: 1.8012                                                                # Throat diameter (in) CHECKED
+exit_diameter: 3.5367                                                                  # Exit diameter (in) CHECKED
+chamber_length: 0.2328                                                                 # Chamber length (m) (FROM INJECTOR TO THROAT) CHECKED
+
+contraction_ratio: 4.512                                                               # Contraction ratio
+expansion_ratio: 3.855                                                                 # Expansion ratio
+
+chamber_Temperature: 2016.961                                                          # Adiabatic flame temperature @ chamber [K]
 #######################################################################################
 # Injector Sizing
 # =====================================================================================
