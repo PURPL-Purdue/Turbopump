@@ -9,6 +9,9 @@ LOx_Cda:  0                   # (m^2) Assumed Cd of 1.0
 fuel_Cda: 0                   # (m^2) Assumed Cd of 1.0
                               # Last updated: May 25th, 2026 by Miles Cohen
 
+film_cooling_Cda: 0           # (m^2) Assumed Cd of 1.0
+                              # 
+
 # Stator Hardware Definition
 stator_throat_area: 0         # (m^2) Assumed to be the same as the injector area
                               # Last updated: May 25th, 2026 by Miles Cohen
@@ -28,6 +31,13 @@ combustion_chamber_length: 0   # (m) This is the internal length of the combusti
 
 combustion_chamber_diameter: 0 # (m) This is the iternal diameter of the combustion chamber.
                                # Last updated: May 25th, 2026 by Miles Cohen
+
+GG_fuel_type: "Isopropanol"
+cp_fuel_l: 185                   # kJ/mol K
+Hvap: 45                         # kJ/mol K
+cp_fuel_g_m: 0.0001331           # linear model for cp of gassous ipa
+cp_fuel_g_b: 0.06588             # Cp(K) is in kJ/mol K
+GG_ox_type: "LO2"
 
 
 # Torch Hardware Definitions
@@ -51,3 +61,4 @@ torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch t
                                # Last updated: May 25th, 2026 by Miles Cohen
 
 torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
+torch_os_type: "O2"
