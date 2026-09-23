@@ -135,7 +135,7 @@ def main():
 
     mDot_main = 9.5                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
-    mDot_torch = 0.01765            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
+    mDot_torch = 0.01762            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
     p_c = 200 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
@@ -262,14 +262,14 @@ def main():
 
     """Chamber Dimensions""" 
     #get chamber volume by defining stay time
-    t_stay = 0.0005 # [s]
+    t_stay = 0.0002 # [s]
     V_chamber = t_stay * mDot_torch / rho_c # [m^3]
     Lstar = V_chamber / A_t # [m]
 
     #chamber volume -> dimensions
     conv_angle = 45 # convergent angle [deg]
-    D_c_in = 0.5 # Chamber diameter setpoint[in]
-    D_c = 0.5 * ft2m / 12   #Chamber diameter [m]
+    D_c_in = 0.4 # Chamber diameter setpoint[in]
+    D_c = D_c_in * ft2m / 12   #Chamber diameter [m]
     
     A1 = diameter_to_area(D_c)
     r_contraction = A1 / A_t # contraction ratio
