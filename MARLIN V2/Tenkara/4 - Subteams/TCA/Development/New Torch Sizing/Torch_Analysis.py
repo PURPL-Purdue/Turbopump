@@ -63,13 +63,13 @@ def solve_chamber_pressure(throatArea, massflow, chamberTemp, OF, k):
 
         k = k_new
         
-    return p_c, k
+    return k, p_c
 
 def main():
     ## Fixed torch parameters
-    A_t = 1    # Throat area
-    Df = 1 * IN_TO_M     # Fuel injector diameter (input in inches)
-    Dox = 1 * IN_TO_M    # Oxidizer injector diameter
+    A_t = 0.005843    # Throat area
+    Df = 0.001048     # Fuel injector diameter (input in inches)
+    Dox = 0.001393    # Oxidizer injector diameter
     Tc = 300     # Chamber temperature
     Tox = 22    # Oxidizer line temperature
     Tf = 22    # Fuel line temperature
@@ -110,5 +110,7 @@ def main():
     print("Oxidizer Line Pressure: ", pox_line / BAR_TO_PA, " bar")
     print("Fuel Line Pressure: ", pf_line / BAR_TO_PA, " bar")
 
+if __name__ == "__main__":
+    main()
 
 
