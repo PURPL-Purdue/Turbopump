@@ -8,8 +8,8 @@ import cea as cea
 
 
 R = 8.314 # Gas constant
-CM_TO_IN = 1/2.54 # Centimeters to Inches
-IN_TO_CM = 2.54 # Inches to Centimeters
+CM_TO_IN = 1/.0254 # Meters to Inches
+IN_TO_M = .0254 # Inches to Meters
 BAR_TO_PA = 1e5 # Bar to Pascals 
 T_AMB_CELSIUS = 20 # [deg C]
 T_AMB_KELVIN = 293.15 # [deg K]
@@ -68,8 +68,8 @@ def solve_chamber_pressure(throatArea, massflow, chamberTemp, OF, k):
 def main():
     ## Fixed torch parameters
     A_t = 1    # Throat area
-    Df = 1 * IN_TO_CM     # Fuel injector diameter (input in inches)
-    Dox = 1 * IN_TO_CM    # Oxidizer injector diameter
+    Df = 1 * IN_TO_M     # Fuel injector diameter (input in inches)
+    Dox = 1 * IN_TO_M    # Oxidizer injector diameter
     Tc = 300     # Chamber temperature
     Tox = 22    # Oxidizer line temperature
     Tf = 22    # Fuel line temperature
