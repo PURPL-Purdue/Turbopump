@@ -19,6 +19,7 @@ design_point: DesignPoint = DesignPoint(
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
+    d_1 = Q_(1, 'in'),              # impeller inlet diameter
 	d_2 = Q_(2.2, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.07, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
@@ -81,30 +82,6 @@ vel.Plot(unit='m/s', station=2)
 vel1 = lox_imp.GetInletVelocities()
 vel1.Plot(unit='m/s', station=1)
 
-# TODO: could probably move into the impeller class and clean it up
-npsh = []
-diam = []
-min_NPSH = Q_(np.inf, 'm')
-opt_diam = Q_(-1, 'in')
-
-for d_1 in np.linspace(lox_imp.d_hub, lox_imp.d_2, 100):
-    lox_imp.d_1 = d_1
-    NPSH_i = lox_imp.NPSH_i
-    
-    if NPSH_i < min_NPSH:
-        min_NPSH = NPSH_i.to('m')
-        opt_diam = d_1.to('in')
-    
-    npsh.append(NPSH_i.magnitude)
-    diam.append(d_1.to('in').magnitude)
-
-plt.figure()
-plt.plot(diam, npsh)
-plt.plot([opt_diam.magnitude], [min_NPSH.magnitude], 'o', label=f'optimal {opt_diam:.2f}, {min_NPSH:.0f}')
-plt.xlabel('Inlet diameter (in.)')
-plt.ylabel('NPSH_i (m)')
-plt.title("NPSH inception vs inlet diameter")
-plt.grid()
-plt.legend()
+lox_imp.SweepInletDiam()
 
 plt.show()

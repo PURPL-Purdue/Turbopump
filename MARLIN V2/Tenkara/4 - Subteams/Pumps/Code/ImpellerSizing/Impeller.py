@@ -11,6 +11,7 @@ g = Q_(9.81, 'm/s^2')
 class InputGeometry:
 	Z_blade: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
+	d_1: Q_[float]			# impeller inlet diameter
 	d_2: Q_[float]			# impeller outlet diameter
 	b_2: Q_[float]			# impeller outlet height
 	thk2: Q_[float]			# blade thickness at exit
@@ -34,12 +35,15 @@ class Impeller:
 
 	def __init__(self, geometry: InputGeometry, design_point: DesignPoint):
 
+		assert geometry.d_1 > geometry.d_hub, 'Inlet diameter must be larger than hub diameter'
+		
 		exit_area: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2 - GetBladeBlockage(
 			geometry.Beta2B, geometry.Z_blade, geometry.thk2, geometry.b_2
 		))
 
 		self.Z_blade = geometry.Z_blade
 		self.Beta2B = geometry.Beta2B
+		self.d_1 = geometry.d_1
 		self.d_2 = geometry.d_2
 		self.b_2 = geometry.b_2
 		self.thk2 = geometry.thk2
@@ -69,9 +73,6 @@ class Impeller:
 		self.HeadCoeff: float = (enthalpy/self.U_2_design**2).to('dimensionless').magnitude
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
-		
-		# TODO: Optimize for inlet diameter d_1
-		self.d_1 = Q_(1, 'in')
 
 	@property
 	def Area1(self) -> Q_[float]:
@@ -118,6 +119,33 @@ class Impeller:
 		b2 = self.b_2
 
 		return sigma * U_2_design**2/g - N/np.tan(beta2b)/(2*np.pi*b2*g) * Q
+
+	def SweepInletDiam(self):
+
+		npsh = []
+		diam = []
+		min_NPSH = Q_(np.inf, 'm')
+		opt_diam = Q_(-1, 'in')
+
+		for d_1 in np.linspace(self.d_hub, self.d_2, 100):
+			self.d_1 = d_1
+			NPSH_i = self.NPSH_i
+			
+			if NPSH_i < min_NPSH:
+				min_NPSH = NPSH_i.to('m')
+				opt_diam = d_1.to('in')
+			
+			npsh.append(NPSH_i.magnitude)
+			diam.append(d_1.to('in').magnitude)
+
+		plt.figure()
+		plt.plot(diam, npsh)
+		plt.plot([opt_diam.magnitude], [min_NPSH.magnitude], 'o', label=f'optimal {opt_diam:.2f}, {min_NPSH:.0f}')
+		plt.xlabel('Inlet diameter (in.)')
+		plt.ylabel('NPSH_i (m)')
+		plt.title("NPSH inception vs inlet diameter")
+		plt.grid()
+		plt.legend()
 
 	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
 		# no preswirl
