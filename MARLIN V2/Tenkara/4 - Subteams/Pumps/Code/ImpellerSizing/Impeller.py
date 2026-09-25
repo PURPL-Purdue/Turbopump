@@ -81,7 +81,7 @@ class Impeller:
 		"""
 			This method of calculating NPSH_i accounts for inlet velocity and losses.
 			Therefore, when comparing with available NSPH, total pressure should be used for NPSH_a calculation
-			NPSH_i = (gamma_c * 1/2 * c_m^2 + gamma_w * 1/2 * w^2) / g
+			NPSH_i = (lambda_c * 1/2 * c_m^2 + lambda_w * 1/2 * w^2) / g
 
 			The physical intuition for the NPSH coefficients is that if the coefficients were equal to 1,
 			then the drop in static pressure due to suction is merely the dynamic pressure due to
@@ -91,14 +91,14 @@ class Impeller:
 		"""
 
 		# Gulich, Centrifugal Pumps, chap. 6
-		gamma_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
-		gamma_w = 1.0	# NPSH coefficient for excess velocity due to flow around leading edge
+		lambda_c = 1.2	# NPSH coefficient for main flow acceleration and losses at inlet
+		lambda_w = 1.0	# NPSH coefficient for excess velocity due to flow around leading edge
 		
 		c_1m = self.DP.Q / self.Area1	# meridional velocity at inlet
 		w_1 = np.sqrt(					# relative velocity of flow at leading edge
 			(self.DP.N_shaft * self.d_1/2)**2 + c_1m**2
 			)
-		return (1/2 / g * (gamma_c * c_1m**2 + gamma_w * w_1**2)).to('m')
+		return (1/2 / g * (lambda_c * c_1m**2 + lambda_w * w_1**2)).to('m')
 	
 	def H_euler(self, Q):
 		"""
