@@ -42,3 +42,4 @@ C = sigma * S
 # TODO Beta =  outlet blade angle-inlet blade angle
 
 
+# USE PINT!!!! OR ELSE IM GOING TO KILL SOMEONE
