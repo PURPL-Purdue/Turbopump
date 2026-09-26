@@ -32,7 +32,7 @@ import math
 import unittest
 import warnings
 
-import Code.Sizing.Inducer as ind
+import BladeParams as ind
 
 
 def dm(deg: float, minutes: float = 0.0) -> float:
