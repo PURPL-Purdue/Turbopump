@@ -16,7 +16,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-import bladeParams as bp
+import Code.Sizing.Inducer as bp
 
 # --- Chart settings ---------------------------------------------------------
 SIGMA_B = 0.05          # assumed blade cavitation number at the tip

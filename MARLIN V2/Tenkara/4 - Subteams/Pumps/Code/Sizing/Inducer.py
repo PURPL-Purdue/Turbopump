@@ -13,6 +13,7 @@ Huzel & Huang:
 
 import math
 import warnings
+from VelocityTriangle import VelocityTriangle
 from dataclasses import dataclass
 
 # --- Unit conversions -------------------------------------------------------
