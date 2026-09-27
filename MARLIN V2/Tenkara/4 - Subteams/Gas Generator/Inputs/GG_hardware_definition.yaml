@@ -3,18 +3,19 @@
 # Last updated by: Miles Cohen
 
 # Injector Hardware Definition
-LOx_Cda:  0                   # (m^2) Assumed Cd of 1.0 
-                              # Last updated: May 25th, 2026 by Miles Cohen
+LOx_Cda:  0.00000142        # (m^2) Assumed Cd of 0.8
+                              # Last updated: Sept 24th, 2026 by Miles Cohen
 
-fuel_Cda: 0                   # (m^2) Assumed Cd of 1.0
-                              # Last updated: May 25th, 2026 by Miles Cohen
+fuel_Cda: 0.00000342      # (m^2) Assumed Cd of 0.8
+                              # Last updated: Sept 24th, 2026 by Miles Cohen
 
-film_cooling_Cda: 0           # (m^2) Assumed Cd of 1.0
-                              # 
+film_Cda: 0.00000276      # (m^2) Assumed Cd of 0.8
+                              # TENTATIVE
 
 # Stator Hardware Definition
-stator_throat_area: 0         # (m^2) Assumed to be the same as the injector area
-                              # Last updated: May 25th, 2026 by Miles Cohen
+stator_throat_area: 0.00011 # (m^2) Assumed to be the same as the injector area
+                              # Last updated: Sept 24th, 2026 by Miles Cohen
+                              #TENTATIVE/RANDOM
 
 stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
                               # Last updated: May 25th, 2026 by Miles Cohen
@@ -33,11 +34,14 @@ combustion_chamber_diameter: 0 # (m) This is the iternal diameter of the combust
                                # Last updated: May 25th, 2026 by Miles Cohen
 
 GG_fuel_type: "Isopropanol"
-cp_fuel_l: 185                   # kJ/mol K
+cp_IPA_l: 0.1933                 # kJ/mol K
+h_vap_IPA: 45                    # kj/mol 
+IPA_rho: 785                     # kg/m^3
 Hvap: 45                         # kJ/mol K
 cp_fuel_g_m: 0.0001331           # linear model for cp of gassous ipa
 cp_fuel_g_b: 0.06588             # Cp(K) is in kJ/mol K
 GG_ox_type: "LO2"
+LOx_rho: 1141                    # kg/m^3
 
 
 # Torch Hardware Definitions

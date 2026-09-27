@@ -48,11 +48,12 @@ def chain_reaction_power(config, T_ign, mech_torch, fuel_torch, ox_torch, OF_tor
         h2_f_MCA = cp.CoolProp.PropsSI("H", "T", T_ign, "P", pc_MCA, MCA_fuel)
                                        
     else:
-        cp_fuel_MCA = config['cp_fuel']
-        h1_f_MCA = cp_fuel_MCA * T1_f
-        h2_f_MCA = cp_fuel_MCA * T_ign
-        #h1_f_MCA = config['h1_f']
-        #h2_f_MCA = config['h2_f']
+        # cp_fuel_MCA = config['cp_fuel']
+        # h1_f_MCA = cp_fuel_MCA * T1_f
+        # h2_f_MCA = cp_fuel_MCA * T_ign
+        h1_f_MCA = config['h1_f']
+        h2_f_MCA = config['h2_f']
+        
 
 
 
