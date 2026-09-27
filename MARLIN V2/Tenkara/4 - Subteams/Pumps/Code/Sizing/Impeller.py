@@ -127,6 +127,8 @@ class Impeller:
 		min_NPSH = Q_(np.inf, 'm')
 		opt_diam = Q_(-1, 'in')
 
+		old_d_1 = self.d_1
+
 		for d_1 in np.linspace(self.d_hub, self.d_2, 100):
 			self.d_1 = d_1
 			NPSH_i = self.NPSH_i
@@ -137,6 +139,8 @@ class Impeller:
 			
 			npsh.append(NPSH_i.magnitude)
 			diam.append(d_1.to('in').magnitude)
+			
+		self.d_1 = old_d_1
 
 		plt.figure()
 		plt.plot(diam, npsh)
