@@ -1,8 +1,8 @@
-of_ratio: 0.5
+of_ratio: 0.4
 tp_mdot: 0.368               # lb/s
 chamber_pressure: 350                 # Psi
-L_star: 1.27                       # meters
-throat_diameter: .00003983           # m^2
+L_star: 50                     # in
+throat_diameter: .06174         # m^2
 expansion_ratio: 2.3
 cstar_efficiency: .7
 
@@ -24,6 +24,7 @@ MCA_inlet: {
   O2: 90,
   #CH4: 278
 }
+
 mech_MCA: "mech_PROCI_alcohols_371sp_commented.yaml"
 CEA_fuel: "Isopropanol"
 CEA_ox: "LO2"
@@ -36,11 +37,15 @@ pc_torch: 220
 WSR_bisection: 10
 
 OF_sweep: true
-OF_min: 1
-OF_max: 3
-OF_step: 0.1
+OF_min: 0.2
+OF_max: 0.6
+OF_step: 0.2
 
 cp_flag_fuel: false
-cp_fuel: 2.68
-cp_flag_ox: true
-cp_ox: 1.71
+cp_fuel: 
+
+h1_f: 3048.22 #J/kg
+h2_f: 2172490 #J/kg
+
+cp_flag_ox: True
+cp_ox: "oxygen"
