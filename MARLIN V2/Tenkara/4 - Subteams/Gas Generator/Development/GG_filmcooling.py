@@ -127,15 +127,15 @@ def IPA_satTemp(Pc):
 step_size = 0.1
 psi2pa = 6894.757
 # Feed pressures
-LOx_feed_pressure = 30000000     #pa
-IPA_feed_pressure = 30000000     #pa
+LOx_feed_pressure = 3430000     #pa
+IPA_feed_pressure = 3430000     #pa
 # IPA inlet temp
 IPA_temp = 298                   # K
 #IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
 IPA_MM = 60.1                    # g/mol
 #IPA_H = 1000 * IPA_H_mol / IPA_MM# kJ/kg
 # Chamber Pressure
-Pc_guess = 24000000              #pa  
+Pc_guess = 2400000              #pa  
 Pc_array = []
 film_temp = []
 gas_temp = []
@@ -149,6 +149,7 @@ Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
 mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
 mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
 mdot_film = mdot(config['film_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
 print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
 print(f'Total OF Ratio: {(mdot_ox/(mdot_IPA + mdot_film)):.3f}')
 print(f'film cooling %: {100*(mdot_film / (mdot_film + mdot_ox+mdot_IPA)):.3f}')
