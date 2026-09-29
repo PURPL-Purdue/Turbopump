@@ -103,7 +103,7 @@ cstar = cea.get_Cstar(Pc=Pc_main, MR=OF) * eta_cstar * FT2IN
 At = np.pi * (Dt/2)**2
 Vc = lstar * At
 ts = Vc * rho_main / mdot_main
-print(f"Stay Time [s]: {ts:0.5f}")
+print(f"Stay Time [s]: {ts}")
 
 # Well Stirred Reactor Model to Find AIT of Propellants for Chamber conditions:
 # Stay Time, Chamber Pressure, OF Ratio

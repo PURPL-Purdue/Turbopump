@@ -12,14 +12,14 @@ opt_dP = Q_(33, 'bar')				# total pressure rise at BEP
 
 design_point: DesignPoint = DesignPoint(
 	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
-	H = (opt_dP / (g * rho)),    	# developed head at BEP
-	N_shaft = Q_(35000, 'rpm'),   	# shaft speed
+	H = (opt_dP / (g * rho)),		# developed head at BEP
+	N_shaft = Q_(35000, 'rpm'),		# shaft speed
 	n_hyd_BEP = 0.5
 )
 lox_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
-    d_1 = Q_(1, 'in'),              # impeller inlet diameter
+	d_1 = Q_(1, 'in'),				# impeller inlet diameter
 	d_2 = Q_(2.2, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.07, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
