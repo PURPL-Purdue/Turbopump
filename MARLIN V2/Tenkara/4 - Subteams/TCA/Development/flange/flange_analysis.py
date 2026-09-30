@@ -185,9 +185,9 @@ def main():
     B = 3.826 * IN2M   # Flange ID [m]
     N = 3/8 * IN2M      # Gasket width [m]
     G = 4.326 * IN2M    # Gasket reaction diameter [m]
-    C = 5.45 * IN2M    # Bolt circle diameter [m]
-    A = 6.25 * IN2M    # Flange OD [m]
-    t = 3/8 * IN2M       # Flange thickness [m]
+    C = 5.7 * IN2M    # Bolt circle diameter [m]
+    A = 6.6 * IN2M    # Flange OD [m]
+    t = 0.5 * IN2M       # Flange thickness [m]
 
     # Hub thicknesses
     g0 = 0.337 * IN2M
@@ -199,7 +199,7 @@ def main():
     thread_type = "UNF"
 
     # working chamber pressure
-    P = 440 * 1.5 * PSI2PA
+    P = 440  * PSI2PA
 
     # gasket properties: vermiculite with SS insert
     m = 2

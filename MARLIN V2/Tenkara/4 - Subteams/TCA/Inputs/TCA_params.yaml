@@ -1,6 +1,6 @@
 ### TCA Setpoints — Used by Sizing Script ###
-### YAML Owner: DANIEL LYSENKO DUDNYK
-### Modification permitted only by the YAML owner or an authorized representative. ###
+### YAML Owner: LOUIS DESANO
+### Modification permitted only by the YAML owner or authorized Responsible Engineers. ###
 
 #######################################################################################
 # Propellants @ OF and Propreties
@@ -41,7 +41,7 @@ cstar_efficiency: 0.875                                                         
 cf_efficiency: 0.875                                                                  # Cf efficiency
  
 L_star: 1                                                                             # Characteristic length (m) 
-l_percent: 80                                                                         # (60/80/90)
+l_percent: 80                                                                         # (60/80/90) Bell Nozzle Percent
 alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
  
  
@@ -85,15 +85,15 @@ hole_diameters:
   fuel: 1.5                                                                           # Orifice diameter for fuel (mm)
 
 ox_distance: 3                                                                        # Distance between LOX holes to the fuel hole in a O-F-O configuration (mm)
-ox_ offset: 5.44                                                                      # Distance of the Ox hole to generate the impingement angle at given thickness (mm)
+ox_offset: 5.44                                                                      # Distance of the Ox hole to generate the impingement angle at given thickness (mm)
 
-impinge_percentage: 0.02                                                              # % of impingement relative to chamber length
+impinge_percentage: 0.02                                                              # impingement length divided by chamber length
 ox_angle_impingement: 31.15                                                           # Angle of impingement for LOX (degrees)
 
 wall_thickness:
   fuel: 6                                                                             # Wall thickness for fuel holes (mm)
   oxidizer: 9                                                                         # Wall thickness for oxidizer holes (mm)
 
-stifness:
-  fuel: 23.1                                                                           # Stiffness for fuel (%)
-  oxidizer: 31.2                                                                       # Stiffness for oxidizer (%)
+stiffness:
+  fuel: 21.8                                                                           # Stiffness for fuel (%)
+  oxidizer: 29.3                                                                       # Stiffness for oxidizer (%)
