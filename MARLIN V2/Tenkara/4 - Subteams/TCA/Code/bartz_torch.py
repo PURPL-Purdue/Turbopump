@@ -13,7 +13,7 @@ from scipy.interpolate import CubicSpline
 # Read properties.csv and read dataframe
 # =====================================================================================
 
-df = pd.read_csv('Outputs/properties.csv')
+df = pd.read_csv('Outputs/properties_torch.csv')
 ureg = UnitRegistry()
 
 with open('Inputs/TCA_params.yaml') as f:
@@ -37,10 +37,11 @@ At = np.pi * rt ** 2
 
 A = np.pi * y ** 2
 
+#Change TW
 Tw = 700 * ureg.kelvin # Conservative value
 w = 0.6
 
-cstar = p['cstar'] * ureg.meter / ureg.second
+cstar = p['torch_cstar'] * ureg.meter / ureg.second
 rc = 0.382*rt # Radius of curvature of the throat (m)
 
 #######################################################################################
@@ -114,7 +115,13 @@ hg_ansys = spline1(x_ansys)
 Tr_ansys = spline2(x_ansys)
 
 np.savetxt(
-    "Outputs/ansys_input2.csv",
+    "Outputs/ansys_input_torch.csv",
     np.column_stack((x_ansys, hg_ansys,Tr_ansys)),
+    delimiter=","
+)
+
+np.savetxt(
+    "Outputs/ansys_input_torch_zeros.csv",
+    np.column_stack((x_ansys, hg_ansys * 0,Tr_ansys)),
     delimiter=","
 )

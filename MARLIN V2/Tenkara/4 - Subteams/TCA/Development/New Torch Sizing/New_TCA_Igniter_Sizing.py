@@ -227,7 +227,7 @@ def main():
     k_c = solution.gamma_s[0]
 
     thrust = mDot_torch * isp                           # [N]
-    cstar = solution.c_star           # UNKNOWN UNITS
+    cstar = solution.c_star           # m/s
     Ts = solution.T
     T_comb = Ts[0]
     Cf = solution.coefficient_of_thrust
@@ -258,6 +258,7 @@ def main():
     print("\nMisc")
     print(f" Thrust [N]: {thrust:0.3f} ")
     print(f" Tcomb  [K]: {T_comb:0.3f} ")
+    print(f" Cstar  [m/s]: {cstar[-1]:0.3f} ")
     print("\n")
 
     """Chamber Dimensions""" 
