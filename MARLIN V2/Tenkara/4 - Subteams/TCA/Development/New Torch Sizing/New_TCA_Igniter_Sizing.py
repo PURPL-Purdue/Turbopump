@@ -136,7 +136,7 @@ def main():
     mDot_main = 9.5                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
     mDot_torch = 0.01762            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
-    p_c = 200 * psi2Pa              # torch chamber pressure [psi->Pa]
+    p_c = 192.4 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
 
@@ -150,7 +150,7 @@ def main():
     #mdot_100psi =  0.01760    #kg/s MDOT @ 20% heat transfer efficiency, 100psi pc
     #mdot =  0.00352    #kg/s MDOT @ 100% heat transfer efficiency, 100psi pc
 
-    OF = 2.5                       # OF ratio
+    OF = 2.0                       # OF ratio
 
     Cd = 0.9                       # Discharge Coefficient
     choked = 1
@@ -209,7 +209,7 @@ def main():
     T_reactant = np.array([T_AMB_KELVIN, T_AMB_KELVIN])  # Reactant temperatures (K)
     fuel_weights = np.array([1.0, 0.0])
     ox_weights = np.array([0.0, 1.0])
-    OF = 2.5
+    OF = 2.0
     p_c = p_c / bar2pa
 
     reac = cea.Mixture(reac_names)
@@ -269,7 +269,7 @@ def main():
 
     #chamber volume -> dimensions
     conv_angle = 45 # convergent angle [deg]
-    D_c_in = 0.4 # Chamber diameter setpoint[in]
+    D_c_in = 0.4567  # Chamber diameter setpoint[in]
     D_c = D_c_in * ft2m / 12   #Chamber diameter [m]
     
     A1 = diameter_to_area(D_c)
