@@ -11,6 +11,7 @@ from rocketcea.cea_obj import CEA_Obj
 import cea as cea
 from pyfluids import Fluid, FluidsList, Input
 import pandas as pd
+import yaml
 
 ## Unit Conversions & Constants ##
 n2lbf = 4.44822     # [N/lbf]
@@ -131,11 +132,14 @@ def size_line(mDot, rho, v_line_chosen):
 
 def main():
 
+    with open('Inputs/TCA_params.yaml') as f:
+        p = yaml.safe_load(f)
+
     ### Design Setpoints ###
 
-    mDot_main = 9.5                 # main chamber mass flow [kg/s]
+    mDot_main = p["tp_mdot"]                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
-    mDot_torch = 0.01762            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
+    mDot_torch = p["torch_mass_flows"]["torch_mdot"]            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
     p_c = 192.4 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
@@ -167,7 +171,7 @@ def main():
     # calculate ox and fuel mass flow rates
     mDot_f = mDot_torch / (OF + 1) # [kg/s]
     mDot_ox = mDot_torch - mDot_f  # [kg/s]
-
+    
     print('\nMass Flows')
     print(f' Torch Mass Flow [kg/s]: {mDot_torch:.5f}')
     print(f' Oxidizer Mass Flow [kg/s]: {mDot_ox:0.5f}')
