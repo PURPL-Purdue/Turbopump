@@ -51,13 +51,13 @@ def get_positional_areas(csv_files):
         y = df["y_mm"].values * ureg.mm  
     return x.to(ureg.m).magnitude, y.to(ureg.m).magnitude
 
+
 #######################################################################################
 # Initialize stuff
 # =====================================================================================
 
 with open('Inputs/TCA_params.yaml') as f:
     p = yaml.safe_load(f)
-    print("AHHAHAH")
 
 ureg = UnitRegistry()
 
@@ -65,27 +65,17 @@ ureg = UnitRegistry()
 # ENGINE PAREMETERS/INPUTS
 # =====================================================================================
 
-###CHANGE TO TORCH YAML
-#F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
-pc    = p['torch_pressures']['chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
-#pe    = p['exit_pressure'] * ureg.psi       # Exit pressure             [psia]
-ac_at = p['torch_dimensions']['contraction_ratio']             # Contraction ratio
-of_ratio = p['torch_of_ratio']
+F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
+pc    = p['chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
+pe    = p['exit_pressure'] * ureg.psi       # Exit pressure             [psia]
+ac_at = p['contraction_ratio']             # Contraction ratio
+of_ratio = p['of_ratio']
 
 # =====================================================================================
 # Get expansion ratio from contour
 # =====================================================================================
 
-###Take lengths of constant d for chamber/throat
-###Do linear fit for throat to exit plane
-x_c = np.arange(-1 * p['torch_dimensions']['chamber_length'], 0, 0.01)
-x_c_numel = len(x_c)
-x_t = np.arange(0, p['torch_dimensions']['orb_to_bspp_len'], 0.01)
-x_t_numel = len(x_t)
-y_c = np.full(x_c_numel, (p['torch_dimensions']['chamber_diameter'] / 2.0))
-y_t = np.full(x_t_numel, (p['torch_dimensions']['throat_diameter'] / 2.0))
-x = np.concatenate((x_c, x_t)) *25.4 / 1000
-y = np.concatenate((y_c, y_t)) *25.4 / 1000
+x, y = get_positional_areas(["Outputs/contour.csv"])
 rt = np.min(y)
 ae_at = (y / rt)**2
 
@@ -93,14 +83,11 @@ ae_at = (y / rt)**2
 # CEA Setup
 # =====================================================================================
 
-###Switch to torch reactants
 reac_names = [
-    build_reactant(p['torch_propellants']['fuel'], p['torch_reactant_T']['fuel']),
-    build_reactant(p['torch_propellants']['oxidizer'], p['torch_reactant_T']['oxidizer']),
+    build_reactant(p['propellants']['fuel'], p['reactant_T']['fuel']),
+    build_reactant(p['propellants']['oxidizer'], p['reactant_T']['oxidizer']),
 ]
-T_reactant = np.array([p['torch_reactant_T']['fuel'], p['torch_reactant_T']['oxidizer']]) * ureg.K
-
-#Same
+T_reactant = np.array([p['reactant_T']['fuel'], p['reactant_T']['oxidizer']]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
 
@@ -121,7 +108,7 @@ properties = []
 throat_tol = 1e-10
 
 subsonic_mask = (x < 0.0) & (ae_at > 1.0 + throat_tol)
-supersonic_mask = (x > 0.0) 
+supersonic_mask = (x > 0.0) & (ae_at > 1.0 + throat_tol)
 
 x_before = x[subsonic_mask]
 areas_before_throat = ae_at[subsonic_mask]
@@ -149,13 +136,12 @@ for xpos, subar in zip(x_before, areas_before_throat):
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],
-        'Mach': solution.Mach[-1],
-        'Density [kg/m^3]': solution.density[-1]
+        'Mach': solution.Mach[-1]
         })
 
 for xpos, supar in zip(x_after, areas_after_throat):
-    solver.solve(solution, weights, pc.to(ureg.bar).magnitude, ac_at=ac_at, iac=False, hc=hc)
-    print(solution.Mach)
+    solver.solve(solution, weights, pc.to(ureg.bar).magnitude, supar=[supar], ac_at=ac_at, iac=False, hc=hc)
+
     properties.append({
         'x_m': xpos,
         'y_m': y[np.where(x == xpos)[0][0]],
@@ -169,8 +155,7 @@ for xpos, supar in zip(x_after, areas_after_throat):
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],
-        'Mach': solution.Mach[-1],
-        'Density [kg/m^3]': solution.density[-1]
+        'Mach': solution.Mach[-1]
         })
 
 # =====================================================================================
@@ -178,6 +163,4 @@ for xpos, supar in zip(x_after, areas_after_throat):
 # =====================================================================================
 
 df = pd.DataFrame(properties)
-print(df)
-df.to_csv('Outputs/properties_torch.csv', index=False)
-print("DONE")
+df.to_csv('Outputs/properties.csv', index=False)

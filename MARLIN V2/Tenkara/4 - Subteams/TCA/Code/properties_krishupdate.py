@@ -10,36 +10,10 @@ import yaml
 # =====================================================================================
 
 # =====================================================================================
-# Function to build a reactant (library name or custom card) from yaml spec
+# Function to get properties from CSV files
 # =====================================================================================
 
-def build_reactant(spec, T_default):
-    """
-    spec: either
-      - a str  -> library species name, used as-is
-      - a dict -> custom card, converted to a cea.Reactant. Expected keys:
-            name, formula (dict of element: atom count), molecular_weight (g/mol),
-            enthalpy, enthalpy_units (e.g. "kJ/mol", "J/kg"), temperature (K, optional)
-    T_default: fallback reactant temperature (K) if spec doesn't specify one
-    """
-    if isinstance(spec, str):
-        return spec
-
-    return cea.Reactant(
-        name=spec["name"],
-        formula=spec["formula"],
-        molecular_weight=spec.get("molecular_weight"),
-        enthalpy=spec["enthalpy"],
-        enthalpy_units=spec["enthalpy_units"],
-        temperature=spec.get("temperature", T_default),
-    )
-
-
-# =====================================================================================
-# Function to get positional areas from CSV files
-# =====================================================================================
-
-def get_positional_areas(csv_files):
+def get_properties(csv_files):
     if not csv_files:
         print("No CSV files provided.")
         return
@@ -49,7 +23,11 @@ def get_positional_areas(csv_files):
         df = df.sort_values("x_mm")
         x = df["x_mm"].values * ureg.mm
         y = df["y_mm"].values * ureg.mm  
-    return x.to(ureg.m).magnitude, y.to(ureg.m).magnitude
+        twall = df["T_wall_K"].values * ureg.K
+    return x.to(ureg.m).magnitude, y.to(ureg.m).magnitude, twall.to(ureg.K).magnitude
+
+
+
 
 
 #######################################################################################
@@ -75,19 +53,16 @@ of_ratio = p['of_ratio']
 # Get expansion ratio from contour
 # =====================================================================================
 
-x, y = get_positional_areas(["Outputs/contour.csv"])
-rt = np.min(y)
-ae_at = (y / rt)**2
+x, y, twall = get_properties(["Outputs/contour.csv"])
+rt = np.interp(0.0, x, y) * ureg.m
+ae_at = np.array((y**2 / (rt.magnitude**2)))
 
 # =====================================================================================
 # CEA Setup
 # =====================================================================================
 
-reac_names = [
-    build_reactant(p['propellants']['fuel'], p['reactant_T']['fuel']),
-    build_reactant(p['propellants']['oxidizer'], p['reactant_T']['oxidizer']),
-]
-T_reactant = np.array([p['reactant_T']['fuel'], p['reactant_T']['oxidizer']]) * ureg.K
+reac_names = [p['propellants']['fuel'], p['propellants']['oxidizer']]
+T_reactant = np.array([298.15, 90.17]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
 
@@ -105,16 +80,15 @@ hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant.to(ureg.kelvin).magnit
 # =====================================================================================
 
 properties = []
-throat_tol = 1e-10
+positions = [x,y]
 
-subsonic_mask = (x < 0.0) & (ae_at > 1.0 + throat_tol)
-supersonic_mask = (x > 0.0) & (ae_at > 1.0 + throat_tol)
+throat_i = np.where(ae_at == ae_at.min())[0]
 
-x_before = x[subsonic_mask]
-areas_before_throat = ae_at[subsonic_mask]
+x_before = x[:throat_i[0]]
+areas_before_throat = ae_at[:throat_i[0]]
 
-x_after = x[supersonic_mask]
-areas_after_throat = ae_at[supersonic_mask]
+x_after = x[throat_i[-1] + 1:]
+areas_after_throat = ae_at[throat_i[-1] + 1:]
 
 # =====================================================================================
 # Run CEA solver for each area ratio, subsonic and supersonic solutions
@@ -126,13 +100,14 @@ for xpos, subar in zip(x_before, areas_before_throat):
     properties.append({
         'x_m': xpos,
         'y_m': y[np.where(x == xpos)[0][0]],
+        'Tw [K]': twall[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
         'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
         'MW [kg/kmol]' : solution.MW[-1],
         'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
-        'T_chamber [K]'  : solution.T[-1],
-        'P_chamber [bar]' : solution.P[-1],
+        'T_local [K]'  : solution.T[-1],
+        'P_local [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],
@@ -145,13 +120,14 @@ for xpos, supar in zip(x_after, areas_after_throat):
     properties.append({
         'x_m': xpos,
         'y_m': y[np.where(x == xpos)[0][0]],
+        'Tw [K]': twall[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
         'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
         'MW [kg/kmol]' : solution.MW[-1],
         'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
-        'T_chamber [K]'  : solution.T[-1],
-        'P_chamber [bar]' : solution.P[-1],
+        'T_local [K]'  : solution.T[-1],
+        'P_local [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],

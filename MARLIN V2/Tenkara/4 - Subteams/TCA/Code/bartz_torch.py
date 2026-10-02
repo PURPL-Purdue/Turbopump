@@ -62,6 +62,7 @@ plt.plot(x.magnitude, hg.magnitude)
 
 plt.xlabel("Axial position, x [m]")
 plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
+plt.title("Bartz HTC vs. Axial Position")
 plt.grid(True)
 plt.show()
 
@@ -69,6 +70,7 @@ plt.plot(x.magnitude, Tr.magnitude)
 
 plt.xlabel("Axial position, x [m]")
 plt.ylabel("Recovery Temperature, $T_r$ [K]")
+plt.title("Recovery Temp vs. Axial Position")
 plt.grid(True)
 plt.show()
 
