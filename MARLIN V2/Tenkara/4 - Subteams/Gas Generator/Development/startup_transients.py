@@ -5,30 +5,118 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d, PchipInterpolator
+import sys
+from pathlib import Path
+from pint import Quantity as Q_
 
-# ---------------------------------------------------------
-# Establish Constants
-# ---------------------------------------------------------
+#######################################
+# Define Impeller Objects
+#######################################
+CURRENT_DIR = Path(__file__).resolve().parent
+TARGET_DIR = CURRENT_DIR.parent.parent / "Pumps" / "Code" / "Sizing"
+sys.path.append(str(TARGET_DIR))
+from Impeller import DesignPoint, InputGeometry, Impeller
+
+LOx_design_point = DesignPoint(
+    Q=Q_(2.03 / 1141, 'm^3/s'),
+    H=Q_(33e5 / (9.81 * 1141), 'm'),
+    N_shaft=Q_(35000, 'rpm'),
+    n_hyd_BEP=0.5
+)
+
+LOx_geometry = InputGeometry(
+    Z_blade=6,
+    Beta2B=Q_(20, 'deg').to('rad'),
+    d_1=Q_(1, 'in'),
+    d_2=Q_(2.2, 'in'),
+    b_2=Q_(0.07, 'in'),
+    thk2=Q_(0.04, 'in'),
+    d_hub=Q_(0.6, 'in')
+)
+
+IPA_design_point = DesignPoint(
+    Q=Q_(2.15 / 786, 'm^3/s'),
+    H=Q_(44.63e5 / (9.81 * 786), 'm'),
+    N_shaft=Q_(35000, 'rpm'),
+    n_hyd_BEP=0.5
+)
+
+IPA_geometry = InputGeometry(
+    Z_blade=6,
+    Beta2B=Q_(20, 'deg').to('rad'),
+    d_1=Q_(1.5, 'in'),
+    d_2=Q_(2.5, 'in'),
+    b_2=Q_(0.15, 'in'),
+    thk2=Q_(0.04, 'in'),
+    d_hub=Q_(1.2, 'in')
+)
+
+# call impeller function for object definitions
+LOx_impeller = Impeller(LOx_geometry, LOx_design_point)
+IPA_impeller = Impeller(IPA_geometry, IPA_design_point)
+
+#######################################
+# Switchoff RPM
+#######################################
+GG_Pc = 390        #psi
+GG_Pc_min = 180    #psi
+tank_press = 100   #psi
+stiffness = .2     # % of Pc
+line_Pdrop = .1    # % of Pc
+LOx_rho = Q_(1141, "kg/m^3")
+IPA_rho = Q_(786, "kg/m^3")
+
+required_pump_output = Q_((GG_Pc + (stiffness * GG_Pc) + (line_Pdrop * GG_Pc) - tank_press), "psi")
+
+# compare head to required output
+N_sweep = range(5000, 60000, 100)
+N_switch_LOx = None
+N_switch_IPA = None
+for N_val in N_sweep:
+    speed_N = Q_(N_val, 'rpm')
+    
+    # LOX Evaluation
+    if N_switch_LOx is None:
+        LOx_brake_work, LOx_fluid_work, _ = LOx_impeller.GetSpecificWork(speed_N=speed_N, flow_Q=LOx_design_point.Q)
+        LOx_delta_P = (LOx_rho * LOx_fluid_work).to("psi")
+        if LOx_delta_P >= required_pump_output:
+            N_switch_LOx = N_val
+
+    # IPA Evaluation
+    if N_switch_IPA is None:
+        IPA_brake_work, IPA_fluid_work, _ = IPA_impeller.GetSpecificWork(speed_N=speed_N, flow_Q=IPA_design_point.Q)
+        IPA_delta_P = (IPA_rho * IPA_fluid_work).to("psi")
+        if IPA_delta_P >= required_pump_output:
+            N_switch_IPA = N_val
+
+    if N_switch_LOx is not None and N_switch_IPA is not None:
+        break
+
+N_switch = max(N_switch_LOx, N_switch_IPA)
+
+#######################################
+# Power Surface Processing
+#######################################
 hptowatts = 745.7        # unit conversion
 lbmtokg = 0.453592       # unit conversion
 I_total = 0.000373116    # kg-m^2
 dragTorque = 0           # Nm - ASSUMED
 N0 = 0                   # RPM
-N_switch = 27175         # RPM
 t_grid = np.linspace(0, 3, 200)  # s
 t_span = (0, 3)
 N_span = (0, 40000)
 
 mdotRead = np.linspace(0.1678, 1.2838, 100) * lbmtokg  # kg/s
-RPMRead = np.linspace(25000, 75000, 50)               # RPM
-RPMExpansion = np.linspace(0, 25000, 50)             # RPM
+RPMRead = np.linspace(25000, 75000, 50)                # RPM
+RPMExpansion = np.linspace(0, 25000, 50)               # RPM
 
-# ---------------------------------------------------------
-# Power Surface Processing
-# ---------------------------------------------------------
+# read in power data from csv
 script_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(script_dir)  # Go up one level
+def_path = os.path.join(parent_dir, 'Inputs', 'GG_hardware_definition.yaml')
 csv_path = os.path.join(script_dir, "hp_surface_n2.csv")
 
+# interpolate power data in lower range
 pmatrix_raw = pd.read_csv(csv_path, header=None).values * hptowatts
 border = pmatrix_raw[0, :]
 slopes = border / np.max(RPMExpansion)
@@ -37,19 +125,18 @@ pExt = np.outer(RPMExpansion, slopes)
 pmatrix = np.vstack([pExt, pmatrix_raw])
 RPMRead_full = np.concatenate([RPMExpansion, RPMRead])
 
-# Create 2D Meshgrids and Transpose to match MATLAB layout
 RPM_mesh, mdot_mesh = np.meshgrid(RPMRead_full, mdotRead)
 RPM = RPM_mesh.T
 mdot = mdot_mesh.T
 
-# ---------------------------------------------------------
+#######################################
 # Power Surface Polynomial Fit
-# ---------------------------------------------------------
+#######################################
 x = RPM.flatten() / 1000.0  # kRPM
 y = mdot.flatten()
 z = pmatrix.flatten()
 
-# Construct Design Matrix A (3rd-degree 2D polynomial surface fit)
+# fit a 3D surface to existing power data
 A = np.column_stack([
     np.ones_like(x),
     x, y,
@@ -57,7 +144,6 @@ A = np.column_stack([
     x**3, (x**2)*y, x*(y**2), y**3
 ])
 
-# Least-squares fit
 c, _, _, _ = np.linalg.lstsq(A, z, rcond=None)
 
 def p_fit(rpm_val, m_val):
@@ -69,9 +155,9 @@ def p_fit(rpm_val, m_val):
 
 Z_fit = p_fit(RPM, mdot)
 
-# ---------------------------------------------------------
-# Solve Integral Equations for Transients (ODE45 equivalent)
-# ---------------------------------------------------------
+#######################################
+#Solve Integral Equations for Transients
+#######################################
 num_sims = len(mdotRead)
 M_grid, T_grid = np.meshgrid(mdotRead, t_grid)
 RPM_grid = np.zeros_like(T_grid)
@@ -80,6 +166,7 @@ Nswitch_grid = np.full_like(RPM_grid, N_switch)
 time_results = []
 RPM_results = []
 
+# solve differential RPM equation
 def make_dNdt(m_val):
     def dNdt(t, N):
         N_curr = N[0] if isinstance(N, np.ndarray) else N
@@ -94,22 +181,19 @@ for i in range(num_sims):
     time_results.append(sol.t)
     RPM_results.append(sol.y[0])
 
-# Project ODE results onto structured grid
 for i in range(num_sims):
     t_vec = time_results[i]
     N_vec = RPM_results[i]
     
-    # Ensure monotonic sequence for interpolation
     _, unique_idx = np.unique(t_vec, return_index=True)
     interp_func = PchipInterpolator(t_vec[unique_idx], N_vec[unique_idx], extrapolate=True)
     RPM_grid[:, i] = interp_func(t_grid)
 
-# ---------------------------------------------------------
+#######################################
 # Display all Plots
-# ---------------------------------------------------------
+#######################################
 fig = plt.figure(figsize=(11, 7))
 
-# Create tab navigation buttons at the top
 ax_tab1 = plt.axes([0.15, 0.92, 0.22, 0.05])
 ax_tab2 = plt.axes([0.39, 0.92, 0.22, 0.05])
 ax_tab3 = plt.axes([0.63, 0.92, 0.22, 0.05])
@@ -118,19 +202,16 @@ btn_tab1 = Button(ax_tab1, 'Power Surface')
 btn_tab2 = Button(ax_tab2, 'Transient Surface')
 btn_tab3 = Button(ax_tab3, 'Transient Plot')
 
-# Plot Axes setups
 ax1 = fig.add_subplot(111, projection='3d')
 ax2 = fig.add_subplot(111, projection='3d')
 ax3 = fig.add_subplot(111)
 
-# Adjust axes position so 3D titles and labels don't clip top/bottom
 for ax in [ax1, ax2]:
     ax.set_position([0.10, 0.12, 0.76, 0.72])
     ax.view_init(elev=30, azim=-120)  # Reorient 90 degrees CCW from default (-30 -> -120)
 
 ax3.set_position([0.12, 0.25, 0.78, 0.62])
 
-# --- TAB 1: Power Surface ---
 ax1.plot_surface(RPM, mdot, pmatrix, cmap='viridis', alpha=0.8)
 ax1.plot_wireframe(RPM, mdot, Z_fit, color='k', rstride=5, cstride=5, linewidth=0.5, label='Fit Mesh')
 ax1.set_xlabel("RPM", labelpad=10)
@@ -138,8 +219,8 @@ ax1.set_ylabel("mdot (kg/s)", labelpad=10)
 ax1.set_zlabel("Power (W)", labelpad=10)
 ax1.set_title("Power Surface Fit Reconstruction", pad=15)
 
-# --- TAB 2: Transient Surface ---
-surf2 = ax2.plot_surface(M_grid, T_grid, RPM_grid, cmap='jet', alpha=0.85, vmin=0, vmax=40000)
+RPM_grid_clipped = np.clip(RPM_grid, 0, 40000)
+surf2 = ax2.plot_surface(M_grid, T_grid, RPM_grid_clipped, cmap='jet', alpha=0.85, vmin=0, vmax=40000)
 cbar = fig.colorbar(surf2, ax=ax2, label='RPM', shrink=0.55, pad=0.1)
 cbar.mappable.set_clim(0, 40000)
 
@@ -147,10 +228,9 @@ ax2.plot_surface(M_grid, T_grid, Nswitch_grid, color='red', alpha=0.3)
 ax2.set_xlabel('mdot (kg/s)', labelpad=10)
 ax2.set_ylabel('Time (s)', labelpad=10)
 ax2.set_zlabel('RPM', labelpad=10)
-ax2.set_zlim(N_span)
+ax2.set_zlim([0, 40000])
 ax2.set_title("Transient Spinup Profile at Various Mass Flows", pad=15)
 
-# --- TAB 3: Interactive Transient Plot ---
 ax3.grid(True)
 ax3.set_xlabel("Time (s)")
 ax3.set_ylabel("RPM")
@@ -165,11 +245,9 @@ ax3.legend(loc="lower right")
 time_text = ax3.text(0.04, 0.88, '', transform=ax3.transAxes, fontsize=11, 
                      bbox=dict(boxstyle='square', facecolor='white', edgecolor='black'))
 
-# Slider control placement
 ax_slider = plt.axes([0.25, 0.08, 0.50, 0.04])
 sld = Slider(ax_slider, 'mdot (kg/s): ', min(mdotRead), max(mdotRead), valinit=mdotinitial, valfmt='%.4f')
 
-# Function to handle tab switches
 def show_tab(tab_num):
     ax1.set_visible(tab_num == 1)
     ax2.set_visible(tab_num == 2)
@@ -182,7 +260,6 @@ btn_tab1.on_clicked(lambda event: show_tab(1))
 btn_tab2.on_clicked(lambda event: show_tab(2))
 btn_tab3.on_clicked(lambda event: show_tab(3))
 
-# Slider update callback
 def expand_update(val):
     sol = solve_ivp(make_dNdt(val), t_span, [N0], method='RK45', rtol=1e-3, atol=1e-3)
     t_out = sol.t
@@ -204,7 +281,6 @@ def expand_update(val):
 
 sld.on_changed(expand_update)
 
-# Display initial tab
 show_tab(1)
 expand_update(mdotinitial)
 
