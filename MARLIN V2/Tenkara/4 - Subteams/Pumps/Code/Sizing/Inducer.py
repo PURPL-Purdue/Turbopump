@@ -13,6 +13,7 @@ Huzel & Huang:
 
 import math
 import warnings
+from pint import Quantity as Q_
 from VelocityTriangle import VelocityTriangle
 from dataclasses import dataclass
 
@@ -212,6 +213,31 @@ def size_inducer(inp: InducerInputs, exact_phi: bool = False) -> InducerResults:
         blade_spacing_ft=spacing,
         chord_ft=chord,
     )
+
+
+def get_velocity_triangles(
+    res: InducerResults,
+) -> tuple[VelocityTriangle, VelocityTriangle]:
+    """Build inlet/outlet tip triangles from sizing results, in ft/s.
+
+    The sizing model uses the same tip speed and axial velocity at both
+    stations, zero inlet preswirl, and efficiency-corrected outlet swirl.
+    """
+    u = Q_(res.tip_speed_fps, "ft/s")
+    c_m = Q_(res.meridional_velocity_fps, "ft/s")
+    c_u = Q_(res.tangential_velocity_fps, "ft/s")
+    inlet = VelocityTriangle(
+        u=u, c_m=c_m, c_u=Q_(0, "ft/s"),
+        w=Q_(math.hypot(res.meridional_velocity_fps, res.tip_speed_fps), "ft/s"),
+    )
+    outlet = VelocityTriangle(
+        u=u, c_m=c_m, c_u=c_u,
+        w=Q_(math.hypot(
+            res.meridional_velocity_fps,
+            res.tip_speed_fps - res.tangential_velocity_fps,
+        ), "ft/s"),
+    )
+    return inlet, outlet
 
 
 def print_results(res: InducerResults) -> None:
