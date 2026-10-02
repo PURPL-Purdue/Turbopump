@@ -123,7 +123,6 @@ torch_dimensions:
   throat_diameter: 0.268                                                                # Torch throat diameter (in)
   chamber_diameter: 0.40                                                                # Torch chamber diameter (in)
   chamber_length: 1.5                                                                   # Torch chamber length (in)
-  exit_diameter: 0.435                                                                  # Torch chamber diameter (in)
   orb_to_bspp_len: 1.142                                                                # Dash 4 ORB to BSPP fitting tube length (in)
   contraction_ratio: 3.02                                                               # Torch contraction ratio (dimensionless) -- NOT recomputed, see note below
 

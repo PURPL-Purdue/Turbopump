@@ -141,15 +141,16 @@ for xpos, subar in zip(x_before, areas_before_throat):
         'y_m': y[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
-        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
+        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.milliwatt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
         'MW [kg/kmol]' : solution.MW[-1],
-        'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
-        'T_chamber [K]'  : solution.T[-1],
-        'P_chamber [bar]' : solution.P[-1],
+        'R [J/kg-K]' : cea.R / (solution.MW[-1]),
+        'Temperature [K]'  : solution.T[-1],
+        'Pressure [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],
-        'Mach': solution.Mach[-1]
+        'Mach': solution.Mach[-1],
+        'Density [kg/m^3]': solution.density[-1]
         })
 
 for xpos, supar in zip(x_after, areas_after_throat):
@@ -160,15 +161,16 @@ for xpos, supar in zip(x_after, areas_after_throat):
         'y_m': y[np.where(x == xpos)[0][0]],
         'gamma' : solution.gamma_s[-1],
         'Cp [(KJ/kg-K)]' : solution.cp[-1],
-        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
+        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.milliwatt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
         'MW [kg/kmol]' : solution.MW[-1],
-        'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
-        'T_chamber [K]'  : solution.T[-1],
-        'P_chamber [bar]' : solution.P[-1],
+        'R [J/kg-K]' : cea.R / (solution.MW[-1]),
+        'Temperature [K]'  : solution.T[-1],
+        'Pressure [bar]' : solution.P[-1],
         'ae_at' : solution.ae_at[-1],
         'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
         'Prandtl Number': solution.Pr_eq[-1],
-        'Mach': solution.Mach[-1]
+        'Mach': solution.Mach[-1],
+        'Density [kg/m^3]': solution.density[-1]
         })
 
 # =====================================================================================
