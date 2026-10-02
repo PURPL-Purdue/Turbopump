@@ -37,7 +37,7 @@ At = np.pi * rt ** 2
 
 A = np.pi * y ** 2
 
-Tw = 1000 * ureg.kelvin # Conservative value
+Tw = 700 * ureg.kelvin # Conservative value
 w = 0.6
 
 cstar = p['cstar'] * ureg.meter / ureg.second
@@ -53,23 +53,26 @@ hg = (0.026/Dt**0.2)*(mu**0.2*Cp.to(ureg.joule/(ureg.kilogram*ureg.kelvin))/Pr**
 
 Tr = T * (1 + ((gamma - 1) / 2 * Pr**(1/3) * M ** 2))
 
-#print(Tr.to(ureg.kelvin))
-#print(hg.to(ureg.watt/(ureg.meter**2*ureg.kelvin)))
+print(Tr.to(ureg.kelvin))
+print(hg.to(ureg.watt/(ureg.meter**2*ureg.kelvin)))
 
 
-#plt.plot(x.magnitude, hg.magnitude)
+plt.plot(x.magnitude, hg.magnitude)
 
-#plt.xlabel("Axial position, x [m]")
-#plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
-#plt.grid(True)
-#plt.show()
+plt.xlabel("Axial position, x [m]")
+plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
+plt.title("Bartz HTC vs. Axial Position")
+plt.grid(True)
+plt.show()
 
-#plt.plot(x.magnitude, Tr.magnitude)
+plt.plot(x.magnitude, Tr.magnitude)
 
-#plt.xlabel("Axial position, x [m]")
-#plt.ylabel("Recovery Temperature, $T_r$ [K]")
-#plt.grid(True)
-#plt.show()
+plt.xlabel("Axial position, x [m]")
+plt.ylabel("Recovery Temperature, $T_r$ [K]")
+plt.title("Recovery Temp vs. Axial Position")
+
+plt.grid(True)
+plt.show()
 
 #######################################################################################
 # Fit heat transfer coefficient and recovery temperature to a spline

@@ -276,7 +276,7 @@ class FlangeSizer:
             maxSpacing = self.bolt_spacing(boltDiam)
 
             # bolt circle: gasket OD + clearance margin
-            C = self.gasket_OD + 2*bolt_clearance_diam #2x since we are adding to the diameter
+            C = self.gasket_OD + 2*bolt_clearance_diam*1.5 #2x since we are adding to the diameter, additional factor for room to add washer
             circum = np.pi * C
 
             # Number required by bolt area
@@ -331,7 +331,7 @@ class FlangeSizer:
 
         # seating moment: eq. (5) -- W = (Am + Ab)*Sa / 2, NOT Ab*Sa.
         Ab = boltArea * count # total area of bolts actually being used [m^2]
-        W = (self.Am + Ab) * self.Sa / 2 # flange design bolt load for gasket seating [N]
+        W = max(self.Wm1, self.Wm2) # flange design bolt load for gasket seating [N]
         Mseating = W * (C - self.G) / 2
 
         # operating condition moment
@@ -476,10 +476,10 @@ def main():
     g1 = g0 #equal for straight integral flange
 
     # working chamber pressure
-    P = 440 * PSI2PA # [Pa]
+    P = 440 * 1.5 * PSI2PA # [Pa]
 
     # gasket properties: vermiculite vermiculite with SS insert
-    m = 2.0 # gasket factor []
+    m = 2 # gasket factor []
     y = 2500  * PSI2PA # design seating stress [Pa]
 
     # physical gasket contact width, facing sketch (1a) per Table 2-5.2
@@ -491,13 +491,13 @@ def main():
     Sa = 30000 * PSI2PA # Yield stress for bolt at atmospheric temp [Pa]
     Sb = Sa # Allowable stress for bolt at design temp [Pa]
 
-    t = 0.5 * IN2M # flange thickness [m]
+    t = 1/2 * IN2M # flange thickness [m]
     Sf = 36000 * PSI2PA # flange yield at temp [Pa]
 
     # modulus of elasticity of flange material at design temperature
     E = 29e6 * PSI2PA # [Pa]
 
-    flange = FlangeSizer(B, P, m, y, N, Sa, Sb, t, g0, g1, Sf, E, safetyFactor=1.5,
+    flange = FlangeSizer(B, P, m, y, N, Sa, Sb, t, g0, g1, Sf, E, safetyFactor=1,
                           facing_sketch=facing_sketch, column=column)
     flange.solve()
     return

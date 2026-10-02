@@ -9,7 +9,7 @@ Reference:
 
 FUNCTIONS
 ---------
-angles, contour, R2 = bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lcyl)
+angles, contour, R2 = bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc)
 export_nozzle_csv(contour, filename)
 export_nozzle_dxf(contour, filename)
 contour_length_mm(contour)
@@ -131,7 +131,7 @@ def find_wall_angles(ar, Rt, l_percent=80):
 # Main contour generator   (all units: mm)
 # ──────────────────────────────────────────────────────────────────────────────
 
-def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lcyl):
+def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lc):
     """
     Generate the full nozzle / chamber contour.
 
@@ -142,7 +142,7 @@ def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lcyl):
     l_percent : int   — bell length as % of 15° cone equivalent (60/80/90)
     cratio    : float — chamber contraction ratio Ac/At
     alpha     : float — convergent half-angle [degrees]
-    Lcyl        : float — cylindrical chamber length [mm]
+    Lc        : float — chamber length [mm]
 
     Returns
     -------
@@ -181,7 +181,7 @@ def bell_nozzle(aratio, Rt, l_percent, cratio, alpha, Lcyl):
     yeca      = [diag_yf + R2 * math.sin(a) - R2 * math.sin(cca_start) for a in ang]
 
     # ── 4. Combustion chamber cylinder
-    iters = np.linspace(xeca[-1], -Lcyl, N_PTS) 
+    iters = np.linspace(xeca[-1], -Lc, N_PTS) 
     xecc  = list(iters)
     yecc  = [yeca[-1]] * N_PTS
 

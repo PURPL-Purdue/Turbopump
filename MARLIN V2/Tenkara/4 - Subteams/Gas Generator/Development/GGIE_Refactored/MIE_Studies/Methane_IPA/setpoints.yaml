@@ -1,0 +1,40 @@
+# Main Chamber Properties and Mechanism
+mech_MCA: "mech_PROCI_alcohols_371sp_commented.yaml"
+MCA_inlet: {"IC3H7OH":298, "O2":90} #Inlet Temperatures [K]
+CEA_fuel: "Isopropanol"
+CEA_ox: "LOX"
+
+WSR_bisection: 25
+
+
+# Igniter Properties and Mechanism
+mech_torch: "gri30_highT.yaml"
+torch_fuel: "CH4"
+torch_ox: "O2"
+pc_torch: 300 #psi
+
+OF_torch: 1.6 # only used if OF_sweep is false [single run]
+OF_sweep: True
+OF_min: 1
+OF_max: 20
+OF_step: 0.1
+
+# MCA Propellant Enthalpies at Injection and Ignition States 
+# if using coolprop for change in enthalpy:
+#   - cp_flag is True
+#   - coolprop fluid ID is needed
+# else:
+#   - enter enthalpies at each state manually
+
+# Fuel
+cp_flag_fuel: True 
+cp_fuel: "methane"
+h1_f: 
+h2_f: 
+
+# Oxidizer
+cp_flag_ox: True
+cp_ox: "oxygen"
+h1_ox: 
+h2_ox:
+

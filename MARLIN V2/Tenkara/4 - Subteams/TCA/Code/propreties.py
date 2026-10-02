@@ -10,6 +10,32 @@ import yaml
 # =====================================================================================
 
 # =====================================================================================
+# Function to build a reactant (library name or custom card) from yaml spec
+# =====================================================================================
+
+def build_reactant(spec, T_default):
+    """
+    spec: either
+      - a str  -> library species name, used as-is
+      - a dict -> custom card, converted to a cea.Reactant. Expected keys:
+            name, formula (dict of element: atom count), molecular_weight (g/mol),
+            enthalpy, enthalpy_units (e.g. "kJ/mol", "J/kg"), temperature (K, optional)
+    T_default: fallback reactant temperature (K) if spec doesn't specify one
+    """
+    if isinstance(spec, str):
+        return spec
+
+    return cea.Reactant(
+        name=spec["name"],
+        formula=spec["formula"],
+        molecular_weight=spec.get("molecular_weight"),
+        enthalpy=spec["enthalpy"],
+        enthalpy_units=spec["enthalpy_units"],
+        temperature=spec.get("temperature", T_default),
+    )
+
+
+# =====================================================================================
 # Function to get positional areas from CSV files
 # =====================================================================================
 
@@ -50,15 +76,18 @@ of_ratio = p['of_ratio']
 # =====================================================================================
 
 x, y = get_positional_areas(["Outputs/contour.csv"])
-rt = np.interp(0.0, x, y) * ureg.m
-ae_at = np.array((y**2 / (rt.magnitude**2)))
+rt = np.min(y)
+ae_at = (y / rt)**2
 
 # =====================================================================================
 # CEA Setup
 # =====================================================================================
 
-reac_names = [p['propellants']['fuel'], p['propellants']['oxidizer']]
-T_reactant = np.array([298.15, 90.17]) * ureg.K
+reac_names = [
+    build_reactant(p['propellants']['fuel'], p['reactant_T']['fuel']),
+    build_reactant(p['propellants']['oxidizer'], p['reactant_T']['oxidizer']),
+]
+T_reactant = np.array([p['reactant_T']['fuel'], p['reactant_T']['oxidizer']]) * ureg.K
 fuel_weights = np.array([1.0, 0.0])
 oxidant_weights = np.array([0.0, 1.0])
 
@@ -76,15 +105,16 @@ hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant.to(ureg.kelvin).magnit
 # =====================================================================================
 
 properties = []
-positions = [x,y]
+throat_tol = 1e-10
 
-throat_i = np.where(ae_at == ae_at.min())[0]
+subsonic_mask = (x < 0.0) & (ae_at > 1.0 + throat_tol)
+supersonic_mask = (x > 0.0) & (ae_at > 1.0 + throat_tol)
 
-x_before = x[:throat_i[0]]
-areas_before_throat = ae_at[:throat_i[0]]
+x_before = x[subsonic_mask]
+areas_before_throat = ae_at[subsonic_mask]
 
-x_after = x[throat_i[-1] + 1:]
-areas_after_throat = ae_at[throat_i[-1] + 1:]
+x_after = x[supersonic_mask]
+areas_after_throat = ae_at[supersonic_mask]
 
 # =====================================================================================
 # Run CEA solver for each area ratio, subsonic and supersonic solutions
