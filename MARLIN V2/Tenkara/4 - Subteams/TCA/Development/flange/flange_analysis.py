@@ -199,7 +199,7 @@ def main():
     thread_type = "UNF"
 
     # working chamber pressure
-    P = 440  * PSI2PA
+    P = 660  * PSI2PA
 
     # gasket properties: vermiculite with SS insert
     m = 2
