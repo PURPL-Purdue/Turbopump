@@ -212,6 +212,8 @@ def Auto_Igntition_Temp(bisect_count, mdot, OF, residence_time, Pc, mech, prop_t
             e_low = e_mid
 
         e_min = e_high
+
+        
     toc = time.time()
     print(f"Bisection Search Completed in {toc-tic:0.2f}s\n")
     

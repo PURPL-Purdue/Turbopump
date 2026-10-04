@@ -25,10 +25,10 @@ class DesignPoint:
 	n_hyd_BEP: float		# hydraulic efficiency at BEP
 
 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
-def GetWiesnerSlipRatio(beta2b: float | Q_[float], Z: int) -> float:
+def GetWiesnerSlipRatio(beta2b: Q_[float], Z: int) -> Q_[float]:
 	return 1 - np.sqrt(np.sin(beta2b)) / Z**0.7
 
-def GetBladeBlockage(beta2b: float, Z: int, thick: float, b2: float) -> float:
+def GetBladeBlockage(beta2b: Q_[float], Z: int, thick: Q_[float], b2: Q_[float]) -> Q_[float]:
 	return thick * b2 * Z / np.sin(beta2b)
 
 class Impeller:
@@ -127,6 +127,8 @@ class Impeller:
 		min_NPSH = Q_(np.inf, 'm')
 		opt_diam = Q_(-1, 'in')
 
+		old_d_1 = self.d_1
+
 		for d_1 in np.linspace(self.d_hub, self.d_2, 100):
 			self.d_1 = d_1
 			NPSH_i = self.NPSH_i
@@ -137,6 +139,8 @@ class Impeller:
 			
 			npsh.append(NPSH_i.magnitude)
 			diam.append(d_1.to('in').magnitude)
+			
+		self.d_1 = old_d_1
 
 		plt.figure()
 		plt.plot(diam, npsh)

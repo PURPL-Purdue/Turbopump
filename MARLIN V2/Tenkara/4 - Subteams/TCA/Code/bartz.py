@@ -37,7 +37,7 @@ At = np.pi * rt ** 2
 
 A = np.pi * y ** 2
 
-Tw = 1000 * ureg.kelvin # Conservative value
+Tw = 700 * ureg.kelvin # Conservative value
 w = 0.6
 
 cstar = p['cstar'] * ureg.meter / ureg.second
@@ -61,6 +61,7 @@ plt.plot(x.magnitude, hg.magnitude)
 
 plt.xlabel("Axial position, x [m]")
 plt.ylabel("Gas-side heat transfer coefficient, $h_g$ [W/m²K]")
+plt.title("Bartz HTC vs. Axial Position")
 plt.grid(True)
 plt.show()
 
@@ -68,6 +69,8 @@ plt.plot(x.magnitude, Tr.magnitude)
 
 plt.xlabel("Axial position, x [m]")
 plt.ylabel("Recovery Temperature, $T_r$ [K]")
+plt.title("Recovery Temp vs. Axial Position")
+
 plt.grid(True)
 plt.show()
 
@@ -114,7 +117,7 @@ hg_ansys = spline1(x_ansys)
 Tr_ansys = spline2(x_ansys)
 
 np.savetxt(
-    "Outputs/ansys_input_zeros.csv",
-    np.column_stack((x_ansys, hg_ansys*0,Tr_ansys*0)),
+    "Outputs/ansys_input2.csv",
+    np.column_stack((x_ansys, hg_ansys,Tr_ansys)),
     delimiter=","
 )

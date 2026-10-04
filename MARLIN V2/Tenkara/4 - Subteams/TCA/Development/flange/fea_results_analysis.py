@@ -213,7 +213,7 @@ def main():
     # Loads
     P = 660              # chamber design pressure [psi]
     F_preload = 16423.189  # total bolt preload force [lbf]
-    R_fea = 9085.1        # FEA reaction force for gasket check [lbf]
+    R_fea = 501*14        # FEA reaction force for gasket check [lbf]
     max_stress_flange = 26288  # <-- REPLACE: max FEA stress on flange body [psi]
 
     # Bolts
@@ -239,11 +239,10 @@ def main():
     # flange_analysis.py / flange_sizing.py's main() (m=2, P=440*1.5=660 psi).
     # Replace with your actual operating m/P if different.
     d1 = 3.826
-    R_fea_gasket = 8494.6
     m = 2
     P_operating = 660
 
-    gasket_seating_check(d1, gasket_width, m, P_operating, R_fea_gasket)
+    gasket_seating_check(d1, gasket_width, m, P_operating, R_fea)
 
 
 if __name__ == "__main__":

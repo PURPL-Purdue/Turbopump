@@ -60,8 +60,6 @@ def load_config(config_path):
     return config_data
 
 main_dir = os.getcwd()
-params_path = os.path.join(main_dir, "MARLIN V2", "Tenakra", "4 - Subteams", "TCA", "Inputs", "TCA_params.yaml")
-params_path = main_dir + r"MARLIN V2\Tenkara\4 - Subteams\TCA\Development\MIE_Refactored\MIE_Refactored\TCA_params.yaml"
 
 # Parse Setpoints From YAML
 TCA_config = load_config(r"Inputs\TCA_params.yaml")
