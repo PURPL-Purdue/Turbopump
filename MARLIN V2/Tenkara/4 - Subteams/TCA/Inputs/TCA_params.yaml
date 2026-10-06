@@ -104,20 +104,18 @@ stiffness:
 # =====================================================================================
 
 torch_pressures:
-  chamber_pressure: 192.4                                                               # Torch chamber pressure (psia)
+  chamber_pressure: 184.1                                                               # Torch chamber pressure (psia)
   ox_inlet_pressure: 505.9                                                              # Torch oxidizer inlet pressure (psia)
   fuel_inlet_pressure: 416.0                                                            # Torch fuel inlet pressure (psia)
 
 torch_mass_flows:
-  ox_mdot: 0.01387                                                                      #Torch oxidizer inlet mass flow rate (kg/s)
-  fuel_mdot: 0.00694                                                                    #Torch oxidizer inlet mass flow rate (kg/s)
-  torch_mdot: 0.02081                                                                   #Torch oxidizer inlet mass flow rate (kg/s)
+  torch_mdot: 0.025                                                                   #Torch oxidizer inlet mass flow rate (kg/s)
 
 orifice_diameters:
   oxidizer: 0.063                                                                       # Torch oxidizer orifice diameter (in)
   fuel: 0.059                                                                           # Torch fuel orifice diameter (in)
 
-torch_of_ratio: 2                                                                       # Torch Oxidizer/Fuel Ratio (dimensionless)
+torch_of_ratio: 1.5                                                                       # Torch Oxidizer/Fuel Ratio (dimensionless)
 
 torch_dimensions:
   throat_diameter: 0.268                                                                # Torch throat diameter (in)
@@ -125,8 +123,6 @@ torch_dimensions:
   chamber_length: 1.5                                                                   # Torch chamber length (in)
   orb_to_bspp_len: 1.142                                                                # Dash 4 ORB to BSPP fitting tube length (in)
   contraction_ratio: 3.02                                                               # Torch contraction ratio (dimensionless) -- NOT recomputed, see note below
-
-torch_stiffness: 30.0                                                                   #Stiffness for oxidizer and fuel (%)
 
 torch_propellants:
   fuel: "CH4"
@@ -136,4 +132,4 @@ torch_reactant_T:                                                               
   fuel: 293.15                                                                              # Fuel Temperature (K)
   oxidizer: 293.15                                                                          # Oxidizer Temperatures (K)
 
-torch_cstar: 2320.0                                                                         #Torch characteristic velocity
+torch_cstar: 1848.0                                                                         #Torch characteristic velocity

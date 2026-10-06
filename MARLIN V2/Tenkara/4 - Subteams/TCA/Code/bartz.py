@@ -25,8 +25,8 @@ gamma = df['gamma'].values
 Cp = df['Cp [(KJ/kg-K)]'].values * ureg.kilojoule / (ureg.kilogram * ureg.kelvin)
 k = df['k [W/m-K]'].values * ureg.watt / (ureg.meter * ureg.kelvin)
 MW = df['MW [kg/kmol]'].values * ureg.kilogram / ureg.kmole
-T = df['T_chamber [K]'].values * ureg.kelvin
-P = df['P_chamber [bar]'].values * ureg.bar
+T = df['Temperature [K]'].values * ureg.kelvin
+P = df['Pressure [bar]'].values * ureg.bar
 mu = df['Viscosity [Pa*s]'].values * ureg.pascal * ureg.second
 Pr = df['Prandtl Number'].values
 M = df['Mach'].values
@@ -37,7 +37,7 @@ At = np.pi * rt ** 2
 
 A = np.pi * y ** 2
 
-Tw = 700 * ureg.kelvin # Conservative value
+Tw = 1250 * ureg.kelvin # Conservative value
 w = 0.6
 
 cstar = p['cstar'] * ureg.meter / ureg.second

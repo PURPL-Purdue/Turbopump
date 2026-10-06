@@ -8,6 +8,9 @@ Changes vs. the original:
   * Discharge coefficients and a c* efficiency are explicit parameters
   * CEA objects are built once and reused
   * Results are returned in a dataclass instead of only printed
+  * c* is computed in `analyze()` (Pc * A_throat / mdot) and carried in
+    TorchResults instead of being referenced as an undefined name in
+    print_results
 """
 
 from dataclasses import dataclass
@@ -66,6 +69,7 @@ class TorchResults:
     k_c: float
     R_c: float
     Tc: float
+    cstar: float
     mdot_ox: float
     mdot_f: float
     P_ox_line: float
@@ -173,6 +177,10 @@ def analyze(cfg: TorchConfig) -> TorchResults:
     cea_model = CEAModel(cfg.T_fuel, cfg.T_ox)
     Pc, k_c, R_c, Tc = solve_chamber_pressure(cfg, cea_model)
 
+    # Characteristic velocity, c* = Pc * A_throat / mdot [m/s]
+    A_t = circle_area(cfg.D_throat)
+    cstar = Pc * A_t / cfg.mdot
+
     # Line pressures required to push the target flow through the injectors
     P_ox = choked_pressure(
         mdot_ox, circle_area(cfg.D_ox), cfg.k_ox, cfg.T_ox, R_OX, cfg.Cd_ox
@@ -190,7 +198,7 @@ def analyze(cfg: TorchConfig) -> TorchResults:
     stiffness_ok = min(stiff_ox, stiff_f) >= cfg.stiffness_min
 
     return TorchResults(
-        Pc=Pc, k_c=k_c, R_c=R_c, Tc=Tc,
+        Pc=Pc, k_c=k_c, R_c=R_c, Tc=Tc, cstar=cstar,
         mdot_ox=mdot_ox, mdot_f=mdot_f,
         P_ox_line=P_ox, P_f_line=P_f,
         stiffness_ox=stiff_ox, stiffness_f=stiff_f,
@@ -210,7 +218,7 @@ def print_results(r: TorchResults, cfg: TorchConfig):
           f"(stiffness {r.stiffness_f:.2f})")
     print(f"Oxidizer injector choked: {r.ox_choked}")
     print(f"Fuel injector choked:     {r.fuel_choked}")
-
+    print(f"Cstar: {r.cstar:0.1f} m/s")
     if not r.ox_choked or not r.fuel_choked:
         print("WARNING: an injector is not choked; the choked-flow sizing "
               "does not apply. Resize the injector.")
@@ -225,14 +233,14 @@ def main():
     D_throat=6.8072e-3,          # 0.268 in -> m
     D_ox=1.6e-3,         # m
     D_fuel=1.5e-3,       # m
-    mdot=0.02081,          # kg/s
-    of_ratio=2,
+    mdot=0.025,          # kg/s
+    of_ratio=1.5,
     Cd_ox=0.8, Cd_fuel=0.8, Cd_throat=0.75,
-    cstar_eff=0.95,
+    cstar_eff=0.85,
     stiffness_min=0.30,
 )
     print_results(analyze(cfg), cfg)
-    return 
+    return
 
 
 if __name__ == "__main__":

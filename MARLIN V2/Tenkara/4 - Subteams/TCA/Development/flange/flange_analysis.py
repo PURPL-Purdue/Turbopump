@@ -125,7 +125,7 @@ def analyze_flange(B, N, G, C, A, bolt_name, bolt_count, t, g0, g1,
     J = (52.14 * V * Mo) / (L * E * g0**2 * KI * ho)
 
     maxStress = max(SH, SR, ST)
-    SFmargin = margins(1, Sf, maxStress)
+    SFmargin = margins(safetyFactor, Sf, maxStress)
 
     # 2-8(a) stress limits + bolt area + bolt spacing + 2-14 rigidity
     checks = [
@@ -216,7 +216,7 @@ def main():
     E = 29e6 * PSI2PA
 
     analyze_flange(B, N, G, C, A, bolt_name, bolt_count, t, g0, g1,
-                    P, m, y, Sa, Sb, Sf, E, safetyFactor=1,
+                    P, m, y, Sa, Sb, Sf, E, safetyFactor=1.2,
                     thread_type=thread_type)
     return
 

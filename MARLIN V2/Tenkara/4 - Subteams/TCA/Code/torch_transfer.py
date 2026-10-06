@@ -30,7 +30,8 @@ ke = df['k [W/m-K]'].iloc[-1] *ureg.watt / (ureg.meter * ureg.kelvin)
 Me = 1
 rho = df['Density [kg/m^3]'].iloc[-1] * ureg.kilogram / ureg.meter**3
 mu = df['Viscosity [Pa*s]'].iloc[-1] * ureg.pascal * ureg.second
-Te = df['Temperature [K]'].iloc[-1] * ureg.kelvin
+Te = df['Chamber_Temperature [K]'].iloc[len(df['Chamber_Temperature [K]'])-1] * ureg.kelvin
+print(Te)
 R = df['R [J/kg-K]'].iloc[-1] * ureg.joule / (ureg.kilogram * ureg.kelvin)
 gamma = df['gamma'].iloc[-1] 
 

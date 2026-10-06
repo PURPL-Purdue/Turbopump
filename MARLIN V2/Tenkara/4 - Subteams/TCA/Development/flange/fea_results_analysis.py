@@ -213,7 +213,7 @@ def main():
     # Loads
     P = 660              # chamber design pressure [psi]
     F_preload = 16423.189  # total bolt preload force [lbf]
-    R_fea = 501*14        # FEA reaction force for gasket check [lbf]
+    R_fea = 991.78*14        # FEA reaction force for gasket check [lbf]
     max_stress_flange = 26288  # <-- REPLACE: max FEA stress on flange body [psi]
 
     # Bolts
@@ -226,7 +226,7 @@ def main():
     Sy_flange = 36000     # flange yield stress [psi]
 
     # Safety factor for margin reporting
-    safetyFactor = 1
+    safetyFactor = 1.5
 
     analyze_fea_results(B, gasket_width, P,
                          bolt_count, bolt_name, Sy_bolt, F_preload,
