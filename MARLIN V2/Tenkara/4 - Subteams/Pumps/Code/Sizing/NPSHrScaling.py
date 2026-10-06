@@ -96,4 +96,4 @@ plt.ylabel('Required Mass Flow (kg/s)')
 plt.legend()
 plt.grid()
 
-plt.show(block=False)
+plt.show()
