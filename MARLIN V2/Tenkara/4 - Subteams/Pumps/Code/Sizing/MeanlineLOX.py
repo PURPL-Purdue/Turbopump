@@ -3,17 +3,31 @@ from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
 from matplotlib import pyplot as plt
 import CoolProp.CoolProp as CP
+from pathlib import Path
+import yaml
 
-g = Q_(9.81, 'm/s^2')				# gravitational acceleration
+script_dir = Path(__file__).resolve().parent.parent
+yaml_path = script_dir.parent / "Inputs/Inputs.yaml"
 
-opt_m_dot = Q_(2.03, 'kg/s')		# mass flow rate at BEP
-rho = Q_(1141, 'kg/m^3')			# fluid density
-opt_dP = Q_(33, 'bar')				# total pressure rise at BEP
+with open(yaml_path, "r") as file:
+    inputs = yaml.safe_load(file)
+dp = inputs['design_point']
+
+g = Q_(9.81, 'm/s^2')					# gravitational acceleration
+
+opt_m_dot = Q_(
+    dp['LOX']['mass_flow'], 'kg/s')		# mass flow rate at BEP
+rho = Q_(1141, 'kg/m^3')				# density of LOX at saturation, atm pressure (lol?)
+
+feed_pressure = Q_(150, 'psi')			# inlet feed pressure, from tank pressure
+discharge_pressure = Q_(
+    dp['LOX']['discharge_pressure'], 'bar')	# ideal discharge pressure
+opt_dP = discharge_pressure - feed_pressure	# total pressure rise at BEP
 
 design_point: DesignPoint = DesignPoint(
-	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
-	H = (opt_dP / (g * rho)),		# developed head at BEP
-	N_shaft = Q_(35000, 'rpm'),		# shaft speed
+	Q = opt_m_dot/rho,					# volumetric flow rate at BEP
+	H = (opt_dP / (g * rho)).to('m'),	# developed head at BEP
+	N_shaft = Q_(dp['N_shaft'], 'rpm'),	# shaft speed
 	n_hyd_BEP = 0.5
 )
 lox_geometry: InputGeometry = InputGeometry(
@@ -59,7 +73,6 @@ print(f"Power consumption, nominal  = {power_consumption.to('kW'):.2f}")
 print(f"Shaft torque, nominal       = {shaft_torque.to('N*m'):.1f}")
 print(f"Shear stress                = {shear_stress.to('MPa'):.1f}")
 
-feed_pressure = Q_(150, 'psi')		# inlet feed pressure, from tank pressure
 atm_press = Q_(1, 'atm')			# atmospheric pressure
 LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmospheric pressure
     CP.PropsSI('T', 'P', atm_press.to('Pa').magnitude, 'Q', 0, 'Oxygen'), 'K')
