@@ -368,4 +368,11 @@ class Impeller:
 			scaleratio=1,
 		)
 
+		fig.update_layout(
+			title="Impeller Meridional Cross-Section",
+			xaxis_title=f"Meridional position ({l})",
+			yaxis_title=f"Radial position ({l})",
+			template="plotly_white"
+		)
+
 		return fig
