@@ -37,6 +37,18 @@ class Impeller:
 
 		assert geometry.d_1 > geometry.d_hub, 'Inlet diameter must be larger than hub diameter'
 		
+		self.DP: DesignPoint = design_point
+
+		self.SpecificSpeed: float = (	# imperial specific speed
+					self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('gallon/min')) /
+					self.DP.H.to('ft')**0.75
+					).magnitude
+		
+		self.n_q: float = (		# metric specific speed
+			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
+			self.DP.H.to('m')**0.75
+			).magnitude
+		
 		exit_area: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2 - GetBladeBlockage(
 			geometry.Beta2B, geometry.Z_blade, geometry.thk2, geometry.b_2
 		))
@@ -50,18 +62,8 @@ class Impeller:
 		self.d_hub = geometry.d_hub
 		self.WiesnerSlip = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
 		self.Area2 = exit_area
+		self.Z_e = (self.d_2 - self.d_1)*((self.n_q/74)**(1.07))	# axial extension, Gulich, pg. 348
 
-		self.DP: DesignPoint = design_point
-
-		self.SpecificSpeed: float = (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('gallon/min')) /
-			self.DP.H.to('ft')**0.75
-			).magnitude
-
-		self.n_q: float = (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
-			self.DP.H.to('m')**0.75
-			).magnitude
 
 		# exit tip velocity at design point
 		self.U_2_design = (self.DP.N_shaft * self.d_2/2).to('m/s')
