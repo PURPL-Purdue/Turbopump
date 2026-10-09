@@ -2,7 +2,7 @@
 thing
 """
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from pint import Quantity as Q_
 
 class VelocityTriangle:
@@ -19,41 +19,50 @@ class VelocityTriangle:
 		self.w = w
 		self.c = np.sqrt(c_m**2 + c_u**2)
 
-	def Plot(self, title='Velocity Triangle', unit='m/s', station=0) -> None:
+	def Plot(self, title='Velocity Triangle', unit='m/s', station=0) -> go.Figure:
 
-		plt.figure()
+		fig = go.Figure()
 		c_u, c_m, c = self.c_u.to(unit).magnitude, self.c_m.to(unit).magnitude, self.c.to(unit).magnitude
 		u, w = self.u.to(unit).magnitude, self.w.to(unit).magnitude
+
 		# C: absolute velocity, origin -> (C_u, C_m)
-		plt.plot([0, c_u], [0, c_m], linewidth=2,
-			label=rf'$C_{station}$ = {c:.1f} {unit}')
+		fig.add_trace(go.Scatter(x=[0, c_u], y=[0, c_m], mode='lines', line=dict(width=2),
+			name=f'C<sub>{station}</sub> = {c:.1f} {unit}'))
 
 		# U: blade speed, origin -> (U, 0)
-		plt.plot([0, u], [0, 0], linewidth=2,
-			label=rf'$U_{station}$ = {u:.1f} {unit}')
+		fig.add_trace(go.Scatter(x=[0, u], y=[0, 0], mode='lines', line=dict(width=2),
+			name=f'U<sub>{station}</sub> = {u:.1f} {unit}'))
 
 		# W: relative velocity, (C_u, C_m) -> (U, 0)
-		plt.plot([c_u, u], [c_m, 0], linewidth=2,
-			label=rf'$W_{station}$ = {w:.1f} {unit}')
+		fig.add_trace(go.Scatter(x=[c_u, u], y=[c_m, 0], mode='lines', line=dict(width=2),
+			name=f'W<sub>{station}</sub> = {w:.1f} {unit}'))
 
 		# C_m: meridional leg, (C_u, 0) -> (C_u, C_m)
-		plt.plot([c_u, c_u], [0, c_m], linewidth=2,
-			label=rf'$C_{{m{station}}}$ = {c_m:.1f} {unit}')
+		fig.add_trace(go.Scatter(x=[c_u, c_u], y=[0, c_m], mode='lines', line=dict(width=2),
+			name=f'C<sub>m{station}</sub> = {c_m:.1f} {unit}'))
 
 		# Labels
-		plt.text(c_u / 2, c_m / 2, rf'$C_{station}$', fontsize=11)
-		plt.text(u / 2, -0.04 * c_m, rf'$U_{station}$', fontsize=11, ha='center')
-		plt.text((u + c_u) / 2, c_m / 2, rf'$W_{station}$', fontsize=11)
-		plt.text(c_u, c_m / 2, rf'$C_{{m{station}}}$', fontsize=11, ha='left', va='center')
+		fig.add_annotation(x=c_u / 2, y=c_m / 2, text=f'C<sub>{station}</sub>',
+			showarrow=False, font=dict(size=14), xanchor='left')
+		fig.add_annotation(x=u / 2, y=-0.04 * c_m, text=f'U<sub>{station}</sub>',
+			showarrow=False, font=dict(size=14), xanchor='center')
+		fig.add_annotation(x=(u + c_u) / 2, y=c_m / 2, text=f'W<sub>{station}</sub>',
+			showarrow=False, font=dict(size=14), xanchor='left')
+		fig.add_annotation(x=c_u, y=c_m / 2, text=f'C<sub>m{station}</sub>',
+			showarrow=False, font=dict(size=14), xanchor='left', yanchor='middle')
 
-		plt.axhline(0, linewidth=0.8)
-		plt.axvline(0, linewidth=0.8)
+		# Axes through the origin
+		fig.add_hline(y=0, line_width=0.8)
+		fig.add_vline(x=0, line_width=0.8)
 
-		plt.xlabel(f'Tangential velocity [{unit}]')
-		plt.ylabel(f'Meridional velocity [{unit}]')
-		plt.title(title)
-		plt.axis('equal')
-		plt.grid(True, alpha=0.2)
-		plt.legend()
+		fig.update_layout(
+			title=title,
+			xaxis=dict(title=f'Tangential velocity [{unit}]', showgrid=True,
+				gridcolor='rgba(128,128,128,0.2)', zeroline=False),
+			yaxis=dict(title=f'Meridional velocity [{unit}]', showgrid=True,
+				gridcolor='rgba(128,128,128,0.2)', zeroline=False,
+				scaleanchor='x', scaleratio=1),  # equal axis scaling
+			template='plotly_white',
+		)
 
-		plt.tight_layout()
+		return fig

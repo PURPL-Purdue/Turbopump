@@ -1,7 +1,7 @@
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
-from matplotlib import pyplot as plt
+import plotly.graph_objects as go
 import EmpiricalRelations as emp
 from VelocityTriangle import VelocityTriangle
 
@@ -144,14 +144,26 @@ class Impeller:
 			
 		self.d_1 = old_d_1
 
-		plt.figure()
-		plt.plot(diam, npsh)
-		plt.plot([opt_diam.magnitude], [min_NPSH.magnitude], 'o', label=f'optimal {opt_diam:.2f}, {min_NPSH:.0f}')
-		plt.xlabel('Inlet diameter (in.)')
-		plt.ylabel('NPSH_i (m)')
-		plt.title("NPSH inception vs inlet diameter")
-		plt.grid()
-		plt.legend()
+		fig = go.Figure()
+		fig.add_trace(go.Scatter(
+			x=diam, y=npsh,
+			mode='lines', name='NPSH_i'
+		))
+		fig.add_trace(go.Scatter(
+			x=[opt_diam.magnitude], y=[min_NPSH.magnitude],
+			mode='markers',
+			name=f'Optimal: {opt_diam:.2f}, {min_NPSH:.0f}',
+			marker=dict(size=9, symbol='circle')
+		))
+		fig.update_layout(
+			title='NPSH inception vs inlet diameter',
+			xaxis_title='Inlet diameter (in.)',
+			yaxis_title='NPSH_i (m)',
+			template='plotly_white'
+		)
+		fig.update_xaxes(showgrid=True)
+		fig.update_yaxes(showgrid=True)
+		fig.show()
 
 	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
 		# no preswirl
@@ -214,7 +226,7 @@ class Impeller:
 
 		return (brake_work, fluid_work, f)
 		
-	def PlotPerformanceHQ(self, rpm_sweep: Q_[list[float]]=None) -> None:
+	def PlotPerformanceHQ(self, rpm_sweep: Q_[list[float]]=None) -> go.Figure:
 		N_sweep = rpm_sweep if rpm_sweep is not None else Q_([self.DP.N_shaft])
 		Q_sweep = Q_(np.linspace(0, 2.0 * self.DP.Q.to('L/s').magnitude, 50), 'L/s')
 
@@ -239,31 +251,49 @@ class Impeller:
 			H_predict.append(head_trace)
 			Q_predict.append(flow_trace)
 
-		plt.figure()
+		fig = go.Figure()
 		# Plot theoretical Euler (linear)
 		H_theoretical = self.H_euler(Q_sweep)
-		plt.plot(Q_sweep.to('L/s').magnitude, H_theoretical.to('m').magnitude,
-				'--', color='gray', label='Theoretical Euler')
+		fig.add_trace(go.Scatter(
+			x=Q_sweep.to('L/s').magnitude,
+			y=H_theoretical.to('m').magnitude,
+			mode='lines', name='Theoretical Euler',
+			line=dict(color='gray', dash='dash')
+		))
 
 		# Plot RPM swept traces
 		for i in range(len(H_predict)):
-
-			plt.plot(Q_predict[i], H_predict[i],
-					'-', color='red', label='Empirical prediction' if i == 0 else None)
-			
-			plt.annotate(f"{N_sweep[i].magnitude:.0f} RPM",
-						xy=(Q_predict[i][-1], H_predict[i][-1]),
-						xytext=(4, 0), textcoords='offset points',
-						fontsize=8, va='center')
+			fig.add_trace(go.Scatter(
+				x=Q_predict[i], y=H_predict[i],
+				mode='lines',
+				name='Empirical prediction' if i == 0 else f'Empirical prediction ({N_sweep[i].magnitude:.0f} RPM)',
+				line=dict(color='red'),
+				showlegend=(i == 0)
+			))
+			if Q_predict[i] and H_predict[i]:
+				fig.add_annotation(
+					x=Q_predict[i][-1], y=H_predict[i][-1],
+					text=f"{N_sweep[i].magnitude:.0f} RPM",
+					showarrow=False, xshift=25, yshift=0,
+					font=dict(size=10)
+				)
 
 		# Plot design point head and flowrate
-		plt.plot(self.DP.Q.to('L/s').magnitude, self.DP.H.to('m').magnitude,
-				'o', color='black', markersize=4, label='Design point',
-				zorder=5)
+		fig.add_trace(go.Scatter(
+			x=[self.DP.Q.to('L/s').magnitude],
+			y=[self.DP.H.to('m').magnitude],
+			mode='markers', name='Design point',
+			marker=dict(color='black', size=7)
+		))
 
-		plt.xlabel('Volumetric flow rate [L/s]')
-		plt.ylabel('Head [m]')
-		plt.title('H-Q Curve')
-		plt.ylim(ymin=0)
-		plt.legend(loc='upper right')
-		plt.grid(True, alpha=0.3)
+		fig.update_layout(
+			title='H-Q Curve',
+			xaxis_title='Volumetric flow rate [L/s]',
+			yaxis_title='Head [m]',
+			yaxis=dict(rangemode='tozero'),
+			legend=dict(x=1, y=1, xanchor='right', yanchor='top'),
+			template='plotly_white'
+		)
+		fig.update_xaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
+		fig.update_yaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
+		return fig

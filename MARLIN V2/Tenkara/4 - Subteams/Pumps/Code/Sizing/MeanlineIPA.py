@@ -1,7 +1,6 @@
 import numpy as np
 from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
-from matplotlib import pyplot as plt
 import CoolProp.CoolProp as CP
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
@@ -68,11 +67,9 @@ print(f"NPSH inception              = {ipa_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):.1f}")
 
-ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm')).show()
 vel, _ = ipa_imp.GetOutletVelocities()
 
-vel.Plot(unit='m/s', station=2)
+vel.Plot(unit='m/s', station=2).show()
 
-ipa_imp.SweepInletDiam()
-
-plt.show()
+ipa_imp.SweepInletDiam().show()

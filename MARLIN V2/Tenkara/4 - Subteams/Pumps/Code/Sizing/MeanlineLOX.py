@@ -1,7 +1,6 @@
 import numpy as np
 from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
-from matplotlib import pyplot as plt
 import CoolProp.CoolProp as CP
 from pathlib import Path
 import yaml
@@ -88,14 +87,12 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm')).show()
 vel, _ = lox_imp.GetOutletVelocities()
 
-vel.Plot(unit='m/s', station=2)
+vel.Plot(unit='m/s', station=2).show()
 
 vel1 = lox_imp.GetInletVelocities()
-vel1.Plot(unit='m/s', station=1)
+vel1.Plot(unit='m/s', station=1).show()
 
-lox_imp.SweepInletDiam()
-
-plt.show()
+lox_imp.SweepInletDiam().show()
