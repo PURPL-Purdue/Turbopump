@@ -79,7 +79,7 @@ def Pc(LOx_feed, IPA_feed, Pc_in, pcA):
     mdot_ipa = mdot(config['fuel_Cda'], IPA_feed, Pc_in, config['IPA_rho'])
     OF = mdot_ox/max(mdot_ipa, 0.000000000001)
     #print(f'mdots {mdot_ox} and {mdot_ipa}')
-    cstar = 0.3048 * cea.get_Cstar(Pc_in/psi2pa, OF)
+    cstar = 0.3048 * config['CSTAR_eff'] * cea.get_Cstar(Pc_in/psi2pa, OF)
     Pc_f = cstar * (mdot_ox+mdot_ipa) / config['stator_throat_area']
     pcA.append(Pc_f)
     #print(len(pcA))
@@ -194,11 +194,11 @@ while abs(film[2] - combustion_gas[2]) > 1 and step_num < 2000:
 OutPut_gas = [film[0] + combustion_gas[0], film[1] + combustion_gas[1], film[2],
                (film[0]*film[3]+combustion_gas[0]*combustion_gas[3])/(film[0]+combustion_gas[0])]
 
-plt.plot(film_temp)
-plt.plot(gas_temp)
-plt.legend(['film','combustion gas'])
-plt.grid()
-plt.show()
+# plt.plot(film_temp)
+# plt.plot(gas_temp)
+# plt.legend(['film','combustion gas'])
+# plt.grid()
+# plt.show()
 
 print(f'Output mdot:  {OutPut_gas[0]:.3f} kg/s')
 print(f'Output Temp:  {OutPut_gas[2]:.3f} K')
