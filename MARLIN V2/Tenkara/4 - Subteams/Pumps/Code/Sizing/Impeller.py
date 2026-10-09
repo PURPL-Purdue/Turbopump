@@ -62,7 +62,7 @@ class Impeller:
 		self.d_hub = geometry.d_hub
 		self.WiesnerSlip = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
 		self.Area2 = exit_area
-		self.Z_e = (self.d_2 - self.d_1)*((self.n_q/74)**(1.07))	# axial extension, Gulich, pg. 348
+		self.Z_e: Q_[float] = ((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))	# axial extension, Gulich, pg. 348
 
 
 		# exit tip velocity at design point
@@ -122,7 +122,7 @@ class Impeller:
 
 		return sigma * U_2_design**2/g - N/np.tan(beta2b)/(2*np.pi*b2*g) * Q
 
-	def SweepInletDiam(self):
+	def SweepInletDiam(self) -> go.Figure:
 
 		npsh = []
 		diam = []
@@ -163,7 +163,7 @@ class Impeller:
 		)
 		fig.update_xaxes(showgrid=True)
 		fig.update_yaxes(showgrid=True)
-		fig.show()
+		return fig
 
 	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
 		# no preswirl
@@ -174,7 +174,7 @@ class Impeller:
 		c_u1 = Q_(0, 'm/s')
 		u_1 = speed_N * self.d_1/2
 		w_u1 = u_1 - c_u1
-		c = np.sqrt(c_m1**2 + c_u1**2)
+		#c = np.sqrt(c_m1**2 + c_u1**2)
 		w = np.sqrt(w_u1**2 + c_m1**2)
 
 		return VelocityTriangle(
@@ -296,4 +296,76 @@ class Impeller:
 		)
 		fig.update_xaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
 		fig.update_yaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
+		return fig
+
+	def PlotMeridional(self, l: str = 'in', color: str = 'black', R_ratio = 1.3) -> go.Figure:
+
+		fig = go.Figure()
+		
+		d_1	= self.d_1.to(l).m
+		Z_e = self.Z_e.to(l).m
+		b_1 = (self.d_1 - self.d_hub).to(l).m
+		b_2 = self.b_2.to(l).m
+		g_1 = 0.3 * b_1/2
+		R_ds = Z_e - g_1 # front shroud radius
+		d_2 = self.d_2.to(l).m
+		d_hub = self.d_hub.to(l).m
+
+		quarter_rads = np.linspace(-np.pi/2, 0, 20)
+
+		R_ts = R_ratio * R_ds
+
+		fig.add_trace(go.Scatter(
+			x=[0, 0], y=[d_hub/2, d_1/2],
+			mode='lines', name='Inlet', line=dict(dash='dot', color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[Z_e, Z_e + b_2],
+			y=[d_2/2, d_2/2],
+			mode='lines', name='Outlet', line=dict(dash='dot', color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[0, g_1], y=[d_1/2, d_1/2],
+			mode='lines', name='Axial short', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=(np.cos(quarter_rads) * R_ds + np.repeat(g_1, quarter_rads.size)),
+			y=(np.sin(quarter_rads) * R_ds + np.repeat(d_1/2 + R_ds, quarter_rads.size)),
+			mode='lines', name='Front shroud curve', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[Z_e, Z_e], y=[d_1/2 + R_ds, d_2/2],
+			mode='lines', name='Front shroud flat', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[0, Z_e + b_2 - R_ts], y=[d_hub/2, d_hub/2],
+			mode='lines', name='Hub flat', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=(np.cos(quarter_rads) * R_ts + np.repeat(Z_e + b_2 - R_ts, quarter_rads.size)),
+			y=(np.sin(quarter_rads) * R_ts + np.repeat(d_hub/2 + R_ts, quarter_rads.size)),
+			mode='lines', name='Back shroud curve', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[Z_e + b_2, Z_e + b_2], y=[d_hub/2 + R_ts, d_2/2],
+			mode='lines', name='Back shroud flat', line=dict(color=color)
+		))
+
+		fig.add_trace(go.Scatter(
+			x=[0, Z_e + b_2], y=[0, 0],
+			mode='lines', name='Meridional axis', line=dict(dash='dash', color='grey')
+		))
+
+		fig.update_yaxes(
+			scaleanchor="x",
+			scaleratio=1,
+		)
+
 		return fig

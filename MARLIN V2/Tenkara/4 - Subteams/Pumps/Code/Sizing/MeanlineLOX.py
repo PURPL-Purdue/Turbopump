@@ -55,6 +55,7 @@ print("\n--- Derived impeller characteristics ---")
 print(f"Slip factor (σ)             = {lox_imp.WiesnerSlip:.4f}")
 print(f"Outlet tip speed (U₂)       = {lox_imp.U_2_design.to('m/s'):.3f}")
 print(f"Outlet area (A₂)            = {lox_imp.Area2.to('in^2'):.3f}")
+print(f"Inlet area (A₁)             = {lox_imp.Area1.to('in^2'):.3f}")
 print(f"Axial extension (Z_e)       = {lox_imp.Z_e:.4f}")
 print(f"Meridional velocity (Cm₂)   = {lox_imp.C_m2_design.to('m/s'):.3f}")
 print(f"Head coefficient (ψ)        = {lox_imp.HeadCoeff:.4f}")
@@ -87,12 +88,14 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm')).show()
-vel, _ = lox_imp.GetOutletVelocities()
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))#.show()
 
-vel.Plot(unit='m/s', station=2).show()
+vel, _ = lox_imp.GetOutletVelocities()
+vel.Plot(unit='m/s', station=2)#.show()
 
 vel1 = lox_imp.GetInletVelocities()
-vel1.Plot(unit='m/s', station=1).show()
+vel1.Plot(unit='m/s', station=1)#.show()
 
-lox_imp.SweepInletDiam().show()
+lox_imp.SweepInletDiam()#.show()
+
+lox_imp.PlotMeridional(color='blue').show()
