@@ -116,7 +116,7 @@ def chain_reaction_power(config, T_ign, mech_torch, fuel_torch, ox_torch, OF_tor
     print(f"Torch Power Required: {P_ig*10**-3:0.3f} [kW]")
 
 
-    nu = 0.2 # Heat Transfer Efficiency from torch exhaust to MCA Propellants
+    nu = 0.30 # Heat Transfer Efficiency from torch exhaust to MCA Propellants
     mdot_torch = P_ig / (combustion_energy_torch * nu)
     mdot_torch_perfect = P_ig / (combustion_energy_torch)
 

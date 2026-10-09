@@ -491,7 +491,7 @@ def main():
     Sa = 30000 * PSI2PA # Yield stress for bolt at atmospheric temp [Pa]
     Sb = Sa # Allowable stress for bolt at design temp [Pa]
 
-    t = 3/8 * IN2M # flange thickness [m]
+    t = 1/2 * IN2M # flange thickness [m]
     Sf = 36000 * PSI2PA # flange yield at temp [Pa]
 
     # modulus of elasticity of flange material at design temperature
