@@ -334,8 +334,6 @@ class Impeller:
 		d_2 = self.d_2.to(l).m
 		d_hub = self.d_hub.to(l).m
 
-		quarter_rads = np.linspace(-np.pi/2, 0, 20)
-
 		R_ts = R_ratio * R_ds
 
 		fig.add_trace(go.Scatter(
