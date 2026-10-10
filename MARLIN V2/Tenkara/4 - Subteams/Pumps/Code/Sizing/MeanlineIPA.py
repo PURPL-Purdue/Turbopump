@@ -18,11 +18,11 @@ design_point: DesignPoint = DesignPoint(
 ipa_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
-    d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
-	d_2 = Q_(2.5, 'in'),			# impeller outlet diameter
-	b_2 = Q_(0.1, 'in'),			# impeller outlet height
+    d_1 = Q_(1.1, 'in'),			# impeller inlet diameter
+	d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
+	b_2 = Q_(0.08, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
-    d_hub=Q_(0.9, 'in')				# hub diameter
+    d_hub=Q_(0.7, 'in')				# hub diameter
 )
 
 ipa_imp = Impeller(ipa_geometry, design_point)
