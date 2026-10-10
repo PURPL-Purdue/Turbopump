@@ -68,11 +68,11 @@ print(f"NPSH inception              = {ipa_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):.1f}")
 
-ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm')).show()
+ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = ipa_imp.GetOutletVelocities()
 
-vel.Plot(unit='m/s', station=2).show()
+vel.Plot(unit='m/s', station=2)
 
-ipa_imp.SweepInletDiam().show()
+ipa_imp.SweepInletDiam()
 
-ipa_imp.PlotMeridional(color='green').show()
+ipa_imp.PlotMeridional(color='green')

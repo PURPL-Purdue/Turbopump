@@ -64,5 +64,5 @@ class VelocityTriangle:
 				scaleanchor='x', scaleratio=1),  # equal axis scaling
 			template='plotly_white',
 		)
-
+		fig.show()
 		return fig

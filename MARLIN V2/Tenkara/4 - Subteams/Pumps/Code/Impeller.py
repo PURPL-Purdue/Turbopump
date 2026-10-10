@@ -186,6 +186,8 @@ class Impeller:
 		)
 		fig.update_xaxes(showgrid=True)
 		fig.update_yaxes(showgrid=True)
+		fig.show()
+
 		return fig
 
 	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
@@ -319,6 +321,8 @@ class Impeller:
 		)
 		fig.update_xaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
 		fig.update_yaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
+		fig.show()
+		
 		return fig
 
 	def PlotMeridional(self, l: str = 'in', color: str = 'black', R_ratio = 1.3) -> go.Figure:
@@ -398,5 +402,7 @@ class Impeller:
 			yaxis_title=f"Radial position ({l})",
 			template="plotly_white"
 		)
+
+		fig.show()
 
 		return fig
