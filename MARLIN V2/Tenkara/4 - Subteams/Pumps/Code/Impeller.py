@@ -31,6 +31,29 @@ def GetWiesnerSlipRatio(beta2b: Q_[float], Z: int) -> Q_[float]:
 def GetBladeBlockage(beta2b: Q_[float], Z: int, thick: Q_[float], b2: Q_[float]) -> Q_[float]:
 	return thick * b2 * Z / np.sin(beta2b)
 
+def ArclenContour(flat: float, R: float, d_i: float, d_o: float):
+
+	total_arclen = flat + R * np.pi/2 + (d_o - d_i)/2 - R
+
+	def Func(s: float) -> tuple[float, float]:
+		s_true = s * total_arclen
+
+		if s_true <= flat:
+			return (s_true, d_i/2)
+		elif s_true < (flat + R * np.pi/2):
+
+			theta = (s_true - flat) / R - np.pi/2
+			
+			x = flat + R * np.cos(theta)
+			y = d_i/2 + R * (1 + np.sin(theta))
+			return (x, y)
+		
+		wall_len = s_true - (flat + R * np.pi/2)
+		return (flat + R, d_i/2 + R + wall_len)
+
+	return Func
+
+
 class Impeller:
 
 	def __init__(self, geometry: InputGeometry, design_point: DesignPoint):
@@ -326,36 +349,39 @@ class Impeller:
 			mode='lines', name='Outlet', line=dict(dash='dot', color=color)
 		))
 
+		shroud_contour = ArclenContour(g_1, R_ds, d_1, d_2)
+		shroud_x, shroud_y = [], []
+
+		hub_contour = ArclenContour(Z_e + b_2 - R_ts, R_ts, d_hub, d_2)
+		hub_x, hub_y = [], []
+		mean_x, mean_y = [], []
+
+		for s in np.linspace(0, 1, 100):
+			x1, y1 = shroud_contour(s)
+			shroud_x.append(x1)
+			shroud_y.append(y1)
+
+			x2, y2 = hub_contour(s)
+			hub_x.append(x2)
+			hub_y.append(y2)
+
+			a = 0.5
+			mean_x.append(x1*a + (1 - a) * x2)
+			mean_y.append(y1*a + (1 - a) * y2)
+
 		fig.add_trace(go.Scatter(
-			x=[0, g_1], y=[d_1/2, d_1/2],
-			mode='lines', name='Axial short', line=dict(color=color)
+			x=shroud_x, y=shroud_y,
+			mode='lines', name='Shroud Contour', line=dict(color=color)
 		))
 
 		fig.add_trace(go.Scatter(
-			x=(np.cos(quarter_rads) * R_ds + np.repeat(g_1, quarter_rads.size)),
-			y=(np.sin(quarter_rads) * R_ds + np.repeat(d_1/2 + R_ds, quarter_rads.size)),
-			mode='lines', name='Front shroud curve', line=dict(color=color)
+			x=hub_x, y=hub_y,
+			mode='lines', name='Hub Contour', line=dict(color=color)
 		))
 
 		fig.add_trace(go.Scatter(
-			x=[Z_e, Z_e], y=[d_1/2 + R_ds, d_2/2],
-			mode='lines', name='Front shroud flat', line=dict(color=color)
-		))
-
-		fig.add_trace(go.Scatter(
-			x=[0, Z_e + b_2 - R_ts], y=[d_hub/2, d_hub/2],
-			mode='lines', name='Hub flat', line=dict(color=color)
-		))
-
-		fig.add_trace(go.Scatter(
-			x=(np.cos(quarter_rads) * R_ts + np.repeat(Z_e + b_2 - R_ts, quarter_rads.size)),
-			y=(np.sin(quarter_rads) * R_ts + np.repeat(d_hub/2 + R_ts, quarter_rads.size)),
-			mode='lines', name='Back shroud curve', line=dict(color=color)
-		))
-
-		fig.add_trace(go.Scatter(
-			x=[Z_e + b_2, Z_e + b_2], y=[d_hub/2 + R_ts, d_2/2],
-			mode='lines', name='Back shroud flat', line=dict(color=color)
+			x=mean_x, y=mean_y,
+			mode='lines', name='Meanline Contour', line=dict(color='color', dash='dashdot')
 		))
 
 		fig.add_trace(go.Scatter(
