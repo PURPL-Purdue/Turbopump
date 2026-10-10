@@ -5,7 +5,7 @@ import CoolProp.CoolProp as CP
 from pathlib import Path
 import yaml
 
-script_dir = Path(__file__).resolve().parent.parent
+script_dir = Path(__file__).resolve().parent
 yaml_path = script_dir.parent / "Inputs/Inputs.yaml"
 
 with open(yaml_path, "r") as file:
