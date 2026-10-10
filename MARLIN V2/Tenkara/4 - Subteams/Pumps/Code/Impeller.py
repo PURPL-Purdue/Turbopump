@@ -87,6 +87,7 @@ class Impeller:
 		self.Area2 = exit_area
 		self.Z_e: Q_[float] = ((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))	# axial extension, Gulich, pg. 348
 
+		self.HubContour = ArclenContour(0, self.Z_e + self.b_2, self.d_hub, self.d_2)
 
 		# exit tip velocity at design point
 		self.U_2_design = (self.DP.N_shaft * self.d_2/2).to('m/s')
@@ -322,54 +323,53 @@ class Impeller:
 		fig.update_xaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
 		fig.update_yaxes(showgrid=True, gridcolor='rgba(128,128,128,0.3)')
 		fig.show()
-		
+
 		return fig
 
 	def PlotMeridional(self, l: str = 'in', color: str = 'black', R_ratio = 1.3) -> go.Figure:
 
 		fig = go.Figure()
 		
-		d_1	= self.d_1.to(l).m
-		Z_e = self.Z_e.to(l).m
-		b_1 = (self.d_1 - self.d_hub).to(l).m
-		b_2 = self.b_2.to(l).m
-		g_1 = 0.3 * b_1/2
-		R_ds = Z_e - g_1 # front shroud radius
-		d_2 = self.d_2.to(l).m
-		d_hub = self.d_hub.to(l).m
+		d_1	= self.d_1.to(l)
+		Z_e = self.Z_e.to(l)
+		b_1 = (self.d_1 - self.d_hub).to(l)
+		b_2 = self.b_2.to(l)
+		g_1 = (0.3 * b_1/2).to(l)
+		R_ds = (Z_e - g_1).to(l) # front shroud radius
+		d_2 = self.d_2.to(l)
+		d_hub = self.d_hub.to(l)
 
 		R_ts = R_ratio * R_ds
 
 		fig.add_trace(go.Scatter(
-			x=[0, 0], y=[d_hub/2, d_1/2],
+			x=[0, 0], y=[d_hub.m/2, d_1.m/2],
 			mode='lines', name='Inlet', line=dict(dash='dot', color=color)
 		))
 
 		fig.add_trace(go.Scatter(
-			x=[Z_e, Z_e + b_2],
-			y=[d_2/2, d_2/2],
+			x=[Z_e.m, Z_e.m + b_2.m],
+			y=[d_2.m/2, d_2.m/2],
 			mode='lines', name='Outlet', line=dict(dash='dot', color=color)
 		))
 
 		shroud_contour = ArclenContour(g_1, R_ds, d_1, d_2)
 		shroud_x, shroud_y = [], []
 
-		hub_contour = ArclenContour(Z_e + b_2 - R_ts, R_ts, d_hub, d_2)
 		hub_x, hub_y = [], []
 		mean_x, mean_y = [], []
 
 		for s in np.linspace(0, 1, 100):
 			x1, y1 = shroud_contour(s)
-			shroud_x.append(x1)
-			shroud_y.append(y1)
+			shroud_x.append(x1.m)
+			shroud_y.append(y1.m)
 
-			x2, y2 = hub_contour(s)
-			hub_x.append(x2)
-			hub_y.append(y2)
+			x2, y2 = self.HubContour(s)
+			hub_x.append(x2.m)
+			hub_y.append(y2.m)
 
 			a = 0.5
-			mean_x.append(x1*a + (1 - a) * x2)
-			mean_y.append(y1*a + (1 - a) * y2)
+			mean_x.append((x1*a + (1 - a) * x2).m)
+			mean_y.append((y1*a + (1 - a) * y2).m)
 
 		fig.add_trace(go.Scatter(
 			x=shroud_x, y=shroud_y,
@@ -383,11 +383,11 @@ class Impeller:
 
 		fig.add_trace(go.Scatter(
 			x=mean_x, y=mean_y,
-			mode='lines', name='Meanline Contour', line=dict(color='color', dash='dashdot')
+			mode='lines', name='Meanline Contour', line=dict(color=color, dash='dashdot')
 		))
 
 		fig.add_trace(go.Scatter(
-			x=[0, Z_e + b_2], y=[0, 0],
+			x=[0, Z_e.m + b_2.m], y=[0, 0],
 			mode='lines', name='Meridional axis', line=dict(dash='dash', color='grey')
 		))
 
