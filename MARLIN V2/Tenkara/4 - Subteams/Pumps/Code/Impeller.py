@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import plotly.graph_objects as go
 import EmpiricalRelations as emp
 from VelocityTriangle import VelocityTriangle
+import Bezier
 
 g = Q_(9.81, 'm/s^2')
 
@@ -31,27 +32,91 @@ def GetWiesnerSlipRatio(beta2b: Q_[float], Z: int) -> Q_[float]:
 def GetBladeBlockage(beta2b: Q_[float], Z: int, thick: Q_[float], b2: Q_[float]) -> Q_[float]:
 	return thick * b2 * Z / np.sin(beta2b)
 
-def ArclenContour(flat: float, R: float, d_i: float, d_o: float):
+class MeridionalContour:
+	"""
+		Meridional contour (z: axial, r: radial) made of three tangent-continuous segments:
+			1. flat:	straight axial section at r_in, of length flat
+			2. bend:	cubic Bezier from axial to purely radial, ending at (z_out, r_bend)
+			3. radial:	straight radial section at z_out, from r_bend to r_out
 
-	total_arclen = flat + R * np.pi/2 + (d_o - d_i)/2 - R
+		The Bezier's end tangents meet at the corner point C = (z_out, r_in), and both inner
+		control points lie on those tangent lines:
+			P1 = P0 + fullness[0] * (C - P0)
+			P2 = P3 + fullness[1] * (C - P3)
+		fullness -> 1 pulls the curve into the corner (tight bend), fullness -> 0 flattens it
+		toward the straight chord P0-P3. ~0.55 approximates a circular arc.
 
-	def Func(s: float) -> tuple[float, float]:
-		s_true = s * total_arclen
+		The contour can be evaluated by normalized arclength s in [0, 1] (__call__), or as r(z)
+		(GetRadius) since z is monotonic along the contour. z is constant on the radial section,
+		so r(z) only describes the contour up to r_bend.
+	"""
 
-		if s_true <= flat:
-			return (s_true, d_i/2)
-		elif s_true < (flat + R * np.pi/2):
+	def __init__(self, r_in: Q_[float], z_out: Q_[float], r_bend: Q_[float], r_out: Q_[float],
+			flat: Q_[float], fullness: tuple[float, float] = (0.55, 0.55), z_in: Q_[float] = Q_(0, 'm'),
+			n_table: int = 2001):
 
-			theta = (s_true - flat) / R - np.pi/2
-			
-			x = flat + R * np.cos(theta)
-			y = d_i/2 + R * (1 + np.sin(theta))
-			return (x, y)
-		
-		wall_len = s_true - (flat + R * np.pi/2)
-		return (flat + R, d_i/2 + R + wall_len)
+		assert r_in < r_bend <= r_out, 'Radii must satisfy r_in < r_bend <= r_out'
+		assert z_in + flat < z_out, 'Flat section must end before the outlet'
 
-	return Func
+		# all lengths stored as magnitudes in meters
+		self.z_in = z_in.to('m').magnitude
+		self.r_in = r_in.to('m').magnitude
+		self.flat = flat.to('m').magnitude
+		self.z_out = z_out.to('m').magnitude
+		self.r_bend = r_bend.to('m').magnitude
+		self.r_out = r_out.to('m').magnitude
+
+		P0 = np.array([self.z_in + self.flat, self.r_in])
+		P3 = np.array([self.z_out, self.r_bend])
+		C = np.array([self.z_out, self.r_in])
+
+		self.P = np.array([P0, P0 + fullness[0] * (C - P0), P3 + fullness[1] * (C - P3), P3])
+
+		# lookup table of Bezier parameter t vs arclength, trapezoidal integration of |dB/dt|
+		t = np.linspace(0, 1, n_table)
+		speed = np.linalg.norm(Bezier.dbez(self.P, t), axis=1)
+		self._t = t
+		self._s = np.concatenate(([0], np.cumsum((speed[1:] + speed[:-1]) / 2 * np.diff(t))))
+		self._pts = Bezier.bez(self.P, t)
+
+		self.s_bend_m = self.flat + self._s[-1]		# arclength at start of radial section
+		self.length_m = self.s_bend_m + self.r_out - self.r_bend
+		self.Length: Q_[float] = Q_(self.length_m, 'm')
+
+	@property
+	def ControlPoints(self) -> Q_[np.ndarray]:
+		return Q_(self.P, 'm')
+
+	def __call__(self, s: float | np.ndarray) -> tuple[Q_, Q_]:
+		"""(z, r) at normalized arclength s in [0, 1]"""
+		s_true = np.clip(np.atleast_1d(np.asarray(s, float)), 0, 1) * self.length_m
+		in_bez = (s_true > self.flat) & (s_true < self.s_bend_m)
+		in_rad = s_true >= self.s_bend_m
+
+		z = self.z_in + s_true
+		r = np.full_like(s_true, self.r_in)
+
+		t = np.interp(s_true[in_bez] - self.flat, self._s, self._t)
+		pts = Bezier.bez(self.P, t)
+		z[in_bez] = pts[:, 0]
+		r[in_bez] = pts[:, 1]
+
+		z[in_rad] = self.z_out
+		r[in_rad] = self.r_bend + s_true[in_rad] - self.s_bend_m
+
+		if np.ndim(s) == 0:
+			return Q_(z[0], 'm'), Q_(r[0], 'm')
+		return Q_(z, 'm'), Q_(r, 'm')
+
+	def GetRadius(self, z: Q_) -> Q_:
+		"""r at axial position z, NaN outside [z_in, z_out]. Returns r_bend at z_out (start of radial section)"""
+		z_m = np.atleast_1d(z.to('m').magnitude).astype(float)
+
+		r = np.interp(z_m, self._pts[:, 0], self._pts[:, 1])
+		r[z_m <= self.P[0, 0]] = self.r_in
+		r[(z_m < self.z_in) | (z_m > self.z_out)] = np.nan
+
+		return Q_(r[0] if np.ndim(z.magnitude) == 0 else r, 'm')
 
 
 class Impeller:
@@ -87,7 +152,9 @@ class Impeller:
 		self.Area2 = exit_area
 		self.Z_e: Q_[float] = ((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))	# axial extension, Gulich, pg. 348
 
-		self.HubContour = ArclenContour(0, self.Z_e + self.b_2, self.d_hub, self.d_2)
+		self.ShroudContour: MeridionalContour
+		self.HubContour: MeridionalContour
+		self.BuildMeridionalContours()
 
 		# exit tip velocity at design point
 		self.U_2_design = (self.DP.N_shaft * self.d_2/2).to('m/s')
@@ -99,6 +166,38 @@ class Impeller:
 		self.HeadCoeff: float = (enthalpy/self.U_2_design**2).to('dimensionless').magnitude
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
+
+	def BuildMeridionalContours(self,
+			shroud_flat_ratio: float = 0.1, hub_flat_ratio: float = 0.0,
+			radial_ratio: float = 0.1, taper_ratio: float = 0.3,
+			shroud_fullness: tuple[float, float] = (0.8, 0.3),
+			hub_fullness: tuple[float, float] = (0.7, 0.7)):
+		"""
+			Shroud: inlet radius d_1/2 -> radial at z = Z_e
+			Hub: inlet radius d_hub/2 -> radial at z = Z_e + b_2
+			Both contours exit purely radially at d_2/2, bounding a constant width b_2 section.
+
+			Going inward from the outlet:
+				radial section: both walls radial, width b_2, over radial_ratio * (d_2 - d_1)/2
+				taper section: hub already radial while the shroud is still sloped, so the passage
+					narrows down to b_2, over taper_ratio * (d_2 - d_1)/2
+			Flat lengths are given as a fraction of the inlet blade height (d_1 - d_hub)/2.
+			See MeridionalContour for the meaning of fullness.
+		"""
+		b_1 = (self.d_1 - self.d_hub) / 2	# inlet blade height
+		r_2 = self.d_2 / 2
+		dr = (self.d_2 - self.d_1) / 2		# radial extent of the shroud
+		r_bend_shroud = r_2 - radial_ratio * dr
+		r_bend_hub = r_bend_shroud - taper_ratio * dr
+
+		self.ShroudContour = MeridionalContour(
+			r_in=self.d_1/2, z_out=self.Z_e, r_bend=r_bend_shroud, r_out=r_2,
+			flat=shroud_flat_ratio * b_1, fullness=shroud_fullness
+		)
+		self.HubContour = MeridionalContour(
+			r_in=self.d_hub/2, z_out=self.Z_e + self.b_2, r_bend=r_bend_hub, r_out=r_2,
+			flat=hub_flat_ratio * b_1, fullness=hub_fullness
+		)
 
 	@property
 	def Area1(self) -> Q_[float]:
@@ -326,20 +425,15 @@ class Impeller:
 
 		return fig
 
-	def PlotMeridional(self, l: str = 'in', color: str = 'black', R_ratio = 1.3) -> go.Figure:
+	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
 
 		fig = go.Figure()
-		
+
 		d_1	= self.d_1.to(l)
 		Z_e = self.Z_e.to(l)
-		b_1 = (self.d_1 - self.d_hub).to(l)
 		b_2 = self.b_2.to(l)
-		g_1 = (0.3 * b_1/2).to(l)
-		R_ds = (Z_e - g_1).to(l) # front shroud radius
 		d_2 = self.d_2.to(l)
 		d_hub = self.d_hub.to(l)
-
-		R_ts = R_ratio * R_ds
 
 		fig.add_trace(go.Scatter(
 			x=[0, 0], y=[d_hub.m/2, d_1.m/2],
@@ -352,37 +446,26 @@ class Impeller:
 			mode='lines', name='Outlet', line=dict(dash='dot', color=color)
 		))
 
-		shroud_contour = ArclenContour(g_1, R_ds, d_1, d_2)
-		shroud_x, shroud_y = [], []
+		s = np.linspace(0, 1, 200)
+		shroud_z, shroud_r = self.ShroudContour(s)
+		hub_z, hub_r = self.HubContour(s)
 
-		hub_x, hub_y = [], []
-		mean_x, mean_y = [], []
-
-		for s in np.linspace(0, 1, 100):
-			x1, y1 = shroud_contour(s)
-			shroud_x.append(x1.m)
-			shroud_y.append(y1.m)
-
-			x2, y2 = self.HubContour(s)
-			hub_x.append(x2.m)
-			hub_y.append(y2.m)
-
-			a = 0.5
-			mean_x.append((x1*a + (1 - a) * x2).m)
-			mean_y.append((y1*a + (1 - a) * y2).m)
+		a = 0.5
+		mean_z = a * shroud_z + (1 - a) * hub_z
+		mean_r = a * shroud_r + (1 - a) * hub_r
 
 		fig.add_trace(go.Scatter(
-			x=shroud_x, y=shroud_y,
+			x=shroud_z.to(l).m, y=shroud_r.to(l).m,
 			mode='lines', name='Shroud Contour', line=dict(color=color)
 		))
 
 		fig.add_trace(go.Scatter(
-			x=hub_x, y=hub_y,
+			x=hub_z.to(l).m, y=hub_r.to(l).m,
 			mode='lines', name='Hub Contour', line=dict(color=color)
 		))
 
 		fig.add_trace(go.Scatter(
-			x=mean_x, y=mean_y,
+			x=mean_z.to(l).m, y=mean_r.to(l).m,
 			mode='lines', name='Meanline Contour', line=dict(color=color, dash='dashdot')
 		))
 
