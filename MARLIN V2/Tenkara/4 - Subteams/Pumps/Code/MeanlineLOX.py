@@ -104,10 +104,5 @@ vel1 = lox_imp.GetInletVelocities()
 #lox_imp.SweepInletDiam()
 
 lox_imp.PlotMeridional(color='blue')
-
-# from Impeller import CadParams
-# cad = CadParams(bore_diam=Q_(0.5, 'in'))   # matches your shaft_diam
-# lox_imp.PlotBladeLines(cad)                # check the plan view and angles first
-# lox_imp.ExportSTEP('lox_impeller.step', cad)
-
-#lox_imp.ShroudHubRevolve()
+lox_imp.GetPotentialFlow().Plot()
+lox_imp.ShroudHubRevolve()

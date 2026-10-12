@@ -176,9 +176,11 @@ class FlowDomain:
 			inlet:	axial, upstream to z_min, inlet_ratio inlet passage heights before the contour inlets.
 					The inlet boundary is then a radial line where the flow can be taken as uniform and axial.
 					Disturbances from the bend decay upstream roughly like exp(-pi * distance / height).
-			outlet:	radial, past the outlet out to r_max = outlet_ratio * r_out. The outlet boundary is then an
-					axial line where the flow can be taken as uniform and radial (Milos uses D_max = 1.25 D_2).
-					The extension is radial whatever the outlet angle, so a tilted contour has a corner there.
+			outlet:	on at the contour's outlet angle to r_corner = corner_ratio * r_out, then radial out to
+					r_max = outlet_ratio * r_out. The outlet boundary is then an axial line where the flow can be
+					taken as uniform and radial (Milos uses D_max = 1.25 D_2). A tilted contour has a corner at
+					r_corner, where the potential flow velocity is singular. Milos puts it at 1.05 D_2 (point G) so
+					this does not distort the impeller outlet velocities. corner_ratio = 1 turns radial at the outlet.
 
 		Along the flow the domain has three zones, ZONES. The extended walls Shroud and Hub are SegmentChains,
 		and ZoneBounds[wall] holds the arclengths (m) along each wall of: start, impeller inlet, impeller
@@ -188,25 +190,31 @@ class FlowDomain:
 	ZONES = ('inlet', 'impeller', 'outlet')
 
 	def __init__(self, shroud: MeridionalContour, hub: MeridionalContour,
-			inlet_ratio: float = 2.0, outlet_ratio: float = 1.25):
+			inlet_ratio: float = 2.0, outlet_ratio: float = 1.25, corner_ratio: float = 1.05):
 
 		assert shroud.r_in > hub.r_in, 'Shroud must be above the hub at the inlet'
-		assert inlet_ratio > 0 and outlet_ratio > 1, 'Extensions must have a positive length'
+		assert inlet_ratio > 0 and 1 <= corner_ratio < outlet_ratio, 'Extensions must have a positive length, corner before the end'
 
 		self.z_min = min(shroud.z_in, hub.z_in) - inlet_ratio * (shroud.r_in - hub.r_in)
+		self.r_corner = corner_ratio * max(shroud.r_out, hub.r_out)
 		self.r_max = outlet_ratio * max(shroud.r_out, hub.r_out)
 
 		self.Shroud = self._Extend(shroud)
 		self.Hub = self._Extend(hub)
 
-		# the extensions are the first and last segments of each wall
-		self.ZoneBounds = {'shroud': self.Shroud._s_start[[0, 1, -2, -1]], 'hub': self.Hub._s_start[[0, 1, -2, -1]]}
+		# wall segments: inlet extension, the contour's segments, outlet extension
+		self.ZoneBounds = {
+			'shroud': self.Shroud._s_start[[0, 1, 1 + len(shroud._segments), -1]],
+			'hub': self.Hub._s_start[[0, 1, 1 + len(hub._segments), -1]]
+		}
 
 	def _Extend(self, contour: MeridionalContour) -> SegmentChain:
+		corner = np.array([contour.z_out + (self.r_corner - contour.r_out) * np.tan(contour.outlet_angle), self.r_corner])
 		return SegmentChain([
 			_LineSegment(np.array([self.z_min, contour.r_in]), np.array([contour.z_in, contour.r_in])),	# axial inlet
 			*contour._segments,
-			_LineSegment(np.array([contour.z_out, contour.r_out]), np.array([contour.z_out, self.r_max]))	# radial outlet
+			_LineSegment(np.array([contour.z_out, contour.r_out]), corner),		# on at the outlet angle
+			_LineSegment(corner, np.array([corner[0], self.r_max]))				# radial outlet
 		])
 
 	def Stations(self, n_stream: int) -> tuple[np.ndarray, np.ndarray, dict[str, tuple[int, int]]]:
@@ -253,7 +261,7 @@ class FlowDomain:
 
 		return MeridionalMesh(list(grid.transpose(1, 0, 2)), phi=phi if by_flow else None, zones=zones)
 
-def _Polylines(curves: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def Polylines(curves: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 	"""(n_curves, n_pts, 2) curves as the x, y of a single plotly trace, with gaps between curves"""
 	gaps = np.full((len(curves), 1, 2), np.nan)
 	xy = np.concatenate((curves, gaps), axis=1).reshape(-1, 2)
@@ -328,20 +336,26 @@ class MeridionalMesh:
 		first, last = self.Zones[zone]
 		return np.arange(first * (self.n_lines - 1), last * (self.n_lines - 1))
 
-	def Traces(self, l: str = 'in', color: str = 'black', qo_color: str = 'grey') -> list[go.Scatter]:
-		"""Mesh QOs, streamlines and zone boundaries (QOs between zones) as plotly traces in length unit l"""
+	def Traces(self, l: str = 'in', color: str = 'black', qo_color: str = 'grey', zone_bounds: bool = True
+			) -> list[go.Scatter]:
+		"""
+			Mesh QOs and streamlines (one legend entry), and the zone boundaries (QOs between zones) if zone_bounds,
+			as plotly traces in length unit l
+		"""
 		scale = Q_(1, 'm').to(l).magnitude
 
-		qo_x, qo_y = _Polylines(self.grid * scale)
-		line_x, line_y = _Polylines(self.grid.transpose(1, 0, 2) * scale)
+		qo_x, qo_y = Polylines(self.grid * scale)
+		line_x, line_y = Polylines(self.grid.transpose(1, 0, 2) * scale)
 		traces = [
-			go.Scatter(x=qo_x, y=qo_y, mode='lines', name='Quasi-orthogonals', line=dict(color=qo_color, width=0.5)),
-			go.Scatter(x=line_x, y=line_y, mode='lines', name='Streamlines', line=dict(color=color, width=1))
+			go.Scatter(x=qo_x, y=qo_y, mode='lines', name='FEM mesh', legendgroup='mesh', showlegend=False,
+				line=dict(color=qo_color, width=0.5)),
+			go.Scatter(x=line_x, y=line_y, mode='lines', name='FEM mesh', legendgroup='mesh',
+				line=dict(color=color, width=1))
 		]
 
 		inner_bounds = sorted({i for bounds in self.Zones.values() for i in bounds} - {0, self.n_stations - 1})
-		if inner_bounds:
-			x, y = _Polylines(self.grid[inner_bounds] * scale)
+		if zone_bounds and inner_bounds:
+			x, y = Polylines(self.grid[inner_bounds] * scale)
 			traces.append(go.Scatter(x=x, y=y, mode='lines', name='Zone boundaries', line=dict(color='red', width=2)))
 
 		return traces
