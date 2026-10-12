@@ -39,8 +39,9 @@ lox_geometry: InputGeometry = InputGeometry(
     d_hub=Q_(0.6, 'in'),			# hub diameter
     
 	Z_e_factor = 1.5,				# axial length extension factor, modifying Gulich formula
-    shroud_fullness=(1, 0.2),
-    hub_fullness=(0.55, 0.7)
+    shroud_fullness=(1, 0.5),
+    hub_fullness=(0.7, 0.7),
+    shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 )
 
 lox_imp = Impeller(lox_geometry, design_point)

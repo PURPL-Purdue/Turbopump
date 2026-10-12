@@ -24,6 +24,10 @@ class InputGeometry:
 
 	shroud_fullness: tuple[float, float] = (1, 0.3)
 	hub_fullness: tuple[float, float] = (0.5, 0.7)
+	# contour angles from radial at the outlet, positive leaning downstream (+z), see BuildMeridionalContours
+	shroud_outlet_angle: Q_[float] = Q_(5, 'deg')
+	hub_outlet_angle: Q_[float] = Q_(0, 'deg')
+	hub_taper_ratio: float = 0.3
 
 	Z_e_factor: float = 1
 
@@ -80,7 +84,10 @@ class Impeller:
 		self.HubContour: MeridionalContour
 		self.BuildMeridionalContours(
 			hub_fullness=geometry.hub_fullness,
-			shroud_fullness=geometry.shroud_fullness
+			shroud_fullness=geometry.shroud_fullness,
+			shroud_outlet_angle=geometry.shroud_outlet_angle,
+			hub_outlet_angle=geometry.hub_outlet_angle,
+			taper_ratio=geometry.hub_taper_ratio
 		)
 
 		# exit tip velocity at design point
@@ -95,35 +102,37 @@ class Impeller:
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
 
 	def BuildMeridionalContours(self,
-			shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0,
-			radial_ratio: float = 0.1, taper_ratio: float = 0.3,
+			shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0, taper_ratio: float = 0.3,
 			shroud_fullness: tuple[float, float] = (1, 0.3),
-			hub_fullness: tuple[float, float] = (0.5, 0.7)):
+			hub_fullness: tuple[float, float] = (0.5, 0.7),
+			shroud_outlet_angle: Q_[float] = Q_(5, 'deg'),
+			hub_outlet_angle: Q_[float] = Q_(0, 'deg')):
 		"""
-			Shroud: inlet radius d_1/2 -> radial at z = Z_e
-			Hub: inlet radius d_hub/2 -> radial at z = Z_e + b_2
-			Both contours exit purely radially at d_2/2, bounding a constant width b_2 section.
+			Shroud: inlet radius d_1/2 -> outlet at (Z_e, d_2/2)
+			Hub: inlet radius d_hub/2 -> outlet at (Z_e + b_2, d_2/2)
+			Each contour reaches the outlet at its outlet angle from radial, positive leaning downstream (+z).
+			Near the outlet the passage width is b_2 + (r_2 - r) * (tan(shroud angle) - tan(hub angle)),
+			so the passage area 2 pi r b does not increase toward the outlet when
+				tan(shroud_outlet_angle) - tan(hub_outlet_angle) >= b_2 / r_2
+			Shrouds are typically tilted 2-8 deg from radial (Milos, Impeller Design Using CAD Techniques
+			and Conformal Mapping Method).
 
-			Going inward from the outlet:
-				radial section: both walls radial, width b_2, over radial_ratio * (d_2 - d_1)/2
-				taper section: hub already radial while the shroud is still sloped, so the passage
-					narrows down to b_2, over taper_ratio * (d_2 - d_1)/2
+			The hub reaches its outlet angle early and runs straight over the last taper_ratio * (d_2 - d_1)/2
+			while the shroud is still bending, so the passage narrows down to b_2.
 			Flat lengths are given as a fraction of the inlet blade height (d_1 - d_hub)/2.
 			See MeridionalContour for the meaning of fullness.
 		"""
 		b_1 = (self.d_1 - self.d_hub) / 2	# inlet blade height
 		r_2 = self.d_2 / 2
 		dr = (self.d_2 - self.d_1) / 2		# radial extent of the shroud
-		r_bend_shroud = r_2 - radial_ratio * dr
-		r_bend_hub = r_bend_shroud - taper_ratio * dr
 
 		self.ShroudContour = MeridionalContour(
-			r_in=self.d_1/2, z_out=self.Z_e, r_bend=r_bend_shroud, r_out=r_2,
+			r_in=self.d_1/2, z_out=self.Z_e, r_out=r_2, outlet_angle=shroud_outlet_angle,
 			flat=shroud_flat_ratio * b_1, fullness=shroud_fullness
 		)
 		self.HubContour = MeridionalContour(
-			r_in=self.d_hub/2, z_out=self.Z_e + self.b_2, r_bend=r_bend_hub, r_out=r_2,
-			flat=hub_flat_ratio * b_1, fullness=hub_fullness
+			r_in=self.d_hub/2, z_out=self.Z_e + self.b_2, r_out=r_2, outlet_angle=hub_outlet_angle,
+			r_bend=r_2 - taper_ratio * dr, flat=hub_flat_ratio * b_1, fullness=hub_fullness
 		)
 
 	@property
