@@ -1,3 +1,5 @@
+import cadquery as cq
+from cadquery.vis import show
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
@@ -5,7 +7,7 @@ import plotly.graph_objects as go
 import plotly.subplots as subplots
 import EmpiricalRelations as emp
 from VelocityTriangle import VelocityTriangle
-import MeridionalContour
+from MeridionalContour import MeridionalContour
 
 g = Q_(9.81, 'm/s^2')
 
@@ -509,3 +511,7 @@ class Impeller:
 		fig.show()
 
 		return fig
+
+	def ShroudHubRevolve():
+		part = cq.Workplane("YZ")
+		
