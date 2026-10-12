@@ -18,11 +18,15 @@ design_point: DesignPoint = DesignPoint(
 ipa_geometry: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(25,'deg').to('rad'),# blade angle at exit, relative to tangent
-    d_1 = Q_(1.1, 'in'),			# impeller inlet diameter
+    d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 	d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.08, 'in'),			# impeller outlet height
 	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
-    d_hub=Q_(0.6, 'in')				# hub diameter
+    d_hub=Q_(0.7, 'in'),			# hub diameter
+    
+	Z_e_factor = 1.5,				# axial length extension factor, modifying Gulich formula
+    shroud_fullness=(1, 0.3),
+    hub_fullness=(0.6, 0.7)
 )
 
 ipa_imp = Impeller(ipa_geometry, design_point)
@@ -68,11 +72,11 @@ print(f"NPSH inception              = {ipa_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):.1f}")
 
-ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+#ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = ipa_imp.GetOutletVelocities()
 
-vel.Plot(unit='m/s', station=2)
+#vel.Plot(unit='m/s', station=2)
 
-ipa_imp.SweepInletDiam()
+#ipa_imp.SweepInletDiam()
 
 ipa_imp.PlotMeridional(color='green')

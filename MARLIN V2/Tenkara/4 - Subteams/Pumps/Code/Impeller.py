@@ -2,6 +2,7 @@ import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
+import plotly.subplots as subplots
 import EmpiricalRelations as emp
 from VelocityTriangle import VelocityTriangle
 import Bezier
@@ -17,6 +18,11 @@ class InputGeometry:
 	b_2: Q_[float]			# impeller outlet height
 	thk2: Q_[float]			# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
+
+	shroud_fullness: tuple[float, float] = (1, 0.3)
+	hub_fullness: tuple[float, float] = (0.5, 0.7)
+
+	Z_e_factor: float = 1
 
 @dataclass
 class DesignPoint:
@@ -150,11 +156,16 @@ class Impeller:
 		self.d_hub = geometry.d_hub
 		self.WiesnerSlip = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
 		self.Area2 = exit_area
-		self.Z_e: Q_[float] = ((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))	# axial extension, Gulich, pg. 348
+		self.Z_e: Q_[float] = (		# axial extension, Gulich, pg. 348
+			geometry.Z_e_factor*((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))
+			)
 
 		self.ShroudContour: MeridionalContour
 		self.HubContour: MeridionalContour
-		self.BuildMeridionalContours()
+		self.BuildMeridionalContours(
+			hub_fullness=geometry.hub_fullness,
+			shroud_fullness=geometry.shroud_fullness
+		)
 
 		# exit tip velocity at design point
 		self.U_2_design = (self.DP.N_shaft * self.d_2/2).to('m/s')
@@ -168,10 +179,10 @@ class Impeller:
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
 
 	def BuildMeridionalContours(self,
-			shroud_flat_ratio: float = 0.1, hub_flat_ratio: float = 0.0,
+			shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0,
 			radial_ratio: float = 0.1, taper_ratio: float = 0.3,
-			shroud_fullness: tuple[float, float] = (0.8, 0.3),
-			hub_fullness: tuple[float, float] = (0.7, 0.7)):
+			shroud_fullness: tuple[float, float] = (1, 0.3),
+			hub_fullness: tuple[float, float] = (0.5, 0.7)):
 		"""
 			Shroud: inlet radius d_1/2 -> radial at z = Z_e
 			Hub: inlet radius d_hub/2 -> radial at z = Z_e + b_2
@@ -425,10 +436,73 @@ class Impeller:
 
 		return fig
 
-	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
+	def GetStreamline(self, phi: float = 0.5, flow_Q: Q_[float] = None, n_qo: int = 101, n_pts: int = 51
+			) -> tuple[Q_, Q_, Q_, Q_]:
+		"""
+			Streamline such that the fraction phi of the flow passes between the hub and itself
+			(phi = 0: hub, phi = 1: shroud), and the meridional velocity along it.
+			Assumes c_m uniform across the passage, no blade blockage.
 
-		fig = go.Figure()
+			Quasi-orthogonals (QOs) are straight lines joining hub and shroud points of equal
+			normalized arclength. Along each QO, the flow direction t is blended linearly from the hub
+			wall tangent to the shroud wall tangent, and continuity through the QO gives
+				Q = c_m * integral( (t . n) 2 pi r dl )
+			where n is the QO normal. (t . n) corrects for QOs not being perpendicular to the flow.
 
+			Returns z, r, arclength along the streamline, and c_m, one value per QO
+		"""
+		flow_Q = flow_Q if flow_Q is not None else self.DP.Q
+
+		s = np.linspace(0, 1, n_qo)
+		hub = np.column_stack([x.to('m').magnitude for x in self.HubContour(s)])		# (n_qo, 2) of (z, r)
+		shroud = np.column_stack([x.to('m').magnitude for x in self.ShroudContour(s)])
+
+		# wall flow directions
+		t_hub = np.gradient(hub, axis=0)
+		t_hub /= np.linalg.norm(t_hub, axis=1, keepdims=True)
+		t_shroud = np.gradient(shroud, axis=0)
+		t_shroud /= np.linalg.norm(t_shroud, axis=1, keepdims=True)
+
+		chord = shroud - hub
+		L = np.linalg.norm(chord, axis=1)
+		n = np.column_stack([chord[:, 1], -chord[:, 0]]) / L[:, None]	# QO normal, pointing downstream
+
+		# points along each QO, lam = 0 at hub, 1 at shroud: (n_qo, n_pts, 2)
+		lam = np.linspace(0, 1, n_pts)
+		pts = hub[:, None, :] + lam[None, :, None] * chord[:, None, :]
+		t = (1 - lam[None, :, None]) * t_hub[:, None, :] + lam[None, :, None] * t_shroud[:, None, :]
+		t /= np.linalg.norm(t, axis=2, keepdims=True)
+
+		# effective flow area per unit lam, and its cumulative integral from the hub
+		dA = np.sum(t * n[:, None, :], axis=2) * 2 * np.pi * pts[:, :, 1] * L[:, None]
+		A = np.concatenate((np.zeros((n_qo, 1)), np.cumsum((dA[:, 1:] + dA[:, :-1]) / 2 * np.diff(lam), axis=1)), axis=1)
+
+		c_m = flow_Q.to('m^3/s').magnitude / A[:, -1]
+
+		# position of the phi flow fraction on each QO
+		lam_phi = np.array([np.interp(phi, A_qo / A_qo[-1], lam) for A_qo in A])
+		line = hub + lam_phi[:, None] * chord
+		arclen = np.concatenate(([0], np.cumsum(np.linalg.norm(np.diff(line, axis=0), axis=1))))
+
+		return Q_(line[:, 0], 'm'), Q_(line[:, 1], 'm'), Q_(arclen, 'm'), Q_(c_m, 'm/s')
+
+	def PlotMeridional(self, l: str = 'in', color: str = 'black',
+			phis: tuple[float, ...] = (0.25, 0.5, 0.75)) -> go.Figure:
+		"""
+			Left: meridional cross-section, with streamlines at flow fractions phis.
+			Right: flow cross-section area of each quasi-orthogonal (left axis) and meridional velocity
+			(right axis), along the mean (phi = 0.5) streamline, at the design point.
+		"""
+
+		fig = subplots.make_subplots(
+			rows=1, cols=2,
+			specs=[[{}, {'secondary_y': True}]],
+			column_widths=[0.4, 0.6],
+			horizontal_spacing=0.1,
+			subplot_titles=("Meridional Cross-Section", "Passage Area and Average Meridional Velocity Along Mean Streamline")
+		)
+
+		# ----- meridional cross-section, subplot (1, 1) -----
 		d_1	= self.d_1.to(l)
 		Z_e = self.Z_e.to(l)
 		b_2 = self.b_2.to(l)
@@ -438,54 +512,90 @@ class Impeller:
 		fig.add_trace(go.Scatter(
 			x=[0, 0], y=[d_hub.m/2, d_1.m/2],
 			mode='lines', name='Inlet', line=dict(dash='dot', color=color)
-		))
+		), row=1, col=1)
 
 		fig.add_trace(go.Scatter(
 			x=[Z_e.m, Z_e.m + b_2.m],
 			y=[d_2.m/2, d_2.m/2],
 			mode='lines', name='Outlet', line=dict(dash='dot', color=color)
-		))
+		), row=1, col=1)
 
 		s = np.linspace(0, 1, 200)
 		shroud_z, shroud_r = self.ShroudContour(s)
 		hub_z, hub_r = self.HubContour(s)
 
-		a = 0.5
-		mean_z = a * shroud_z + (1 - a) * hub_z
-		mean_r = a * shroud_r + (1 - a) * hub_r
-
 		fig.add_trace(go.Scatter(
 			x=shroud_z.to(l).m, y=shroud_r.to(l).m,
 			mode='lines', name='Shroud Contour', line=dict(color=color)
-		))
+		), row=1, col=1)
 
 		fig.add_trace(go.Scatter(
 			x=hub_z.to(l).m, y=hub_r.to(l).m,
 			mode='lines', name='Hub Contour', line=dict(color=color)
-		))
+		), row=1, col=1)
 
+		# geometric meanline, midpoint between hub and shroud at equal normalized arclength
 		fig.add_trace(go.Scatter(
-			x=mean_z.to(l).m, y=mean_r.to(l).m,
-			mode='lines', name='Meanline Contour', line=dict(color=color, dash='dashdot')
-		))
+			x=((shroud_z + hub_z) / 2).to(l).m, y=((shroud_r + hub_r) / 2).to(l).m,
+			mode='lines', name='Geometric Meanline', line=dict(color='grey', dash='dash', width=1)
+		), row=1, col=1)
+
+		# streamlines at flow fraction phi from the hub, phi = 0.5 is the mean streamline
+		for phi in phis:
+			stream_z, stream_r, _, _ = self.GetStreamline(phi)
+			fig.add_trace(go.Scatter(
+				x=stream_z.to(l).m, y=stream_r.to(l).m,
+				mode='lines', name=f'Streamline φ = {phi:.2f}',
+				line=dict(color=color, dash='dashdot' if phi == 0.5 else 'dot', width=1.5 if phi == 0.5 else 1)
+			), row=1, col=1)
 
 		fig.add_trace(go.Scatter(
 			x=[0, Z_e.m + b_2.m], y=[0, 0],
 			mode='lines', name='Meridional axis', line=dict(dash='dash', color='grey')
-		))
+		), row=1, col=1)
 
-		fig.update_yaxes(
-			scaleanchor="x",
-			scaleratio=1,
-		)
+		fig.update_xaxes(title_text=f"Meridional position ({l})", row=1, col=1)
+		fig.update_yaxes(title_text=f"Radial position ({l})", scaleanchor='x', scaleratio=1, row=1, col=1)
+
+		# ----- passage area and meridional velocity along the mean streamline, subplot (1, 2) -----
+		_, _, arclen, c_m = self.GetStreamline(0.5)
+		area = self.DP.Q / c_m
+		s = arclen.to(l).m
+
+		fig.add_trace(go.Scatter(
+			x=s, y=area.to(f'{l}^2').m,
+			mode='lines', name='Passage area', line=dict(color='blue')
+		), row=1, col=2)
+		fig.add_trace(go.Scatter(
+			x=[0, s[-1]], y=[self.Area1.to(f'{l}^2').m] * 2,
+			mode='lines', name='Inlet area', line=dict(dash='dot', color='blue')
+		), row=1, col=2)
+		fig.add_trace(go.Scatter(
+			x=s, y=c_m.to('m/s').m,
+			mode='lines', name='Meridional velocity', line=dict(color='red')
+		), row=1, col=2, secondary_y=True)
+
+		fig.update_xaxes(title_text=f"Mean streamline arclength ({l})", showgrid=True,
+			gridcolor='rgba(128,128,128,0.3)', row=1, col=2)
+		fig.update_yaxes(title_text=f"Cross-section area ({l}^2)", rangemode='tozero', color='blue',
+			gridcolor='rgba(128,128,128,0.3)', row=1, col=2, secondary_y=False)
+		fig.update_yaxes(title_text="Meridional velocity c_m (m/s)", rangemode='tozero', color='red',
+			showgrid=True, row=1, col=2, secondary_y=True)
+
+		# a separate legend for each subplot, see layout below
+		fig.update_traces(legend='legend2', row=1, col=2)
 
 		fig.update_layout(
-			title="Impeller Meridional Cross-Section",
-			xaxis_title=f"Meridional position ({l})",
-			yaxis_title=f"Radial position ({l})",
+			title="Impeller Meridional Flow Path",
+			# cross-section legend in its empty upper-left corner, area/velocity legend right of its plot
+			legend=dict(x=0.01, y=0.99, xanchor='left', yanchor='top', bgcolor='rgba(255,255,255,0.8)'),
+			legend2=dict(x=1.02, y=1, xanchor='left', yanchor='top'),
 			template="plotly_white"
 		)
 
 		fig.show()
 
 		return fig
+
+	def CreateInitialRevolution():
+		pass
