@@ -6,10 +6,10 @@ from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
 import plotly.subplots as subplots
-import EmpiricalRelations as emp
-from VelocityTriangle import VelocityTriangle
-from MeridionalContour import MeridionalContour, QuasiOrthogonalFlow, FlowDomain, MeridionalMesh
-from PotentialFlow import PotentialFlow
+from . import EmpiricalRelations as emp
+from .VelocityTriangle import VelocityTriangle
+from .MeridionalContour import MeridionalContour, QuasiOrthogonalFlow, FlowDomain, MeridionalMesh
+from .PotentialFlow import PotentialFlow
 
 g = Q_(9.81, 'm/s^2')
 
@@ -38,6 +38,7 @@ class DesignPoint:
 	N_shaft: Q_[float]		# shaft rotating speed
 	H: Q_[float]			# headrise, developed head
 	n_hyd_BEP: float		# hydraulic efficiency at BEP
+	rho: Q_[float]			# average density of the fluid
 
 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
 def GetWiesnerSlipRatio(beta2b: Q_[float], Z: int) -> Q_[float]:

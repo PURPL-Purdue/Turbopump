@@ -1,36 +1,11 @@
 import numpy as np
-from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
-import CoolProp.CoolProp as CP
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
+from Code.Impeller import IPA as ipa_imp
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
-
-opt_m_dot = Q_(2.15, 'kg/s')		# mass flow rate at BEP
-rho = Q_(786, 'kg/m^3')				# fluid density
-opt_dP = Q_(44.63, 'bar')			# total pressure rise at BEP
-
-design_point: DesignPoint = DesignPoint(
-	Q = opt_m_dot/rho,				# volumetric flow rate at BEP
-	H = (opt_dP / (g * rho)),    	# developed head at BEP
-	N_shaft = Q_(35000, 'rpm'),   	# shaft speed
-	n_hyd_BEP = 0.5
-)
-ipa_geometry: InputGeometry = InputGeometry(
-	Z_blade = 6,
-	Beta2B = Q_(25,'deg').to('rad'),# blade angle at exit, relative to tangent
-    d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
-	d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
-	b_2 = Q_(0.08, 'in'),			# impeller outlet height
-	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
-    d_hub=Q_(0.7, 'in'),			# hub diameter
-    
-	Z_e_factor = 1.5,				# axial length extension factor, modifying Gulich formula
-    shroud_fullness=(1, 0.5),
-    hub_fullness=(0.7, 0.7),
-    shroud_outlet_angle=Q_(5, 'deg')	# shroud contour angle from radial at outlet
-)
-
-ipa_imp = Impeller(ipa_geometry, design_point)
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {ipa_imp.DP.Q.to("L/s"):.2f}")
@@ -54,7 +29,7 @@ print(f"Flow coefficient (ϕ)        = {ipa_imp.FlowCoeff:.4f}")
 # ------------------------------------------------------------------
 # Performance
 specific_work, _, _ = ipa_imp.GetSpecificWork()
-power_consumption = (opt_m_dot * specific_work)
+power_consumption = (ipa_imp.DP.Q * ipa_imp.DP.rho * specific_work)
 
 
 print("\n--- Performance characteristics ---")
@@ -66,7 +41,7 @@ IPA_temp = Q_(25, 'C')				# assume IPA temperature is 25 degrees C
 
 p_vapor_IPA = Q_(6060, 'Pa')		# vapor pressure at inlet (pressurized) - inputting manually bc coolprop has no ipa
 
-NPSH_a = (feed_pressure - p_vapor_IPA) / rho / g
+NPSH_a = (feed_pressure - p_vapor_IPA) / ipa_imp.DP.rho / g
 
 print("\n--- Inlet conditions ---")
 print(f"NPSH inception              = {ipa_imp.NPSH_i.to('m'):.0f}")

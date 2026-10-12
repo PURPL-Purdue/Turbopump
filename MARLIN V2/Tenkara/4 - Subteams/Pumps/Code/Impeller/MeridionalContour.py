@@ -1,4 +1,4 @@
-import Bezier
+from . import Bezier
 import numpy as np
 from pint import Quantity as Q_
 import plotly.graph_objects as go

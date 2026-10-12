@@ -6,7 +6,7 @@ from plotly.colors import sample_colorscale
 import scipy.sparse as sparse
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import PchipInterpolator
-from MeridionalContour import MeridionalMesh, QuasiOrthogonalFlow, Polylines
+from .MeridionalContour import MeridionalMesh, QuasiOrthogonalFlow, Polylines
 
 # corners of the bilinear quadrilateral in (xi, eta), in element node order, and its 2 x 2 Gauss points (weights 1)
 _CORNERS = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])
