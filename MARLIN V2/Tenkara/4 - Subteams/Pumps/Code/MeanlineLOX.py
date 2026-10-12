@@ -110,4 +110,4 @@ lox_imp.PlotMeridional(color='blue')
 # lox_imp.PlotBladeLines(cad)                # check the plan view and angles first
 # lox_imp.ExportSTEP('lox_impeller.step', cad)
 
-lox_imp.ShroudHubRevolve()
+#lox_imp.ShroudHubRevolve()
