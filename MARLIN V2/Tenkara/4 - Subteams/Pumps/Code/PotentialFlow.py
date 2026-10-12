@@ -156,7 +156,7 @@ class PotentialFlow:
 			Left: meridional velocity over the flow domain, with the FEM mesh it is solved on, the streamlines phis
 			and the impeller inlet and outlet.
 			Right: meridional velocity along each streamline against arclength from the impeller inlet, colored from
-			hub to shroud and bold over the impeller (Milos Fig. 8), and Q / A of each QO (c_m uniform across the
+			hub to shroud and bold over the impeller (Milos Fig. 8), and Q / A of each QO (v_m uniform across the
 			passage) for comparison.
 		"""
 		m = self.Mesh
@@ -199,7 +199,8 @@ class PotentialFlow:
 		), row=1, col=1)
 		x, y = Polylines(m.grid[[first, last]] * scale)
 		fig.add_trace(go.Scatter(
-			x=x, y=y, mode='lines', name='Impeller inlet and outlet', line=dict(color='red', dash='dash', width=2)
+			x=x, y=y, mode='lines', name='Impeller inlet and outlet',
+			line=dict(color='black', dash='dot', width=2)
 		), row=1, col=1)
 
 		fig.update_xaxes(title_text=f"Meridional position ({l})", row=1, col=1)
@@ -225,7 +226,7 @@ class PotentialFlow:
 		_, _, s_mean, _ = self.GetStreamline(0.5)
 		fig.add_trace(go.Scatter(
 			x=s_mean.to(l).m, y=self.Q.to('m^3/s').m / area, mode='lines',
-			name='Q / QO area (uniform c_m)',
+			name='Q / QO area (uniform v_m)',
 			line=dict(color='black', dash='dashdot', width=2)
 		), row=1, col=2)
 		fig.add_vline(x=0, line=dict(color='grey', dash='dot'), row=1, col=2)
