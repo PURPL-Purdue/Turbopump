@@ -391,7 +391,7 @@ class Impeller:
 
 		return Q_(line[:, 0], 'm'), Q_(line[:, 1], 'm'), Q_(arclen, 'm'), Q_(c_m, 'm/s')
 
-	def GetPotentialFlow(self, flow_Q: Q_[float] = None, mesh: MeridionalMesh = None) -> PotentialFlow:
+	def GetPotentialFlow(self, flow_Q: Q_[float] = None) -> PotentialFlow:
 		"""
 			Meridional potential flow at flow_Q (design point if None), solved by FEM on the default FlowDomain
 			mesh if mesh is None. Gives the meridional velocity across the passage, which GetStreamline assumes
