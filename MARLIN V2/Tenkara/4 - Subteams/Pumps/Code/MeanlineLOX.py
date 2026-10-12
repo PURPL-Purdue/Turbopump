@@ -108,3 +108,5 @@ lox_imp.PlotMeridional(color='blue')
 # cad = CadParams(bore_diam=Q_(0.5, 'in'))   # matches your shaft_diam
 # lox_imp.PlotBladeLines(cad)                # check the plan view and angles first
 # lox_imp.ExportSTEP('lox_impeller.step', cad)
+
+lox_imp.ShroudHubRevolve()

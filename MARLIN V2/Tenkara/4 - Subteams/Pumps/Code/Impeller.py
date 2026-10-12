@@ -1,5 +1,6 @@
 import cadquery as cq
 from cadquery.vis import show
+from cadquery.func import spline, revolve
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
@@ -512,6 +513,26 @@ class Impeller:
 
 		return fig
 
-	def ShroudHubRevolve():
-		part = cq.Workplane("YZ")
+	def ShroudHubRevolve(self, resolution: int=200):
 		
+		s = np.linspace(0, 1, resolution)
+		hub_z, hub_r = self.HubContour(s)
+		shroud_z, shroud_r = self.ShroudContour(s)
+		hub = list(zip(hub_z.to('mm').m, hub_r.to('mm').m))              # [(axial, radial), ...]
+		shroud = list(zip(shroud_z.to('mm').m, shroud_r.to('mm').m))
+
+		part = (cq.Workplane("YZ")
+			.spline(hub)										# hub: inlet → outlet
+			.lineTo(*shroud[-1])								# outlet line across b_2
+			.spline(shroud[::-1][1:], includeCurrent=True)		# shroud: outlet → inlet
+			.close()											# inlet line back to the hub
+			.revolve(360, (1, 0, 0), (0, 0, 0))					# revolve about the sketch x-axis
+		)
+		show(part, alpha = 0.8)
+
+		# hub_wire = spline(*[cq.Vector(0, z, r) for z, r in hub])   # points in the global YZ plane
+		# hub_face = revolve(hub_wire, (0, 0, 0), (0, 1, 0), 360)    # axis = global Y
+
+		# shroud_wire = spline(*[cq.Vector(0, z, r) for z, r in shroud])   # points in the global YZ plane
+		# shroud_face = revolve(shroud_wire, (0, 0, 0), (0, 1, 0), 360)    # axis = global Y
+		# #show(hub_face, shroud_face, alpha = 0.8)
