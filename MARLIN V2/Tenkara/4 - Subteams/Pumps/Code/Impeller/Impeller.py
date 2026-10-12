@@ -165,6 +165,10 @@ class Impeller:
 			(self.DP.N_shaft * self.d_1/2)**2 + c_1m**2
 			)
 		return (1/2 / g * (lambda_c * c_1m**2 + lambda_w * w_1**2)).to('m')
+
+	def GetMassFlow(self, volumetric_flowrate: Q_[float]) -> Q_[float]:
+		volumetric_flowrate = volumetric_flowrate if volumetric_flowrate is not None else self.DP.Q
+		return volumetric_flowrate * self.DP.rho
 	
 	def H_euler(self, Q):
 		"""
