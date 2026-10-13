@@ -56,5 +56,5 @@ vel, _ = ipa_imp.GetOutletVelocities()
 #ipa_imp.SweepInletDiam()
 
 ipa_imp.PlotMeridional(color='green')
-ipa_imp.GetPotentialFlow().Plot()
+ipa_imp.PotentialFlow.Plot()
 ipa_imp.ShroudHubRevolve()

@@ -67,5 +67,5 @@ vel1 = lox_imp.GetInletVelocities()
 #lox_imp.SweepInletDiam()
 
 lox_imp.PlotMeridional(color='blue')
-lox_imp.GetPotentialFlow().Plot()
+lox_imp.PotentialFlow.Plot()
 lox_imp.ShroudHubRevolve()

@@ -6,7 +6,7 @@ from plotly.colors import sample_colorscale
 import scipy.sparse as sparse
 from scipy.sparse.linalg import spsolve
 from scipy.interpolate import PchipInterpolator
-from .MeridionalContour import MeridionalMesh, QuasiOrthogonalFlow, Polylines
+from .MeridionalContour import MeridionalMesh, QuasiOrthogonalFlow, Polylines, Polyline
 
 # corners of the bilinear quadrilateral in (xi, eta), in element node order, and its 2 x 2 Gauss points (weights 1)
 _CORNERS = np.array([[-1, -1], [1, -1], [1, 1], [-1, 1]])
@@ -96,6 +96,26 @@ def StreamFunctionGradient(mesh: MeridionalMesh, psi: np.ndarray) -> np.ndarray:
 	det = z_i * r_j - z_j * r_i
 	return np.stack([(f_i * r_j - f_j * r_i) / det, (z_i * f_j - z_j * f_i) / det], axis=-1).reshape(-1, 2)
 
+class Streamline(Polyline):
+	"""
+		Streamline of a PotentialFlow over the whole flow domain, straight between its points, one on each QO.
+		Evaluated by arclength like the other meridional curves, from the start to the end of the domain.
+			phi:		flow fraction passing between the hub and the streamline (0: hub, 1: shroud)
+			x:			(n,) arclength of each point from the impeller inlet, negative upstream
+			v_m:		(n,) meridional velocity at each point
+			Impeller:	the part between the impeller inlet and outlet, a Polyline evaluated by normalized arclength
+						like the hub and shroud contours
+	"""
+
+	def __init__(self, points: np.ndarray, v_m: np.ndarray, phi: float, impeller: tuple[int, int]):
+		super().__init__(points)
+		first, last = impeller
+
+		self.phi = phi
+		self.x: Q_[np.ndarray] = Q_(self.s_m - self.s_m[first], 'm')
+		self.v_m: Q_[np.ndarray] = Q_(v_m, 'm/s')
+		self.Impeller = Polyline(self.points[first:last + 1])
+
 class PotentialFlow:
 	"""
 		Inviscid, incompressible, irrotational axisymmetric flow through the meridional flow domain of a
@@ -127,11 +147,10 @@ class PotentialFlow:
 		self.v_r = -grad[:, 0]
 		self.v_m = np.hypot(self.v_z, self.v_r)
 
-	def GetStreamline(self, phi: float) -> tuple[Q_, Q_, Q_, Q_]:
+	def GetStreamline(self, phi: float) -> Streamline:
 		"""
 			Streamline psi = phi (0: hub, 1: shroud), one point per QO, located by monotone cubic interpolation of psi
-			along each QO (Milos uses cubic splines), with the velocity components interpolated the same way.
-			Returns z, r, arclength from the impeller inlet (negative upstream), and the meridional velocity v_m
+			along each QO (Milos uses cubic splines, p. 38), with the velocity components interpolated the same way
 		"""
 		assert 0 <= phi <= 1, 'phi is a flow fraction, 0 at the hub and 1 at the shroud'
 		m = self.Mesh
@@ -146,10 +165,7 @@ class PotentialFlow:
 			pts[i] = [np.interp(t_phi, t, qo[:, 0]), np.interp(t_phi, t, qo[:, 1])]
 			v[i] = PchipInterpolator(t, vel[i])(t_phi)
 
-		arclen = np.concatenate(([0], np.cumsum(np.linalg.norm(np.diff(pts, axis=0), axis=1))))
-		arclen -= arclen[m.Zones.get('impeller', (0, 0))[0]]
-
-		return Q_(pts[:, 0], 'm'), Q_(pts[:, 1], 'm'), Q_(arclen, 'm'), Q_(np.hypot(v[:, 0], v[:, 1]), 'm/s')
+		return Streamline(pts, np.hypot(v[:, 0], v[:, 1]), phi, m.Zones.get('impeller', (0, m.n_stations - 1)))
 
 	def Plot(self, phis: np.ndarray = np.linspace(0, 1, 11), l: str = 'in') -> go.Figure:
 		"""
@@ -191,7 +207,7 @@ class PotentialFlow:
 		for trace in m.Traces(l, color=mesh_color, qo_color=mesh_color, zone_bounds=False):
 			fig.add_trace(trace, row=1, col=1)
 
-		x, y = Polylines(np.stack([np.column_stack([z.to(l).m, r.to(l).m]) for z, r, _, _ in lines]))
+		x, y = Polylines(np.stack([line.points for line in lines]) * scale)
 		fig.add_trace(go.Scatter(
 			x=x, y=y,
 			mode='lines', name='Streamlines', line=dict(color='black', width=1),
@@ -208,8 +224,8 @@ class PotentialFlow:
 
 		# ----- velocity along the streamlines, subplot (1, 2) -----
 		colors = sample_colorscale('Viridis', np.linspace(0, 0.85, len(phis)))
-		for phi, (_, _, s, v_m), color in zip(phis, lines, colors):
-			s, v_m = s.to(l).m, v_m.to('m/s').m
+		for phi, line, color in zip(phis, lines, colors):
+			s, v_m = line.x.to(l).m, line.v_m.to('m/s').m
 			name = f"ψ = {phi:.2f}" + (" (hub)" if phi == 0 else " (shroud)" if phi == 1 else "")
 			hover = f"ψ = {phi:g}<br>s = %{{x:.3f}} {l}<br>v_m = %{{y:.2f}} m/s<extra></extra>"
 
@@ -223,7 +239,7 @@ class PotentialFlow:
 			), row=1, col=2)
 
 		_, area = QuasiOrthogonalFlow(m.grid[:, 0], m.grid[:, -1], 0.5)
-		_, _, s_mean, _ = self.GetStreamline(0.5)
+		s_mean = self.GetStreamline(0.5).x
 		fig.add_trace(go.Scatter(
 			x=s_mean.to(l).m, y=self.Q.to('m^3/s').m / area, mode='lines',
 			name='Q / QO area (uniform v<sub>m</sub>)',

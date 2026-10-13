@@ -32,28 +32,22 @@ class _BezierSegment:
 		"""(n, 2) points at arclengths s from P[0]"""
 		return Bezier.bez(self.P, np.interp(s, self._s, self._t))
 
-class SegmentChain:
+class MeridionalCurve:
 	"""
-		Segments joined end to end, evaluated by arclength along the whole chain. Zero-length segments
-		are dropped. All lengths in meters.
+		Curve in the meridional (z, r) plane evaluated by arclength. Common base of the hub and shroud contours and
+		the FlowDomain walls (SegmentChain), and of the geometric meanline and the potential flow streamlines
+		(Polyline). Subclasses set length_m and implement Points. All lengths in meters.
 	"""
 
-	def __init__(self, segments: list):
-		self._segments = [seg for seg in segments if seg.length > 0]
-		self._s_start = np.concatenate(([0], np.cumsum([seg.length for seg in self._segments])))
+	length_m: float
 
-		self.length_m = self._s_start[-1]
-		self.Length: Q_[float] = Q_(self.length_m, 'm')
+	@property
+	def Length(self) -> Q_[float]:
+		return Q_(self.length_m, 'm')
 
 	def Points(self, s_m: np.ndarray) -> np.ndarray:
-		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the start of the chain"""
-		# segment containing each point, the end of the chain belongs to the last one
-		i_seg = np.clip(np.searchsorted(self._s_start, s_m, side='right') - 1, 0, len(self._segments) - 1)
-		pts = np.empty((s_m.size, 2))
-		for i, seg in enumerate(self._segments):
-			on_seg = i_seg == i
-			pts[on_seg] = seg(s_m[on_seg] - self._s_start[i])
-		return pts
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the start of the curve"""
+		raise NotImplementedError
 
 	def __call__(self, s: float | np.ndarray) -> tuple[Q_, Q_]:
 		"""(z, r) at normalized arclength s in [0, 1]"""
@@ -66,6 +60,52 @@ class SegmentChain:
 		if np.ndim(s) == 0:
 			return Q_(z[0], 'm'), Q_(r[0], 'm')
 		return Q_(z, 'm'), Q_(r, 'm')
+
+	def StaticMoment(self, s_1: float = 0, s_2: float = 1, n: int = 1001) -> Q_[float]:
+		"""
+			Static moment about the axis between normalized arclengths s_1 and s_2, S = integral(r dx) with x the
+			arclength, by the trapezoid rule over n points (Milos eqs. 34-35)
+		"""
+		x = np.linspace(s_1, s_2, n) * self.length_m
+		r = self.Points(x)[:, 1]
+		return Q_(np.sum((r[1:] + r[:-1]) / 2 * np.diff(x)), 'm^2')
+
+class SegmentChain(MeridionalCurve):
+	"""
+		Segments joined end to end, evaluated by arclength along the whole chain. Zero-length segments
+		are dropped. All lengths in meters.
+	"""
+
+	def __init__(self, segments: list):
+		self._segments = [seg for seg in segments if seg.length > 0]
+		self._s_start = np.concatenate(([0], np.cumsum([seg.length for seg in self._segments])))
+
+		self.length_m = self._s_start[-1]
+
+	def Points(self, s_m: np.ndarray) -> np.ndarray:
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the start of the chain"""
+		# segment containing each point, the end of the chain belongs to the last one
+		i_seg = np.clip(np.searchsorted(self._s_start, s_m, side='right') - 1, 0, len(self._segments) - 1)
+		pts = np.empty((s_m.size, 2))
+		for i, seg in enumerate(self._segments):
+			on_seg = i_seg == i
+			pts[on_seg] = seg(s_m[on_seg] - self._s_start[i])
+		return pts
+
+class Polyline(MeridionalCurve):
+	"""
+		Straight lines through points, an (n, 2) array of (z, r) in meters, evaluated by arclength.
+		s_m holds the arclength of each point from the first one.
+	"""
+
+	def __init__(self, points: np.ndarray):
+		self.points = np.asarray(points, float)
+		self.s_m = np.concatenate(([0], np.cumsum(np.linalg.norm(np.diff(self.points, axis=0), axis=1))))
+		self.length_m = self.s_m[-1]
+
+	def Points(self, s_m: np.ndarray) -> np.ndarray:
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the first point"""
+		return np.column_stack([np.interp(s_m, self.s_m, self.points[:, 0]), np.interp(s_m, self.s_m, self.points[:, 1])])
 
 class MeridionalContour(SegmentChain):
 	"""
@@ -126,6 +166,11 @@ class MeridionalContour(SegmentChain):
 	@property
 	def ControlPoints(self) -> Q_[np.ndarray]:
 		return Q_(self.P, 'm')
+
+def MeanCurve(a: MeridionalCurve, b: MeridionalCurve, n: int = 201) -> Polyline:
+	"""Midpoints of a and b at equal normalized arclength, e.g. the geometric meanline between the hub and shroud"""
+	s = np.linspace(0, 1, n)
+	return Polyline((a.Points(s * a.length_m) + b.Points(s * b.length_m)) / 2)
 
 def QuasiOrthogonalFlow(hub: np.ndarray, shroud: np.ndarray, phi: float | np.ndarray, n_pts: int = 51
 		) -> tuple[np.ndarray, np.ndarray]:

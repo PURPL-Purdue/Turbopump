@@ -6,8 +6,9 @@ from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
 from . import EmpiricalRelations as emp
+from . import Bezier
 from .VelocityTriangle import VelocityTriangle
-from .MeridionalContour import MeridionalContour, QuasiOrthogonalFlow, FlowDomain, MeridionalMesh
+from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve
 from .PotentialFlow import PotentialFlow
 
 g = Q_(9.81, 'm/s^2')
@@ -24,7 +25,7 @@ class InputGeometry:
 
 	shroud_fullness: tuple[float, float] = (1, 0.3)
 	hub_fullness: tuple[float, float] = (0.5, 0.7)
-	# contour angles from radial at the outlet, positive leaning downstream (+z), see BuildMeridionalContours
+	# contour angles from radial at the outlet, positive leaning downstream (+z), see BuildMeridian
 	shroud_outlet_angle: Q_[float] = Q_(5, 'deg')
 	hub_outlet_angle: Q_[float] = Q_(0, 'deg')
 	hub_taper_ratio: float = 0.3
@@ -83,7 +84,8 @@ class Impeller:
 
 		self.ShroudContour: MeridionalContour
 		self.HubContour: MeridionalContour
-		self.BuildMeridionalContours(
+		self.MeanContour: MeridionalCurve
+		self.BuildMeridian(
 			hub_fullness=geometry.hub_fullness,
 			shroud_fullness=geometry.shroud_fullness,
 			shroud_outlet_angle=geometry.shroud_outlet_angle,
@@ -102,7 +104,7 @@ class Impeller:
 		# AKA Flow factor: c / u
 		self.FlowCoeff: float = (self.C_m2_design / self.U_2_design).to('dimensionless').magnitude
 
-	def BuildMeridionalContours(self,
+	def BuildMeridian(self,
 			shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0, taper_ratio: float = 0.3,
 			shroud_fullness: tuple[float, float] = (1, 0.3),
 			hub_fullness: tuple[float, float] = (0.5, 0.7),
@@ -135,8 +137,55 @@ class Impeller:
 			r_in=self.d_hub/2, z_out=self.Z_e + self.b_2, r_out=r_2, outlet_angle=hub_outlet_angle,
 			r_bend=r_2 - taper_ratio * dr, flat=hub_flat_ratio * b_1, fullness=hub_fullness
 		)
+		# geometric meanline, midway between the hub and shroud at equal normalized arclength, an approximation of the
+		# mean (phi = 0.5) streamline
+		self.MeanContour = MeanCurve(self.HubContour, self.ShroudContour)
 
-		self.MeridionalMesh = FlowDomain(self.ShroudContour, self.HubContour).Mesh()
+		self.PotentialFlow = PotentialFlow(
+			mesh=FlowDomain(self.ShroudContour, self.HubContour).Mesh(by_flow=False),
+			flow_Q=self.DP.Q
+		)
+
+		# leading edge in the meridional view, on the hub, the meanline and the shroud: all three have the same static
+		# moment about the axis, S = integral(r dx) from the leading edge to the impeller outlet. S sets Pfleiderer's
+		# slip coefficient p = psi' r_2^2 / (z S) (Milos eqs. 34-35), so the slip is the same from hub to shroud.
+		s_LE_shroud = 0									# reference, normalized arclength along the shroud: the impeller inlet
+		static_moment_ref = self.ShroudContour.StaticMoment(s_LE_shroud)
+
+		def GetLeadingEdge(contour: MeridionalCurve) -> float:
+			"""
+				Normalized arclength along contour where its static moment to the impeller outlet matches the reference,
+				by bisection. The static moment shrinks as the leading edge moves toward the impeller outlet, so the
+				solution always lies between s_a (static moment too large) and s_b (too small), and halving that
+				interval converges to it.
+			"""
+			s_a, s_b = 0, 1
+			assert contour.StaticMoment(s_a) >= static_moment_ref, \
+				'Contour is too short to match the static moment of the shroud'
+			while s_b - s_a > 1e-4:
+				s = (s_a + s_b) / 2
+				if contour.StaticMoment(s) > static_moment_ref:
+					s_a = s
+				else:
+					s_b = s
+			return (s_a + s_b) / 2
+
+		# leading edge points, hub to shroud
+		contours = (self.HubContour, self.MeanContour, self.ShroudContour)
+		s_LE = (GetLeadingEdge(self.HubContour), GetLeadingEdge(self.MeanContour), s_LE_shroud)
+		zr_LE = np.array([[q.m for q in contour(s)] for contour, s in zip(contours, s_LE)])	# (3, 2) (z, r) in m
+		self.LeadingEdgePoints: Q_[np.ndarray] = Q_(zr_LE, 'm')
+
+		# quadratic Bezier through the three points, with the meanline point at its fraction t of the chord length.
+		# Written as a cubic for Bezier.bez: the inner control points are 2/3 of the way from each end to the
+		# quadratic's middle control point P1.
+		P_hub, P_mean, P_shroud = zr_LE
+		t = np.linalg.norm(P_mean - P_hub) / (np.linalg.norm(P_mean - P_hub) + np.linalg.norm(P_shroud - P_mean))
+		P1 = (P_mean - (1 - t)**2 * P_hub - t**2 * P_shroud) / (2 * t * (1 - t))
+		self.LeadingEdge: Q_[np.ndarray] = Q_(np.array([						# Bezier control points
+			P_hub, P_hub + 2/3 * (P1 - P_hub), P_shroud + 2/3 * (P1 - P_shroud), P_shroud
+		]), 'm')
+				
 
 	@property
 	def Area1(self) -> Q_[float]:
@@ -368,20 +417,10 @@ class Impeller:
 
 		return fig
 
-	def GetPotentialFlow(self, flow_Q: Q_[float] = None) -> PotentialFlow:
-		"""
-			Meridional potential flow at flow_Q (design point if None), solved by FEM on the default FlowDomain
-			mesh if mesh is None. Gives the meridional velocity across the passage, which GetStreamline assumes
-			uniform. No blade blockage. See PotentialFlow.
-		"""
-		flow_Q = flow_Q if flow_Q is not None else self.DP.Q
-
-		return PotentialFlow(self.MeridionalMesh, flow_Q)
-
 	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
 		"""
-			Meridional cross-section: hub and shroud contours, geometric meanline, inlet and outlet.
-			The FEM mesh is shown over the potential flow solution, see GetPotentialFlow and PotentialFlow.Plot.
+			Meridional cross-section: hub and shroud contours, leading edge, geometric meanline, inlet and outlet.
+			The FEM mesh is shown over the potential flow solution by self.PotentialFlow.Plot.
 		"""
 
 		fig = go.Figure()
@@ -421,9 +460,20 @@ class Impeller:
 			showlegend=False
 		))
 
-		# geometric meanline, midpoint between hub and shroud at equal normalized arclength
+		# leading edge Bezier, with markers on its hub, meanline and shroud points (see BuildMeridian)
+		le = Bezier.bez(self.LeadingEdge.to(l).m, s)
 		fig.add_trace(go.Scatter(
-			x=((shroud_z + hub_z) / 2).to(l).m, y=((shroud_r + hub_r) / 2).to(l).m,
+			x=le[:, 0], y=le[:, 1],
+			mode='lines', name='Leading Edge', legendgroup='LE', line=dict(color=color)
+		))
+		fig.add_trace(go.Scatter(
+			x=self.LeadingEdgePoints[:, 0].to(l).m, y=self.LeadingEdgePoints[:, 1].to(l).m,
+			mode='markers', name='Leading Edge', legendgroup='LE', showlegend=False, marker=dict(color=color, size=6)
+		))
+
+		mean_z, mean_r = self.MeanContour(s)
+		fig.add_trace(go.Scatter(
+			x=mean_z.to(l).m, y=mean_r.to(l).m,
 			mode='lines', name='Geometric Meanline', line=dict(color='black', dash='dashdot')
 		))
 
