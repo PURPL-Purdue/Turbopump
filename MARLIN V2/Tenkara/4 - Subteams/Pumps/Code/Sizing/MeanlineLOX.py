@@ -1,10 +1,46 @@
 import numpy as np
+from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
+from matplotlib import pyplot as plt
 import CoolProp.CoolProp as CP
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
-from Code.Impeller import LOX as lox_imp
+import yaml
+
+script_dir = Path(__file__).resolve().parent.parent
+yaml_path = script_dir.parent / "Inputs/Inputs.yaml"
+
+with open(yaml_path, "r") as file:
+    inputs = yaml.safe_load(file)
+dp = inputs['design_point']
+
+g = Q_(9.81, 'm/s^2')					# gravitational acceleration
+
+opt_m_dot = Q_(
+    dp['LOX']['mass_flow'], 'kg/s')		# mass flow rate at BEP
+rho = Q_(1141, 'kg/m^3')				# density of LOX at saturation, atm pressure (lol?)
+
+feed_pressure = Q_(150, 'psi')			# inlet feed pressure, from tank pressure
+discharge_pressure = Q_(
+    dp['LOX']['discharge_pressure'], 'bar')	# ideal discharge pressure
+opt_dP = discharge_pressure - feed_pressure	# total pressure rise at BEP
+
+design_point: DesignPoint = DesignPoint(
+	Q = opt_m_dot/rho,					# volumetric flow rate at BEP
+	H = (opt_dP / (g * rho)).to('m'),	# developed head at BEP
+	N_shaft = Q_(dp['N_shaft'], 'rpm'),	# shaft speed
+	n_hyd_BEP = 0.5
+)
+lox_geometry: InputGeometry = InputGeometry(
+	Z_blade = 6,
+	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
+	d_1 = Q_(1, 'in'),				# impeller inlet diameter
+	d_2 = Q_(2.2, 'in'),			# impeller outlet diameter
+	b_2 = Q_(0.07, 'in'),			# impeller outlet height
+	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
+    d_hub=Q_(0.6, 'in')				# hub diameter
+)
+
+lox_imp = Impeller(lox_geometry, design_point)
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
@@ -19,9 +55,7 @@ print(f"Specific speed (metric)     = {lox_imp.n_q:.1f}")
 print("\n--- Derived impeller characteristics ---")
 print(f"Slip factor (σ)             = {lox_imp.WiesnerSlip:.4f}")
 print(f"Outlet tip speed (U₂)       = {lox_imp.U_2_design.to('m/s'):.3f}")
-print(f"Inlet area (A₁)             = {lox_imp.Area1.to('in^2'):.3f}")
 print(f"Outlet area (A₂)            = {lox_imp.Area2.to('in^2'):.3f}")
-print(f"Axial extension (Z_e)       = {lox_imp.Z_e:.4f}")
 print(f"Meridional velocity (Cm₂)   = {lox_imp.C_m2_design.to('m/s'):.3f}")
 print(f"Head coefficient (ψ)        = {lox_imp.HeadCoeff:.4f}")
 print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
@@ -29,7 +63,7 @@ print(f"Flow coefficient (ϕ)        = {lox_imp.FlowCoeff:.4f}")
 # ------------------------------------------------------------------
 # Performance
 specific_work, _, _ = lox_imp.GetSpecificWork()
-power_consumption = (lox_imp.DP.Q * lox_imp.DP.rho * specific_work)
+power_consumption = (opt_m_dot * specific_work)
 shaft_torque = power_consumption / lox_imp.DP.N_shaft
 shaft_diam = Q_(0.5, 'in')
 shear_stress = shaft_torque * shaft_diam / 2 / (np.pi/32 * shaft_diam**4)
@@ -46,9 +80,6 @@ LO2_temp = Q_(						# assume LO2 temperature is saturation temperature at atmosp
 p_vapor_LO2 = Q_(					# vapor pressure at inlet (pressurized)
     CP.PropsSI('P', 'T', LO2_temp.magnitude, 'Q', 0, 'Oxygen'), 'Pa')
 
-feed_pressure = Q_(150, 'psi')
-rho = lox_imp.DP.rho
-g = Q_(9.81, 'm/s^2')
 NPSH_a = (feed_pressure - p_vapor_LO2) / rho / g
 
 print("\n--- Inlet conditions ---")
@@ -56,16 +87,14 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-#lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
-
+lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 vel, _ = lox_imp.GetOutletVelocities()
-#vel.Plot(unit='m/s', station=2)
+
+vel.Plot(unit='m/s', station=2)
 
 vel1 = lox_imp.GetInletVelocities()
-#vel1.Plot(unit='m/s', station=1)
+vel1.Plot(unit='m/s', station=1)
 
-#lox_imp.SweepInletDiam()
+lox_imp.SweepInletDiam()
 
-lox_imp.PlotMeridional(color='blue')
-lox_imp.PotentialFlow.Plot()
-lox_imp.ShroudHubRevolve()
+plt.show()
