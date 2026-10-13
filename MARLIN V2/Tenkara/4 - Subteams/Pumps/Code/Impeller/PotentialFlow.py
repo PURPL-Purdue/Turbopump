@@ -183,7 +183,7 @@ class PotentialFlow:
 		fig.add_trace(go.Contourcarpet(
 			a=a, b=b, z=self.v_m.reshape(m.n_stations, m.n_lines).T.ravel(), carpet='domain',
 			ncontours=40, contours=dict(showlines=False), colorscale='Jet',
-			colorbar=dict(title='v_m (m/s)', x=fig.layout.xaxis.domain[1] + 0.01, len=0.9, thickness=15)
+			colorbar=dict(title='v<sub>m</sub> (m/s)', x=fig.layout.xaxis.domain[1] + 0.01, len=0.9, thickness=15)
 		), row=1, col=1)
 
 		# mesh over the velocity field, translucent so the colors show through
@@ -226,21 +226,21 @@ class PotentialFlow:
 		_, _, s_mean, _ = self.GetStreamline(0.5)
 		fig.add_trace(go.Scatter(
 			x=s_mean.to(l).m, y=self.Q.to('m^3/s').m / area, mode='lines',
-			name='Q / QO area (uniform v_m)',
+			name='Q / QO area (uniform v<sub>m</sub>)',
 			line=dict(color='black', dash='dashdot', width=2)
 		), row=1, col=2)
 		fig.add_vline(x=0, line=dict(color='grey', dash='dot'), row=1, col=2)
 
 		fig.update_xaxes(title_text=f"Streamline arclength from impeller inlet ({l})", showgrid=True,
 			gridcolor='rgba(128,128,128,0.3)', row=1, col=2)
-		fig.update_yaxes(title_text="Meridional velocity v_m (m/s)", rangemode='tozero', showgrid=True,
+		fig.update_yaxes(title_text="Meridional velocity v<sub>m</sub> (m/s)", rangemode='tozero', showgrid=True,
 			gridcolor='rgba(128,128,128,0.3)', row=1, col=2)
 
 		# a separate legend for each subplot, see layout below
 		fig.update_traces(legend='legend2', row=1, col=2)
 
 		fig.update_layout(
-			title=f"Meridional Potential Flow at Q = {self.Q.to('L/s').m:.2f} L/s ({m.n_elements} elements)",
+			title=f"Meridional Potential Flow, No Blades, at Q = {self.Q.to('L/s').m:.2f} L/s ({m.n_elements} elements)",
 			# field legend in its empty upper-left corner, streamline legend right of its plot
 			legend=dict(x=0.01, y=0.99, xanchor='left', yanchor='top', bgcolor='rgba(255,255,255,0.8)'),
 			legend2=dict(x=1.02, y=1, xanchor='left', yanchor='top'),
