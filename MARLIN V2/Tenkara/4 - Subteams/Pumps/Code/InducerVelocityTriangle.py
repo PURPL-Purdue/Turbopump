@@ -4,7 +4,7 @@
 import numpy as np
 from pint import Quantity as Q_
 
-from VelocityTriangle import VelocityTriangle
+from Impeller.VelocityTriangle import VelocityTriangle
 
 
 def GetInletVelocities(
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     inlet.Plot(
         title=f"Inducer Inlet Velocity Triangle (beta = {beta_1.magnitude:.2f} deg)",
         station=1,
-        show_c=False,
+        #show_c=False,
     )
     inlet_figure = plt.gcf()
     inlet_figure.canvas.manager.set_window_title("Inducer Inlet Velocity Triangle")
