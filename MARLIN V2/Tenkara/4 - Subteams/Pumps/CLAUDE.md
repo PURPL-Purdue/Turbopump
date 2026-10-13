@@ -41,6 +41,7 @@ Preliminary design code for the LOX and IPA centrifugal pump impellers, plus sta
 
 ## Conventions
 
+- File split: geometry goes in `MeridionalContour.py`, flow theory goes in `PotentialFlow.py`. `FlowDomain` and `MeridionalMesh` count as geometry because they contain no flow equations. The one deliberate exception is `QuasiOrthogonalFlow` (1D continuity), which stays with the mesh because `FlowDomain.Mesh(by_flow=True)` uses it; moving it would make the two files import each other.
 - Reuse what the package already has (`Bezier.py`, the curve classes, numpy) rather than adding imports. Ask before adding a new library or scipy function.
 - Use pint `Q_` at interfaces. Curve and mesh internals are plain floats in meters; convert with `.to(...)` and `.m`.
 - Meridional coordinates are always ordered (z, r): z is axial and is the plot x-axis, r is radial.
