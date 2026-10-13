@@ -5,7 +5,6 @@ import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
-import plotly.subplots as subplots
 from . import EmpiricalRelations as emp
 from .VelocityTriangle import VelocityTriangle
 from .MeridionalContour import MeridionalContour, QuasiOrthogonalFlow, FlowDomain, MeridionalMesh
@@ -369,32 +368,6 @@ class Impeller:
 
 		return fig
 
-	def GetStreamline(self, phi: float = 0.5, flow_Q: Q_[float] = None, n_qo: int = 101, n_pts: int = 51
-			) -> tuple[Q_, Q_, Q_, Q_]:
-		"""
-			Streamline such that the fraction phi of the flow passes between the hub and itself
-			(phi = 0: hub, phi = 1: shroud), and the meridional velocity along it.
-			Assumes c_m uniform across the passage, no blade blockage.
-
-			Quasi-orthogonals (QOs) are straight lines joining hub and shroud points of equal
-			normalized arclength, see QuasiOrthogonalFlow for continuity through each QO.
-
-			Returns z, r, arclength along the streamline, and c_m, one value per QO
-		"""
-		flow_Q = flow_Q if flow_Q is not None else self.DP.Q
-
-		s = np.linspace(0, 1, n_qo)
-		hub = np.column_stack([x.to('m').magnitude for x in self.HubContour(s)])		# (n_qo, 2) of (z, r)
-		shroud = np.column_stack([x.to('m').magnitude for x in self.ShroudContour(s)])
-
-		lam_phi, area = QuasiOrthogonalFlow(hub, shroud, phi, n_pts)
-		c_m = flow_Q.to('m^3/s').magnitude / area
-
-		line = hub + lam_phi[:, None] * (shroud - hub)
-		arclen = np.concatenate(([0], np.cumsum(np.linalg.norm(np.diff(line, axis=0), axis=1))))
-
-		return Q_(line[:, 0], 'm'), Q_(line[:, 1], 'm'), Q_(arclen, 'm'), Q_(c_m, 'm/s')
-
 	def GetPotentialFlow(self, flow_Q: Q_[float] = None) -> PotentialFlow:
 		"""
 			Meridional potential flow at flow_Q (design point if None), solved by FEM on the default FlowDomain
@@ -407,21 +380,12 @@ class Impeller:
 
 	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
 		"""
-			Left: meridional cross-section, with the mean (phi = 0.5) streamline.
-			Right: flow cross-section area of each quasi-orthogonal (left axis) and meridional velocity
-			along the mean streamline, at the design point.
+			Meridional cross-section: hub and shroud contours, geometric meanline, inlet and outlet.
 			The FEM mesh is shown over the potential flow solution, see GetPotentialFlow and PotentialFlow.Plot.
 		"""
 
-		fig = subplots.make_subplots(
-			rows=1, cols=2,
-			specs=[[{}, {'secondary_y': True}]],
-			column_widths=[0.5, 0.5],
-			horizontal_spacing=0.1,
-			subplot_titles=("Meridional Cross-Section", "Passage Area and Average Meridional Velocity Along Mean Streamline")
-		)
+		fig = go.Figure()
 
-		# ----- meridional cross-section, subplot (1, 1) -----
 		d_1	= self.d_1.to(l)
 		Z_e = self.Z_e.to(l)
 		b_2 = self.b_2.to(l)
@@ -432,14 +396,14 @@ class Impeller:
 			x=[0, 0], y=[d_hub.m/2, d_1.m/2],
 			mode='lines', name='Inlet', line=dict(dash='dot', color='grey'),
 			showlegend=False
-		), row=1, col=1)
+		))
 
 		fig.add_trace(go.Scatter(
 			x=[Z_e.m, Z_e.m + b_2.m],
 			y=[d_2.m/2, d_2.m/2],
 			mode='lines', name='Outlet', line=dict(dash='dot', color='grey'),
 			showlegend=False
-		), row=1, col=1)
+		))
 
 		s = np.linspace(0, 1, 200)
 		shroud_z, shroud_r = self.ShroudContour(s)
@@ -449,61 +413,32 @@ class Impeller:
 			x=shroud_z.to(l).m, y=shroud_r.to(l).m,
 			mode='lines', name='Shroud Contour', line=dict(color=color),
 			showlegend=False
-		), row=1, col=1)
+		))
 
 		fig.add_trace(go.Scatter(
 			x=hub_z.to(l).m, y=hub_r.to(l).m,
 			mode='lines', name='Hub Contour', line=dict(color=color),
 			showlegend=False
-		), row=1, col=1)
+		))
 
 		# geometric meanline, midpoint between hub and shroud at equal normalized arclength
 		fig.add_trace(go.Scatter(
 			x=((shroud_z + hub_z) / 2).to(l).m, y=((shroud_r + hub_r) / 2).to(l).m,
 			mode='lines', name='Geometric Meanline', line=dict(color='black', dash='dashdot')
-		), row=1, col=1)
+		))
 
 		fig.add_trace(go.Scatter(
 			x=[0, Z_e.m + b_2.m], y=[0, 0],
 			mode='lines', name='Meridional axis', line=dict(dash='dashdot', color='grey')
-		), row=1, col=1)
+		))
 
-		fig.update_xaxes(title_text=f"Meridional position ({l})", row=1, col=1)
-		fig.update_yaxes(title_text=f"Radial position ({l})", scaleanchor='x', scaleratio=1, row=1, col=1)
-
-		# ----- passage area and meridional velocity along the mean streamline, subplot (1, 2) -----
-		_, _, arclen, c_m = self.GetStreamline(0.5)
-		area = self.DP.Q / c_m
-		s = arclen.to(l).m
-
-		fig.add_trace(go.Scatter(
-			x=s, y=area.to(f'{l}^2').m,
-			mode='lines', name='Passage area', line=dict(color='blue')
-		), row=1, col=2)
-		fig.add_trace(go.Scatter(
-			x=[0, s[-1]], y=[self.Area1.to(f'{l}^2').m] * 2,
-			mode='lines', name='Inlet area', line=dict(dash='dot', color='blue')
-		), row=1, col=2)
-		fig.add_trace(go.Scatter(
-			x=s, y=c_m.to('m/s').m,
-			mode='lines', name='Meridional velocity', line=dict(color='red')
-		), row=1, col=2, secondary_y=True)
-
-		fig.update_xaxes(title_text=f"Mean streamline arclength ({l})", showgrid=True,
-			gridcolor='rgba(128,128,128,0.3)', row=1, col=2)
-		fig.update_yaxes(title_text=f"Cross-section area ({l}^2)", rangemode='tozero', color='blue',
-			gridcolor='rgba(128,128,128,0.3)', row=1, col=2, secondary_y=False)
-		fig.update_yaxes(title_text="Meridional velocity c_m (m/s)", rangemode='tozero', color='red',
-			showgrid=True, row=1, col=2, secondary_y=True)
-
-		# a separate legend for each subplot, see layout below
-		fig.update_traces(legend='legend2', row=1, col=2)
+		fig.update_xaxes(title_text=f"Meridional position ({l})")
+		fig.update_yaxes(title_text=f"Radial position ({l})", scaleanchor='x', scaleratio=1)
 
 		fig.update_layout(
-			title="Impeller Meridional Flow Path",
-			# cross-section legend in its empty upper-left corner, area/velocity legend right of its plot
+			title="Impeller Meridional Cross-Section",
+			# legend in the empty upper-left corner
 			legend=dict(x=0.01, y=0.99, xanchor='left', yanchor='top', bgcolor='rgba(255,255,255,0.8)'),
-			legend2=dict(x=1.02, y=1, xanchor='left', yanchor='top'),
 			template="plotly_white"
 		)
 
