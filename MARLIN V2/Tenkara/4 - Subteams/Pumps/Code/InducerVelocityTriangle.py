@@ -123,6 +123,8 @@ if __name__ == "__main__":
         head_rise=Q_(10, "m"),
     )
     outlet.Plot(title="Inducer Outlet Velocity Triangle", station=2)
+    euler_head = (outlet.u * outlet.c_u - inlet.u * inlet.c_u) / Q_(9.81, 'm/s^2')
+    print(euler_head.to('m'))
     outlet_figure = plt.gcf()
     outlet_figure.canvas.manager.set_window_title("Inducer Outlet Velocity Triangle")
     print(f"Outlet meridional velocity: {outlet.c_m.to('m/s'):.2f}")
