@@ -4,12 +4,33 @@
 #   integrate auto cross section dimension calcs
 
 from pint import Quantity as Q_
+from dataclasses import dataclass
 from matplotlib import pyplot as plt
 import numpy as np
 import math
 
 # Constants
 g = Q_(9.81, 'm/s**2')
+
+@dataclass
+class VoluteDesignPoint:
+    N_shaft: Q_[float]
+    Q: Q_[float]
+    H: Q_[float]
+
+@dataclass
+class VoluteGeometry:
+    e_sp: Q_[float] # Wrap angle
+
+def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant velocity Stepanoff method
+    avg_V = K_v * np.sqrt(2 * g.to('ft/s**2') * H.to('feet'))
+
+def getAreas(Q: Q_[float], avg_V: Q_[float]) -> Q_[float]:  # Get areas as a function of angle
+    #A_t = Q / avg_V
+
+
+class Volute:
+    def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
 
 # System inputs
 Q_design = Q_(1.78, 'liters/second')
