@@ -305,7 +305,7 @@ class Impeller:
 		C_u2 = (U_2 - W_u2)
 		
 		return VelocityTriangle(
-			u=U_2, c_m=C_m2, c_u=C_u2, w=W_2
+			u=U_2, c_m=C_m2, c_u=C_u2, w=W_2, beta_b=self.Beta2B
 		), f
 
 	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float], float]:
