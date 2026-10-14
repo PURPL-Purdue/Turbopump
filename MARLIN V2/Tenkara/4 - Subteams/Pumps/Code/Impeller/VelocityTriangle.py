@@ -151,16 +151,17 @@ class VelocityTriangle:
 		# reference ray in the plot, `sense` is the direction in which the angle is positive
 		ref = (np.pi / 2, np.pi / 2) if axial else (0, np.pi)
 		sense = (-1, -1) if axial else (1, -1)
-		# label offsets in px from the arc midpoint (x right, y down), outside the triangle
-		offsets = dict(alpha=(-45, -30), beta=(45, -30), beta_b=(45, -55)) if axial \
-			else dict(alpha=(-45, 30), beta=(45, 30), beta_b=(45, -35))
+		# label offsets in px from the arc midpoint (x right, y up), outside the triangle
+		offsets = dict(alpha=(-45, 30), beta=(45, 30), beta_b=(45, 55)) if axial \
+			else dict(alpha=(-45, -30), beta=(45, -30), beta_b=(45, 35))
 		R = 0.25 * (u - c_u)
 
 		def Angle(k, th_vec, R, name, offset, dash='solid'):
 			vertex = O if k == 0 else U_tip
 			x, y = Arc(vertex, ref[k], th_vec, R, dash)
 			value = np.degrees(sense[k] * (th_vec - ref[k]))
-			fig.add_annotation(x=x, y=y, ax=offset[0], ay=offset[1], axref='pixel', ayref='pixel',
+			# ax/ay only apply with showarrow=True, so the offset is a shift of the text itself
+			fig.add_annotation(x=x, y=y, xshift=offset[0], yshift=offset[1],
 				text=f'{name} = {value:.1f}°', showarrow=False,
 				font=dict(size=14))
 
