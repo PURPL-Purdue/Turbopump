@@ -17,7 +17,7 @@ Preliminary design code for the LOX and IPA centrifugal pump impellers, plus sta
 - `Impeller.py`
   - `InputGeometry`, `DesignPoint` and `Impeller`.
   - `Impeller` does the 1D sizing: Wiesner slip, velocity triangles, H-Q curve, NPSH_i.
-  - `BuildMeridian` builds `ShroudContour`, `HubContour`, `MeanContour`, `PotentialFlow`, and the leading edge (`LeadingEdge`, a `BezierCurve` from hub to shroud, and its three `LeadingEdgePoints`).
+  - `BuildMeridian` builds `ShroudContour`, `HubContour`, `MeanContour`, `PotentialFlow`, the leading edge (`LeadingEdge`, a `BezierCurve` from hub to shroud), and the trailing edge (`TrailingEdge`, a straight `Polyline` from the shroud outlet to the hub outlet).
   - Plotting: `PlotMeridional`, `PlotPerformanceHQ`, `ShroudHubRevolve`.
 - `_IPA_impeller.py`, `_LOX_impeller.py`: geometry inputs for each pump, with the design point taken from `Inputs.yaml`.
 - `MeridionalContour.py`: meridional curves, the FEM domain and the mesh.

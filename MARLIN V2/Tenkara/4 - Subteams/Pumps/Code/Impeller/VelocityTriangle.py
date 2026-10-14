@@ -22,13 +22,14 @@ class VelocityTriangle:
 	w: Q_[float]
 	beta_b: Q_[float] | None	# blade (metal) angle from the tangent, as Beta2B; None if not applicable
 
-	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], w: Q_[float], beta_b: Q_[float] | None = None):
+	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], w: Q_[float], beta_b: Q_[float] | None = None, station: int|None=None):
 		self.u = u
 		self.c_m = c_m
 		self.c_u = c_u
 		self.w = w
 		self.beta_b = beta_b
 		self.c = np.sqrt(c_m**2 + c_u**2)
+		self.station = str(station) if station is not None else ''
 
 	@property
 	def alpha(self) -> Q_[float]:
@@ -54,7 +55,7 @@ class VelocityTriangle:
 			w=self.c_m / np.sin(self.beta_b.to('rad').m)
 		)
 
-	def Plot(self, title='Velocity Triangle', unit='m/s', station: int|str = '', convention: str = 'centrifugal') -> go.Figure:
+	def Plot(self, title='Velocity Triangle', unit='m/s', station: int|None = None, convention: str = 'centrifugal') -> go.Figure:
 		"""
 			Plots the velocity triangle as the vector sum c = u + w: U and C start at the origin, W runs from
 			the tip of U to the tip of C, and C_m is the dashed meridional component.
@@ -80,6 +81,7 @@ class VelocityTriangle:
 		ideal = self.Ideal
 		if ideal is not None:
 			c_u_id, c_id, w_id = ideal.c_u.to(unit).magnitude, ideal.c.to(unit).magnitude, ideal.w.to(unit).magnitude
+		station = str(station) if station is not None else self.station
 		st, st_id = f'{station}', (f'{station},id' if station != '' else 'id')
 
 		def Arrow(p0, p1, name, color, dash='solid'):
@@ -204,5 +206,5 @@ class VelocityTriangle:
 				scaleanchor='x', scaleratio=1),  # equal axis scaling
 			template='plotly_white',
 		)
-		fig.show()
+		
 		return fig

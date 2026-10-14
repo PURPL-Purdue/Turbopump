@@ -16,7 +16,7 @@ class MeridionalCurve:
 		Curve in the meridional (z, r) plane evaluated by arclength. Subclasses set length_m and implement Points, all
 		lengths in meters:
 			Polyline:		straight lines through points: the geometric meanline, the potential flow streamlines, and
-							any straight line (two points)
+							any straight line (two points), such as the trailing edge
 			BezierCurve:	cubic Bezier: the bends of the hub and shroud contours, the leading edge
 			SegmentChain:	curves joined end to end: the hub and shroud contours (MeridionalContour), the FlowDomain walls
 	"""

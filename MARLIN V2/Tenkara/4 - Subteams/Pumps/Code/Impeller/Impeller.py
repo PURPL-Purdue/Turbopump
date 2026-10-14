@@ -5,9 +5,10 @@ import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
+import plotly.subplots
 from . import EmpiricalRelations as emp
 from .VelocityTriangle import VelocityTriangle
-from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve
+from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve, Polyline
 from .PotentialFlow import PotentialFlow
 
 g = Q_(9.81, 'm/s^2')
@@ -176,6 +177,10 @@ class Impeller:
 
 		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
 		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)
+		
+		# trailing edge in the meridional view: a straight line across the impeller outlet, shroud to hub
+		zr_TE = np.array([[q.to('m').m for q in contour(1)] for contour in (self.ShroudContour, self.HubContour)])	# (2, 2) (z, r) in m
+		self.TrailingEdge: Polyline = Polyline(zr_TE)
 
 	@property
 	def Area1(self) -> Q_[float]:
@@ -461,10 +466,11 @@ class Impeller:
 
 		return fig
 
-	def GetLeadingEdgeVelocities(self, phi: float=0.5) -> VelocityTriangle:
-		#pass
+	def GetVelocities(self, phi: float=0.5, station: int=None) -> VelocityTriangle:
+		assert (station == 1 or station == 2), 'Station must be 1 or 2'
 		streamline = self.PotentialFlow.GetStreamline(phi)
-		intersects = self.LeadingEdge.FindIntersect(streamline)
+		edge_curve = (self.LeadingEdge if station == 1 else self.TrailingEdge)
+		intersects = edge_curve.FindIntersect(streamline)
 
 		assert len(intersects) == 1, 'It should have exactly one intersect'
 
@@ -477,13 +483,32 @@ class Impeller:
 		w = np.sqrt(c_m**2 + (u - c_u)**2)
 
 		vel_tri = VelocityTriangle(
-			u=u, c_m=c_m, c_u=c_u, w = w
+			u=u, c_m=c_m, c_u=c_u, w = w, station=station
 		)
-		vel_tri.Plot()
+		#vel_tri.Plot()
 		
 		return vel_tri
 
+	def SweepVelocities(self, phis: list[float] | np.ndarray=[0, 0.5, 1]) -> go.Figure:
+		rows = len(phis)
+		grid = plotly.subplots.make_subplots(
+			rows=rows, cols=2,
+			subplot_titles=[f'{label} at ϕ = {phi}' for phi in phis for label in ['Inlet', 'Outlet']]
+			)
+		for row in range(1, rows):
+			for station in [1, 2]:
+				phi = phis[row]
 
+				velocity_triangle = self.GetVelocities(phi, station)
+				fig = velocity_triangle.Plot(
+					title=('Inlet' if station == 1 else 'Outlet') + f' Velocity Triangle at Flow Fraction ϕ = {phi}',
+					convention='centrifugal',
+					station=station
+					)
+
+				grid.add_traces(fig.data, rows=row, cols=station)
+
+		return grid
 
 	def ShroudHubRevolve(self, resolution: int=200):
 		
