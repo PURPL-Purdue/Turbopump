@@ -508,6 +508,10 @@ class Impeller:
 
 				grid.add_traces(fig.data, rows=row, cols=station)
 
+		grid.update_layout(
+			title='Inlet & Outlet Velocities at Various Flow Fractions',
+			template='plotly_white'
+			)
 		return grid
 
 	def ShroudHubRevolve(self, resolution: int=200):
