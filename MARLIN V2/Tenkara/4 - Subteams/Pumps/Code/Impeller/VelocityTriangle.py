@@ -65,9 +65,10 @@ class VelocityTriangle:
 			convention sets how the angles are measured, and is printed under the title:
 			- 'centrifugal': from the tangential axis towards the meridional direction, positive for normal pump flow.
 			  alpha from +u, beta and beta_b from -u (the blade tangent).
-			- 'axial': from the meridional axis (+c_m), positive towards +u, the direction of blade motion.
+			- 'axial': from the meridional velocity c_m to c (alpha) and to w (beta), drawn at the tip of C,
+			  positive towards +u, the direction of blade motion.
 			  alpha = atan(c_u/c_m), beta = atan((c_u-u)/c_m), which is negative when the flow lags the blade.
-			  beta_b is converted from its tangent reference.
+			  beta_b is converted from its tangent reference and drawn at the ideal tip.
 		"""
 		if convention not in ('centrifugal', 'axial'):
 			raise ValueError(f"convention must be 'centrifugal' or 'axial', not {convention!r}")
@@ -147,42 +148,45 @@ class VelocityTriangle:
 			SideLabel(U_tip, C_tip_id, centroid_id, not W_out, f'W<sub>{st_id}</sub> = {w_id:.1f} {unit}')
 
 		# --- angles ---
-		# vertex 0 is the origin (alpha), vertex 1 is the tip of U (beta, beta_b). `ref` is the angle of the
-		# reference ray in the plot, `sense` is the direction in which the angle is positive
-		ref = (np.pi / 2, np.pi / 2) if axial else (0, np.pi)
-		sense = (-1, -1) if axial else (1, -1)
-		# label offsets in px from the arc midpoint (x right, y up), outside the triangle
-		offsets = dict(alpha=(-45, 30), beta=(45, 30), beta_b=(45, 55)) if axial \
-			else dict(alpha=(-45, -30), beta=(45, -30), beta_b=(45, 35))
-		R = 0.25 * (u - c_u)
-
-		def Angle(k, th_vec, R, name, offset, dash='solid'):
-			vertex = O if k == 0 else U_tip
-			x, y = Arc(vertex, ref[k], th_vec, R, dash)
-			value = np.degrees(sense[k] * (th_vec - ref[k]))
-			# ax/ay only apply with showarrow=True, so the offset is a shift of the text itself
-			fig.add_annotation(x=x, y=y, xshift=offset[0], yshift=offset[1],
-				text=f'{name} = {value:.1f}°', showarrow=False,
+		def Angle(vertex, th_ref, th_vec, sense, R, name, dash='solid', **label):
+			# arc at `vertex` from the reference ray th_ref to the vector th_vec (plot angles, rad). The value is
+			# positive in the direction `sense` (+1 counterclockwise). The label sits at the arc midpoint, shifted by
+			# xshift/yshift px, unless `label` gives its own x, y. (ax/ay only apply with showarrow=True)
+			x, y = Arc(vertex, th_ref, th_vec, R, dash)
+			value = np.degrees(sense * (th_vec - th_ref)) + 0.0		# + 0.0 turns -0.0 into 0.0
+			fig.add_annotation(**(dict(x=x, y=y) | label), text=f'{name} = {value:.1f}°', showarrow=False,
 				font=dict(size=14))
 
-		Angle(0, np.arctan2(c_m, c_u), 0.25 * c_u, f'α<sub>{st}</sub>', offsets['alpha'])
-		Angle(1, np.arctan2(c_m, c_u - u), R, f'β<sub>{st}</sub>', offsets['beta'])
-		
-		if ideal is not None:
-			# the ideal W is along the blade, so its angle is beta_b
-			R_ideal = 0.25 * (u - c_u_id)
-			Angle(1, np.arctan2(c_m, c_u_id - u), R_ideal, f'β<sub>{st}B</sub>', offsets['beta_b'], 'dash')
 		if axial:
-			for x0 in (0, u):
-				fig.add_trace(go.Scatter(x=[x0, x0], y=[0, 2 * R], mode='lines', showlegend=False, hoverinfo='skip',
-					line=dict(width=1, color='gray', dash='dot')))
+			# At the tip of C, from the C_m leg to C (alpha) and to W (beta), and at the ideal tip from C_m,id to
+			# W_id (beta_b). The arcs run from the C_m leg (pointing down) to C and W reversed, which is the same
+			# angle as from +C_m to C and W. The labels sit just above the tips, where nothing else is drawn:
+			# alpha on the left of C_m, beta on the right
+			left = dict(xanchor='right', yanchor='bottom', xshift=-4, yshift=4)
+			right = dict(xanchor='left', yanchor='bottom', xshift=4, yshift=4)
+			R = 0.3 * c_m
+			Angle(C_tip, -np.pi / 2, np.arctan2(-c_m, -c_u), -1, R, f'α<sub>{st}</sub>', x=c_u, y=c_m, **left)
+			Angle(C_tip, -np.pi / 2, np.arctan2(-c_m, u - c_u), -1, R, f'β<sub>{st}</sub>', x=c_u, y=c_m, **right)
+			if ideal is not None:
+				# one line higher than beta, which can run into it when the two tips are close
+				Angle(C_tip_id, -np.pi / 2, np.arctan2(-c_m, u - c_u_id), -1, R, f'β<sub>{st}B</sub>', 'dash',
+					x=c_u_id, y=c_m, **(right | dict(yshift=24)))
+		else:
+			# alpha at the origin from +U, beta and beta_b at the tip of U from -U.
+			# Label shifts are in px from the arc midpoint (x right, y up), outside the triangle
+			Angle(O, 0, np.arctan2(c_m, c_u), 1, 0.25 * c_u, f'α<sub>{st}</sub>', xshift=-45, yshift=-30)
+			Angle(U_tip, np.pi, np.arctan2(c_m, c_u - u), -1, 0.25 * (u - c_u), f'β<sub>{st}</sub>', xshift=45, yshift=-30)
+			if ideal is not None:
+				# the ideal W is along the blade, so its angle is beta_b
+				Angle(U_tip, np.pi, np.arctan2(c_m, c_u_id - u), -1, 0.25 * (u - c_u_id), f'β<sub>{st}B</sub>', 'dash',
+					xshift=45, yshift=35)
 
 		# Axes through the origin
 		fig.add_hline(y=0, line_width=0.8, layer='below')
 		fig.add_vline(x=0, line_width=0.8, layer='below')
 
 		if axial:
-			convention_note = 'Angles from the meridional axis, positive towards +U (blade motion)'
+			convention_note = 'Angles from the meridional velocity C<sub>m</sub> to C and W, positive towards +U (blade motion)'
 		else:
 			convention_note = 'Angles from the tangential axis towards the meridional direction (α from +U, β and blade angle from −U)'
 
