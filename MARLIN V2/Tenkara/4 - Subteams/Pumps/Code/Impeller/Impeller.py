@@ -461,6 +461,30 @@ class Impeller:
 
 		return fig
 
+	def GetLeadingEdgeVelocities(self, phi: float=0.5) -> VelocityTriangle:
+		#pass
+		streamline = self.PotentialFlow.GetStreamline(phi)
+		intersects = self.LeadingEdge.FindIntersect(streamline)
+
+		assert len(intersects) == 1, 'It should have exactly one intersect'
+
+		z, r, s_1, s_2 = intersects[0]
+		c_m: Q_[float] = streamline.Interpolate(streamline.v_m, s_2)
+		u = (r * self.DP.N_shaft).to('m/s')
+		# assume no inlet swirl (tangential velocity is 0)
+		c_u = Q_(0, 'm/s')
+		Beta1B = Q_(np.atan(c_m / (u - c_u)), 'rad').to('deg')
+		w = np.sqrt(c_m**2 + (u - c_u)**2)
+
+		vel_tri = VelocityTriangle(
+			u=u, c_m=c_m, c_u=c_u, w = w
+		)
+		vel_tri.Plot()
+		
+		return vel_tri
+
+
+
 	def ShroudHubRevolve(self, resolution: int=200):
 		
 		s = np.linspace(0, 1, resolution)

@@ -4,7 +4,7 @@ import CoolProp.CoolProp as CP
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
-from Code.Impeller import LOX as lox_imp
+from Code.Impeller._LOX_impeller import lox_imp
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
@@ -66,6 +66,7 @@ vel1 = lox_imp.GetInletVelocities()
 
 #lox_imp.SweepInletDiam()
 
-lox_imp.PlotMeridional(color='blue')
-lox_imp.PotentialFlow.Plot()
-lox_imp.ShroudHubRevolve()
+#lox_imp.PlotMeridional(color='blue')
+#lox_imp.PotentialFlow.Plot()
+#lox_imp.ShroudHubRevolve()
+lox_imp.GetLeadingEdgeVelocities(0.5)

@@ -19,7 +19,7 @@ class VelocityTriangle:
 		self.w = w
 		self.c = np.sqrt(c_m**2 + c_u**2)
 
-	def Plot(self, title='Velocity Triangle', unit='m/s', station=0) -> go.Figure:
+	def Plot(self, title='Velocity Triangle', unit='m/s', station: int|str = '') -> go.Figure:
 
 		fig = go.Figure()
 		c_u, c_m, c = self.c_u.to(unit).magnitude, self.c_m.to(unit).magnitude, self.c.to(unit).magnitude
