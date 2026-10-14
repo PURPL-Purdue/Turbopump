@@ -173,11 +173,9 @@ class Impeller:
 		contours = (self.HubContour, self.MeanContour, self.ShroudContour)
 		s_LE = (GetLeadingEdge(self.HubContour), GetLeadingEdge(self.MeanContour), s_LE_shroud)
 		zr_LE = np.array([[q.m for q in contour(s)] for contour, s in zip(contours, s_LE)])	# (3, 2) (z, r) in m
-		self.LeadingEdgePoints: Q_[np.ndarray] = Q_(zr_LE, 'm')
 
 		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
 		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)
-				
 
 	@property
 	def Area1(self) -> Q_[float]:
@@ -441,10 +439,6 @@ class Impeller:
 
 		# leading edge, with markers on its hub, meanline and shroud points (see BuildMeridian)
 		fig.add_trace(self.LeadingEdge.Trace(l, name='Leading Edge', legendgroup='LE', line=dict(color=color)))
-		fig.add_trace(go.Scatter(
-			x=self.LeadingEdgePoints[:, 0].to(l).m, y=self.LeadingEdgePoints[:, 1].to(l).m,
-			mode='markers', name='Leading Edge', legendgroup='LE', showlegend=False, marker=dict(color=color, size=6)
-		))
 
 		fig.add_trace(self.MeanContour.Trace(l, name='Geometric Meanline', line=dict(color='black', dash='dashdot')))
 
