@@ -17,7 +17,7 @@ Preliminary design code for the LOX and IPA centrifugal pump impellers, plus sta
 - `Impeller.py`
   - `InputGeometry`, `DesignPoint` and `Impeller`.
   - `Impeller` does the 1D sizing: Wiesner slip, velocity triangles, H-Q curve, NPSH_i.
-  - `BuildMeridian` builds `ShroudContour`, `HubContour`, `MeanContour`, `PotentialFlow`, and the leading edge (`LeadingEdge` Bezier control points, `LeadingEdgePoints`).
+  - `BuildMeridian` builds `ShroudContour`, `HubContour`, `MeanContour`, `PotentialFlow`, and the leading edge (`LeadingEdge`, a `BezierCurve` from hub to shroud, and its three `LeadingEdgePoints`).
   - Plotting: `PlotMeridional`, `PlotPerformanceHQ`, `ShroudHubRevolve`.
 - `_IPA_impeller.py`, `_LOX_impeller.py`: geometry inputs for each pump, with the design point taken from `Inputs.yaml`.
 - `MeridionalContour.py`: meridional curves, the FEM domain and the mesh.
@@ -25,18 +25,23 @@ Preliminary design code for the LOX and IPA centrifugal pump impellers, plus sta
     - `curve(s)` returns (z, r) Quantities at normalized arclength;
     - `Points(s_m)` returns an (n, 2) array in m at true arclength;
     - `Length`;
-    - `StaticMoment(s_1, s_2)` returns ∫r dx.
-  - Subclasses:
-    - `SegmentChain`;
-    - `MeridionalContour(SegmentChain)`: flat, then a cubic Bezier bend, then an outlet line;
-    - `Polyline`;
-    - `MeanCurve(a, b)`.
-  - `FlowDomain` extends the hub and shroud upstream and downstream for the FEM solve, with zones `inlet`/`impeller`/`outlet`. `FlowDomain.Mesh()` builds a `MeridionalMesh`, by default 101 stations × 11 lines.
+    - `StaticMoment(s_1, s_2)` returns ∫r dx;
+    - `FindIntersect(other)` returns an `IntersectResults`: a list of `(z, r, s_1, s_2)` tuples ordered by `s_1` (normalized arclength on this curve, `s_2` on `other`), empty when the curves don't cross. A start or end of one curve lying on the other (within 1 µm) counts, with `s` exactly 0 or 1. Overlapping stretches and a curve with itself are not handled;
+    - `Closest(p)` returns the distance from a point (Quantity or m) to the curve and the normalized arclength of the closest point;
+    - `Trace(l, **scatter)` returns the curve as a plotly line.
+  - Subclasses (a new kind of curve only needs `length_m` and `Points`):
+    - `Polyline`: straight lines through points; two points make a straight line. `Interpolate(values, s)` interpolates per-point data, such as a streamline's `v_m`, at normalized arclength the same way as the points;
+    - `BezierCurve`: cubic Bezier by arclength, with `ControlPoints`. `BezierCurve.ThroughPoints(P_a, P_m, P_b)` is a quadratic through three points;
+    - `SegmentChain`: any curves joined end to end, chains included. `Segments` holds the pieces and `s_m` the arclength (m) of each joint;
+    - `MeridionalContour(SegmentChain)`: a flat `Polyline`, then the bend `Bend` (a `BezierCurve`), then an outlet `Polyline`;
+    - `MeanCurve(a, b)` returns a `Polyline`.
+  - `Cross(a, b)` is the 2D cross product, used by `FindIntersect` and the mesh.
+  - `FlowDomain` extends the hub and shroud upstream and downstream for the FEM solve, with zones `inlet`/`impeller`/`outlet`. Its walls are `SegmentChain`s with the contour nested as one segment. `FlowDomain.Mesh()` builds a `MeridionalMesh`, by default 101 stations × 11 lines.
 - `PotentialFlow.py`: the FEM stream-function solve (`PotentialFlow`). `GetStreamline(phi)` returns a `Streamline(Polyline)` with:
   - `.x`: arclength from the impeller inlet;
   - `.v_m`: meridional velocity;
   - `.Impeller`: the impeller part only.
-- `Bezier.py`: `bez(P, t)` and `dbez(P, t)` for cubic Beziers. Use these for any Bezier work.
+- `Bezier.py`: `bez(P, t)` and `dbez(P, t)` for cubic Beziers, by Bezier parameter t. Use `BezierCurve` when you need a curve evaluated by arclength.
 - `VelocityTriangle.py`, `EmpiricalRelations.py`.
 
 ## Conventions
@@ -71,7 +76,7 @@ To read the PDF: WebFetch can't parse it and no PDF library is installed. Downlo
 - **Leading edge (our choice, not Milos's):**
   - the hub, the geometric meanline and the shroud have equal S from the leading edge to the outlet, which gives equal slip from hub to shroud;
   - the shroud leading edge sits at the impeller inlet (`s_LE_shroud = 0`), and the other two are found by bisection;
-  - the curve is a quadratic Bezier through the three points, stored as a cubic;
+  - the curve is a quadratic Bezier through the three points, stored as a cubic (`BezierCurve.ThroughPoints`);
   - the geometric meanline lies about 0.5-0.8 mm closer to the hub than the true φ = 0.5 streamline at the inlet. Using `self.PotentialFlow.GetStreamline(0.5).Impeller` instead is a one-line swap.
 - **Limits of the potential flow:** inviscid, irrotational, axisymmetric, no blades. It is fine for contour shaping and streamlines, but not for head, losses or off-design. The ~2 mm outlet width b₂ is dominated by viscosity.
 - **Other references:** Gülich, *Centrifugal Pumps* (axial extension Z_e p. 348, NPSH ch. 6); Wiesner slip (CFturbo manual).

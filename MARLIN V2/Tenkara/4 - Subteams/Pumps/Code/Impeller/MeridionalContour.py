@@ -3,40 +3,22 @@ import numpy as np
 from pint import Quantity as Q_
 import plotly.graph_objects as go
 
-class _LineSegment:
-	"""Straight segment from P0 to P1, evaluated by arclength"""
+# (z, r, s_1, s_2) of each intersection of two curves: the point, and its normalized arclength on the curve FindIntersect is
+# called on (s_1) and on the other curve (s_2). Ordered by s_1, empty when the curves do not intersect.
+IntersectResults = list[tuple[Q_[float], Q_[float], float, float]]
 
-	def __init__(self, P0: np.ndarray, P1: np.ndarray):
-		self.P0 = P0
-		self.P1 = P1
-		self.length = np.linalg.norm(P1 - P0)
-
-	def __call__(self, s: np.ndarray) -> np.ndarray:
-		"""(n, 2) points at arclengths s from P0"""
-		return self.P0 + (s / self.length)[:, None] * (self.P1 - self.P0)
-
-class _BezierSegment:
-	"""Cubic Bezier with control points P, evaluated by arclength"""
-
-	def __init__(self, P: np.ndarray, n_table: int):
-		self.P = P
-
-		# lookup table of Bezier parameter t vs arclength, trapezoidal integration of |dB/dt|
-		t = np.linspace(0, 1, n_table)
-		speed = np.linalg.norm(Bezier.dbez(P, t), axis=1)
-		self._t = t
-		self._s = np.concatenate(([0], np.cumsum((speed[1:] + speed[:-1]) / 2 * np.diff(t))))
-		self.length = self._s[-1]
-
-	def __call__(self, s: np.ndarray) -> np.ndarray:
-		"""(n, 2) points at arclengths s from P[0]"""
-		return Bezier.bez(self.P, np.interp(s, self._s, self._t))
+def Cross(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+	"""2D cross product a x b = a_z b_r - a_r b_z of (..., 2) arrays of (z, r), broadcast over the leading axes"""
+	return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
 
 class MeridionalCurve:
 	"""
-		Curve in the meridional (z, r) plane evaluated by arclength. Common base of the hub and shroud contours and
-		the FlowDomain walls (SegmentChain), and of the geometric meanline and the potential flow streamlines
-		(Polyline). Subclasses set length_m and implement Points. All lengths in meters.
+		Curve in the meridional (z, r) plane evaluated by arclength. Subclasses set length_m and implement Points, all
+		lengths in meters:
+			Polyline:		straight lines through points: the geometric meanline, the potential flow streamlines, and
+							any straight line (two points)
+			BezierCurve:	cubic Bezier: the bends of the hub and shroud contours, the leading edge
+			SegmentChain:	curves joined end to end: the hub and shroud contours (MeridionalContour), the FlowDomain walls
 	"""
 
 	length_m: float
@@ -70,32 +52,89 @@ class MeridionalCurve:
 		r = self.Points(x)[:, 1]
 		return Q_(np.sum((r[1:] + r[:-1]) / 2 * np.diff(x)), 'm^2')
 
-class SegmentChain(MeridionalCurve):
-	"""
-		Segments joined end to end, evaluated by arclength along the whole chain. Zero-length segments
-		are dropped. All lengths in meters.
-	"""
+	def Closest(self, p: Q_[np.ndarray] | np.ndarray, n: int = 1001) -> tuple[Q_[float], float]:
+		"""
+			Distance from the point p, (z, r) as a Quantity or in meters, to this curve, and the normalized arclength of
+			the closest point: the closest of n samples, then 9 times the closest of 21 samples spanning its two
+			neighbours, 10 times finer each time. The distance is to the curve itself, not to the chords between samples.
+		"""
+		p = p.to('m').magnitude if isinstance(p, Q_) else np.asarray(p, float)
+		lo, hi, m = 0.0, 1.0, n
+		for _ in range(9):
+			t = np.linspace(lo, hi, m)
+			dist = np.linalg.norm(self.Points(t * self.length_m) - p, axis=1)
+			k = np.argmin(dist)
+			step = t[1] - t[0]
+			lo, hi, m = max(t[k] - step, 0.0), min(t[k] + step, 1.0), 21
+		return Q_(dist[k], 'm'), float(t[k])
 
-	def __init__(self, segments: list):
-		self._segments = [seg for seg in segments if seg.length > 0]
-		self._s_start = np.concatenate(([0], np.cumsum([seg.length for seg in self._segments])))
+	def FindIntersect(self, other: 'MeridionalCurve', n: int=1001) -> IntersectResults:
+		"""
+			Intersections of this curve with other, ordered by normalized arclength along this curve. Both curves are
+			sampled at n points, uniform in normalized arclength, and the straight pieces between samples are
+			intersected pairwise. Writing a piece of this curve as p + u d and a piece of other as q + v e, they cross at
+				u = (q - p) x e / (d x e),	v = (q - p) x d / (d x e)
+			with x the 2D cross product, and the crossing lies on both pieces when u and v are in [0, 1]. The point is
+			evaluated on this curve, within about ds^2 * curvature / 8 of the other (ds: sample spacing), under 1e-7 m
+			for the hub and shroud contours at the default n.
 
-		self.length_m = self._s_start[-1]
+			A curve that starts or ends on the other (within 1 um) is an intersection at that start or end, with s_1 or s_2
+			exactly 0 or 1. The pieces alone can miss these: where the curves join tangent-continuously the pieces are
+			parallel, and where the other curve is curved its chord can fall just beyond the end. Crossings within one
+			sample spacing of each other on both curves are reported once.
 
-	def Points(self, s_m: np.ndarray) -> np.ndarray:
-		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the start of the chain"""
-		# segment containing each point, the end of the chain belongs to the last one
-		i_seg = np.clip(np.searchsorted(self._s_start, s_m, side='right') - 1, 0, len(self._segments) - 1)
-		pts = np.empty((s_m.size, 2))
-		for i, seg in enumerate(self._segments):
-			on_seg = i_seg == i
-			pts[on_seg] = seg(s_m[on_seg] - self._s_start[i])
-		return pts
+			Not handled: curves that overlap along a stretch (their pieces are parallel) beyond the ends of the stretch,
+			and a curve with itself.
+		"""
+		tol = 1e-9					# on u and v, so a crossing at a sample point is not lost to round-off
+		tol_end = Q_(1, 'um')		# distance within which a start or end of a curve is on the other curve
+
+		s = np.linspace(0, 1, n)
+		A = self.Points(s * self.length_m)
+		B = other.Points(s * other.length_m)
+
+		d = np.diff(A, axis=0)[:, None]			# pieces of this curve, (n - 1, 1, 2)
+		e = np.diff(B, axis=0)[None]			# pieces of other, (1, n - 1, 2)
+		w = B[None, :-1] - A[:-1, None]			# q - p for every pair of pieces, (n - 1, n - 1, 2)
+		with np.errstate(divide='ignore', invalid='ignore'):		# parallel pieces: d x e = 0, u and v are inf or nan, never a hit
+			den = Cross(d, e)
+			u = Cross(w, e) / den
+			v = Cross(w, d) / den
+			i, j = np.nonzero((u >= -tol) & (u <= 1 + tol) & (v >= -tol) & (v <= 1 + tol))
+		s_1 = np.clip((i + u[i, j]) / (n - 1), 0, 1)
+		s_2 = np.clip((j + v[i, j]) / (n - 1), 0, 1)
+
+		# starts and ends of one curve on the other, as (s_1, s_2)
+		ends = []
+		for s_end in (0, 1):
+			dist, s_other = other.Closest(self.Points(np.array([s_end * self.length_m]))[0], n)
+			if dist < tol_end:
+				ends.append((s_end, s_other))
+			dist, s_self = self.Closest(other.Points(np.array([s_end * other.length_m]))[0], n)
+			if dist < tol_end:
+				ends.append((s_self, s_end))
+
+		# a crossing at a sample point is found by up to four neighbouring pairs of pieces, and a crossing at a start or
+		# end by its pieces as well, keep one: the start or end first, it is the exact one
+		found = []
+		for s_a, s_b in ends + sorted(zip(s_1, s_2)):
+			if not any(abs(s_a - a) < 1 / (n - 1) and abs(s_b - b) < 1 / (n - 1) for a, b in found):
+				found.append((s_a, s_b))
+
+		return [(*self(a), float(a), float(b)) for a, b in sorted(found)]
+
+	def Trace(self, l: str = 'in', n: int = 200, **scatter) -> go.Scatter:
+		"""
+			The curve as a plotly line in length unit l, through n points evenly spaced in arclength. scatter is passed
+			on to go.Scatter (name, line, legendgroup, ...), with mode='lines' unless it says otherwise.
+		"""
+		z, r = self(np.linspace(0, 1, n))
+		return go.Scatter(x=z.to(l).magnitude, y=r.to(l).magnitude, **({'mode': 'lines'} | scatter))
 
 class Polyline(MeridionalCurve):
 	"""
-		Straight lines through points, an (n, 2) array of (z, r) in meters, evaluated by arclength.
-		s_m holds the arclength of each point from the first one.
+		Straight lines through points, an (n, 2) array of (z, r) in meters, evaluated by arclength. Two points make a
+		straight line. s_m holds the arclength of each point from the first one.
 	"""
 
 	def __init__(self, points: np.ndarray):
@@ -103,16 +142,93 @@ class Polyline(MeridionalCurve):
 		self.s_m = np.concatenate(([0], np.cumsum(np.linalg.norm(np.diff(self.points, axis=0), axis=1))))
 		self.length_m = self.s_m[-1]
 
+	def _Interp(self, values: np.ndarray, s_m: np.ndarray) -> np.ndarray:
+		"""values given at each point, (n_points,) or (n_points, k), linearly interpolated at arclengths s_m"""
+		if values.ndim == 1:
+			return np.interp(s_m, self.s_m, values)
+		return np.stack([np.interp(s_m, self.s_m, column) for column in values.T], axis=-1)
+
 	def Points(self, s_m: np.ndarray) -> np.ndarray:
 		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the first point"""
-		return np.column_stack([np.interp(s_m, self.s_m, self.points[:, 0]), np.interp(s_m, self.s_m, self.points[:, 1])])
+		return self._Interp(self.points, s_m)
+
+	def Interpolate(self, values: Q_[np.ndarray] | np.ndarray, s: float | np.ndarray) -> Q_[np.ndarray] | np.ndarray:
+		"""
+			values given at each point, (n_points,) or (n_points, k), at normalized arclengths s in [0, 1], interpolated
+			linearly in arclength like the points themselves. A Quantity keeps its units, e.g. the meridional velocity
+			along a streamline: streamline.Interpolate(streamline.v_m, s).
+		"""
+		s_m = np.clip(np.asarray(s, float), 0, 1) * self.length_m
+		if isinstance(values, Q_):
+			return Q_(self._Interp(values.magnitude, s_m), values.units)
+		return self._Interp(np.asarray(values, float), s_m)
+
+class BezierCurve(MeridionalCurve):
+	"""
+		Cubic Bezier with control points P, a (4, 2) array of (z, r) in meters (Bezier.bez), evaluated by arclength
+		through a lookup table of the Bezier parameter t against arclength: n_table points, trapezoidal integration of
+		|dB/dt|.
+	"""
+
+	def __init__(self, P: np.ndarray, n_table: int = 2001):
+		self.P = np.asarray(P, float)
+
+		t = np.linspace(0, 1, n_table)
+		speed = np.linalg.norm(Bezier.dbez(self.P, t), axis=1)
+		self._t = t
+		self._s = np.concatenate(([0], np.cumsum((speed[1:] + speed[:-1]) / 2 * np.diff(t))))
+		self.length_m = self._s[-1]
+
+	@classmethod
+	def ThroughPoints(cls, P_a: np.ndarray, P_m: np.ndarray, P_b: np.ndarray, n_table: int = 2001) -> 'BezierCurve':
+		"""
+			Quadratic Bezier from P_a to P_b through P_m, (z, r) in meters, with P_m at the fraction t of the polygon
+			length P_a-P_m-P_b. Written as a cubic: the inner control points are 2/3 of the way from each end to the
+			quadratic's middle control point P1.
+		"""
+		P_a, P_m, P_b = (np.asarray(P, float) for P in (P_a, P_m, P_b))
+		l_a, l_b = np.linalg.norm(P_m - P_a), np.linalg.norm(P_b - P_m)
+		assert l_a > 0 and l_b > 0, 'The middle point must differ from both ends'
+		t = l_a / (l_a + l_b)
+		P1 = (P_m - (1 - t)**2 * P_a - t**2 * P_b) / (2 * t * (1 - t))
+		return cls(np.array([P_a, P_a + 2/3 * (P1 - P_a), P_b + 2/3 * (P1 - P_b), P_b]), n_table)
+
+	@property
+	def ControlPoints(self) -> Q_[np.ndarray]:
+		return Q_(self.P, 'm')
+
+	def Points(self, s_m: np.ndarray) -> np.ndarray:
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from P[0]"""
+		return Bezier.bez(self.P, np.interp(s_m, self._s, self._t))
+
+class SegmentChain(MeridionalCurve):
+	"""
+		Curves joined end to end, evaluated by arclength along the whole chain. The segments can be any
+		MeridionalCurves, chains included. Zero-length segments are dropped. s_m holds the arclength of each joint from
+		the start: the start of every segment, then the end of the chain. All lengths in meters.
+	"""
+
+	def __init__(self, segments: list[MeridionalCurve]):
+		self.Segments = [seg for seg in segments if seg.length_m > 0]
+		self.s_m = np.concatenate(([0], np.cumsum([seg.length_m for seg in self.Segments])))
+		self.length_m = self.s_m[-1]
+
+	def Points(self, s_m: np.ndarray) -> np.ndarray:
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from the start of the chain"""
+		# segment containing each point, the end of the chain belongs to the last one
+		i_seg = np.clip(np.searchsorted(self.s_m, s_m, side='right') - 1, 0, len(self.Segments) - 1)
+		pts = np.empty((s_m.size, 2))
+		for i, seg in enumerate(self.Segments):
+			on_seg = i_seg == i
+			pts[on_seg] = seg.Points(s_m[on_seg] - self.s_m[i])
+		return pts
 
 class MeridionalContour(SegmentChain):
 	"""
 		Meridional contour (z: axial, r: radial) made of tangent-continuous segments:
-			1. flat:	straight axial section at r_in, of length flat
-			2. bend:	cubic Bezier from axial to the outlet angle, ending at (z_bend, r_bend)
-			3. outlet:	straight section at the outlet angle, from (z_bend, r_bend) to (z_out, r_out).
+			1. flat:	straight axial section at r_in, of length flat (Polyline)
+			2. bend:	cubic Bezier from axial to the outlet angle, ending at (z_bend, r_bend) (BezierCurve, Bend)
+			3. outlet:	straight section at the outlet angle, from (z_bend, r_bend) to (z_out, r_out) (Polyline).
 						Absent when r_bend = r_out (default), the bend then ends at the outlet.
 
 		outlet_angle is the angle of the contour from the radial direction at the outlet, positive when
@@ -155,17 +271,18 @@ class MeridionalContour(SegmentChain):
 		C = np.array([self.z_bend - (self.r_bend - self.r_in) * tan_out, self.r_in])
 		assert C[0] > P0[0], 'Outlet tangent must cross the inlet line after the flat section, reduce flat or outlet_angle'
 
-		self.P = np.array([P0, P0 + fullness[0] * (C - P0), P3 + fullness[1] * (C - P3), P3])
+		self.Bend = BezierCurve(np.array([P0, P0 + fullness[0] * (C - P0), P3 + fullness[1] * (C - P3), P3]), n_table)
 
 		super().__init__([
-			_LineSegment(np.array([self.z_in, self.r_in]), P0),		# flat
-			_BezierSegment(self.P, n_table),						# bend
-			_LineSegment(P3, np.array([self.z_out, self.r_out]))	# outlet
+			Polyline([[self.z_in, self.r_in], P0]),		# flat
+			self.Bend,									# bend
+			Polyline([P3, [self.z_out, self.r_out]])	# outlet
 		])
 
 	@property
 	def ControlPoints(self) -> Q_[np.ndarray]:
-		return Q_(self.P, 'm')
+		"""Control points of the bend"""
+		return self.Bend.ControlPoints
 
 def MeanCurve(a: MeridionalCurve, b: MeridionalCurve, n: int = 201) -> Polyline:
 	"""Midpoints of a and b at equal normalized arclength, e.g. the geometric meanline between the hub and shroud"""
@@ -227,9 +344,9 @@ class FlowDomain:
 					r_corner, where the potential flow velocity is singular. Milos puts it at 1.05 D_2 (point G) so
 					this does not distort the impeller outlet velocities. corner_ratio = 1 turns radial at the outlet.
 
-		Along the flow the domain has three zones, ZONES. The extended walls Shroud and Hub are SegmentChains,
-		and ZoneBounds[wall] holds the arclengths (m) along each wall of: start, impeller inlet, impeller
-		outlet, end.
+		Along the flow the domain has three zones, ZONES. The extended walls Shroud and Hub are SegmentChains with
+		the contour as one segment, and ZoneBounds[wall] holds the arclengths (m) along each wall of: start, impeller
+		inlet, impeller outlet, end.
 	"""
 
 	ZONES = ('inlet', 'impeller', 'outlet')
@@ -247,19 +364,20 @@ class FlowDomain:
 		self.Shroud = self._Extend(shroud)
 		self.Hub = self._Extend(hub)
 
-		# wall segments: inlet extension, the contour's segments, outlet extension
+		# wall segments: inlet extension, the contour, outlet extensions. The first two always have a length, so their
+		# joints are the impeller inlet and outlet.
 		self.ZoneBounds = {
-			'shroud': self.Shroud._s_start[[0, 1, 1 + len(shroud._segments), -1]],
-			'hub': self.Hub._s_start[[0, 1, 1 + len(hub._segments), -1]]
+			'shroud': self.Shroud.s_m[[0, 1, 2, -1]],
+			'hub': self.Hub.s_m[[0, 1, 2, -1]]
 		}
 
 	def _Extend(self, contour: MeridionalContour) -> SegmentChain:
 		corner = np.array([contour.z_out + (self.r_corner - contour.r_out) * np.tan(contour.outlet_angle), self.r_corner])
 		return SegmentChain([
-			_LineSegment(np.array([self.z_min, contour.r_in]), np.array([contour.z_in, contour.r_in])),	# axial inlet
-			*contour._segments,
-			_LineSegment(np.array([contour.z_out, contour.r_out]), corner),		# on at the outlet angle
-			_LineSegment(corner, np.array([corner[0], self.r_max]))				# radial outlet
+			Polyline([[self.z_min, contour.r_in], [contour.z_in, contour.r_in]]),	# axial inlet
+			contour,
+			Polyline([[contour.z_out, contour.r_out], corner]),		# on at the outlet angle
+			Polyline([corner, [corner[0], self.r_max]])				# radial outlet
 		])
 
 	def Stations(self, n_stream: int) -> tuple[np.ndarray, np.ndarray, dict[str, tuple[int, int]]]:
@@ -353,7 +471,7 @@ class MeridionalMesh:
 		quad = self.nodes[self.elements]
 		to_next = np.roll(quad, -1, axis=1) - quad
 		to_prev = np.roll(quad, 1, axis=1) - quad
-		corner = to_next[:, :, 0] * to_prev[:, :, 1] - to_next[:, :, 1] * to_prev[:, :, 0]
+		corner = Cross(to_next, to_prev)
 		assert np.all(corner > 0), 'Elements must be convex with counterclockwise nodes, streamlines or QOs cross'
 
 	@property
@@ -362,7 +480,7 @@ class MeridionalMesh:
 		quad = self.nodes[self.elements]
 		d13 = quad[:, 2] - quad[:, 0]
 		d24 = quad[:, 3] - quad[:, 1]
-		return (d13[:, 0] * d24[:, 1] - d13[:, 1] * d24[:, 0]) / 2
+		return Cross(d13, d24) / 2
 
 	@property
 	def Centers(self) -> np.ndarray:

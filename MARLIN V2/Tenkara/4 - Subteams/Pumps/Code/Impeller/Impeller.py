@@ -6,9 +6,8 @@ from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
 from . import EmpiricalRelations as emp
-from . import Bezier
 from .VelocityTriangle import VelocityTriangle
-from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve
+from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve
 from .PotentialFlow import PotentialFlow
 
 g = Q_(9.81, 'm/s^2')
@@ -176,15 +175,8 @@ class Impeller:
 		zr_LE = np.array([[q.m for q in contour(s)] for contour, s in zip(contours, s_LE)])	# (3, 2) (z, r) in m
 		self.LeadingEdgePoints: Q_[np.ndarray] = Q_(zr_LE, 'm')
 
-		# quadratic Bezier through the three points, with the meanline point at its fraction t of the chord length.
-		# Written as a cubic for Bezier.bez: the inner control points are 2/3 of the way from each end to the
-		# quadratic's middle control point P1.
-		P_hub, P_mean, P_shroud = zr_LE
-		t = np.linalg.norm(P_mean - P_hub) / (np.linalg.norm(P_mean - P_hub) + np.linalg.norm(P_shroud - P_mean))
-		P1 = (P_mean - (1 - t)**2 * P_hub - t**2 * P_shroud) / (2 * t * (1 - t))
-		self.LeadingEdge: Q_[np.ndarray] = Q_(np.array([						# Bezier control points
-			P_hub, P_hub + 2/3 * (P1 - P_hub), P_shroud + 2/3 * (P1 - P_shroud), P_shroud
-		]), 'm')
+		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
+		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)
 				
 
 	@property
@@ -444,38 +436,17 @@ class Impeller:
 			showlegend=False
 		))
 
-		s = np.linspace(0, 1, 200)
-		shroud_z, shroud_r = self.ShroudContour(s)
-		hub_z, hub_r = self.HubContour(s)
+		fig.add_trace(self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False))
+		fig.add_trace(self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False))
 
-		fig.add_trace(go.Scatter(
-			x=shroud_z.to(l).m, y=shroud_r.to(l).m,
-			mode='lines', name='Shroud Contour', line=dict(color=color),
-			showlegend=False
-		))
-
-		fig.add_trace(go.Scatter(
-			x=hub_z.to(l).m, y=hub_r.to(l).m,
-			mode='lines', name='Hub Contour', line=dict(color=color),
-			showlegend=False
-		))
-
-		# leading edge Bezier, with markers on its hub, meanline and shroud points (see BuildMeridian)
-		le = Bezier.bez(self.LeadingEdge.to(l).m, s)
-		fig.add_trace(go.Scatter(
-			x=le[:, 0], y=le[:, 1],
-			mode='lines', name='Leading Edge', legendgroup='LE', line=dict(color=color)
-		))
+		# leading edge, with markers on its hub, meanline and shroud points (see BuildMeridian)
+		fig.add_trace(self.LeadingEdge.Trace(l, name='Leading Edge', legendgroup='LE', line=dict(color=color)))
 		fig.add_trace(go.Scatter(
 			x=self.LeadingEdgePoints[:, 0].to(l).m, y=self.LeadingEdgePoints[:, 1].to(l).m,
 			mode='markers', name='Leading Edge', legendgroup='LE', showlegend=False, marker=dict(color=color, size=6)
 		))
 
-		mean_z, mean_r = self.MeanContour(s)
-		fig.add_trace(go.Scatter(
-			x=mean_z.to(l).m, y=mean_r.to(l).m,
-			mode='lines', name='Geometric Meanline', line=dict(color='black', dash='dashdot')
-		))
+		fig.add_trace(self.MeanContour.Trace(l, name='Geometric Meanline', line=dict(color='black', dash='dashdot')))
 
 		fig.add_trace(go.Scatter(
 			x=[0, Z_e.m + b_2.m], y=[0, 0],
