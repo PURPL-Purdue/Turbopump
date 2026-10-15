@@ -49,12 +49,11 @@ print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):.1f}")
 
 #ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
-vel, _ = ipa_imp.GetOutletVelocities()
-
-#vel.Plot(unit='m/s', station=2)
 
 #ipa_imp.SweepInletDiam()
 
 ipa_imp.PlotMeridional(color='green')
 ipa_imp.PotentialFlow.Plot()
-ipa_imp.ShroudHubRevolve()
+#ipa_imp.ShroudHubRevolve()
+
+ipa_imp.SweepVelocities().show()

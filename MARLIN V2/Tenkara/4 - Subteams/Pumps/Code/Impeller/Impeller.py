@@ -277,41 +277,20 @@ class Impeller:
 
 		return fig
 
-	def GetInletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> VelocityTriangle:
-		# no preswirl
-		flow_Q = flow_Q if not flow_Q is None else self.DP.Q
-		speed_N = speed_N if not speed_N is None else self.DP.N_shaft
-
-		c_m1 = flow_Q / self.Area1
-		c_u1 = Q_(0, 'm/s')
-		u_1 = speed_N * self.d_1/2
-		w_u1 = u_1 - c_u1
-		#c = np.sqrt(c_m1**2 + c_u1**2)
-		w = np.sqrt(w_u1**2 + c_m1**2)
-
-		return VelocityTriangle(
-			u=u_1, c_m=c_m1, c_u=c_u1, w=w
-		)
-
-	def GetOutletVelocities(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> tuple[VelocityTriangle, float]:
+	def GetC_u2(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> Q_[float]:
 		flow_Q = flow_Q if not flow_Q is None else self.DP.Q
 		speed_N = speed_N if not speed_N is None else self.DP.N_shaft
 		
-		f = emp.FlowSpeedRatio(
-				flow_Q, speed_N,
-				self.DP.Q, self.DP.N_shaft
-				).to('dimensionless').magnitude
-		
-		U_2 = speed_N * self.d_2/2
-		C_m2 = flow_Q / self.Area2
-		slip = U_2 * (1 - self.WiesnerSlip)
-		W_u2 = C_m2 / np.tan(self.Beta2B) + slip
-		W_2 = np.sqrt(C_m2**2 + W_u2**2)
-		C_u2 = (U_2 - W_u2)
-		
-		return VelocityTriangle(
-			u=U_2, c_m=C_m2, c_u=C_u2, w=W_2, beta_b=self.Beta2B
-		), f
+		u_2 = speed_N * self.d_2/2
+		c_m2 = flow_Q / self.Area2
+		slip = u_2 * (1 - self.WiesnerSlip)
+		w_u2 = c_m2 / np.tan(self.Beta2B) + slip
+		w_2 = np.sqrt(c_m2**2 + w_u2**2)
+		c_u2 = (u_2 - w_u2)
+		return c_u2
+
+	def GetC_u1(self, flow_Q: Q_[float]=None, speed_N: Q_[float]=None) -> Q_[float]:
+		return Q_(0, 'm/s')
 
 	def GetSpecificWork(self, speed_N: Q_[float]=None, flow_Q: Q_[float]=None) -> tuple[Q_[float], Q_[float], float]:
 		"""
@@ -327,10 +306,12 @@ class Impeller:
 
 		#vels: VelocityTriangle
 		#f: float
-		vels, f = self.GetOutletVelocities(flow_Q, speed_N)
+		c_u1, u_1 = self.GetC_u1(flow_Q, speed_N), (self.d_1 + self.d_hub)/4 * speed_N
+		c_u2, u_2 = self.GetC_u2(flow_Q, speed_N), self.d_2/2 * speed_N
 		# Euler turbomachinery equation
-		brake_work = (vels.c_u * vels.u).to('kJ/kg')
+		brake_work = (c_u2 * u_2 - c_u1 * u_1).to('kJ/kg')
 
+		f=emp.FlowSpeedRatio(flow_Q, speed_N, self.DP.Q, self.DP.N_shaft)
 		# empirical prediction, valid for 0 < f < 2
 		n_hydraulic = emp.HydraulicEfficiency(f) * self.DP.n_hyd_BEP
 
@@ -466,7 +447,7 @@ class Impeller:
 
 		return fig
 
-	def GetVelocities(self, phi: float=0.5, station: int=None) -> VelocityTriangle:
+	def GetVelocities(self, station: int, phi: float=0.5) -> VelocityTriangle:
 		assert (station == 1 or station == 2), 'Station must be 1 or 2'
 		streamline = self.PotentialFlow.GetStreamline(phi)
 		edge_curve = (self.LeadingEdge if station == 1 else self.TrailingEdge)
@@ -474,39 +455,39 @@ class Impeller:
 
 		assert len(intersects) == 1, 'It should have exactly one intersect'
 
-		z, r, s_1, s_2 = intersects[0]
+		_, r, _, s_2 = intersects[0]
 		c_m: Q_[float] = streamline.Interpolate(streamline.v_m, s_2)
 		u = (r * self.DP.N_shaft).to('m/s')
-		# assume no inlet swirl (tangential velocity is 0)
-		c_u = Q_(0, 'm/s')
-		Beta1B = Q_(np.atan(c_m / (u - c_u)), 'rad').to('deg')
-		w = np.sqrt(c_m**2 + (u - c_u)**2)
 
+		if station == 1:
+			# assume no inlet swirl (tangential velocity is 0)
+			c_u = self.GetC_u1()
+		else:
+			c_u = self.GetC_u2()
+		#BetaB = Q_(np.atan(c_m / (u - c_u)), 'rad').to('deg')
+		w = np.sqrt(c_m**2 + (u - c_u)**2)
+		
 		vel_tri = VelocityTriangle(
-			u=u, c_m=c_m, c_u=c_u, w = w, station=station
+			u=u, c_m=c_m, c_u=c_u, w = w, station=station, beta_b=(self.Beta2B if station==2 else None)
 		)
 		#vel_tri.Plot()
 		
 		return vel_tri
 
 	def SweepVelocities(self, phis: list[float] | np.ndarray=[0, 0.5, 1]) -> go.Figure:
-		rows = len(phis)
 		grid = plotly.subplots.make_subplots(
-			rows=rows, cols=2,
-			subplot_titles=[f'{label} at ϕ = {phi}' for phi in phis for label in ['Inlet', 'Outlet']]
+			rows=len(phis), cols=2,
+			subplot_titles=[f'{label} Velocities at Flow Fraction ϕ = {phi}' for phi in phis for label in ['Inlet', 'Outlet']]
 			)
-		for row in range(1, rows):
+		for i in range(len(phis)):
+			phi = phis[i]
 			for station in [1, 2]:
-				phi = phis[row]
-
-				velocity_triangle = self.GetVelocities(phi, station)
-				fig = velocity_triangle.Plot(
-					title=('Inlet' if station == 1 else 'Outlet') + f' Velocity Triangle at Flow Fraction ϕ = {phi}',
+				velocity_triangle = self.GetVelocities(station, phi)
+				velocity_triangle.Plot(
 					convention='centrifugal',
-					station=station
-					)
-
-				grid.add_traces(fig.data, rows=row, cols=station)
+					station=station,
+					fig=grid, row=i + 1, col=station
+				)
 
 		grid.update_layout(
 			title='Inlet & Outlet Velocities at Various Flow Fractions',

@@ -1,6 +1,4 @@
-"""
-thing
-"""
+from typing import Optional as Opt
 import numpy as np
 import plotly.graph_objects as go
 from pint import Quantity as Q_
@@ -55,7 +53,7 @@ class VelocityTriangle:
 			w=self.c_m / np.sin(self.beta_b.to('rad').m)
 		)
 
-	def Plot(self, title='Velocity Triangle', unit='m/s', station: int|None = None, convention: str = 'centrifugal') -> go.Figure:
+	def Plot(self, title='Velocity Triangle', unit='m/s', station: Opt[int]=None, convention: str = 'centrifugal', fig: Opt[go.Figure]=None, row: int=None, col: int=None) -> go.Figure:
 		"""
 			Plots the velocity triangle as the vector sum c = u + w: U and C start at the origin, W runs from
 			the tip of U to the tip of C, and C_m is the dashed meridional component.
@@ -75,7 +73,11 @@ class VelocityTriangle:
 			raise ValueError(f"convention must be 'centrifugal' or 'axial', not {convention!r}")
 		axial = convention == 'axial'
 
-		fig = go.Figure()
+		grid_passed: bool = True
+		if fig is None:
+			grid_passed = False
+			fig = go.Figure()
+
 		c_u, c_m, c = self.c_u.to(unit).magnitude, self.c_m.to(unit).magnitude, self.c.to(unit).magnitude
 		u, w = self.u.to(unit).magnitude, self.w.to(unit).magnitude
 		ideal = self.Ideal
@@ -89,17 +91,17 @@ class VelocityTriangle:
 			# previous segment on screen (size 0 hides the tail). The shaft is drawn from the tip backwards, so its
 			# first dash lies under the head, and a dash always reaches the head base (the head is ~11 px long, the
 			# pattern is 6 px on / 4 px off). marker.standoff would pull the head off p1 and leave a gap.
-			fig.add_trace(go.Scatter(x=[p1[0], p0[0]], y=[p1[1], p0[1]], mode='lines', name=name,
-				line=dict(width=(2 if dash=='solid' else 1), color=color, dash='6px,4px' if dash == 'dash' else dash)))
+			fig.add_trace(go.Scatter(x=[p1[0], p0[0]], y=[p1[1], p0[1]], mode='lines', name=name, showlegend=not grid_passed,
+				line=dict(width=(2 if dash=='solid' else 1), color=color, dash='6px,4px' if dash == 'dash' else dash)), row=row, col=col)
 			fig.add_trace(go.Scatter(x=[p0[0], p1[0]], y=[p0[1], p1[1]], mode='markers', showlegend=False, hoverinfo='skip',
-				marker=dict(symbol='arrow', size=[0, 14], angleref='previous', color=color, opacity=1, line=dict(width=0))))
+				marker=dict(symbol='arrow', size=[0, 14], angleref='previous', color=color, opacity=1, line=dict(width=0))), row=row, col=col)
 
 		def Label(x, y, nx, ny, text, pad=6):
 			# text sits at (x, y) pushed by pad px along the unit direction (nx, ny)
 			fig.add_annotation(x=x, y=y, text=text, showarrow=False, font=dict(size=14),
 				xanchor='left' if nx > 0.3 else 'right' if nx < -0.3 else 'center',
 				yanchor='bottom' if ny > 0.3 else 'top' if ny < -0.3 else 'middle',
-				xshift=pad * nx, yshift=pad * ny)
+				xshift=pad * nx, yshift=pad * ny, row=row, col=col)
 
 		def SideLabel(p0, p1, centroid, outward, text):
 			# label on the outer or inner side of the segment p0-p1, relative to the centroid of its triangle
@@ -114,7 +116,7 @@ class VelocityTriangle:
 			# arc from the reference ray to the vector, returns its midpoint for the label
 			th = np.linspace(th_ref, th_vec, 40)
 			fig.add_trace(go.Scatter(x=vertex[0] + R * np.cos(th), y=vertex[1] + R * np.sin(th), mode='lines',
-				line=dict(width=1.2, color='black', dash=dash), showlegend=False, hoverinfo='skip'))
+				line=dict(width=1.2, color='black', dash=dash), showlegend=False, hoverinfo='skip'), row=row, col=col)
 			th_mid = (th_ref + th_vec) / 2
 			return vertex[0] + R * np.cos(th_mid), vertex[1] + R * np.sin(th_mid)
 
@@ -157,7 +159,7 @@ class VelocityTriangle:
 			x, y = Arc(vertex, th_ref, th_vec, R, dash)
 			value = np.degrees(sense * (th_vec - th_ref)) + 0.0		# + 0.0 turns -0.0 into 0.0
 			fig.add_annotation(**(dict(x=x, y=y) | label), text=f'{name} = {value:.1f}°', showarrow=False,
-				font=dict(size=14))
+				font=dict(size=14), row=row, col=col)
 
 		if axial:
 			# At the tip of C, from the C_m leg to C (alpha) and to W (beta), and at the ideal tip from C_m,id to
@@ -184,8 +186,8 @@ class VelocityTriangle:
 					xshift=45, yshift=35)
 
 		# Axes through the origin
-		fig.add_hline(y=0, line_width=0.8, layer='below')
-		fig.add_vline(x=0, line_width=0.8, layer='below')
+		fig.add_hline(y=0, line_width=0.8, layer='below', row=row, col=col)
+		fig.add_vline(x=0, line_width=0.8, layer='below', row=row, col=col)
 
 		if axial:
 			convention_note = 'Angles from the meridional velocity C<sub>m</sub> to C and W, positive towards +U (blade motion)'
@@ -196,15 +198,23 @@ class VelocityTriangle:
 		xs = [0, u, c_u] + ([c_u_id] if ideal is not None else [])
 		pad = 0.2 * (max(xs) - min(xs))
 
-		fig.update_layout(
-			title=f'{title}<br><sup>{convention_note}</sup>',
-			xaxis=dict(title=f'Tangential velocity [{unit}]', showgrid=True,
-				gridcolor='rgba(128,128,128,0.2)', zeroline=False,
-				range=[min(xs) - pad, max(xs) + pad]),
-			yaxis=dict(title=f'Meridional velocity [{unit}]', showgrid=True,
-				gridcolor='rgba(128,128,128,0.2)', zeroline=False,
-				scaleanchor='x', scaleratio=1),  # equal axis scaling
-			template='plotly_white',
-		)
+		title = f'{title}<br><sup>{convention_note}</sup>'
+		if grid_passed:
+			fig.update_yaxes(
+				scaleanchor=fig.get_subplot(row, col).yaxis.anchor,
+				scaleratio=1,
+				row=row, col=col,
+            )
+		else:
+			fig.update_layout(
+				title=title,
+				xaxis=dict(title=f'Tangential velocity [{unit}]', showgrid=True,
+					gridcolor='rgba(128,128,128,0.2)', zeroline=False,
+					range=[min(xs) - pad, max(xs) + pad]),
+				yaxis=dict(title=f'Meridional velocity [{unit}]', showgrid=True,
+					gridcolor='rgba(128,128,128,0.2)', zeroline=False,
+					scaleanchor='x', scaleratio=1),  # equal axis scaling
+				template='plotly_white',
+			)
 		
 		return fig
