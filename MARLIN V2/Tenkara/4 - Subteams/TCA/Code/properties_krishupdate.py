@@ -1,0 +1,142 @@
+import pandas as pd
+import numpy as np
+from pint import UnitRegistry
+import cea
+import yaml
+
+
+#######################################################################################
+# FUNCTIONS
+# =====================================================================================
+
+# =====================================================================================
+# Function to get properties from CSV files
+# =====================================================================================
+
+def get_properties(csv_files):
+    if not csv_files:
+        print("No CSV files provided.")
+        return
+
+    for path in csv_files:
+        df = pd.read_csv(path)
+        df = df.sort_values("x_mm")
+        x = df["x_mm"].values * ureg.mm
+        y = df["y_mm"].values * ureg.mm  
+        twall = df["T_wall_K"].values * ureg.K
+    return x.to(ureg.m).magnitude, y.to(ureg.m).magnitude, twall.to(ureg.K).magnitude
+
+
+
+
+
+#######################################################################################
+# Initialize stuff
+# =====================================================================================
+
+with open('Inputs/TCA_params.yaml') as f:
+    p = yaml.safe_load(f)
+
+ureg = UnitRegistry()
+
+#######################################################################################
+# ENGINE PAREMETERS/INPUTS
+# =====================================================================================
+
+F     = p['Thrust_target']  * ureg.lbf      # Target thrust             [lbf]
+pc    = p['chamber_pressure'] * ureg.psi    # Chamber pressure          [psia]
+pe    = p['exit_pressure'] * ureg.psi       # Exit pressure             [psia]
+ac_at = p['contraction_ratio']             # Contraction ratio
+of_ratio = p['of_ratio']
+
+# =====================================================================================
+# Get expansion ratio from contour
+# =====================================================================================
+
+x, y, twall = get_properties(["Outputs/contour.csv"])
+rt = np.interp(0.0, x, y) * ureg.m
+ae_at = np.array((y**2 / (rt.magnitude**2)))
+
+# =====================================================================================
+# CEA Setup
+# =====================================================================================
+
+reac_names = [p['propellants']['fuel'], p['propellants']['oxidizer']]
+T_reactant = np.array([298.15, 90.17]) * ureg.K
+fuel_weights = np.array([1.0, 0.0])
+oxidant_weights = np.array([0.0, 1.0])
+
+reac = cea.Mixture(reac_names)
+prod = cea.Mixture(reac_names, products_from_reactants=True)
+
+solver = cea.RocketSolver(prod, reactants=reac, transport=True)
+solution = cea.RocketSolution(solver)
+
+weights = reac.of_ratio_to_weights(oxidant_weights, fuel_weights, of_ratio) #Convert OF to weights.
+hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant.to(ureg.kelvin).magnitude)/cea.R
+
+# =====================================================================================
+# Set propreties array, and sort area ratios and positions into subsonic and supersonic
+# =====================================================================================
+
+properties = []
+positions = [x,y]
+
+throat_i = np.where(ae_at == ae_at.min())[0]
+
+x_before = x[:throat_i[0]]
+areas_before_throat = ae_at[:throat_i[0]]
+
+x_after = x[throat_i[-1] + 1:]
+areas_after_throat = ae_at[throat_i[-1] + 1:]
+
+# =====================================================================================
+# Run CEA solver for each area ratio, subsonic and supersonic solutions
+# =====================================================================================
+
+for xpos, subar in zip(x_before, areas_before_throat): 
+    solver.solve(solution, weights, pc.to(ureg.bar).magnitude, subar=[subar], ac_at=ac_at, iac=False, hc=hc)
+    print(solution.P)
+    properties.append({
+        'x_m': xpos,
+        'y_m': y[np.where(x == xpos)[0][0]],
+        'Tw [K]': twall[np.where(x == xpos)[0][0]],
+        'gamma' : solution.gamma_s[-1],
+        'Cp [(KJ/kg-K)]' : solution.cp[-1],
+        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
+        'MW [kg/kmol]' : solution.MW[-1],
+        'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
+        'T_local [K]'  : solution.T[-1],
+        'P_local [bar]' : solution.P[-1],
+        'ae_at' : solution.ae_at[-1],
+        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
+        'Prandtl Number': solution.Pr_eq[-1],
+        'Mach': solution.Mach[-1]
+        })
+
+for xpos, supar in zip(x_after, areas_after_throat):
+    solver.solve(solution, weights, pc.to(ureg.bar).magnitude, supar=[supar], ac_at=ac_at, iac=False, hc=hc)
+
+    properties.append({
+        'x_m': xpos,
+        'y_m': y[np.where(x == xpos)[0][0]],
+        'Tw [K]': twall[np.where(x == xpos)[0][0]],
+        'gamma' : solution.gamma_s[-1],
+        'Cp [(KJ/kg-K)]' : solution.cp[-1],
+        'k [W/m-K]' : (solution.conductivity_eq[-1] * ureg.watt / (ureg.centimeter * ureg.kelvin)).to(ureg.watt / (ureg.meter * ureg.kelvin)).magnitude,
+        'MW [kg/kmol]' : solution.MW[-1],
+        'R [kJ/kg-K]' : cea.R / (solution.MW[-1]),
+        'T_local [K]'  : solution.T[-1],
+        'P_local [bar]' : solution.P[-1],
+        'ae_at' : solution.ae_at[-1],
+        'Viscosity [Pa*s]': (solution.viscosity[-1] * ureg.millipoise).to(ureg.pascal * ureg.second).magnitude,
+        'Prandtl Number': solution.Pr_eq[-1],
+        'Mach': solution.Mach[-1]
+        })
+
+# =====================================================================================
+# Save all propreties into a csv file and generate polynomial coefficients for each property
+# =====================================================================================
+
+df = pd.DataFrame(properties)
+df.to_csv('Outputs/properties.csv', index=False)

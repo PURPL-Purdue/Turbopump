@@ -1,0 +1,12 @@
+design_point:
+  N_shaft: 35000              # RPM
+    
+  LOX:
+    feed_pressure: 10.34      # bar
+    mass_flow: 2.03           # kg/s
+    discharge_pressure: 43.41 # bar
+
+  IPA:
+    feed_pressure: 10.34      # bar
+    mass_flow: 2.15           # kg/s
+    discharge_pressure: 54.97 # bar
