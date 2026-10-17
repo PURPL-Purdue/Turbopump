@@ -52,8 +52,20 @@ print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):
 
 #ipa_imp.SweepInletDiam()
 
-ipa_imp.PlotMeridional(color='green')
-ipa_imp.PotentialFlow.Plot()
+#ipa_imp.PlotMeridional(color='green')
+#ipa_imp.PotentialFlow.Plot()
 #ipa_imp.ShroudHubRevolve()
 
-ipa_imp.SweepVelocities().show()
+#ipa_imp.SweepVelocities().show()
+
+# torque = power_consumption / ipa_imp.DP.N_shaft
+# mu = 0.2 # static coefficient of friction, aluminum on hardened steel
+# shaft_diameter = Q_(0.4, 'in')
+# mean_radius: Q_[float] = (ipa_imp.d_hub + shaft_diameter)/4 #np.sqrt((ipa_imp.d_hub/2)**2 + (shaft_diameter/2)**2)
+# axial_force = (torque / mean_radius / mu).to('kN')
+# area = 1/4 * (ipa_imp.d_hub**2 - shaft_diameter**2)
+# stress = (axial_force / area).to('MPa')
+# print(mean_radius)
+# print(torque.to('kN*m'))
+# print(axial_force)
+# print(stress)

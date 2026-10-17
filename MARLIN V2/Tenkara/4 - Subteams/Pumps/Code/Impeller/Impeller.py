@@ -209,6 +209,17 @@ class Impeller:
 			)
 		return (1/2 / g * (lambda_c * c_1m**2 + lambda_w * w_1**2)).to('m')
 
+	# inlet blockage factor
+	def _tau_1(self, Beta1B: Q_[float], lambda_LE: Q_[float]) -> float:
+		# Gulich Table 0.1
+		"""
+		Returns the inlet blockage factor tau_1, where A_1' = A_1 * tau_1
+		Beta1B is the metallic blade angle at the inlet
+		lambda_LE is the angle measured in the meridional view between the shroud contour and the leading edge projection
+		"""
+		tau_1 = 1 / (1 - self.Z_blade * self.thk2 / (np.pi * self.d_1 * np.sin(Beta1B.to('rad').m) * np.sin(lambda_LE.to('rad').m)))
+		return tau_1
+
 	def GetMassFlow(self, volumetric_flowrate: Q_[float]) -> Q_[float]:
 		volumetric_flowrate = volumetric_flowrate if volumetric_flowrate is not None else self.DP.Q
 		return volumetric_flowrate * self.DP.rho
