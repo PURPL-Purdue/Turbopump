@@ -28,8 +28,8 @@ def main():
     Blade_Lead = 2 * np.pi * r * np.tan(Blade_Angle_rad) #SP 8052
     Cascade_Solidity = 2.5 #SP 8052
     Blade_Num = 3 #Investigation of Inducer Geometry Variations on Centrifugal Pump Hydraulic Performance: Numerical Approach
+    Blade_Spacing = (np.pi * H_Diameter)/(Blade_Num * np.sin(Blade_Angle_rad))  #SP 8052
     Chord_Length = Cascade_Solidity * Blade_Spacing #SP 8052
-    Blade_Spacing = Chord_Length / Cascade_Solidity #SP 8052
     Blade_Axial_Length = Cascade_Solidity * Blade_Lead #SP 8052
     Axial_Clearance = Blade_Axial_Length / Cascade_Solidity #SP 8052
  
