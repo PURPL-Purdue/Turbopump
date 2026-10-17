@@ -15,3 +15,6 @@ def _tau_1(impeller: Impeller, Beta1B: Q_[np.ndarray], lambda_LE: Q_[float]) -> 
 		)
 	return tau_1.to('dimensionless').m
 
+from _LOX_impeller import lox_imp
+
+print(_tau_1(lox_imp, Q_(8, 'deg'), ))
