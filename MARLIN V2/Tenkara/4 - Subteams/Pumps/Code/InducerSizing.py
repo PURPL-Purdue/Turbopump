@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pint import Quantity as Q_
 from dataclasses import replace
-from inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints
+from Inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints
 
-g = Q_(9.80, 'm/s^2')
+g = Q_(9.81, 'm/s^2')
 
 # 1. Nominal Design Points
 design_points = {

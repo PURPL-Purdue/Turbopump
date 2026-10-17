@@ -2,7 +2,7 @@ import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 
-g = Q_(9.8, 'm/s^2')
+g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InducerDesignPoint:
