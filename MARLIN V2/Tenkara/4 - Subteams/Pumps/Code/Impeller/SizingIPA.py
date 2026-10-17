@@ -1,9 +1,6 @@
 import numpy as np
 from pint import Quantity as Q_
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
-from Code.Impeller import IPA as ipa_imp
+from _IPA_impeller import ipa_imp
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 

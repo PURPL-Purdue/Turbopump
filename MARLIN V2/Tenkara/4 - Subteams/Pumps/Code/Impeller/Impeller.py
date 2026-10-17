@@ -6,10 +6,10 @@ from pint import Quantity as Q_
 from dataclasses import dataclass
 import plotly.graph_objects as go
 import plotly.subplots
-from . import EmpiricalRelations as emp
-from .VelocityTriangle import VelocityTriangle
-from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve, Polyline
-from .PotentialFlow import PotentialFlow
+import EmpiricalRelations as emp
+from VelocityTriangle import VelocityTriangle
+from MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve, Polyline
+from PotentialFlow import PotentialFlow
 
 g = Q_(9.81, 'm/s^2')
 
@@ -178,8 +178,8 @@ class Impeller:
 		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
 		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)
 		
-		# trailing edge in the meridional view: a straight line across the impeller outlet, shroud to hub
-		zr_TE = np.array([[q.to('m').m for q in contour(1)] for contour in (self.ShroudContour, self.HubContour)])	# (2, 2) (z, r) in m
+		# trailing edge in the meridional view: a straight line across the impeller outlet, hub to shroud
+		zr_TE = np.array([[q.to('m').m for q in contour(1)] for contour in (self.HubContour, self.ShroudContour)])	# (2, 2) (z, r) in m
 		self.TrailingEdge: Polyline = Polyline(zr_TE)
 
 	@property
@@ -208,17 +208,6 @@ class Impeller:
 			(self.DP.N_shaft * self.d_1/2)**2 + c_1m**2
 			)
 		return (1/2 / g * (lambda_c * c_1m**2 + lambda_w * w_1**2)).to('m')
-
-	# inlet blockage factor
-	def _tau_1(self, Beta1B: Q_[float], lambda_LE: Q_[float]) -> float:
-		# Gulich Table 0.1
-		"""
-		Returns the inlet blockage factor tau_1, where A_1' = A_1 * tau_1
-		Beta1B is the metallic blade angle at the inlet
-		lambda_LE is the angle measured in the meridional view between the shroud contour and the leading edge projection
-		"""
-		tau_1 = 1 / (1 - self.Z_blade * self.thk2 / (np.pi * self.d_1 * np.sin(Beta1B.to('rad').m) * np.sin(lambda_LE.to('rad').m)))
-		return tau_1
 
 	def GetMassFlow(self, volumetric_flowrate: Q_[float]) -> Q_[float]:
 		volumetric_flowrate = volumetric_flowrate if volumetric_flowrate is not None else self.DP.Q

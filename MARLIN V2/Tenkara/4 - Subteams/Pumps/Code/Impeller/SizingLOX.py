@@ -1,10 +1,7 @@
 import numpy as np
 from pint import Quantity as Q_
 import CoolProp.CoolProp as CP
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
-from Code.Impeller._LOX_impeller import lox_imp
+from _LOX_impeller import lox_imp
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
