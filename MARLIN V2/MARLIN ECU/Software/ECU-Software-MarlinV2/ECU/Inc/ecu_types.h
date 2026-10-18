@@ -6,16 +6,16 @@
 
 /* Shared data contracts used by the ECU modules. */
 
-/* Length of one control cycle, and so the time between two autosequencer rows. */
+/* Period of the control task loop. */
 #define CONTROL_PERIOD_MS 1U
 
 typedef enum
 {
-  ECU_STATE_STANDBY = 0, /* Outputs off, manual control from Mission Control. */
-  ECU_STATE_STARTUP,     /* Main sequence running, manual control locked out. */
-  ECU_STATE_RUNNING,     /* Main sequence running, entered automatically.     */
-  ECU_STATE_SHUTDOWN,    /* Shutdown rows at the end of the main sequence.    */
-  ECU_STATE_FAULT        /* Separate fault sequence, then back to STANDBY.    */
+  ECU_STATE_STANDBY = 0,
+  ECU_STATE_STARTUP,
+  ECU_STATE_RUNNING,
+  ECU_STATE_SHUTDOWN,
+  ECU_STATE_FAULT
 } ecu_state_t;
 
 /*
@@ -24,6 +24,7 @@ typedef enum
  */
 typedef enum
 {
+  //all placeholder, will put full amout of valves and igniters later
   ACT_VALVE_0 = 0,
   ACT_VALVE_1,
   ACT_VALVE_2,
@@ -35,52 +36,61 @@ typedef enum
   ACT_COUNT
 } actuator_id_t;
 
-/* One value per output (0 = off/closed): one autosequencer row, or the manual
- * outputs in STANDBY. */
+/*
+ * Every sensor the ECU reads.  These names are PLACEHOLDERS until the test
+ * stand's instrumentation list is final.
+ */
+typedef enum
+{
+  SNS_PT_0 = 0,
+  SNS_PT_1,
+  SNS_PT_2,
+  SNS_PT_3,
+  SNS_TC_0,
+  SNS_TC_1,
+  SNS_COUNT
+} sensor_id_t;
+
+/* One value per output (0 = off/closed). */
 typedef struct
 {
   uint16_t out[ACT_COUNT];
 } ecu_command_t;
 
-/* Messages from Mission Control, delivered to the control task by a queue. */
-typedef enum
-{
-  MC_CMD_HEARTBEAT = 0,  /* Proves the link is alive; carries no data.       */
-  MC_CMD_SET_ACTUATOR,   /* STANDBY only: out[actuator] = value.             */
-  MC_CMD_START,          /* STANDBY only: begin the main sequence.           */
-  MC_CMD_ABORT           /* Stop the sequence (goes to FAULT).               */
-} mc_command_type_t;
-
-typedef struct
-{
-  mc_command_type_t type;
-  uint16_t actuator;
-  uint16_t value;
-} mc_command_t;
-
 /* Each bit is one fault; zero means no fault. */
 typedef uint32_t fault_flags_t;
 
-#define FAULT_NONE         0U
-#define FAULT_MC_LINK_LOST (1UL << 0) /* No MC message within the timeout. */
-#define FAULT_MC_ABORT     (1UL << 1) /* Operator pressed abort.           */
+#define FAULT_NONE 0U
 
+/* Snapshot of every sensor's value for one control cycle. */
 typedef struct
 {
-  /* Generic fields only; real sensor channels can be added later. */
-  uint32_t timestamp_ms;
-  bool valid;
+  float value[SNS_COUNT];  /* Engineering units. */
+  bool valid[SNS_COUNT];
+  uint32_t timestamp_ms;   /* Synced clock. */
 } sensor_data_t;
 
+/*
+ * Frame received from Mission Control, delivered to the control task through
+ * the inbound queue.  Contents not defined yet.
+ */
 typedef struct
 {
-  /* One snapshot passed from the control task to the telemetry task. */
-  uint32_t timestamp_ms;
+  uint8_t placeholder; /* TODO: define inbound frame fields. */
+} ecu_inbound_frame_t;
+
+/*
+ * Frame sent to Mission Control, delivered to the telemetry task through the
+ * outbound queue.  Values only; device properties stay on the ECU.
+ */
+typedef struct
+{
+  uint32_t timestamp_ms;              /* Synced clock. */
   ecu_state_t state;
-  uint32_t sequence_tick;    /* Row being executed in the active table. */
-  sensor_data_t sensors;
-  ecu_command_t command;     /* What was sent to the outputs.           */
-  fault_flags_t faults;
-} telemetry_frame_t;
+  float sensor_value[SNS_COUNT];      /* Engineering units. */
+  uint16_t actuator_value[ACT_COUNT]; /* Commanded value. */
+  float actuator_position[ACT_COUNT]; /* Measured position feedback. */
+  /* TODO: further fields TBD. */
+} ecu_outbound_frame_t;
 
 #endif

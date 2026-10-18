@@ -1,14 +1,23 @@
 #include "autosequencer.h"
 
-bool Autosequencer_GetRow(const autosequencer_table_t *table,
-                          uint32_t tick,
-                          ecu_command_t *command)
+#include <stddef.h>
+
+const autosequencer_step_t *Autosequencer_GetStep(const autosequencer_table_t *table,
+                                                  uint32_t index)
 {
-  if (tick >= table->length)
+  if (index >= table->length)
   {
-    return false;
+    return NULL;
   }
 
-  *command = table->rows[tick];
-  return true;
+  return &table->steps[index];
+}
+
+bool Autosequencer_StepComplete(const autosequencer_step_t *step,
+                                const sensor_data_t *sensors)
+{
+  (void)step;
+  (void)sensors;
+  /* TODO: evaluate the step's exit conditions. */
+  return false;
 }

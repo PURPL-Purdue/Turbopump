@@ -7,7 +7,7 @@
 /* Prepare the future telemetry transport. */
 void Telemetry_Initialize(void);
 
-/* Process one snapshot produced by the control task. */
-void Telemetry_Process(const telemetry_frame_t *frame);
+/* Send one outbound frame produced by the control task. */
+void Telemetry_Process(const ecu_outbound_frame_t *frame);
 
 #endif

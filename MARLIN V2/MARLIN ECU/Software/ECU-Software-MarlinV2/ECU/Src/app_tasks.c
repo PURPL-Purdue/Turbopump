@@ -1,7 +1,6 @@
 #include "app_tasks.h"
 
 #include "cmsis_os2.h"
-#include "stm32h7xx_hal.h"
 
 #include "actuators.h"
 #include "autosequencer.h"
@@ -11,36 +10,39 @@
 #include "sensors.h"
 #include "telemetry.h"
 
-#define TELEMETRY_QUEUE_LENGTH 4U
+#define INBOUND_QUEUE_LENGTH  16U
+#define OUTBOUND_QUEUE_LENGTH 4U
 
-static osMessageQueueId_t telemetry_queue;
+static osMessageQueueId_t inbound_queue;  /* Mission Control -> control task. */
+static osMessageQueueId_t outbound_queue; /* Control task -> telemetry task.  */
+
+static void sync_clock(void)
+{
+  /* TODO: clock pulse sync at setup; frame timestamps come from this clock. */
+}
 
 void AppTasks_Initialize(void)
 {
-  /* Outputs first, so every valve is off as early as possible. */
   Actuators_Initialize();
 
-  /*
-   * Create the queue before the scheduler starts.  The control task will put
-   * snapshots into it and the telemetry task will remove them later.
-   */
-  telemetry_queue = osMessageQueueNew(TELEMETRY_QUEUE_LENGTH, sizeof(telemetry_frame_t), NULL);
+  inbound_queue = osMessageQueueNew(INBOUND_QUEUE_LENGTH, sizeof(ecu_inbound_frame_t), NULL);
+  outbound_queue = osMessageQueueNew(OUTBOUND_QUEUE_LENGTH, sizeof(ecu_outbound_frame_t), NULL);
 
-  /* Initialize each replaceable subsystem before the tasks are created. */
   Sensors_Initialize();
   ExternalInput_Initialize();
   Telemetry_Initialize();
+  sync_clock();
   Sensors_StartDma();
+}
+
+bool AppTasks_SubmitInbound(const ecu_inbound_frame_t *frame)
+{
+  return osMessageQueuePut(inbound_queue, frame, 0U, 0U) == osOK;
 }
 
 void AppControlTask_Run(void *argument)
 {
   control_state_machine_t state_machine;
-  sensor_data_t sensors = {0};
-  mc_command_t mc_command;
-  telemetry_frame_t frame = {0};
-  uint32_t next_control_release = osKernelGetTickCount();
-
   (void)argument;
 
   ControlStateMachine_Initialize(&state_machine,
@@ -49,45 +51,21 @@ void AppControlTask_Run(void *argument)
 
   for (;;)
   {
-    /* Run once every CONTROL_PERIOD_MS, measured from a fixed start time. */
-    next_control_release += CONTROL_PERIOD_MS;
-    (void)osDelayUntil(next_control_release);
-
-    /* Mission Control commands, at most one queue's worth per cycle. */
-    for (uint32_t i = 0U; i < MC_COMMAND_QUEUE_LENGTH; i++)
-    {
-      if (!ExternalInput_Receive(&mc_command))
-      {
-        break;
-      }
-      ControlStateMachine_HandleCommand(&state_machine, &mc_command);
-    }
-
-    (void)Sensors_Read(&sensors);
-    ControlStateMachine_Update(&state_machine,
-                               FailureMonitor_Evaluate(&sensors, state_machine.state));
-    Actuators_Apply(&state_machine.output_command);
-
-    frame.timestamp_ms = osKernelGetTickCount();
-    frame.state = state_machine.state;
-    frame.sequence_tick = state_machine.sequence_tick;
-    frame.sensors = sensors;
-    frame.command = state_machine.output_command;
-    frame.faults = state_machine.faults;
-
-    /* Never wait on telemetry; if the queue is full this frame is skipped. */
-    (void)osMessageQueuePut(telemetry_queue, &frame, 0U, 0U);
+    /* TODO: control loop.  Outbound frame is filled from the synced clock,
+     * state_machine.state, the sensor snapshot, output_command and the
+     * actuator positions. */
+    (void)osDelay(CONTROL_PERIOD_MS);
   }
 }
 
 void AppTelemetryTask_Run(void *argument)
 {
-  telemetry_frame_t frame;
+  ecu_outbound_frame_t frame;
 
   (void)argument;
   for (;;)
   {
-    if (osMessageQueueGet(telemetry_queue, &frame, NULL, osWaitForever) == osOK)
+    if (osMessageQueueGet(outbound_queue, &frame, NULL, osWaitForever) == osOK)
     {
       Telemetry_Process(&frame);
     }
