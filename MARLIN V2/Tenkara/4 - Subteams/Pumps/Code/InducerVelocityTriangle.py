@@ -1,54 +1,76 @@
-"""Plot inducer tip velocity triangles using the sizing results from Inducer.py."""
+"""Plot inducer tip velocity triangles calculated by Inducer.py."""
 
-import math
+from math import hypot
 
 import matplotlib.pyplot as plt
 from matplotlib.patches import Arc
 
-from Inducer import DESIGN_INPUTS, InducerResults, get_velocity_triangles, size_inducer
+from Inducer import Inducer, constraints, design_points, print_parameters
 
 
-def plot_velocity_triangles(results: InducerResults) -> None:
-    """Draw separate inlet/outlet graphs; all flow calculations live in Inducer.py.
+def plot_velocity_triangles(inducer: Inducer, name: str = 'Inducer'):
+    """Return inlet/outlet figures; all flow calculations live in Inducer.py.
 
-    Gamma is the relative flow angle from the tangent, not the blade metal
-    angle. Velocities from the US-unit sizing model are displayed in m/s.
+    Assumes uniform annulus flow, zero inlet prewhirl, constant tip radius,
+    and ideal Euler head rise for outlet swirl. Gamma is a flow angle
+    measured from the negative tangent, not a blade metal angle.
     """
-    inlet, outlet = get_velocity_triangles(results)
+    figures = []
     stations = (
-        (1, "Inlet", inlet, results.inlet_flow_angle_rad),
-        (2, "Outlet", outlet, results.outlet_flow_angle_rad),
+        ('Inlet', inducer.C_m1, inducer.C_u1, inducer.W_1, inducer.gamma_1),
+        ('Outlet', inducer.C_m2, inducer.C_u2, inducer.W_2, inducer.gamma_2),
     )
-    for station, name, triangle, flow_angle in stations:
-        angle_deg = math.degrees(flow_angle)
-        triangle.Plot(
-            title=f"Inducer {name} Velocity Triangle (flow angle = {angle_deg:.2f} deg)",
-            station=station,
+    for station, (label, cm, cu, w, gamma) in enumerate(stations, start=1):
+        u = inducer.U_tip.to('m/s').magnitude
+        cm, cu, w = (v.to('m/s').magnitude for v in (cm, cu, w))
+        angle = gamma.to('deg').magnitude
+        fig, ax = plt.subplots(figsize=(9, 5))
+        vectors = (
+            ((0, 0), (u, 0), 'U', u, 'green', (0, -16)),
+            ((0, 0), (cu, cm), 'C', hypot(cu, cm), 'blue', (-65, 12)),
+            ((u, 0), (cu, cm), 'W', w, 'red', (0, 12)),
         )
-        figure = plt.gcf()
-        figure.canvas.manager.set_window_title(f"Inducer {name} Velocity Triangle")
-        ax = plt.gca()
+        def component_label(symbol, value, position, offset, color):
+            text = f'{symbol}{station} = {value:.2f} m/s'
+            ax.annotate(text, xy=position, xytext=offset,
+                        textcoords='offset points', ha='center', va='center',
+                        color=color, fontsize=9,
+                        bbox=dict(facecolor='white', edgecolor='none', alpha=0.85, pad=2))
+            return text
 
-        # Mark the calculated relative flow angle between the tangent and W.
-        u_plot = triangle.u.to("m/s").magnitude
-        radius = 0.25 * triangle.w.to("m/s").magnitude
-        ax.add_patch(Arc(
-            (u_plot, 0), 2 * radius, 2 * radius,
-            theta1=180 - angle_deg, theta2=180,
-            color="black", linewidth=1.2,
-        ))
-        half_angle = flow_angle / 2
-        label_radius = 1.6 * radius
-        ax.text(
-            u_plot - label_radius * math.cos(half_angle),
-            label_radius * math.sin(half_angle),
-            rf"$\gamma_{station} = {angle_deg:.2f}^\circ$",
-            ha="center", va="center", fontsize=10,
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
-        )
-        figure.tight_layout()
+        for start, end, symbol, value, color, offset in vectors:
+            ax.annotate('', xy=end, xytext=start,
+                        arrowprops=dict(arrowstyle='->', color=color, lw=2))
+            midpoint = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+            text = component_label(symbol, value, midpoint, offset, color)
+            ax.plot([], [], color=color, label=text)
+        ax.plot([cu, cu], [0, cm], '--', color='orange', label=f'Cm{station} = {cm:.2f} m/s')
+        component_label('Cm', cm, (cu, cm / 2), (65, 0), 'darkorange')
+        ax.plot([0, cu], [cm, cm], '--', color='purple', label=f'Cu{station} = {cu:.2f} m/s')
+        component_label('Cu', cu, (cu / 2, cm), (0, 16), 'purple')
+        ax.set_title(f'{name} {label} Velocity Triangle\n'
+                     f'U = {u:.2f}, Cm = {cm:.2f}, Cu = {cu:.2f}, W = {w:.2f} m/s')
+        radius = 0.25 * w
+        ax.add_patch(Arc((u, 0), 2 * radius, 2 * radius,
+                         theta1=180-angle, theta2=180, color='black'))
+        ax.text(u - radius, -0.08 * max(u, cm),
+                rf'$\gamma_{station} = {angle:.2f}^\circ$', ha='center')
+        ax.update_datalim([(0, 0), (u, 0), (cu, cm)])
+        ax.autoscale_view()
+        ax.margins(0.2)
+        ax.set_aspect('equal', adjustable='box')
+        ax.set_xlabel('Tangential velocity [m/s]')
+        ax.set_ylabel('Meridional velocity [m/s]')
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        fig.tight_layout()
+        figures.append(fig)
+    return tuple(figures)
 
 
-if __name__ == "__main__":
-    plot_velocity_triangles(size_inducer(DESIGN_INPUTS))
+if __name__ == '__main__':
+    for name, design_point in design_points.items():
+        inducer = Inducer(design_point, constraints)
+        print_parameters(inducer, name)
+        plot_velocity_triangles(inducer, name)
     plt.show()

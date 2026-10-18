@@ -91,3 +91,75 @@ class Inducer:
         self.R_hub_2: Q_[float] = Q_(float(r_h2_m), 'm')
         self.L_ax: Q_[float] = Q_(l_ax_m, 'm')
         self.alpha_taper: Q_[float] = Q_(float(np.degrees(np.arctan((r_h2_m - r_h1_m) / l_ax_m))), 'deg')
+
+        # Uniform annulus flow, constant tip radius, zero inlet prewhirl,
+        # and ideal Euler head: g * Delta_H = U_tip * (C_u2 - C_u1).
+        self.A_inlet = (np.pi * (self.D_tip**2 - self.D_hub**2) / 4).to('m^2')
+        self.A_outlet = (np.pi * ((self.D_tip / 2)**2 - self.R_hub_2**2)).to('m^2')
+        self.C_m1 = (self.DP.Q / self.A_inlet).to('m/s')
+        self.C_m2 = (self.DP.Q / self.A_outlet).to('m/s')
+        self.C_u1 = Q_(0.0, 'm/s')
+        self.C_u2 = (self.g * self.Delta_H / self.U_tip).to('m/s')
+        self.W_1 = np.sqrt(self.C_m1**2 + (self.U_tip - self.C_u1)**2)
+        self.W_2 = np.sqrt(self.C_m2**2 + (self.U_tip - self.C_u2)**2)
+        # Relative flow angles measured from the negative tangential direction.
+        self.gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
+        self.gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
+
+
+# Shared nominal inputs for sizing and velocity-triangle scripts.
+design_points = {
+    'LOx': InducerDesignPoint(
+        Q=Q_(1.69, 'L/s'), N=Q_(35000, 'rpm'),
+        NPSH_a=Q_(105.46, 'm'), NPSH_r=Q_(150.0, 'm'),
+    ),
+    'IPA': InducerDesignPoint(
+        Q=Q_(2.739, 'L/s'), N=Q_(35000, 'rpm'),
+        NPSH_a=Q_(105.46, 'm'), NPSH_r=Q_(150.0, 'm'),
+    ),
+}
+constraints = InducerInletDesignConstraints(
+    hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=1.0,
+)
+
+
+def print_parameters(inducer: Inducer, name: str = 'Inducer') -> None:
+    """Print design inputs, sizing results, and inlet/outlet triangle components."""
+    print(f'\n===== {name} Inducer =====')
+
+    def print_group(title, parameters):
+        print(f'\n{title}')
+        for label, value in parameters:
+            print(f'{label:<36} = {value:.4f}')
+
+    print_group('Design inputs', vars(inducer.DP).items())
+    print_group('Design constraints (dimensionless)', vars(inducer.C).items())
+    print_group('Sizing results', (
+        (label, getattr(inducer, label)) for label in (
+            'g', 'Delta_H', 'phi', 'D_tip', 'D_hub', 'N_ss', 'NPSH_3',
+            'psi_2', 'R_hub_1', 'R_hub_2', 'L_ax', 'alpha_taper',
+        )
+    ))
+    print_group('Inlet velocity triangle', (
+        ('A_inlet', inducer.A_inlet),
+        ('U_tip (tip velocity)', inducer.U_tip),
+        ('C_m1 (meridional velocity)', inducer.C_m1),
+        ('C_u1 (tangential velocity)', inducer.C_u1),
+        ('C_1 (absolute velocity)', np.sqrt(inducer.C_m1**2 + inducer.C_u1**2)),
+        ('W_1 (relative velocity)', inducer.W_1),
+        ('gamma_1 (relative flow angle)', inducer.gamma_1),
+    ))
+    print_group('Outlet velocity triangle', (
+        ('A_outlet', inducer.A_outlet),
+        ('U_tip (tip velocity)', inducer.U_tip),
+        ('C_m2 (meridional velocity)', inducer.C_m2),
+        ('C_u2 (tangential velocity)', inducer.C_u2),
+        ('C_2 (absolute velocity)', np.sqrt(inducer.C_m2**2 + inducer.C_u2**2)),
+        ('W_2 (relative velocity)', inducer.W_2),
+        ('gamma_2 (relative flow angle)', inducer.gamma_2),
+    ))
+
+
+if __name__ == '__main__':
+    for name, design_point in design_points.items():
+        print_parameters(Inducer(design_point, constraints), name)

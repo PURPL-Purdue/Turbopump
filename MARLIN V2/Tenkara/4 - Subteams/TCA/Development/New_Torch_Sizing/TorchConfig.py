@@ -152,13 +152,12 @@ def solve_chamber_pressure(cfg, cea_model):
 
     for _ in range(cfg.max_iter):
         k, R, Tc = cea_model.props(p_c, cfg.of_ratio)
-        Tc_eff = Tc * cfg.cstar_eff ** 2
 
         # Choked throat: Pc = mdot * sqrt(R T) / (Cd * A * sqrt(k) * factor)
-        p_new = choked_pressure(cfg.mdot, A_t, k, Tc_eff, R, cfg.Cd_throat)
+        p_new = choked_pressure(cfg.mdot, A_t, k, Tc, R, cfg.Cd_throat)
 
         if abs(p_new - p_c) / p_c < cfg.tol:
-            return p_new, k, R, Tc_eff
+            return p_new, k, R, Tc
         p_c = p_new
 
     raise RuntimeError(
@@ -236,7 +235,7 @@ def main():
     mdot=0.025,          # kg/s
     of_ratio=1.5,
     Cd_ox=0.8, Cd_fuel=0.8, Cd_throat=0.75,
-    cstar_eff=0.85,
+    cstar_eff=1,
     stiffness_min=0.30,
 )
     print_results(analyze(cfg), cfg)
