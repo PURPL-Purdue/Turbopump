@@ -1,0 +1,9 @@
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# png files
+*.png
