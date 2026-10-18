@@ -3,17 +3,17 @@
 # By: Miles Cohen
 
 # Injector Hardware Definition
-LOx_Cda:  0.00000142        # (m^2) Assumed Cd of 0.8
+LOx_Cda:  0.00000142        # (m^2) Assumed Cd of 0.5
                               # Last updated: Sept 24th, 2026 by Miles Cohen
 
-fuel_Cda: 0.00000342      # (m^2) Assumed Cd of 0.8
+fuel_Cda: 0.00000342      # (m^2) Assumed Cd of 0.5
                               # Last updated: Sept 24th, 2026 by Miles Cohen
 
-film_Cda: 0.00000276      # (m^2) Assumed Cd of 0.8
-                              # TENTATIVE
+film_Cda: 0.0000028      # (m^2) Assumed Cd of 0.5
+                              # TENTATIVE/Symbolic
 
 # Stator Hardware Definition
-stator_throat_area: 0.00011 # (m^2) Assumed to be the same as the injector area
+stator_throat_area: 0.000077 # (m^2) Assumed to be the same as the injector area
                               # Last updated: Sept 27th, 2026 by Miles Cohen
                               #TENTATIVE/RANDOM
 
@@ -22,6 +22,8 @@ stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
 
 stator_eff_combustion_volume: 0   # (m^3) This is the volume of the HGM that is effectivly used for combustion.
                                   # Last updated: May 25th, 2026 by Miles Cohen
+
+CSTAR_eff: 0.75                # Last updated October 9th by Miles Cohen
 
 # Combustion Chamber Hardware Definition
 combustion_chamber_volume: 0.0001393   # (m^3) This is the total volume of the combustion chamber.

@@ -1,3 +1,6 @@
+# TODO: fix npsha to include vapor press
+
+
 from pint import Quantity as Q_
 import numpy as np
 from matplotlib import pyplot as plt
@@ -96,4 +99,4 @@ plt.ylabel('Required Mass Flow (kg/s)')
 plt.legend()
 plt.grid()
 
-plt.show(block=False)
+plt.show()

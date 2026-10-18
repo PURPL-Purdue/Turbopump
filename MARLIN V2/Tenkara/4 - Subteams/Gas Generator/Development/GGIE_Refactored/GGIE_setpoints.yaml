@@ -39,7 +39,7 @@ WSR_bisection: 10
 OF_sweep: true
 OF_min: 0.2
 OF_max: 0.6
-OF_step: 0.2
+OF_step: 0.1
 
 cp_flag_fuel: false
 cp_fuel: 
