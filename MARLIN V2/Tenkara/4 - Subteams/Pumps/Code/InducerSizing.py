@@ -2,37 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pint import Quantity as Q_
 from dataclasses import replace
-from inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints
+from Inducer import Inducer, constraints, design_points
 
 g = Q_(9.80, 'm/s^2')
 
-# 1. Nominal Design Points
-design_points = {
-    "LOx": InducerDesignPoint(
-        Q=Q_(1.69, 'L/s'),
-        N=Q_(35000, 'rpm'),
-        NPSH_a=Q_(105.46, 'm'),
-        NPSH_r=Q_(150.0, 'm')
-    ),
-    "IPA": InducerDesignPoint(
-        Q=Q_(2.739, 'L/s'),
-        N=Q_(35000, 'rpm'),
-        NPSH_a=Q_(105.46, 'm'),
-        NPSH_r=Q_(150.0, 'm')
-    ),
-}
+# 1. Nominal design points and constraints are shared with the triangle plot.
 
 # 2. Sweep Ranges (Defined directly as variables)
 hub_tip_sweep = np.linspace(0.2, 0.6, 100)
-
-# 3. Geometry Constraints
-constraints = InducerInletDesignConstraints(
-    hub_tip_ratio=0.5,
-    sigma=0.03,
-    K=1.1,
-    psi_1=0.08,
-    axial_length_ratio=1.0
-)
 
 # 4. Instantiate and Calculate Nominal Points
 inducers = {name: Inducer(dp, constraints, g=g) for name, dp in design_points.items()}
