@@ -1,5 +1,5 @@
 import numpy as np
-from .Impeller import DesignPoint, InputGeometry, Impeller
+from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
 import CoolProp.CoolProp as CP
 from pathlib import Path

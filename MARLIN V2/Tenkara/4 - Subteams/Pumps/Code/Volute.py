@@ -1,6 +1,5 @@
 #   TODO: 
 #   Integrate this with the impeller sizing (automatically wooooo)
-#   Select cross section shapes
 #   integrate auto cross section dimension calcs
 
 #   Assumed single volute
@@ -16,7 +15,10 @@ from dataclasses import dataclass
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-
+import sys
+from pathlib import Path
+#sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
+from Impeller import LOX, IPA, EmpiricalRelations as emp
 # Constants
 g = Q_(9.81, 'm/s**2')
 
@@ -31,6 +33,11 @@ class VoluteGeometry:
     e_sp: Q_[float] # Wrap angle
     n_volutes: int # Number of volutes
 
+def getKv(N_s: float) -> float:
+    a, b = emp.Kv()
+    K_v = a * N_s**b
+    return K_v
+
 def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant velocity Stepanoff method
     avg_V = K_v * np.sqrt(2 * g.to('ft/s**2') * H.to('feet'))
     return avg_V
@@ -42,6 +49,7 @@ def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float]
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         pass
+
 # System inputs
 #Q_design = Q_(1.78, 'liters/second')
 #H_design = Q_(294.8, 'meters')
