@@ -43,8 +43,8 @@ cf_efficiency: 0.875                                                            
 L_star: 1                                                                             # Characteristic length (m) 
 l_percent: 80                                                                         # (60/80/90) Bell Nozzle Percent
 alpha_divergence: 45.0                                                                # Divergence half-angle (degrees)
- 
- 
+
+
 #######################################################################################
 # Efficiency metrics
 # =====================================================================================
