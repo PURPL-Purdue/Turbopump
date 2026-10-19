@@ -334,12 +334,12 @@ class Inducer:
             z = self.L_ax * frac
             r = Q_(np.linspace(self._r_hub(z.to('m').m), self._r_tip(z.to('m').m), 50), 'm')
             fig.add_trace(go.Scatter(
-                x=r.to(l).magnitude, y=self.GetC_u(r, z).to('m/s').magnitude,
+                x=self.GetC_u(r, z).to(f'{l}/s').m, y=r.to(l).m,
                 mode='lines', name=f'z/L = {frac:.2f}'
             ))
 
-        fig.update_xaxes(title_text=f"Radial position ({l})")
-        fig.update_yaxes(title_text="Swirl velocity c_u (m/s)")
+        fig.update_yaxes(title_text=f"Radial position ({l})")
+        fig.update_xaxes(title_text="Swirl velocity c<sub>u</sub> (m/s)")
 
         fig.update_layout(
             title=f"{name} Swirl Velocity",
