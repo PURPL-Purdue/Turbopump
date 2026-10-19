@@ -1,6 +1,10 @@
 import numpy as np
 from pint import Quantity as Q_
 from _IPA_impeller import ipa_imp
+from Inducer import Inducer, design_points, constraints
+from Pump import Pump
+
+ipa_pump = Pump(Inducer(design_points['LOx'], constraints), ipa_imp)	# inducer design point and constraints from Inducer.py
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 
@@ -50,6 +54,7 @@ ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 ipa_imp.SweepInletDiam()
 
 ipa_imp.PlotMeridional(color='green')
+ipa_pump.PlotMeridional(color='green')
 ipa_imp.PotentialFlow.Plot()
 ipa_imp.ShroudHubRevolve()
 

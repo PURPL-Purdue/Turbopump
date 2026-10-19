@@ -2,6 +2,10 @@ import numpy as np
 from pint import Quantity as Q_
 import CoolProp.CoolProp as CP
 from _LOX_impeller import lox_imp
+from Inducer import Inducer, constraints, design_points
+from Pump import Pump
+
+lox_pump = Pump(Inducer(design_points['LOx'], constraints), lox_imp)	# inducer design point and constraints from Inducer.py
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")
@@ -58,6 +62,7 @@ lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 #lox_imp.SweepInletDiam()
 
 lox_imp.PlotMeridional(color='blue')
+lox_pump.PlotMeridional(color='blue')
 lox_imp.PotentialFlow.Plot()
 lox_imp.ShroudHubRevolve()
 lox_imp.GetVelocities(station=1).Plot().show()

@@ -397,13 +397,12 @@ class Impeller:
 
 		return fig
 
-	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
+	def MeridionalTraces(self, l: str = 'in', color: str = 'black') -> list[go.Scatter]:
 		"""
-			Meridional cross-section: hub and shroud contours, leading edge, geometric meanline, inlet and outlet.
-			The FEM mesh is shown over the potential flow solution by self.PotentialFlow.Plot.
+			Meridional cross-section as plotly traces in length unit l, z = 0 at the impeller inlet: hub and shroud
+			contours, leading edge, geometric meanline, inlet and outlet. Drawn by PlotMeridional, and with the inducer
+			by Pump.PlotMeridional.
 		"""
-
-		fig = go.Figure()
 
 		d_1	= self.d_1.to(l)
 		Z_e = self.Z_e.to(l)
@@ -411,29 +410,35 @@ class Impeller:
 		d_2 = self.d_2.to(l)
 		d_hub = self.d_hub.to(l)
 
-		fig.add_trace(go.Scatter(
-			x=[0, 0], y=[d_hub.m/2, d_1.m/2],
-			mode='lines', name='Inlet', line=dict(dash='dot', color='grey'),
-			showlegend=False
-		))
+		return [
+			go.Scatter(
+				x=[0, 0], y=[d_hub.m/2, d_1.m/2],
+				mode='lines', name='Inlet', line=dict(dash='dot', color='grey'),
+				showlegend=False
+			),
+			go.Scatter(
+				x=[Z_e.m, Z_e.m + b_2.m],
+				y=[d_2.m/2, d_2.m/2],
+				mode='lines', name='Outlet', line=dict(dash='dot', color='grey'),
+				showlegend=False
+			),
+			self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False),
+			self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False),
+			# leading edge, with markers on its hub, meanline and shroud points (see BuildMeridian)
+			self.LeadingEdge.Trace(l, name='Leading Edge', legendgroup='LE', line=dict(color=color)),
+			self.MeanContour.Trace(l, name='Geometric Meanline', line=dict(color='black', dash='dashdot'))
+		]
+
+	def PlotMeridional(self, l: str = 'in', color: str = 'black') -> go.Figure:
+		"""
+			Meridional cross-section (MeridionalTraces) and the axis, in its own figure.
+			The FEM mesh is shown over the potential flow solution by self.PotentialFlow.Plot.
+		"""
+
+		fig = go.Figure(self.MeridionalTraces(l, color))
 
 		fig.add_trace(go.Scatter(
-			x=[Z_e.m, Z_e.m + b_2.m],
-			y=[d_2.m/2, d_2.m/2],
-			mode='lines', name='Outlet', line=dict(dash='dot', color='grey'),
-			showlegend=False
-		))
-
-		fig.add_trace(self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False))
-		fig.add_trace(self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False))
-
-		# leading edge, with markers on its hub, meanline and shroud points (see BuildMeridian)
-		fig.add_trace(self.LeadingEdge.Trace(l, name='Leading Edge', legendgroup='LE', line=dict(color=color)))
-
-		fig.add_trace(self.MeanContour.Trace(l, name='Geometric Meanline', line=dict(color='black', dash='dashdot')))
-
-		fig.add_trace(go.Scatter(
-			x=[0, Z_e.m + b_2.m], y=[0, 0],
+			x=[0, self.Z_e.to(l).m + self.b_2.to(l).m], y=[0, 0],
 			mode='lines', name='Meridional axis', line=dict(dash='dashdot', color='grey')
 		))
 

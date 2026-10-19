@@ -141,20 +141,24 @@ class Inducer:
         hub = self.HubContour.Points(np.linspace(0, self.HubContour.length_m, 51))
         self.MeanContour: Polyline = Polyline(np.column_stack([hub[:, 0], np.sqrt((r_t**2 + hub[:, 1]**2) / 2)]))
 
+    def MeridionalTraces(self, l: str = 'in', color: str = 'black') -> list[go.Scatter]:
+        """
+        Meridional cross-section as plotly traces in length unit l, z = 0 at the inducer inlet: hub and shroud
+        contours, inlet and outlet, rms meanline (see BuildMeridian). Drawn by PlotMeridional, and with the impeller by
+        Pump.PlotMeridional. Blades are not drawn yet; their leading and trailing edges would be added here, as in
+        Impeller.MeridionalTraces.
+        """
+        return [
+            self.Inlet.Trace(l, name='Inlet', line=dict(dash='dot', color='grey'), showlegend=False),
+            self.Outlet.Trace(l, name='Outlet', line=dict(dash='dot', color='grey'), showlegend=False),
+            self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False),
+            self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False),
+            self.MeanContour.Trace(l, name='RMS Meanline', line=dict(color='black', dash='dashdot'))
+        ]
+
     def PlotMeridional(self, l: str = 'in', color: str = 'black', name: str = 'Inducer') -> go.Figure:
-        """
-        Meridional cross-section: hub and shroud contours, inlet and outlet, rms meanline and axis (see BuildMeridian).
-        Blades are not drawn yet; their leading and trailing edges would be added here, as in Impeller.PlotMeridional.
-        """
-        fig = go.Figure()
-
-        fig.add_trace(self.Inlet.Trace(l, name='Inlet', line=dict(dash='dot', color='grey'), showlegend=False))
-        fig.add_trace(self.Outlet.Trace(l, name='Outlet', line=dict(dash='dot', color='grey'), showlegend=False))
-
-        fig.add_trace(self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False))
-        fig.add_trace(self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False))
-
-        fig.add_trace(self.MeanContour.Trace(l, name='RMS Meanline', line=dict(color='black', dash='dashdot')))
+        """Meridional cross-section (MeridionalTraces) and the axis, in its own figure."""
+        fig = go.Figure(self.MeridionalTraces(l, color))
 
         fig.add_trace(go.Scatter(
             x=[0, self.L_ax.to(l).magnitude], y=[0, 0],
