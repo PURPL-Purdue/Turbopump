@@ -1,6 +1,8 @@
 import numpy as np
+import plotly.graph_objects as go
 from pint import Quantity as Q_
 from dataclasses import dataclass
+from MeridionalContour import Polyline
 
 g = Q_(9.81, 'm/s^2')
 
@@ -106,6 +108,72 @@ class Inducer:
         self.gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
         self.gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
 
+        # ---------------------------------------------------------
+        # Meridional Geometry
+        # ---------------------------------------------------------
+        self.BuildMeridian()
+
+    def BuildMeridian(self):
+        """
+        Meridional curves, (z, r) in m with z = 0 at the inducer inlet:
+            shroud:         casing at the constant tip radius D_tip / 2
+            hub:            linear taper from R_hub_1 to R_hub_2 over L_ax, as in InducerRadialEquilibrium
+            inlet, outlet:  stations 1 and 2, straight from hub to tip at z = 0 and z = L_ax
+            mean:           rms radius sqrt((r_tip^2 + r_hub^2) / 2), which splits the annulus into equal areas
+                            (NASA SP-8052, Glossary). With the uniform c_m assumed above, half the flow passes on each
+                            side of it, and it is the radius at which InducerRadialEquilibrium sets the blade angle
+                            (SP-8052 sec. 3.1.12). MeanCurve(HubContour, ShroudContour) would give the geometric
+                            meanline instead, as in Impeller.
+
+        Blades are not modeled yet. Their leading and trailing edges would be built here, hub to tip, like
+        Impeller.LeadingEdge and Impeller.TrailingEdge.
+        """
+        r_t = self.D_tip.to('m').magnitude / 2
+        r_h1 = self.R_hub_1.to('m').magnitude
+        r_h2 = self.R_hub_2.to('m').magnitude
+        l_ax = self.L_ax.to('m').magnitude
+
+        self.ShroudContour: Polyline = Polyline([[0, r_t], [l_ax, r_t]])
+        self.HubContour: Polyline = Polyline([[0, r_h1], [l_ax, r_h2]])
+        self.Inlet: Polyline = Polyline([[0, r_h1], [0, r_t]])
+        self.Outlet: Polyline = Polyline([[l_ax, r_h2], [l_ax, r_t]])
+
+        hub = self.HubContour.Points(np.linspace(0, self.HubContour.length_m, 51))
+        self.MeanContour: Polyline = Polyline(np.column_stack([hub[:, 0], np.sqrt((r_t**2 + hub[:, 1]**2) / 2)]))
+
+    def PlotMeridional(self, l: str = 'in', color: str = 'black', name: str = 'Inducer') -> go.Figure:
+        """
+        Meridional cross-section: hub and shroud contours, inlet and outlet, rms meanline and axis (see BuildMeridian).
+        Blades are not drawn yet; their leading and trailing edges would be added here, as in Impeller.PlotMeridional.
+        """
+        fig = go.Figure()
+
+        fig.add_trace(self.Inlet.Trace(l, name='Inlet', line=dict(dash='dot', color='grey'), showlegend=False))
+        fig.add_trace(self.Outlet.Trace(l, name='Outlet', line=dict(dash='dot', color='grey'), showlegend=False))
+
+        fig.add_trace(self.ShroudContour.Trace(l, name='Shroud Contour', line=dict(color=color), showlegend=False))
+        fig.add_trace(self.HubContour.Trace(l, name='Hub Contour', line=dict(color=color), showlegend=False))
+
+        fig.add_trace(self.MeanContour.Trace(l, name='RMS Meanline', line=dict(color='black', dash='dashdot')))
+
+        fig.add_trace(go.Scatter(
+            x=[0, self.L_ax.to(l).magnitude], y=[0, 0],
+            mode='lines', name='Meridional axis', line=dict(dash='dashdot', color='grey')
+        ))
+
+        fig.update_xaxes(title_text=f"Meridional position ({l})")
+        fig.update_yaxes(title_text=f"Radial position ({l})", scaleanchor='x', scaleratio=1)
+
+        # legend in plotly's default place, outside the plot: the passage fills the top of the view
+        fig.update_layout(
+            title=f"{name} Meridional Cross-Section",
+            template="plotly_white"
+        )
+
+        fig.show()
+
+        return fig
+
 
 # Shared nominal inputs for sizing and velocity-triangle scripts.
 design_points = {
@@ -162,4 +230,6 @@ def print_parameters(inducer: Inducer, name: str = 'Inducer') -> None:
 
 if __name__ == '__main__':
     for name, design_point in design_points.items():
-        print_parameters(Inducer(design_point, constraints), name)
+        inducer = Inducer(design_point, constraints)
+        print_parameters(inducer, name)
+        inducer.PlotMeridional(name=f'{name} Inducer')
