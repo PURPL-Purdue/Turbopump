@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 from pint import Quantity as Q_
 from Inducer import Inducer
 from Impeller import Impeller
+import ConstructHardware
 
 class Pump:
 	"""
@@ -11,7 +12,7 @@ class Pump:
 		its outlet axial_gap before the impeller inlet.
 	"""
 
-	def __init__(self, inducer: Inducer, impeller: Impeller, axial_gap: Q_[float] = Q_(0, 'in')):
+	def __init__(self, inducer: Inducer, impeller: Impeller, axial_gap: Q_[float]=Q_(0, 'in')):
 		self.Inducer = inducer
 		self.Impeller = impeller
 		self.axial_gap = axial_gap		# from the inducer outlet to the impeller inlet
@@ -48,3 +49,15 @@ class Pump:
 		fig.show()
 
 		return fig
+
+def LOX() -> Pump:
+	return Pump(
+		inducer=ConstructHardware.InducerLOX(),
+		impeller=ConstructHardware.ImpellerLOX()
+		)
+
+def IPA() -> Pump:
+	return Pump(
+		inducer=ConstructHardware.InducerIPA(),
+		impeller=ConstructHardware.ImpellerIPA()
+		)

@@ -1,10 +1,9 @@
 import numpy as np
 from pint import Quantity as Q_
-from _IPA_impeller import ipa_imp
-from Inducer import Inducer, design_points, constraints
-from Pump import Pump
+import Pump
 
-ipa_pump = Pump(Inducer(design_points['LOx'], constraints), ipa_imp)	# inducer design point and constraints from Inducer.py
+ipa_pump = Pump.IPA()
+ipa_imp = ipa_pump.Impeller
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 

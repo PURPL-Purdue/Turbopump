@@ -1,11 +1,10 @@
 import numpy as np
 from pint import Quantity as Q_
 import CoolProp.CoolProp as CP
-from _LOX_impeller import lox_imp
-from Inducer import Inducer, constraints, design_points
-from Pump import Pump
+import Pump
 
-lox_pump = Pump(Inducer(design_points['LOx'], constraints), lox_imp)	# inducer design point and constraints from Inducer.py
+lox_pump = Pump.LOX()
+lox_imp = lox_pump.Impeller
 
 print("\n--- Design point parameters ---")
 print(f"Flowrate (Q)                = {lox_imp.DP.Q.to("L/s"):.2f}")

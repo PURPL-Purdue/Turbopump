@@ -22,10 +22,11 @@ class InducerInletDesignConstraints:
     axial_length_ratio: float = 1.0   #L_a / D_t (axial length as a multiple of tip diameter)
 
 class Inducer:
-    def __init__(self, design_point: InducerDesignPoint, constraints: InducerInletDesignConstraints, g: Q_[float] = g):
+    def __init__(self, design_point: InducerDesignPoint, constraints: InducerInletDesignConstraints):
         self.DP = design_point
+        print(type(self.DP))
+        print(design_point)
         self.C = constraints
-        self.g = g
 
         # Head rise across inducer (Delta H = NPSHr - NPSHa)
         self.Delta_H = (self.DP.NPSH_r - self.DP.NPSH_a).to('m')
@@ -77,7 +78,7 @@ class Inducer:
         omega = 2.0 * np.pi * n_rpm / 60.0
         self.U_tip: Q_[float] = Q_(omega * r_t_m, 'm/s')
         self.psi_2: float = float(
-            self.g.to('m/s^2').magnitude * self.Delta_H.to('m').magnitude / self.U_tip.to('m/s').magnitude ** 2
+            g.to('m/s^2').magnitude * self.Delta_H.to('m').magnitude / self.U_tip.to('m/s').magnitude ** 2
         )
 
         # ---------------------------------------------------------
@@ -101,12 +102,12 @@ class Inducer:
         self.C_m1 = (self.DP.Q / self.A_inlet).to('m/s')
         self.C_m2 = (self.DP.Q / self.A_outlet).to('m/s')
         self.C_u1 = Q_(0.0, 'm/s')
-        self.C_u2 = (self.g * self.Delta_H / self.U_tip).to('m/s')
+        self.C_u2 = (g * self.Delta_H / self.U_tip).to('m/s')
         self.W_1 = np.sqrt(self.C_m1**2 + (self.U_tip - self.C_u1)**2)
         self.W_2 = np.sqrt(self.C_m2**2 + (self.U_tip - self.C_u2)**2)
         # Relative flow angles measured from the negative tangential direction.
-        self.gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
-        self.gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
+        gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
+        gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
 
         # ---------------------------------------------------------
         # Meridional Geometry
