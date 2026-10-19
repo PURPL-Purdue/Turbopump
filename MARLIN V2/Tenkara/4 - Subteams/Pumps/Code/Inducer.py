@@ -24,8 +24,6 @@ class InducerInletDesignConstraints:
 class Inducer:
     def __init__(self, design_point: InducerDesignPoint, constraints: InducerInletDesignConstraints):
         self.DP = design_point
-        print(type(self.DP))
-        print(design_point)
         self.C = constraints
 
         # Head rise across inducer (Delta H = NPSHr - NPSHa)
