@@ -4,7 +4,7 @@ from pint import Quantity as Q_
 from dataclasses import replace
 from Inducer import Inducer, constraints, design_points
 
-g = Q_(9.80, 'm/s^2')
+g = Q_(9.81, 'm/s^2')
 
 # 1. Nominal design points and constraints are shared with the triangle plot.
 
