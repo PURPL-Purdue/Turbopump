@@ -60,11 +60,6 @@ print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):
 # ------------------------------------------------------------------
 # Inducer
 
-lox_inducer = lox_pump.Inducer
-print_parameters(lox_inducer, 'LOX')
-lox_inducer.PlotMeridional(name='LOX Inducer')
-lox_inducer.PlotSwirl(name='LOX Inducer')
-
 def dothething():
     lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 
@@ -76,3 +71,8 @@ def dothething():
     lox_imp.ShroudHubRevolve()
     #lox_imp.GetVelocities(station=1).Plot().show()
     lox_imp.SweepVelocities().show()
+
+    lox_inducer = lox_pump.Inducer
+    print_parameters(lox_inducer, 'LOX')
+    lox_inducer.PlotMeridional(name='LOX Inducer')
+    lox_inducer.PlotSwirl(name='LOX Inducer')
