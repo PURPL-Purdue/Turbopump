@@ -46,6 +46,13 @@ def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float]
     A = (e / e_sp) * (Q / (n_volutes * avg_V))
     return A
 
+def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[float], Q: Q_[float], Q_bep: Q_[float]) -> Q_[float]:
+    K = 0.36*(1 - (Q.to('gallons per minute') / Q_bep.to('gallons per minute'))**2)
+    radial_thrust = K * H.to('ft') * D2.to('inches') * B2_total.to('inches') * rho.to('lb/ft**3') * g.to('ft/s**2')
+    return radial_thrust
+
+radial_thrust = calcRadialThrust(lox_imp.design_point.H, lox_imp.geometry.D2, lox_imp.geometry.)
+
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         pass
