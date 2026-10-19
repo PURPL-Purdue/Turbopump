@@ -76,5 +76,6 @@ def dothething():
     print_parameters(lox_inducer, 'LOX')
     #lox_inducer.PlotMeridional(name='LOX Inducer')
     lox_inducer.PlotSwirl(name='LOX Inducer')
+    lox_inducer.PlotC_m()
 
 dothething()

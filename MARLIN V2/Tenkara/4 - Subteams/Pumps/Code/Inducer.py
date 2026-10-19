@@ -350,6 +350,29 @@ class Inducer:
 
         return fig
 
+    def PlotC_m(self, l: str = 'in', name: str = 'Inducer') -> go.Figure:
+        """Meridional velocity c_m (GetC_m) from hub to tip at z/L_ax = 0, 0.25, 0.5, 0.75 and 1, against radius in length unit l."""
+        fig = go.Figure()
+
+        for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
+            z = self.L_ax * frac
+            r = Q_(np.linspace(self._r_hub(z.to('m').m), self._r_tip(z.to('m').m), 50), 'm')
+            fig.add_trace(go.Scatter(
+                x=self.GetC_m(r, z).to(f'{l}/s').m, y=r.to(l).m,
+                mode='lines', name=f'z/L = {frac:.2f}'
+            ))
+
+        fig.update_yaxes(title_text=f"Radial position ({l})")
+        fig.update_xaxes(title_text="Meridional velocity c<sub>m</sub> (m/s)")
+
+        fig.update_layout(
+            title=f"{name} Swirl Velocity",
+            template="plotly_white"
+        )
+
+        fig.show()
+
+        return fig
 
 # Shared nominal inputs for sizing and velocity-triangle scripts.
 design_points = {
