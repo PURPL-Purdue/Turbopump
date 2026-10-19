@@ -1,6 +1,9 @@
 import numpy as np
 from pint import Quantity as Q_
-from _IPA_impeller import ipa_imp
+import Pump
+
+ipa_pump = Pump.IPA()
+ipa_imp = ipa_pump.Impeller
 
 g = Q_(9.81, 'm/s^2')				# gravitational acceleration
 
@@ -45,15 +48,16 @@ print(f"NPSH inception              = {ipa_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(ipa_imp.DP.Q / ipa_imp.Area1).to('m/s'):.1f}")
 
-#ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+ipa_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
 
-#ipa_imp.SweepInletDiam()
+ipa_imp.SweepInletDiam()
 
-#ipa_imp.PlotMeridional(color='green')
-#ipa_imp.PotentialFlow.Plot()
-#ipa_imp.ShroudHubRevolve()
+ipa_imp.PlotMeridional(color='green')
+ipa_pump.PlotMeridional(color='green')
+ipa_imp.PotentialFlow.Plot()
+ipa_imp.ShroudHubRevolve()
 
-#ipa_imp.SweepVelocities().show()
+ipa_imp.SweepVelocities().show()
 
 # torque = power_consumption / ipa_imp.DP.N_shaft
 # mu = 0.2 # static coefficient of friction, aluminum on hardened steel
