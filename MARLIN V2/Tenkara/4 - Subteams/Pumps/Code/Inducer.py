@@ -373,6 +373,10 @@ class Inducer:
         fig.show()
 
         return fig
+    
+    def GetAveragedOutletSpecificAngularMomentum(self) -> Q_[float]:
+        # TODO, right not DeltaH is fixed...
+        return (g * self.Delta_H / self.DP.N).to('m^2/s')
 
 # Shared nominal inputs for sizing and velocity-triangle scripts.
 design_points = {
