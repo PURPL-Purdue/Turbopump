@@ -2,6 +2,7 @@ import numpy as np
 from pint import Quantity as Q_
 import CoolProp.CoolProp as CP
 import Pump
+from Inducer import print_parameters
 
 lox_pump = Pump.LOX()
 lox_imp = lox_pump.Impeller
@@ -56,13 +57,22 @@ print(f"NPSH inception              = {lox_imp.NPSH_i.to('m'):.0f}")
 print(f"NPSH available              = {NPSH_a.to('m'):.0f}")
 print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):.1f}")
 
-lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+# ------------------------------------------------------------------
+# Inducer
 
-#lox_imp.SweepInletDiam()
+lox_inducer = lox_pump.Inducer
+print_parameters(lox_inducer, 'LOX')
+lox_inducer.PlotMeridional(name='LOX Inducer')
+lox_inducer.PlotSwirl(name='LOX Inducer')
 
-lox_imp.PlotMeridional(color='blue')
-lox_pump.PlotMeridional(color='blue')
-lox_imp.PotentialFlow.Plot()
-lox_imp.ShroudHubRevolve()
-#lox_imp.GetVelocities(station=1).Plot().show()
-lox_imp.SweepVelocities().show()
+def dothething():
+    lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+
+    #lox_imp.SweepInletDiam()
+
+    lox_imp.PlotMeridional(color='blue')
+    lox_pump.PlotMeridional(color='blue')
+    lox_imp.PotentialFlow.Plot()
+    lox_imp.ShroudHubRevolve()
+    #lox_imp.GetVelocities(station=1).Plot().show()
+    lox_imp.SweepVelocities().show()

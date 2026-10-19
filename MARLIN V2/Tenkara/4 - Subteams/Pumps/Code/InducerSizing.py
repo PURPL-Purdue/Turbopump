@@ -1,10 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pint import Quantity as Q_
 from dataclasses import replace
 from Inducer import Inducer, constraints, design_points
-
-g = Q_(9.81, 'm/s^2')
 
 # 1. Nominal design points and constraints are shared with the triangle plot.
 
@@ -12,7 +9,7 @@ g = Q_(9.81, 'm/s^2')
 hub_tip_sweep = np.linspace(0.2, 0.6, 100)
 
 # 4. Instantiate and Calculate Nominal Points
-inducers = {name: Inducer(dp, constraints, g=g) for name, dp in design_points.items()}
+inducers = {name: Inducer(dp, constraints) for name, dp in design_points.items()}
 
 # 5. Print Sizing Results
 for name, inducer in inducers.items():
@@ -52,7 +49,7 @@ for ax, (name, inducer) in zip(axes, inducers.items()):
     d_hub_in = []
     for ht_val in hub_tip_sweep:
         c = replace(constraints, hub_tip_ratio=ht_val)
-        inducer_stage = Inducer(inducer.DP, c, g=g)
+        inducer_stage = Inducer(inducer.DP, c)
         d_tip_in.append(inducer_stage.D_tip.to('in').magnitude)
         d_hub_in.append(inducer_stage.D_hub.to('in').magnitude)
 

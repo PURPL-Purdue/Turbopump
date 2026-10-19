@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pint import Quantity as Q_
-from Inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints
+from Inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints, InducerGeometry
 from Impeller import DesignPoint, InputGeometry, Impeller
 from pint import Quantity as Q_
 #import CoolProp.CoolProp as CP
@@ -66,6 +66,10 @@ inducer_inlet_constraints = InducerInletDesignConstraints(
     hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=1.0,
 )
 
+inducer_geometry = InducerGeometry(
+	Z_blade=3, thk=Q_(1, 'mm'),
+)
+
 impeller_geometry_LOX: InputGeometry = InputGeometry(
 	Z_blade = 6,
 	Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
@@ -103,8 +107,8 @@ def ImpellerIPA() -> Impeller:
 	return Impeller(impeller_geometry_IPA, impeller_design_point_IPA)
 
 def InducerLOX() -> Inducer:
-	return Inducer(inducer_design_point_LOX, inducer_inlet_constraints)
+	return Inducer(inducer_design_point_LOX, inducer_inlet_constraints, inducer_geometry)
 
 def InducerIPA() -> Inducer:
-	return Inducer(inducer_design_point_IPA, inducer_inlet_constraints)
+	return Inducer(inducer_design_point_IPA, inducer_inlet_constraints, inducer_geometry)
 
