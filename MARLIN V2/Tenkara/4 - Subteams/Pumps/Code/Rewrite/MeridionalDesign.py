@@ -45,6 +45,7 @@ class MeridionalDesign:
 		self.Pump = pump
 		impeller = pump.Impeller
 
+		# pseudo b_1 not true b_1
 		b_1 = (impeller.d_1 - impeller.d_hub) / 2	# inlet blade height
 		r_2 = impeller.d_2 / 2
 		dr = (impeller.d_2 - impeller.d_1) / 2		# radial extent of the shroud
