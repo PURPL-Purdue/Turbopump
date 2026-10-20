@@ -1,4 +1,5 @@
 import Impeller
+import Inducer
 from pint import Quantity as Q_
 from dataclasses import dataclass
 
@@ -31,3 +32,11 @@ class Pump:
 		)
 
 		self.NPSH_a = ((design_point.feed_pressure - design_point.inlet_vapor_pressure) / design_point.rho / g).to('m')
+
+	def AddInducer(self, inducer_head: Q_[float]) -> Inducer.Inducer:
+		self.Inducer = Inducer.Inducer(
+			design_point=Inducer.InducerDesignPoint(
+				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
+				)
+		)
+		

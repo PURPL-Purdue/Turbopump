@@ -2,6 +2,8 @@ import numpy as np
 from pint import Quantity as Q_
 import Pump
 import Impeller
+import Inducer
+from InducerRadialEquilibrium import InducerRadialEquilibrium
 from CoolProp import CoolProp as CP
 import MeridionalDesign
 import Pump1D
@@ -95,9 +97,11 @@ def MakeDesign(propellant: str='LOX'):
 	print(pump.NPSH_a)
 
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
-	print(inducer_head)
+
+	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
-	# TODO create inducer
+
+	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	pump.Impeller.PrintDimensionlessParameters()
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
