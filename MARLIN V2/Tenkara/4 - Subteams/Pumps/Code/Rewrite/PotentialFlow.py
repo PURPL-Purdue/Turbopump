@@ -263,6 +263,4 @@ class PotentialFlow:
 			template="plotly_white"
 		)
 
-		fig.show()
-
 		return fig

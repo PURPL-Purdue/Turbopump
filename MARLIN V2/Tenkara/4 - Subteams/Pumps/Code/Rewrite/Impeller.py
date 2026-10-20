@@ -25,8 +25,6 @@ class InputGeometry:
 	# hub_outlet_angle: Q_[float] = Q_(0, 'deg')
 	# hub_taper_ratio: float = 0.3
 
-	Z_e_factor: float = 1
-
 @dataclass
 class DesignPoint:
 	Q: Q_[float]			# volumetric flowrate
@@ -66,9 +64,6 @@ class Impeller:
 		self.thk2 = geometry.thk2
 		self.d_hub = geometry.d_hub
 		self.WiesnerSlip: float = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
-		self.Z_e: Q_[float] = (		# axial extension, Gulich, pg. 348
-			geometry.Z_e_factor*((self.d_2 - self.d_1)*((self.n_q/74)**(1.07)))
-			)
 
 		u_2, c_m2, c_u2, w_2 = self.GetOutletVelocities()
 
