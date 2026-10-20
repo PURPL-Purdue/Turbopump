@@ -72,6 +72,8 @@ class Impeller:
 
 		u_2, c_m2, c_u2, w_2 = self.GetOutletVelocities()
 
+		# Stage loading: Δh / u^2 = c_u / u assuming no preswirl
+		self.StageLoading = (c_u2 / u_2).to('dimensionless').m
 		# AKA Flow factor: c / u
 		self.FlowCoefficient: float = (c_m2 / u_2).to('dimensionless').m
 		
@@ -81,7 +83,7 @@ class Impeller:
 
 	@property
 	def HeadCoefficient(self):
-		"""head coefficient: g*H / u^2 | AKA Stage loading: Δh / u^2"""
+		"""head coefficient: g*H / u^2"""
 		u_2 = self.d_2/2 * self.DP.N_shaft
 		return (g * self.DP.H_rise / u_2**2).to('dimensionless').m
 
@@ -129,6 +131,7 @@ class Impeller:
 		print(f"Specific speed (imperial)   = {self.n_s:.0f}")
 		print(f"Specific speed (metric)     = {self.n_q:.1f}")
 
-		print(f"Slip factor (σ)             = {self.WiesnerSlip:.4f}")
-		print(f"Head coefficient (ψ)        = {self.HeadCoefficient:.4f}")
-		print(f"Flow coefficient (ϕ)        = {self.FlowCoefficient:.4f}")
+		print(f"Slip factor (σ)             = {self.WiesnerSlip:.3f}")
+		print(f"Head coefficient (ψ)        = {self.HeadCoefficient:.3f}")
+		print(f"Stage loading               = {self.StageLoading:.3f}")
+		print(f"Flow coefficient (ϕ)        = {self.FlowCoefficient:.3f}")

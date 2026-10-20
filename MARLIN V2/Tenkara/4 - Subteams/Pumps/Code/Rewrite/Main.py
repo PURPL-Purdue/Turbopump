@@ -50,8 +50,5 @@ def LOXPump():
 
 if __name__ == "__main__":
 	pump = LOXPump()
-	import Pump1D
-	print(Pump1D.GuessInducerlessNPSH_r(pump))
-	print(pump.NPSH_a)
-	print(Pump1D.GetInducerHeadRequirement(pump))
-	#pump.Impeller.PrintDimensionlessParameters()
+	from Design import Design
+	Design(pump)
