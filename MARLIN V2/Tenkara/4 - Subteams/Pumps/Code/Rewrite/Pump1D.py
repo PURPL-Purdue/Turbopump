@@ -38,7 +38,6 @@ def GetActualHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q
 
 def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figure:
 
-
 	f_max = 2	# for flow speed ratio > 2, the emperical correlation has low accuracy
 
 	fig = go.Figure()
