@@ -108,6 +108,8 @@ def MakeDesign(propellant: str='LOX'):
 	pump_meridional.PotentialFlow.Plot().show()
 	pump_meridional.PlotMeridional(color=color[propellant]).show()
 
+	return pump
+
 if __name__ == "__main__":
 	MakeDesign('LOX')
 	MakeDesign('IPA')
