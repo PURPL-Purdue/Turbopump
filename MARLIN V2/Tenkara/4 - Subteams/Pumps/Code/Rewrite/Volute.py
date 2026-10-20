@@ -18,7 +18,8 @@ import math
 import sys
 from pathlib import Path
 #sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
-from Impeller import LOX, IPA, EmpiricalRelations as emp
+import Main #TODO uhhhh talk to @Charlie Zhu
+import EmpiricalRelations as emp
 # Constants
 g = Q_(9.81, 'm/s**2')
 
@@ -45,6 +46,22 @@ def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant 
 def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float], n_volutes: int) -> Q_[float]:  # Get areas as a function of angle
     A = (e / e_sp) * (Q / (n_volutes * avg_V))
     return A
+
+def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[float], Q: Q_[float], Q_bep: Q_[float]) -> Q_[float]:
+    K = 0.36*(1 - (Q.to('gallons per minute') / Q_bep.to('gallons per minute'))**2)
+    radial_thrust = K * H.to('ft') * D2.to('inches') * B2_total.to('inches') * rho.to('lb/ft**3') * g.to('ft/s**2')
+    # [Charlie]: you don't have to convert the units each time, you can just wrap it all in parenthesis and convert once
+    return radial_thrust
+
+lox_pump = Main.CreatePump('LOX')
+radial_thrust = calcRadialThrust(
+    lox_pump.DesignHeadRise,
+    lox_pump.Impeller.d_2,
+    lox_pump.Impeller.b_2,
+    lox_pump.DP.rho,
+    lox_pump.DesignFlowRate,
+    lox_pump.DesignFlowRate
+    )
 
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):

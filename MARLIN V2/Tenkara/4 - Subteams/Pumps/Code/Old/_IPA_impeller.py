@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 
 script_dir = Path(__file__).resolve().parent
-yaml_path = script_dir.parents[1] / "Inputs/Inputs.yaml"	# Pumps/Inputs
+yaml_path = script_dir.parent / "Inputs/Inputs.yaml"	# Pumps/Inputs
 
 with open(yaml_path, "r") as file:
 	inputs = yaml.safe_load(file)

@@ -94,7 +94,7 @@ bisect_count = sim_config["WSR_bisection"]
 # determine stay time for WSR model
 # get density of chamber 
 cea = CEA_Obj(oxName=cea_ox, fuelName=cea_fuel)
-rho_main = cea.get_Chamber_Density(Pc=Pc_main, MR=OF, eps=1) / (12**3)
+rho_main = cea.get_Chamber_Density(Pc=Pc_main, MR=OF, eps=1) / (FT2IN**3)
 cstar = cea.get_Cstar(Pc=Pc_main, MR=OF) * eta_cstar * FT2IN
 At = np.pi * (Dt/2)**2
 Vc = lstar * At
