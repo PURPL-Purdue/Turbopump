@@ -85,7 +85,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 	return fig
 
 if __name__ == '__main__':
-	import ConstructHardware
-	lox_pump = ConstructHardware.LOXPump()
+	import Main
+	lox_pump = Main.LOXPump()
 	#lox_pump.Impeller.OutletVelocityTriangleAtDesign.Plot().show()
 	PlotHQ(lox_pump).show()
