@@ -16,6 +16,12 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	u_2, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q_flow, N_speed)
 	return (u_2 * c_u2).to('kJ/kg')
 
+def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+	return (pump.DP.mass_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+
+def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+	return (GetPowerConsumption(pump, Q_flow, N_speed) / N_speed).to('kN*m')
+
 def GetEulerHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	return (GetSpecificWork(pump, Q_flow, N_speed) / g).to('m')
 
@@ -84,8 +90,32 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	return fig
 
+def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0, blade_blockage_factor: float=0.7) -> Q_:
+
+	"""
+		This method of calculating NPSH_i accounts for inlet velocity and losses.
+		Therefore, when comparing with available NSPH, total pressure should be used for NPSH_a calculation
+		NPSH_i = (lambda_c * 1/2 * c_m^2 + lambda_w * 1/2 * w^2) / g
+
+		The physical intuition for the NPSH coefficients is that if the coefficients were equal to 1,
+		then the drop in static pressure due to suction is merely the dynamic pressure due to
+		acceleration of the flow at the inlet due to inlet area reduction (c_m, merdional velocity)
+		and the acceleration of the flow over and around the blade leading edge (w, relative velocity)
+
+		https://manual.cfturbo.com/en/md_parameters_pumpvent.html
+	"""
+	impeller = pump.Impeller
+	area_1 = (impeller.d_1**2 - impeller.d_hub**2)/4 * np.pi * blade_blockage_factor
+	# assume no preswirl, c_m1 = c_1
+	c_m1 = impeller.DP.Q / area_1
+	u_1 = impeller.DP.N_shaft * impeller.d_1/2
+	w_1: Q_[float] = np.sqrt(c_m1**2 + u_1**2)
+
+	return (1/(2 * g) * (lambda_c * c_m1**2 + lambda_w * w_1**2)).to('m')
+
 if __name__ == '__main__':
 	import Main
 	lox_pump = Main.LOXPump()
 	#lox_pump.Impeller.OutletVelocityTriangleAtDesign.Plot().show()
-	PlotHQ(lox_pump).show()
+	#PlotHQ(lox_pump).show()
+	GuessInducerlessNPSH_r(lox_pump)

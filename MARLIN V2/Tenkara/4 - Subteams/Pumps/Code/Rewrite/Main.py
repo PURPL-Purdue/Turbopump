@@ -38,3 +38,9 @@ def LOXPump():
 			# shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 		)
 	)
+
+if __name__ == "__main__":
+	pump = LOXPump()
+	import Pump1D
+	Pump1D.GuessInducerlessNPSH_r(pump)
+	pump.Impeller.PrintDimensionlessParameters()

@@ -48,17 +48,6 @@ class Impeller:
 		assert geometry.d_1 > geometry.d_hub, 'Inlet diameter must be larger than hub diameter'
 		
 		self.DP: DesignPoint = design_point
-		
-		# imperial specific speed
-		self.n_s: float = (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('gallon/min')) /
-			self.DP.H_rise.to('ft')**0.75
-			).magnitude
-		# metric specific speed
-		self.n_q: float = (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
-			self.DP.H_rise.to('m')**0.75
-			).magnitude
 
 		exit_blockage_area = GetExitBladeBlockage(
 			beta2b=geometry.Beta2B,
@@ -82,15 +71,35 @@ class Impeller:
 			)
 
 		u_2, c_m2, c_u2, w_2 = self.GetOutletVelocities()
+
+		# AKA Flow factor: c / u
+		self.FlowCoefficient: float = (c_m2 / u_2).to('dimensionless').m
 		
 		self.OutletVelocityTriangleAtDesign = VelocityTriangle(
 			u=u_2, c_m=c_m2, c_u=c_u2, w=w_2, beta_b=self.Beta2B, station=2
 			)
 
-		# head coefficient: g*H / u^2 | AKA Stage loading: Δh / u^2
-		self.HeadCoefficient: float = (g * self.DP.H_rise / (u_2**2)).to('dimensionless').m
-		# AKA Flow factor: c / u
-		self.FlowCoefficient: float = (c_m2 / u_2).to('dimensionless').m
+	@property
+	def HeadCoefficient(self):
+		"""head coefficient: g*H / u^2 | AKA Stage loading: Δh / u^2"""
+		u_2 = self.d_2/2 * self.DP.N_shaft
+		return (g * self.DP.H_rise / u_2**2).to('dimensionless').m
+
+	@property
+	def n_s(self) -> float:
+		"""Imperial specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('gallon/min')) /
+			self.DP.H_rise.to('ft')**0.75
+			).m
+
+	@property
+	def n_q(self) -> float:
+		"""Metric specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
+			self.DP.H_rise.to('m')**0.75
+			).magnitude
 
 	def GetOutletVelocities(self, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 		"""
@@ -113,3 +122,13 @@ class Impeller:
 		w_2: Q_[float] = np.sqrt(c_m2**2 + (u_2 - c_u2)**2)
 
 		return u_2, c_m2, c_u2, w_2
+
+	def PrintDimensionlessParameters(self):
+
+		print("\n--- Impeller dimensionless parameters ---")
+		print(f"Specific speed (imperial)   = {self.n_s:.0f}")
+		print(f"Specific speed (metric)     = {self.n_q:.1f}")
+
+		print(f"Slip factor (σ)             = {self.WiesnerSlip:.4f}")
+		print(f"Head coefficient (ψ)        = {self.HeadCoefficient:.4f}")
+		print(f"Flow coefficient (ϕ)        = {self.FlowCoefficient:.4f}")
