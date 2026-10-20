@@ -56,9 +56,9 @@ class InducerRadialEquilibrium:
         # rms = root-mean-square radius sqrt((r_tip^2 + r_hub^2)/2), the radius splitting the annulus into equal areas (Glossary)
         return np.sqrt((self.R_t**2 + self._r_hub(z) ** 2) / 2.0)
 
-    def _beta(self, z, b2):
+    def _beta(self, z, beta2):
         # Parabolic camber distribution, SP-8052 eq. 74 (specified at the rms radius, sec. 3.1.12)
-        return self.beta1 + (b2 - self.beta1) * (z / self.L) ** 2
+        return self.beta1 + (beta2 - self.beta1) * (z / self.L) ** 2
 
     def _dA(self, r, lam, strict=True):
         # Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
@@ -81,13 +81,13 @@ class InducerRadialEquilibrium:
         self._dA(r, lam)
         return lam
 
-    def _lead(self, z, b2):
-        gamma = self._beta(z, b2) - self.alpha1 * (1.0 - z / self.L)
+    def _lead(self, z, beta2):
+        gamma = self._beta(z, beta2) - self.alpha1 * (1.0 - z / self.L)
         lam_sched = self._r_ms(z) * np.tan(gamma)  # eq. 33: lambda = r tan(beta)
         return max(lam_sched, self._lam_flow(z))  # lam below the zero-swirl lead would give negative swirl
 
-    def _C(self, z, b2):
-        lam = self._lead(z, b2)
+    def _C(self, z, beta2):
+        lam = self._lead(z, beta2)
         r = np.linspace(self._r_hub(z), self.R_t, 400)
         dA = self._dA(r, lam)
         # Own derivation: Q = omega*lam*(A0 - C*A1) from eqs. 38-39; SP-8052 eq. 43 is the closed form for a linearly tapered blade
@@ -95,19 +95,23 @@ class InducerRadialEquilibrium:
         A1 = _trapz(dA / (r**2 + lam**2), r)
         return max((A0 - self.Q / (self.omega * lam)) / A1, 0.0)
 
-    def _psi(self, r, z, b2):
+    def _psi(self, r, z, beta2):
         # Eq. 38: psi_l = C/(r^2 + lambda^2), from radial equilibrium (eq. 34) with perfect guidance (eq. 35) and zero loss (eq. 36)
-        return self._C(z, b2) / (np.asarray(r) ** 2 + self._lead(z, b2) ** 2)
+        return self._C(z, beta2) / (np.asarray(r) ** 2 + self._lead(z, beta2) ** 2)
 
-    def _outlet_head(self, b2):
+    def _avg_angular_momentum(self, beta2):
+        # Mass-averaged r c_u at the outlet = angular momentum flux / mass flux; conserved across a torque-free gap
         r = np.linspace(self._r_hub(self.L), self.R_t, 400)
-        lam = self._lead(self.L, b2)
-        psi = self._psi(r, self.L, b2)
+        lam = self._lead(self.L, beta2)
+        psi = self._psi(r, self.L, beta2)
         dA = self._dA(r, lam)
         c_u = psi * r * self.omega  # eq. 40
         c_a = (1.0 - psi) * lam * self.omega  # eq. 39
+        return _trapz(r * c_u * c_a * dA, r) / _trapz(c_a * dA, r)
+    
+    def _outlet_head(self, beta2):
         # Mass-averaged Euler head g*H = omega * <r c_u> (eq. 36 with c_u = 0 at inlet, eq. 47)
-        return self.omega * _trapz(r * c_u * c_a * dA, r) / _trapz(c_a * dA, r)
+        return self.omega * self._avg_angular_momentum(beta2)
 
     def _solve_beta2(self):
         grid = np.linspace(self.beta1, 1.5, 600)
@@ -148,25 +152,29 @@ class InducerRadialEquilibrium:
         psi = self._psi(r_m, z_m, self.beta2)
         return Q_((1.0 - psi) * self._lead(z_m, self.beta2) * self.omega, 'm/s')
 
+    def GetOutletAngularMomentum(self) -> Q_:
+        """Mass-averaged r*c_theta at the outlet; equals g*H_rise / (eta_bl*omega) through the choice of beta2."""
+        return Q_(self._avg_angular_momentum(self.beta2), 'm^2/s')
+
 
 if __name__ == "__main__":
     g = Q_(9.81, 'm/s^2')
-    constraints = InducerInletDesignConstraints(hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=1.0)
-    points = {
-        "LOx": InducerDesignPoint(Q=Q_(1.69, 'L/s'), N=Q_(35000, 'rpm'), NPSH_a=Q_(105.46, 'm'), NPSH_r=Q_(150.0, 'm')),
-        "IPA": InducerDesignPoint(Q=Q_(2.739, 'L/s'), N=Q_(35000, 'rpm'), NPSH_a=Q_(105.46, 'm'), NPSH_r=Q_(150.0, 'm')),
-    }
+    import Main
+    lox_pump = Main.CreatePump('LOX')
+    ipa_pump = Main.CreatePump('IPA')
+    lox_pump.AddInducer(Q_(65, 'm'))
+    ipa_pump.AddInducer(Q_(80, 'm'))
+    
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    for ax, inducer in zip(axes, (lox_pump.Inducer, ipa_pump.Inducer)):
 
-    fig, axes = plt.subplots(1, len(points), figsize=(12, 5), sharey=True)
-    for ax, (name, dp) in zip(axes, points.items()):
-        inducer = Inducer(dp, constraints, g=g)
         eq = InducerRadialEquilibrium(inducer, incidence_ratio=None, blade_number=3, blade_thickness=Q_(0.5, 'mm')) # Assuming 3 blades with 0.5 mm constant thickness
-        print(f"{name}: beta1 = {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
+        print(f"beta1 = {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
         for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
             z = inducer.L_ax * frac
             r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)
             ax.plot(r * 1e3, eq.c_theta(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
-        ax.set_title(name)
+        ax.set_title("Uhhh inducer?")
         ax.set_xlabel("r [mm]")
         ax.grid(True, linestyle='--', alpha=0.5)
         ax.legend()
