@@ -107,7 +107,6 @@ class Impeller:
 		c_m2 = (Q_flow / self.Area2).to('m/s')
 
 		c_u2_ideal: Q_[float] = u_2 - c_m2 / np.tan(self.Beta2B.to('rad').m)
-		print(c_u2_ideal)
 		# Wiesner slip = 1 - (c_u2_ideal - c_u2)/u_2
 		# https://manual.cfturbo.com/en/bl_te_aungier.html
 		c_u2 = c_u2_ideal - u_2*(1 - self.WiesnerSlip)

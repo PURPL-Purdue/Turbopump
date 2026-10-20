@@ -13,7 +13,6 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	# H = [u_2 * c_u2] / g		(station 2 denotes impeller outlet)
 	if Q_flow is None: Q_flow = pump.DesignFlowRate
 	if N_speed is None: N_speed = pump.DP.N_shaft
-	print(Q_flow, N_speed)
 	u_2, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q_flow, N_speed)
 	return (u_2 * c_u2).to('kJ/kg')
 
@@ -40,19 +39,20 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	for i in range(rpm_sweeps):
 		rpm = pump.DP.N_shaft - Q_(i * rpm_step_down, 'rpm')
+		# DNE flowrate, such that empirical flow speed ratio < 2
 		Q_sweep_max = (rpm / pump.DP.N_shaft * f_max * pump.DesignFlowRate).to('L/s')
+
 		flow_sweep = Q_(np.linspace(0, Q_sweep_max.m), 'L/s')
 		head_sweep = GetActualHeadRise(pump, flow_sweep, rpm)
+
 		fig.add_trace(go.Scatter(
 			x=flow_sweep.m, y=head_sweep.m,
 			mode='lines', name='Headrise prediction (empirical correlation)', showlegend=False
 		))
 
 		fig.add_annotation(
-			x=Q_sweep_max.m, y=head_sweep[len(head_sweep)-1].m,
-			text=f"{rpm.m:d} RPM",
-			showarrow=False, xshift=40, yshift=0,
-			font=dict(size=10)
+			x=Q_sweep_max.m, y=head_sweep[len(head_sweep)-1].m, text=f"{rpm.m:d} RPM",
+			showarrow=False, xshift=40, yshift=0, font=dict(size=12)
 		)
 
 	Q_euler_max = pump.DesignFlowRate.to('L/s') * f_max
