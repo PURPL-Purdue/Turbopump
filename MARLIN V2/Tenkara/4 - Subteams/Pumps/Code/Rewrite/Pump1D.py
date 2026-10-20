@@ -117,7 +117,7 @@ def GetInducerHeadRequirement(pump: Pump) -> Q_:
 	difference = (no_inducer_NPSH_r - pump.NPSH_a).to('m')
 	# round to the nearest 5 m
 	# this is to prevent the inducer requirements from changing too much with small changes in design point
-	return Q_(5 * round(difference.m / 5), 'm')
+	return Q_(5 * round(difference.m / 5 + 0.5), 'm')
 
 if __name__ == '__main__':
 	import Main
