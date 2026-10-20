@@ -61,8 +61,8 @@ print(f"Inlet flow velocity         = {(lox_imp.DP.Q / lox_imp.Area1).to('m/s'):
 # Inducer
 
 def dothething():
-    # lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
-
+    #lox_imp.PlotPerformanceHQ(Q_([20000, 25000, 30000, 35000], 'rpm'))
+    lox_imp.GetVelocities(2, 0.5).Plot().show()
     # #lox_imp.SweepInletDiam()
 
     # lox_imp.PlotMeridional(color='blue')
@@ -72,10 +72,10 @@ def dothething():
     # #lox_imp.GetVelocities(station=1).Plot().show()
     # lox_imp.SweepVelocities().show()
 
-    lox_inducer = lox_pump.Inducer
-    print_parameters(lox_inducer, 'LOX')
-    #lox_inducer.PlotMeridional(name='LOX Inducer')
-    lox_inducer.PlotSwirl(name='LOX Inducer')
-    lox_inducer.PlotC_m()
+    # lox_inducer = lox_pump.Inducer
+    # print_parameters(lox_inducer, 'LOX')
+    # #lox_inducer.PlotMeridional(name='LOX Inducer')
+    # lox_inducer.PlotSwirl(name='LOX Inducer')
+    # lox_inducer.PlotC_m()
 
 dothething()
