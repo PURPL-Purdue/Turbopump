@@ -112,6 +112,13 @@ def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0,
 
 	return (1/(2 * g) * (lambda_c * c_m1**2 + lambda_w * w_1**2)).to('m')
 
+def GetInducerHeadRequirement(pump: Pump) -> Q_:
+	no_inducer_NPSH_r: Q_[float] = GuessInducerlessNPSH_r(pump)
+	difference = (no_inducer_NPSH_r - pump.NPSH_a).to('m')
+	# round to the nearest 5 m
+	# this is to prevent the inducer requirements from changing too much with small changes in design point
+	return Q_(5 * round(difference.m / 5), 'm')
+
 if __name__ == '__main__':
 	import Main
 	lox_pump = Main.LOXPump()

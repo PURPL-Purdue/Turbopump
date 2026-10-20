@@ -8,6 +8,7 @@ g = Q_(9.81, 'm/s^2')
 class PumpDesignPoint:
 	feed_pressure: Q_[float]			# feed pressure (tank pressure)
 	discharge_pressure: Q_[float]		# desired outlet pressure
+	inlet_vapor_pressure: Q_[float]		# vapor pressure of the working fluid at the inlet
 	N_shaft: Q_[float]					# shaft spin speed
 	mass_flow: Q_[float]				# mass flow rate (strictly speaking inlet, should be almost equal to outlet)
 	rho: Q_[float]						# average fluid density
@@ -28,3 +29,5 @@ class Pump:
 				H_rise=self.DesignHeadRise # initial
 			)
 		)
+
+		self.NPSH_a = ((design_point.feed_pressure - design_point.inlet_vapor_pressure) / design_point.rho / g).to('m')

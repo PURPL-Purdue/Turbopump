@@ -12,14 +12,23 @@ from Inputs import Inputs
 
 #print(Inputs)
 
+atm_pressure = Q_(1, 'atm').to('Pa')
+
 def LOXPump():
+
+	# LO2 is initially saturated at atmospheric pressure and then later pressurized
+	# It can be assumed that the temperature of LO2 after tank pressurization is approximately equal to the saturation temperature before pressurization
+	lox_temp = CP.PropsSI('T', 'P', atm_pressure.m, 'Q', 0, 'O2')
+	lox_vapor_pressure = Q_(CP.PropsSI('P', 'T', lox_temp, 'Q', 0, 'O2'), 'Pa')
+
 	return Pump.Pump(
 		design_point=Pump.PumpDesignPoint(
 			feed_pressure=Inputs['LOX']['feed_pressure'],
 			discharge_pressure=Inputs['LOX']['discharge_pressure'],
 			mass_flow=Inputs['LOX']['mass_flow'],
 			N_shaft=Inputs['N_shaft'],
-			rho=Q_(1146, 'kg/m^3')
+			rho=Q_(1146, 'kg/m^3'),
+			inlet_vapor_pressure=lox_vapor_pressure
 		),
 
 		impeller_geometry=Impeller.InputGeometry(
@@ -42,5 +51,7 @@ def LOXPump():
 if __name__ == "__main__":
 	pump = LOXPump()
 	import Pump1D
-	Pump1D.GuessInducerlessNPSH_r(pump)
-	pump.Impeller.PrintDimensionlessParameters()
+	print(Pump1D.GuessInducerlessNPSH_r(pump))
+	print(pump.NPSH_a)
+	print(Pump1D.GetInducerHeadRequirement(pump))
+	#pump.Impeller.PrintDimensionlessParameters()
