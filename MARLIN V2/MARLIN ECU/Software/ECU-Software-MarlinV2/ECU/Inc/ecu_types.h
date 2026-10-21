@@ -9,6 +9,9 @@
 /* Period of the control task loop. */
 #define CONTROL_PERIOD_MS 1U
 
+/* Minimum time between frames sent to telemetry. */
+#define TELEMETRY_PERIOD_MS 5U
+
 typedef enum
 {
   ECU_STATE_STANDBY = 0,
@@ -24,15 +27,15 @@ typedef enum
  */
 typedef enum
 {
-  //all placeholder, will put full amout of valves and igniters later
+  //all placeholder, will put full amout of valves and solenoids later
   ACT_VALVE_0 = 0,
   ACT_VALVE_1,
   ACT_VALVE_2,
   ACT_VALVE_3,
   ACT_VALVE_4,
   ACT_VALVE_5,
-  ACT_IGNITER_0,
-  ACT_IGNITER_1,
+  ACT_VALVE_6,
+  ACT_VALVE_7,
   ACT_COUNT
 } actuator_id_t;
 
@@ -56,11 +59,6 @@ typedef struct
 {
   uint16_t out[ACT_COUNT];
 } ecu_command_t;
-
-/* Each bit is one fault; zero means no fault. */
-typedef uint32_t fault_flags_t;
-
-#define FAULT_NONE 0U
 
 /* Snapshot of every sensor's value for one control cycle. */
 typedef struct
@@ -89,7 +87,6 @@ typedef struct
   ecu_state_t state;
   float sensor_value[SNS_COUNT];      /* Engineering units. */
   uint16_t actuator_value[ACT_COUNT]; /* Commanded value. */
-  float actuator_position[ACT_COUNT]; /* Measured position feedback. */
   /* TODO: further fields TBD. */
 } ecu_outbound_frame_t;
 

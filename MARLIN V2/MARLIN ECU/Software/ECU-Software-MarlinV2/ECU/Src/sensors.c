@@ -5,7 +5,10 @@
  * without exposing those hardware details to the control task.
  */
 
-/* PLACEHOLDER properties until the instrumentation list is final. */
+/*
+ * PLACEHOLDER properties until the instrumentation list is final.  Hardware
+ * binding fields (cs_port, cs_pin) are left NULL/0 for now.
+ */
 static sensor_t sensors[SNS_COUNT] = {
   [SNS_PT_0] = { .type = SENSOR_TYPE_PRESSURE,    .channel = 0U, .scale = 1.0f },
   [SNS_PT_1] = { .type = SENSOR_TYPE_PRESSURE,    .channel = 1U, .scale = 1.0f },
@@ -17,7 +20,7 @@ static sensor_t sensors[SNS_COUNT] = {
 
 void Sensors_Initialize(void)
 {
-  /* TODO: configure sensor peripherals. */
+  /* TODO: configure each sensors[i] cs_port/cs_pin and peripheral. */
 }
 
 void Sensors_StartDma(void)

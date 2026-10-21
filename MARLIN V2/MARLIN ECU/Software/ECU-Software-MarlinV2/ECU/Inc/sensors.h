@@ -3,6 +3,7 @@
 
 /* Sensor acquisition interface; hardware details belong in sensors.c. */
 #include "ecu_types.h"
+#include "stm32h7xx_hal.h"
 
 typedef enum
 {
@@ -11,21 +12,28 @@ typedef enum
   SENSOR_TYPE_TEMPERATURE
 } sensor_type_t;
 
-/* One sensor: its properties plus its latest reading. */
+/* One sensor: its properties, hardware binding and latest reading. */
 typedef struct
 {
   sensor_type_t type;
+
+  /* Hardware binding, unassigned (NULL/0) until the pinout is final.  Add the
+   * ADC/SPI handle pointer once that peripheral is enabled in CubeMX. */
+  GPIO_TypeDef *cs_port; /* External ADC chip select.          */
+  uint16_t cs_pin;
   uint8_t channel;   /* ADC/SPI channel, placeholder.      */
   float scale;       /* value = raw * scale + offset.      */
   float offset;
   float min_valid;   /* Plausibility range.                */
   float max_valid;
+  float redline;     /* Fault limit, TBD; unset (0) for now. */
   uint32_t raw;      /* Last raw reading.                  */
   float value;       /* Last converted value.              */
   bool valid;
 } sensor_t;
 
-/* Prepare sensor peripherals. */
+/* Configure each sensor's hardware from its table entry.  The sensor objects
+ * themselves are static (sensors.c). */
 void Sensors_Initialize(void);
 
 /* Start or configure the future DMA acquisition path. */

@@ -5,10 +5,14 @@
  * consume the result instead of knowing individual safety thresholds. The valid
  * redlines can differ by ECU state, so the current state is a required input.
  */
-fault_flags_t FailureMonitor_Evaluate(const sensor_data_t *sensors,
-                                      ecu_state_t current_state)
+bool FailureMonitor_Evaluate(const sensor_data_t *sensors,
+                             ecu_state_t current_state)
 {
   (void)sensors;
   (void)current_state;
-  return FAULT_NONE;
+  /* TODO: redline checks per state.
+   * TODO: noise / bad-reading handling - use sensors->valid[] and decide how
+   * many bad or out-of-range readings (consecutive or within a window) count
+   * as a FAULT, rather than tripping on a single noisy sample. */
+  return false;
 }

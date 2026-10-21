@@ -4,8 +4,8 @@
 /* Safety evaluation interface; no limits are defined in this skeleton. */
 #include "ecu_types.h"
 
-/* Evaluate a sample and return the sensor faults active for this ECU state. */
-fault_flags_t FailureMonitor_Evaluate(const sensor_data_t *sensors,
-                                      ecu_state_t current_state);
+/* True if the sample breaks a limit for this ECU state. */
+bool FailureMonitor_Evaluate(const sensor_data_t *sensors,
+                             ecu_state_t current_state);
 
 #endif

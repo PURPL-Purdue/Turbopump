@@ -23,12 +23,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "actuators.h"
 #include "app_tasks.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef StaticTask_t osStaticThreadDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -49,16 +49,26 @@ COM_InitTypeDef BspCOMInit;
 
 /* Definitions for controlTask */
 osThreadId_t controlTaskHandle;
+uint32_t controlTaskBuffer[ 1024 ];
+osStaticThreadDef_t controlTaskControlBlock;
 const osThreadAttr_t controlTask_attributes = {
   .name = "controlTask",
-  .stack_size = 1024 * 4,
+  .cb_mem = &controlTaskControlBlock,
+  .cb_size = sizeof(controlTaskControlBlock),
+  .stack_mem = &controlTaskBuffer[0],
+  .stack_size = sizeof(controlTaskBuffer),
   .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for telemetryTask */
 osThreadId_t telemetryTaskHandle;
+uint32_t telemetryTaskBuffer[ 512 ];
+osStaticThreadDef_t telemetryTaskControlBlock;
 const osThreadAttr_t telemetryTask_attributes = {
   .name = "telemetryTask",
-  .stack_size = 512 * 4,
+  .cb_mem = &telemetryTaskControlBlock,
+  .cb_size = sizeof(telemetryTaskControlBlock),
+  .stack_mem = &telemetryTaskBuffer[0],
+  .stack_size = sizeof(telemetryTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 /* USER CODE BEGIN PV */
@@ -331,7 +341,6 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  Actuators_ForceSafe();
   while (1)
   {
   }

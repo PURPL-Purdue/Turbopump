@@ -5,6 +5,9 @@
  * The autosequencer is a list of steps.  Each step holds its outputs until its
  * exit conditions are met (values that must be reached), then the sequence
  * advances to the next step.  Steps are not tied to a fixed time.
+ *
+ * There is one sequence.  It is split into sections (e.g. main, fault), each a
+ * range of steps; the control logic jumps between them.
  */
 
 #include <stdbool.h>
@@ -24,9 +27,8 @@ typedef struct
   uint32_t length;
 } autosequencer_table_t;
 
-/* The tables themselves (autosequencer_table.c). */
-extern const autosequencer_table_t autosequencer_main_sequence;
-extern const autosequencer_table_t autosequencer_fault_sequence;
+/* The sequence itself (autosequencer_table.c). */
+extern const autosequencer_table_t autosequencer_sequence;
 
 /* Step `index` of the table, or NULL once past the end. */
 const autosequencer_step_t *Autosequencer_GetStep(const autosequencer_table_t *table,

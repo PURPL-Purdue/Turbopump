@@ -2,12 +2,15 @@
 #define CONTROL_STATE_MACHINE_H
 
 /*
- * ECU state machine.  Each control cycle the control task:
- *   1. passes every waiting inbound frame to HandleCommand(),
- *   2. calls Update() once with this cycle's sensors and faults,
- *   3. sends machine.output_command to the actuators.
+ * ECU state machine.  Called by the control task each cycle (app_tasks.c):
+ *   - StartSequence() when Mission Control requests a start,
+ *   - ClearFault() when Mission Control requests FAULT -> STANDBY,
+ *   - Fault() when the fault logic trips (callable at any point; the FAULT
+ *     state persists, so a fault raised late in one cycle holds into the next),
+ *   - then Update() runs the active state and sets output_command,
+ * then output_command goes to the actuators.
  *
- * Control logic not defined yet.
+ * Control logic not defined yet.  Only STANDBY has been designed.
  */
 
 #include <stdbool.h>
@@ -18,27 +21,38 @@
 typedef struct
 {
   ecu_state_t state;
-  uint32_t step_index;              /* Active step of the running sequence.   */
+  ecu_state_t previous_state;       /* State on the last Update(); a change
+                                     * means this cycle is the state's entry. */
+  uint32_t step_index;              /* Active step of the sequence.           */
 
-  const autosequencer_table_t *main_table;
-  const autosequencer_table_t *fault_table;
+  const autosequencer_table_t *sequence;
 
   ecu_command_t output_command;     /* What goes to the actuators this cycle. */
-  fault_flags_t faults;             /* Faults seen this cycle.                */
 } control_state_machine_t;
 
-/* Enter STANDBY with every output off. */
+/* Start in STANDBY. */
 void ControlStateMachine_Initialize(control_state_machine_t *machine,
-                                    const autosequencer_table_t *main_table,
-                                    const autosequencer_table_t *fault_table);
+                                    const autosequencer_table_t *sequence);
 
-/* Take in one inbound frame from Mission Control. */
-void ControlStateMachine_HandleCommand(control_state_machine_t *machine,
-                                       const ecu_inbound_frame_t *frame);
+/*
+ * Requests.  Each only sets the next state; Update() runs that state's entry
+ * actions on its first cycle there.
+ */
 
-/* Run one control cycle. */
+/* Move to STARTUP.  Ignored outside STANDBY. */
+void ControlStateMachine_StartSequence(control_state_machine_t *machine);
+
+/* Move to FAULT.  Safe to call every cycle a fault is present: already being
+ * in FAULT is not a new entry, so the fault section is not restarted. */
+void ControlStateMachine_Fault(control_state_machine_t *machine);
+
+/* Return from FAULT to STANDBY on Mission Control's command.  Ignored
+ * outside FAULT. */
+void ControlStateMachine_ClearFault(control_state_machine_t *machine);
+
+/* Run the active state: its entry actions on the first cycle there, then
+ * its per-cycle work (e.g. advance the autosequence) and set output_command. */
 void ControlStateMachine_Update(control_state_machine_t *machine,
-                                const sensor_data_t *sensors,
-                                fault_flags_t faults);
+                                const sensor_data_t *sensors);
 
 #endif

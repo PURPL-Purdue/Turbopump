@@ -12,4 +12,8 @@
 /* Prepare the receive transport. */
 void ExternalInput_Initialize(void);
 
+/* Check the receive buffers for new frames and submit each one.  Polled from
+ * the telemetry task; no receive interrupt. */
+void ExternalInput_Poll(void);
+
 #endif
