@@ -16,8 +16,12 @@ def main():
     H_Diameter = get_float("Enter hub diameter (H_Diameter): ")
     T_Diameter = get_float("Enter tip diameter (T_Diameter): ")
     Blade_Angle = get_float("Enter blade angle in degrees (Blade_Angle): ")
- 
+    Incidence_Angle = get_float("Enter incidence angle in degrees (Incidence_Angle): ")
+    Fluid_Vel_Blade_Tip_I = get_float("Enter fluid velocity at blade tip (inlet) (Fluid_Vel_Blade_Tip_I): ")
+    Fluid_Vel_Blade_O = get_float("Enter fluid velocity at blade outlet (Fluid_Vel_Blade_O): ")
+
     Blade_Angle_rad = np.deg2rad(Blade_Angle)
+    Incidence_Angle_rad = np.deg2rad(Incidence_Angle) 
  
     # ---------------- Parameters ----------------
     H_Radius = H_Diameter / 2
@@ -32,12 +36,16 @@ def main():
     Chord_Length = Cascade_Solidity * Blade_Spacing #SP 8052
     Blade_Axial_Length = Cascade_Solidity * Blade_Lead #SP 8052
     Axial_Clearance = Blade_Axial_Length / Cascade_Solidity #SP 8052
+    Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (Fluid_Vel_Blade_Tip_I - Fluid_Vel_Blade_O))  #SP 8052
+    Min_Blade_Thickness = 0.01 * Blade_Max_Thickness  # Assuming a minimum thickness of 1% of the maximum thickness for structural integrity
+    Linear_Taper_Rate = (Blade_Max_Thickness - Min_Blade_Thickness) / (T_Radius - H_Radius)  # Linear taper rate from hub to tip
  
     # ---------------- Display ----------------
     print("\n=========== Parameters ===========")
     print(f"H_Diameter         = {H_Diameter}")
     print(f"T_Diameter         = {T_Diameter}")
     print(f"Blade_Angle        = {Blade_Angle} deg ({Blade_Angle_rad:.4f} rad)")
+    print(f"Incidence_Angle    = {Incidence_Angle} deg ({Incidence_Angle_rad:.4f} rad)")
     print(f"H_Radius           = {H_Radius}")
     print(f"T_Radius           = {T_Radius}")
     print(f"Cascade_Solidity   = {Cascade_Solidity}")
@@ -48,6 +56,9 @@ def main():
     print(f"Blade_Lead         : min {Blade_Lead.min():.4f}, max {Blade_Lead.max():.4f}")
     print(f"Blade_Axial_Length : min {Blade_Axial_Length.min():.4f}, max {Blade_Axial_Length.max():.4f}")
     print(f"Axial_Clearance    : min {Axial_Clearance.min():.4f}, max {Axial_Clearance.max():.4f}")
+    print(f"Blade_Max_Thickness: min {Blade_Max_Thickness.min():.4f}, max {Blade_Max_Thickness.max():.4f}")
+    print(f"Min_Blade_Thickness: min {Min_Blade_Thickness.min():.4f}, max {Min_Blade_Thickness.max():.4f}")
+    print(f"Linear_Taper_Rate  : min {Linear_Taper_Rate.min():.4f}, max {Linear_Taper_Rate.max():.4f}")
     print("==================================\n")
  
     # ---------------- Plots ----------------
