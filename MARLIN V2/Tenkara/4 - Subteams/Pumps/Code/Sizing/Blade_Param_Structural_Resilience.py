@@ -36,7 +36,7 @@ def main():
     Chord_Length = Cascade_Solidity * Blade_Spacing #SP 8052
     Blade_Axial_Length = Cascade_Solidity * Blade_Lead #SP 8052
     Axial_Clearance = Blade_Axial_Length / Cascade_Solidity #SP 8052
-    Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (Fluid_Vel_Blade_Tip_I - Fluid_Vel_Blade_O))  #SP 8052
+    Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (Fluid_Vel_Blade_Tip_I - Fluid_Vel_Blade_O) * np.sin(Incidence_Angle_rad))  #SP 8052
     Min_Blade_Thickness = 0.01 * Blade_Max_Thickness  # Assuming a minimum thickness of 1% of the maximum thickness for structural integrity
     Linear_Taper_Rate = (Blade_Max_Thickness - Min_Blade_Thickness) / (T_Radius - H_Radius)  # Linear taper rate from hub to tip
  
