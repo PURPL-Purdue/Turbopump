@@ -21,11 +21,6 @@ class MeridionalGeometry:
 class MeridionalDesign:
 
 	def __init__(self, pump: Pump, geometry: MeridionalGeometry=MeridionalGeometry()):
-			# shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0, taper_ratio: float = 0.3,
-			# shroud_fullness: tuple[float, float] = (1, 0.3),
-			# hub_fullness: tuple[float, float] = (0.5, 0.7),
-			# shroud_outlet_angle: Q_[float] = Q_(5, 'deg'),
-			# hub_outlet_angle: Q_[float] = Q_(0, 'deg')):
 		"""
 			Shroud: inlet radius d_1/2 -> outlet at (Z_e, d_2/2)
 			Hub: inlet radius d_hub/2 -> outlet at (Z_e + b_2, d_2/2)
