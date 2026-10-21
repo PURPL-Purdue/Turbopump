@@ -29,17 +29,19 @@ def main():
  
     r = np.linspace(H_Radius, T_Radius, 500)  
  
-    Blade_Lead = 2 * np.pi * r * np.tan(Blade_Angle_rad) #SP 8052
+    Blade_Lead = r * np.tan(Blade_Angle_rad) #SP 8052
     Cascade_Solidity = 2.5 #SP 8052
     Blade_Num = 3 #Investigation of Inducer Geometry Variations on Centrifugal Pump Hydraulic Performance: Numerical Approach
-    Blade_Spacing = (np.pi * H_Diameter)/(Blade_Num * np.sin(Blade_Angle_rad))  #SP 8052
+    Blade_Spacing = (np.pi * T_Diameter) / Blade_Num  #SP 8052
     Chord_Length = Cascade_Solidity * Blade_Spacing #SP 8052
     Blade_Axial_Length = Cascade_Solidity * Blade_Lead #SP 8052
     Axial_Clearance = Blade_Axial_Length / Cascade_Solidity #SP 8052
     Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (Fluid_Vel_Blade_Tip_I - Fluid_Vel_Blade_O) * np.sin(Incidence_Angle_rad))  #SP 8052
     Min_Blade_Thickness = 0.01 * Blade_Max_Thickness  # Assuming a minimum thickness of 1% of the maximum thickness for structural integrity
     Linear_Taper_Rate = (Blade_Max_Thickness - Min_Blade_Thickness) / (T_Radius - H_Radius)  # Linear taper rate from hub to tip
- 
+    Local_Thickness = Blade_Max_Thickness - Linear_Taper_Rate * r  # Local thickness along the blade span
+    intercept = Blade_Max_Thickness + Linear_Taper_Rate * H_Radius  # Intercept for the linear thickness equation
+
     # ---------------- Display ----------------
     print("\n=========== Parameters ===========")
     print(f"H_Diameter         = {H_Diameter}")
@@ -59,10 +61,12 @@ def main():
     print(f"Blade_Max_Thickness: min {Blade_Max_Thickness.min():.4f}, max {Blade_Max_Thickness.max():.4f}")
     print(f"Min_Blade_Thickness: min {Min_Blade_Thickness.min():.4f}, max {Min_Blade_Thickness.max():.4f}")
     print(f"Linear_Taper_Rate  : min {Linear_Taper_Rate.min():.4f}, max {Linear_Taper_Rate.max():.4f}")
+    print(f"Local_Thickness    : min {Local_Thickness.min():.4f}, max {Local_Thickness.max():.4f}")
+    print(f"intercept          : min {intercept.min():.4f}, max {intercept.max():.4f}")
     print("==================================\n")
  
     # ---------------- Plots ----------------
-    fig, axes = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
  
     # Chord length is a single value, so draw it as a constant line across the radius
     axes[0].plot(r, np.full_like(r, Chord_Length), color="tab:blue")
@@ -77,7 +81,14 @@ def main():
     axes[2].set_ylabel("Blade Axial Length")
     axes[2].set_xlabel("Radius, r")
     axes[2].set_title("Blade Axial Length vs Radius")
- 
+
+    axes[3].plot(r, Local_Thickness, color="tab:red")
+    axes[3].set_ylabel("Local Thickness")
+    axes[3].set_title("Local Thickness vs Radius")
+    axes[3].set_xlabel("Radius, r")
+    axes[3].set_ylabel("Local Thickness")
+    axes[3].set_title("Local Thickness vs Radius")
+
     for ax in axes:
         ax.grid(True)
  
