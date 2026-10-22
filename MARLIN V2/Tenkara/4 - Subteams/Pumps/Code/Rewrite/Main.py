@@ -3,7 +3,6 @@ from pint import Quantity as Q_
 import Pump
 import Impeller
 import Inducer
-from InducerRadialEquilibrium import InducerRadialEquilibrium
 from CoolProp import CoolProp as CP
 import MeridionalDesign
 import Pump1D
@@ -99,7 +98,7 @@ def MakeDesign(propellant: str='LOX'):
 
 	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
-
+	from InducerRadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	#print(inducer_eq.GetOutletAngularMomentum())
@@ -109,6 +108,10 @@ def MakeDesign(propellant: str='LOX'):
 	pump_meridional.PotentialFlow.Plot()#.show()
 	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
+	from ImpellerBladeDesign import ImpellerBladeDesign
+
+	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
+	
 	return pump
 
 if __name__ == "__main__":
