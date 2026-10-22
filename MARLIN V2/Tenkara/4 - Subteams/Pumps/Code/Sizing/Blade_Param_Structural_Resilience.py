@@ -39,8 +39,9 @@ def main():
     Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (Fluid_Vel_Blade_Tip_I - Fluid_Vel_Blade_O) * np.sin(Incidence_Angle_rad))  #SP 8052
     Min_Blade_Thickness = 0.01 * Blade_Max_Thickness  # Assuming a minimum thickness of 1% of the maximum thickness for structural integrity
     Linear_Taper_Rate = (Blade_Max_Thickness - Min_Blade_Thickness) / (T_Radius - H_Radius)  # Linear taper rate from hub to tip
-    Local_Thickness = Blade_Max_Thickness - Linear_Taper_Rate * r  # Local thickness along the blade span
     intercept = Blade_Max_Thickness + Linear_Taper_Rate * H_Radius  # Intercept for the linear thickness equation
+    Local_Thickness = intercept - (Linear_Taper_Rate * r)  # Local thickness along the blade span
+    
 
     # ---------------- Display ----------------
     print("\n=========== Parameters ===========")
