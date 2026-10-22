@@ -15,7 +15,7 @@ class InputGeometry:
 	d_1: Q_[float]			# impeller inlet diameter
 	d_2: Q_[float]			# impeller outlet diameter
 	b_2: Q_[float]			# impeller outlet height
-	thk2: Q_[float]			# blade thickness at exit
+	blade_thick: Q_[float]			# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
 
 	# shroud_fullness: tuple[float, float] = (1, 0.3)
@@ -50,7 +50,7 @@ class Impeller:
 		exit_blockage_area = GetExitBladeBlockage(
 			beta2b=geometry.Beta2B,
 			Z=geometry.Z_blade,
-			thick=geometry.thk2,
+			thick=geometry.blade_thick,
 			b2=geometry.b_2
 		)
 		self.Area2: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2) - exit_blockage_area
@@ -61,7 +61,7 @@ class Impeller:
 		self.d_1 = geometry.d_1
 		self.d_2 = geometry.d_2
 		self.b_2 = geometry.b_2
-		self.thk2 = geometry.thk2
+		self.blade_thick = geometry.blade_thick
 		self.d_hub = geometry.d_hub
 		self.WiesnerSlip: float = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
 
