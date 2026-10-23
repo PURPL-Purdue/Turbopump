@@ -87,17 +87,17 @@ class Impeller:
 	def n_s(self) -> float:
 		"""Imperial specific speed"""
 		return (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('gallon/min')) /
-			self.DP.H_rise.to('ft')**0.75
-			).m
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DP.Q.to('gallon/min').m) /
+			self.DP.H_rise.to('ft').m**0.75
+			)
 
 	@property
 	def n_q(self) -> float:
 		"""Metric specific speed"""
 		return (
-			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
-			self.DP.H_rise.to('m')**0.75
-			).magnitude
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DP.Q.to('m^3/s').m) /
+			self.DP.H_rise.to('m').m**0.75
+			)
 
 	def PlotOutletVelocities(self) -> go.Figure:
 		return PlotTriangles(

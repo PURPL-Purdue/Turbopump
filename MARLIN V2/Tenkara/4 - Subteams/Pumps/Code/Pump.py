@@ -1,5 +1,6 @@
 import Impeller
 import Inducer
+import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 
@@ -39,4 +40,20 @@ class Pump:
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
 				)
 		)
+
+	@property
+	def n_s(self) -> float:
+		"""Imperial specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DesignFlowRate.to('gallon/min').m) /
+			self.DesignHeadRise.to('ft').m**0.75
+			)
+
+	@property
+	def n_q(self) -> float:
+		"""Metric specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DesignFlowRate.to('m^3/s').m) /
+			self.DesignHeadRise.to('m').m**0.75
+			)
 		
