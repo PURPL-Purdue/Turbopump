@@ -3,7 +3,6 @@ from pint import Quantity as Q_
 import Pump
 import Impeller
 import Inducer
-from InducerRadialEquilibrium import InducerRadialEquilibrium
 from CoolProp import CoolProp as CP
 import MeridionalDesign
 import Pump1D
@@ -25,7 +24,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.07, 'in'),			# impeller outlet height
-		thk2 = Q_(0.04, 'in'),			# blade thickness at exit
+		blade_thick = Q_(0.04, 'in'),			# blade thickness at exit
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
@@ -36,7 +35,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.08, 'in'),			# impeller outlet height
-		thk2 = Q_(0.04, 'in'),			# blade thickness at exit
+		blade_thick = Q_(0.04, 'in'),			# blade thickness at exit
 		d_hub=Q_(0.7, 'in'),			# hub diameter
 	)
 }
@@ -92,25 +91,29 @@ def CreatePump(propellant: str='LOX'):
 def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
 
-	Pump1D.PlotHQ(pump)#.show()
+	Pump1D.PlotHQ(pump).show()
 
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
 
 	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
-
+	from InducerRadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	pump.Impeller.PrintDimensionlessParameters()
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	pump_meridional.PotentialFlow.Plot()#.show()
-	pump_meridional.PlotMeridional(color=color[propellant])#.show()
+	#pump_meridional.PotentialFlow.Plot().show()
+	pump_meridional.PlotMeridional(color=color[propellant]).show()
+
+	from ImpellerBladeDesign import ImpellerBladeDesign
+
+	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
 
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	MakeDesign('IPA')
+	#MakeDesign('IPA')

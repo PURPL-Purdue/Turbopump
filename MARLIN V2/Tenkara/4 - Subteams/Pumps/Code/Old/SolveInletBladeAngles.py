@@ -10,7 +10,7 @@ def _tau_1(impeller: Impeller, Beta1B: Q_[np.ndarray]) -> np.ndarray:
 	rho_1 = .8 # initial guess
 	Beta1B_prime = np.atan(np.tan(Beta1B) / rho_1)
 	for _ in range(50):
-		rho_1: Q_ = 1 - impeller.Z_blade * impeller.thk2 / (np.pi * impeller.d_hub * np.sin(Beta1B_prime.to('rad').m) * np.sin(impeller.lambdaLE.to('rad').m))
+		rho_1: Q_ = 1 - impeller.Z_blade * impeller.blade_thick / (np.pi * impeller.d_hub * np.sin(Beta1B_prime.to('rad').m) * np.sin(impeller.lambdaLE.to('rad').m))
 		Beta1B_prime = np.atan(np.tan(Beta1B_prime) / rho_1)
 		print(Beta1B_prime.to('deg'))
 		print(rho_1)

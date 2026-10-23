@@ -37,7 +37,7 @@ lox_geometry: InputGeometry = InputGeometry(
 	d_1 = Q_(1, 'in'),				# impeller inlet diameter
 	d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 	b_2 = Q_(0.07, 'in'),			# impeller outlet height
-	thk2 = Q_(0.04, 'in'),			# blade thickness at exit
+	blade_thick = Q_(0.04, 'in'),			# blade thickness at exit
 	d_hub=Q_(0.6, 'in'),			# hub diameter
 	
 	Z_e_factor = 1.5,				# axial length extension factor, modifying Gulich formula
