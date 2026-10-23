@@ -5,11 +5,10 @@ import Impeller
 import Inducer
 from CoolProp import CoolProp as CP
 import MeridionalDesign
-import Pump1D
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Inputs package imports when run directly
+sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
 
 #print(Inputs)
@@ -90,8 +89,9 @@ def CreatePump(propellant: str='LOX'):
 
 def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
-
-	Pump1D.PlotHQ(pump).show()
+	
+	import Pump1D
+	Pump1D.PlotHQ(pump)#.show()
 
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
@@ -106,12 +106,12 @@ def MakeDesign(propellant: str='LOX'):
 	pump.Impeller.PrintDimensionlessParameters()
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
 	#pump_meridional.PotentialFlow.Plot().show()
-	pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	from ImpellerBladeDesign import ImpellerBladeDesign
 
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
-
+	imp_blade_design.PlotInletTriangles().show()
 	return pump
 
 if __name__ == "__main__":
