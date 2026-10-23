@@ -8,7 +8,7 @@ import MeridionalDesign
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Inputs package imports when run directly
+sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
 
 #print(Inputs)
