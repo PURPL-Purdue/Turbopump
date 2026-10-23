@@ -16,8 +16,7 @@ class _TriInfo:
 
 class ImpellerBladeDesign:
 
-	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None,
-			n_streamlines: int = 11):
+	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None):
 
 		self.Pump = meridional_design.Pump
 		self._mer = meridional_design
