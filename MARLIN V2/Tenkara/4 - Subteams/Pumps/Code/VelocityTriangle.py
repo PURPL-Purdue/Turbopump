@@ -1,4 +1,4 @@
-from typing import Optional as Opt
+# Centrifugal pump impeller and inducer turbomachinery velocity triangle plotting
 import numpy as np
 import plotly.graph_objects as go
 from pint import Quantity as Q_
@@ -12,209 +12,241 @@ COLORS = dict(
 	c_u="#a10da6"
 	)
 
+# line dash of each superimposed triangle, in order. '6px,4px' is a short dash, so one always reaches the arrowhead
+DASHES = ['solid', '6px,4px', 'dot', 'dashdot']
+
+# how the angles are measured, printed under the title (see PlotTriangles)
+CONVENTION_NOTES = dict(
+	centrifugal='Angles from the tangential axis towards the meridional direction (α from +U, β from −U)',
+	axial='Angles from the meridional velocity C<sub>m</sub> to C and W, positive towards +U (blade motion)'
+	)
+
 class VelocityTriangle:
+	"""
+		Velocity triangle c = u + w at one station. Angles from the tangent towards +c_m (centrifugal convention):
+		alpha from +u to c, beta from -u to w, so tan(beta) = c_m / (u - c_u)
+	"""
 	u: Q_[float]
 	c: Q_[float]
 	c_m: Q_[float]
 	c_u: Q_[float]
 	w: Q_[float]
-	beta_b: Q_[float] | None	# blade (metal) angle from the tangent, as Beta2B; None if not applicable
+	beta: Q_[float]
+	alpha: Q_[float]
+	notation: str		# HTML after each symbol in the plot labels, e.g. '<sub>2B</sub>' or "<sub>1</sub><sup>'</sup>"
 
-	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], w: Q_[float], beta_b: Q_[float] | None = None, station: int|None=None):
+	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], notation: str=''):
+		self.notation = notation
 		self.u = u
 		self.c_m = c_m
 		self.c_u = c_u
-		self.w = w
-		self.beta_b = beta_b
-		self.c = np.sqrt(c_m**2 + c_u**2)
-		self.station = str(station) if station is not None else ''
 
-	@property
-	def alpha(self) -> Q_[float]:
-		"""Absolute flow angle, from the tangential axis (+u) towards +c_m (centrifugal convention)."""
-		return np.arctan2(self.c_m, self.c_u)
+		self.beta = np.arctan2(self.c_m, u - c_u)
+		self.alpha = np.arctan2(self.c_m, self.c_u)
+		self.w = np.sqrt(c_m**2 + (u - self.c_u)**2)
+		self.c = np.sqrt(c_m**2 + self.c_u**2)
 
-	@property
-	def beta(self) -> Q_[float]:
-		"""Relative flow angle, from the tangent (-u) towards +c_m (centrifugal convention)."""
-		return np.arctan2(self.c_m, self.u - self.c_u)
+	@classmethod
+	def FromBeta(cls, u: Q_[float], c_m: Q_[float], beta: Q_[float], notation: str='') -> 'VelocityTriangle':
+		"""Triangle whose relative flow leaves at beta from the tangent: c_u = u - c_m / tan(beta)"""
+		return cls(u, c_m, u - c_m / np.tan(beta.to('rad')), notation)
 
-	@property
-	def Ideal(self) -> 'VelocityTriangle | None':
+	def _Vectors(self, unit: str) -> dict[str, tuple[np.ndarray, np.ndarray]]:
 		"""
-			Triangle without slip: same u and c_m, but the relative flow follows the blade angle exactly,
-			w_u = c_m / tan(beta_b) and w = c_m / sin(beta_b). None if beta_b is not set.
+			Start and end of U, C, W and C_m in the plot plane (tangential, meridional), in unit. C_m is the meridional
+			leg under the tip of C, left out without swirl, where it is C itself
 		"""
-		if self.beta_b is None:
-			return None
-		return VelocityTriangle(
-			u=self.u, c_m=self.c_m,
-			c_u=self.u - self.c_m / np.tan(self.beta_b.to('rad').m),
-			w=self.c_m / np.sin(self.beta_b.to('rad').m)
-		)
+		u, c_u, c_m = (v.to(unit).m for v in (self.u, self.c_u, self.c_m))
+		O, U_tip, C_tip = np.array([0.0, 0.0]), np.array([u, 0.0]), np.array([c_u, c_m])
+		vectors = dict(U=(O, U_tip), C=(O, C_tip), W=(U_tip, C_tip))
+		if abs(c_u) > 1e-6 * np.hypot(c_u, c_m):
+			vectors['C_m'] = (np.array([c_u, 0.0]), C_tip)
+		return vectors
 
-	def Plot(self, title='Velocity Triangle', unit='m/s', station: Opt[int]=None, convention: str = 'centrifugal', fig: Opt[go.Figure]=None, row: int=None, col: int=None) -> go.Figure:
-		"""
-			Plots the velocity triangle as the vector sum c = u + w: U and C start at the origin, W runs from
-			the tip of U to the tip of C, and C_m is the dashed meridional component.
+def _Arrow(fig: go.Figure, p0, p1, color: str, dash: str, text: str, group: str, row: int|None, col: int|None):
+	# Shaft and head are separate traces. The head is an 'arrow' marker with its tip on p1, turned along the
+	# previous segment on screen (size 0 hides the tail). The shaft is drawn from the tip backwards, so its
+	# first dash lies under the head, and a dash always reaches the head base (the head is ~11 px long, longer than
+	# any gap in DASHES). marker.standoff would pull the head off p1 and leave a gap.
+	fig.add_trace(go.Scatter(x=[p1[0], p0[0]], y=[p1[1], p0[1]], mode='lines', legendgroup=group, showlegend=False,
+		hovertemplate=f'{text}<extra></extra>', line=dict(width=2 if dash == 'solid' else 1, color=color, dash=dash)),
+		row=row, col=col)
+	fig.add_trace(go.Scatter(x=[p0[0], p1[0]], y=[p0[1], p1[1]], mode='markers', legendgroup=group, showlegend=False,
+		hoverinfo='skip', marker=dict(symbol='arrow', size=[0, 14], angleref='previous', color=color, opacity=1,
+		line=dict(width=0))), row=row, col=col)
 
-			If beta_b is set, the ideal triangle (relative flow along the blade angle, no slip) is overlaid with
-			dashed C and W. U and C_m are the same in both, so they are drawn once.
+def _Label(fig: go.Figure, x, y, nx, ny, text: str, color: str, row: int|None, col: int|None, pad: float=6):
+	# text sits at (x, y) pushed by pad px along the unit direction (nx, ny)
+	fig.add_annotation(x=x, y=y, text=text, showarrow=False, font=dict(size=14, color=color),
+		xanchor='left' if nx > 0.3 else 'right' if nx < -0.3 else 'center',
+		yanchor='bottom' if ny > 0.3 else 'top' if ny < -0.3 else 'middle',
+		xshift=pad * nx, yshift=pad * ny, row=row, col=col)
 
-			convention sets how the angles are measured, and is printed under the title:
-			- 'centrifugal': from the tangential axis towards the meridional direction, positive for normal pump flow.
-			  alpha from +u, beta and beta_b from -u (the blade tangent).
-			- 'axial': from the meridional velocity c_m to c (alpha) and to w (beta), drawn at the tip of C,
-			  positive towards +u, the direction of blade motion.
-			  alpha = atan(c_u/c_m), beta = atan((c_u-u)/c_m), which is negative when the flow lags the blade.
-			  beta_b is converted from its tangent reference and drawn at the ideal tip.
-		"""
-		if convention not in ('centrifugal', 'axial'):
-			raise ValueError(f"convention must be 'centrifugal' or 'axial', not {convention!r}")
-		axial = convention == 'axial'
+def _Angle(fig: go.Figure, vertex, th_ref: float, th_vec: float, sense: int, R: float, name: str, dash: str, group: str,
+		level: int, side: int, row: int|None, col: int|None):
+	# Arc at vertex from the reference ray th_ref to the vector th_vec (plot angles, rad). The value is positive in the
+	# direction sense (+1 counterclockwise), and printed as line `level` of a stack above the vertex, on the left
+	# (side -1) or right (+1)
+	th = np.linspace(th_ref, th_vec, 40)
+	fig.add_trace(go.Scatter(x=vertex[0] + R * np.cos(th), y=vertex[1] + R * np.sin(th), mode='lines', legendgroup=group,
+		line=dict(width=1.2, color='black', dash=dash), showlegend=False, hoverinfo='skip'), row=row, col=col)
+	value = np.degrees(sense * (th_vec - th_ref)) + 0.0		# + 0.0 turns -0.0 into 0.0
+	fig.add_annotation(x=vertex[0], y=vertex[1], text=f'{name} = {value:.1f}°', showarrow=False, font=dict(size=14),
+		xanchor='left' if side > 0 else 'right', yanchor='bottom', xshift=6 * side, yshift=4 + 20 * level,
+		row=row, col=col)
 
-		grid_passed: bool = True
-		if fig is None:
-			grid_passed = False
-			fig = go.Figure()
+def _LabelPlaces(group: list[tuple[np.ndarray, np.ndarray]], defaults: list[np.ndarray], tol: float) -> list[tuple[float, np.ndarray]]:
+	"""
+		Where to label each vector (p0, p1) in group: the fraction t along it, and the unit normal towards the label side.
+		The side faces away from the mean midpoint of the group, or is the default side when the vector has no clear
+		side (alone, or crossing the middle). A vector in line with an earlier one takes the opposite side to it.
+		Labels sharing a side are spread along their vectors, the outermost nearest the start: vectors from a common
+		point are furthest apart near their ends, where the inner labels need the room.
+	"""
+	mids = [(p0 + p1) / 2 for p0, p1 in group]
+	centre = np.mean(mids, axis=0)
+	lefts = [np.array([p0[1] - p1[1], p1[0] - p0[0]]) / np.hypot(*(p1 - p0)) for p0, p1 in group]
+	offsets = [n @ (mid - centre) for n, mid in zip(lefts, mids)]
+	normals = [n * np.sign(offset) if abs(offset) > tol else default for n, offset, default in zip(lefts, offsets, defaults)]
 
-		c_u, c_m, c = self.c_u.to(unit).magnitude, self.c_m.to(unit).magnitude, self.c.to(unit).magnitude
-		u, w = self.u.to(unit).magnitude, self.w.to(unit).magnitude
-		ideal = self.Ideal
-		if ideal is not None:
-			c_u_id, c_id, w_id = ideal.c_u.to(unit).magnitude, ideal.c.to(unit).magnitude, ideal.w.to(unit).magnitude
-		station = str(station) if station is not None else self.station
-		st, st_id = f'{station}', (f'{station},id' if station != '' else 'id')
+	for k, (q0, q1) in enumerate(group):
+		for j, (p0, _) in enumerate(group[:k]):
+			if abs(lefts[j] @ (q0 - p0)) < tol and abs(lefts[j] @ (q1 - p0)) < tol:
+				normals[k] = -normals[j]
 
-		def Arrow(p0, p1, name, color, dash='solid'):
-			# Shaft and head are separate traces. The head is an 'arrow' marker with its tip on p1, turned along the
-			# previous segment on screen (size 0 hides the tail). The shaft is drawn from the tip backwards, so its
-			# first dash lies under the head, and a dash always reaches the head base (the head is ~11 px long, the
-			# pattern is 6 px on / 4 px off). marker.standoff would pull the head off p1 and leave a gap.
-			fig.add_trace(go.Scatter(x=[p1[0], p0[0]], y=[p1[1], p0[1]], mode='lines', name=name, showlegend=not grid_passed,
-				line=dict(width=(2 if dash=='solid' else 1), color=color, dash='6px,4px' if dash == 'dash' else dash)), row=row, col=col)
-			fig.add_trace(go.Scatter(x=[p0[0], p1[0]], y=[p0[1], p1[1]], mode='markers', showlegend=False, hoverinfo='skip',
-				marker=dict(symbol='arrow', size=[0, 14], angleref='previous', color=color, opacity=1, line=dict(width=0))), row=row, col=col)
+	t = [0.5] * len(group)
+	for side in (1, -1):
+		on_side = sorted((k for k in range(len(group)) if np.sign(normals[k] @ lefts[k]) == side), key=lambda k: -side * offsets[k])
+		for j, k in enumerate(on_side):
+			t[k] = (j + 1) / (len(on_side) + 1)
+	return list(zip(t, normals))
 
-		def Label(x, y, nx, ny, text, pad=6):
-			# text sits at (x, y) pushed by pad px along the unit direction (nx, ny)
-			fig.add_annotation(x=x, y=y, text=text, showarrow=False, font=dict(size=14),
-				xanchor='left' if nx > 0.3 else 'right' if nx < -0.3 else 'center',
-				yanchor='bottom' if ny > 0.3 else 'top' if ny < -0.3 else 'middle',
-				xshift=pad * nx, yshift=pad * ny, row=row, col=col)
+def PlotTriangles(triangles: list[VelocityTriangle], fig: go.Figure|None=None, row: int|None=None, col: int|None=None,
+		names: list[str]|None=None, dashes: list[str]|None=None, unit: str='m/s', convention: str='centrifugal',
+		title: str='Velocity Triangles') -> go.Figure:
+	"""
+		Plots velocity triangles on top of each other, each as the vector sum c = u + w: U and C start at the origin,
+		W runs from the tip of U to the tip of C, and C_m is the meridional leg under the tip of C. Colour marks the
+		vector (COLORS) and dash the triangle (DASHES), so the triangles may differ in anything: c_m, beta, even u.
+		A vector shared by several triangles, such as a common U, is drawn once.
 
-		def SideLabel(p0, p1, centroid, outward, text):
-			# label on the outer or inner side of the segment p0-p1, relative to the centroid of its triangle
-			d = np.subtract(p1, p0)
-			n = np.array([-d[1], d[0]]) / np.hypot(*d)
-			mid = np.add(p0, p1) / 2
-			if (np.dot(n, mid - centroid) < 0) == outward:
-				n = -n
-			Label(mid[0], mid[1], n[0], n[1], text)
+		Each vector's magnitude is printed beside it, labelled with the triangle's notation (e.g. W<sub>1</sub>), on the
+		side facing away from the same vector of the other triangles. The angles are stacked above their vertex, the
+		first triangle on top. The legend shows the names (or else the notations) once per figure, and clicking an
+		entry toggles that triangle in every subplot.
 
-		def Arc(vertex, th_ref, th_vec, R, dash='solid'):
-			# arc from the reference ray to the vector, returns its midpoint for the label
-			th = np.linspace(th_ref, th_vec, 40)
-			fig.add_trace(go.Scatter(x=vertex[0] + R * np.cos(th), y=vertex[1] + R * np.sin(th), mode='lines',
-				line=dict(width=1.2, color='black', dash=dash), showlegend=False, hoverinfo='skip'), row=row, col=col)
-			th_mid = (th_ref + th_vec) / 2
-			return vertex[0] + R * np.cos(th_mid), vertex[1] + R * np.sin(th_mid)
+		convention sets how the angles are measured (CONVENTION_NOTES):
+		- 'centrifugal': from the tangential axis towards the meridional direction, positive for normal pump flow.
+		  alpha from +u at the origin, beta from -u (the blade tangent) at the tip of U.
+		- 'axial': from the meridional velocity c_m to c (alpha) and to w (beta), drawn at the tip of C,
+		  positive towards +u, the direction of blade motion.
+		  alpha = atan(c_u/c_m), beta = atan((c_u-u)/c_m), which is negative when the flow lags the blade.
 
-		# --- real triangle ---
-		O, U_tip, C_tip = (0, 0), (u, 0), (c_u, c_m)
-		centroid = np.array([u + c_u, c_m]) / 3
-		swirl = abs(c_u) > 1e-6 * c		# without swirl C and C_m are the same vector
+		Without fig a new figure is made, titled with the convention note under title. With fig, and row and col for a
+		subplot of make_subplots, the caller sets the layout, e.g. the note once in the figure title.
+	"""
+	if convention not in CONVENTION_NOTES:
+		raise ValueError(f"convention must be one of {list(CONVENTION_NOTES)}, not {convention!r}")
+	axial = convention == 'axial'
 
-		# on the side where both triangles have a vector, the outer one is labelled outside and the inner one inside
-		ideal_right = ideal is not None and c_u_id > c_u
-		C_out = ideal is None or ideal_right
-		W_out = ideal is None or not ideal_right
+	new_fig = fig is None
+	if new_fig:
+		fig = go.Figure()
 
-		c_name = f'C<sub>{st}</sub> = ' if swirl else f'C<sub>{st}</sub> = C<sub>m{st}</sub> = '
-		Arrow(O, U_tip, f'U<sub>{st}</sub> = {u:.1f} {unit}', COLORS['u'])
-		Arrow(O, C_tip, f'{c_name}{c:.1f} {unit}', COLORS['c'])
-		Arrow(U_tip, C_tip, f'W<sub>{st}</sub> = {w:.1f} {unit}', COLORS['w'])
-		Label(u / 2, 0, 0, -1, f'U<sub>{st}</sub> = {u:.1f} {unit}')
-		SideLabel(O, C_tip, centroid, C_out, f'{c_name}{c:.1f} {unit}')
-		SideLabel(U_tip, C_tip, centroid, W_out, f'W<sub>{st}</sub> = {w:.1f} {unit}')
-		if swirl:
-			Arrow((c_u, 0), C_tip, f'C<sub>m{st}</sub> = {c_m:.1f} {unit}', COLORS['c_u'])
-			Label(c_u, c_m / 2, 1, 0, f'C<sub>m{st}</sub> = {c_m:.1f} {unit}')
+	n = len(triangles)
+	if dashes is None:
+		dashes = [DASHES[i % len(DASHES)] for i in range(n)]
+	groups = [name or tri.notation for tri, name in zip(triangles, names or [''] * n)]
+	vectors = [tri._Vectors(unit) for tri in triangles]
+	scale = max(np.hypot(*(p1 - p0)) for v in vectors for p0, p1 in v.values())
+	tol = 1e-6 * scale
 
-		# --- ideal triangle (relative flow along the blade angle), dashed on top of the real one ---
-		if ideal is not None:
-			C_tip_id = (c_u_id, c_m)
-			centroid_id = np.array([u + c_u_id, c_m]) / 3
-			Arrow(O, C_tip_id, f'C<sub>{st_id}</sub> = {c_id:.1f} {unit}', COLORS['c'], 'dash')
-			Arrow(U_tip, C_tip_id, f'W<sub>{st_id}</sub> = {w_id:.1f} {unit}', COLORS['w'], 'dash')
-			Arrow((c_u_id, 0), C_tip_id, f'C<sub>m{st},id</sub> = {c_m:.1f} {unit}', COLORS['c_u'], 'dash')
-			SideLabel(O, C_tip_id, centroid_id, not C_out, f'C<sub>{st_id}</sub> = {c_id:.1f} {unit}')
-			SideLabel(U_tip, C_tip_id, centroid_id, not W_out, f'W<sub>{st_id}</sub> = {w_id:.1f} {unit}')
+	# --- legend: one entry per triangle, once per figure ---
+	if n > 1 or names is not None:
+		shown = {trace.legendgroup for trace in fig.data if trace.showlegend}
+		for group, dash in zip(groups, dashes):
+			if group not in shown:
+				fig.add_trace(go.Scatter(x=[None], y=[None], mode='lines', name=group, legendgroup=group, showlegend=True,
+					line=dict(color='black', dash=dash)), row=row, col=col)
 
-		# --- angles ---
-		def Angle(vertex, th_ref, th_vec, sense, R, name, dash='solid', **label):
-			# arc at `vertex` from the reference ray th_ref to the vector th_vec (plot angles, rad). The value is
-			# positive in the direction `sense` (+1 counterclockwise). The label sits at the arc midpoint, shifted by
-			# xshift/yshift px, unless `label` gives its own x, y. (ax/ay only apply with showarrow=True)
-			x, y = Arc(vertex, th_ref, th_vec, R, dash)
-			value = np.degrees(sense * (th_vec - th_ref)) + 0.0		# + 0.0 turns -0.0 into 0.0
-			fig.add_annotation(**(dict(x=x, y=y) | label), text=f'{name} = {value:.1f}°', showarrow=False,
-				font=dict(size=14), row=row, col=col)
+	# --- vectors, each kind as a group whose labels keep away from each other ---
+	for kind in ('U', 'C', 'W', 'C_m'):
+		group, owners = [], []		# each vector once, with the triangles that have it
+		for i, v in enumerate(vectors):
+			if kind not in v:
+				continue
+			p0, p1 = v[kind]
+			for (q0, q1), sharing in zip(group, owners):
+				if np.allclose(p0, q0, atol=tol) and np.allclose(p1, q1, atol=tol):
+					sharing.append(i)
+					break
+			else:
+				group.append((p0, p1))
+				owners.append([i])
 
+		# without anything to avoid: U below the axis, C_m to the right of its leg, C and W outside their triangle
+		defaults = []
+		for (p0, p1), (i, *_) in zip(group, owners):
+			if kind == 'U':
+				defaults.append(np.array([0.0, -1.0]))
+			elif kind == 'C_m':
+				defaults.append(np.array([1.0, 0.0]))
+			else:
+				n_out = np.array([p0[1] - p1[1], p1[0] - p0[0]]) / np.hypot(*(p1 - p0))
+				centroid = (vectors[i]['U'][1] + vectors[i]['C'][1]) / 3
+				defaults.append(n_out if n_out @ ((p0 + p1) / 2 - centroid) > 0 else -n_out)
+
+		for (p0, p1), sharing, (t, normal) in zip(group, owners, _LabelPlaces(group, defaults, 1e-3 * scale)):
+			i = sharing[0]
+			notation = triangles[i].notation
+			if kind == 'C_m':
+				sym = f'C<sub>m</sub>{notation}'
+			elif kind == 'C' and 'C_m' not in vectors[i]:
+				sym = f'C{notation} = C<sub>m</sub>{notation}'
+			else:
+				sym = kind + notation
+			text = f'{sym} = {np.hypot(*(p1 - p0)):.1f} {unit}'
+			color = COLORS['c_u' if kind == 'C_m' else kind.lower()]
+			# a shared vector stays when one of its triangles is toggled off
+			_Arrow(fig, p0, p1, color, dashes[i], text, groups[i] if len(sharing) == 1 else '', row, col)
+			x, y = p0 + t * (p1 - p0)
+			_Label(fig, x, y, normal[0], normal[1], text, color, row, col)
+
+	# --- angles: nested arcs, values stacked above the vertex, the first triangle on top ---
+	if axial:
+		R_0 = 0.25 * min(min(np.hypot(*(p1 - p0)) for k, (p0, p1) in v.items() if k != 'U') for v in vectors)
+	else:
+		R_alpha = 0.2 * min(min(np.hypot(*v['U'][1]), np.hypot(*v['C'][1])) for v in vectors)
+		R_beta = 0.2 * min(min(np.hypot(*v['U'][1]), np.hypot(*(v['W'][1] - v['W'][0]))) for v in vectors)
+	for i, (tri, v) in enumerate(zip(triangles, vectors)):
+		O, U_tip = v['U']
+		C_tip = v['C'][1]
+		c_u, c_m = C_tip
+		u = U_tip[0]
+		level, grow = n - 1 - i, 1 + 0.3 * i
+		alpha, beta = 'α' + tri.notation, 'β' + tri.notation
+		args = (dashes[i], groups[i], level)
 		if axial:
-			# At the tip of C, from the C_m leg to C (alpha) and to W (beta), and at the ideal tip from C_m,id to
-			# W_id (beta_b). The arcs run from the C_m leg (pointing down) to C and W reversed, which is the same
-			# angle as from +C_m to C and W. The labels sit just above the tips, where nothing else is drawn:
-			# alpha on the left of C_m, beta on the right
-			left = dict(xanchor='right', yanchor='bottom', xshift=-4, yshift=4)
-			right = dict(xanchor='left', yanchor='bottom', xshift=4, yshift=4)
-			R = 0.3 * c_m
-			Angle(C_tip, -np.pi / 2, np.arctan2(-c_m, -c_u), -1, R, f'α<sub>{st}</sub>', x=c_u, y=c_m, **left)
-			Angle(C_tip, -np.pi / 2, np.arctan2(-c_m, u - c_u), -1, R, f'β<sub>{st}</sub>', x=c_u, y=c_m, **right)
-			if ideal is not None:
-				# one line higher than beta, which can run into it when the two tips are close
-				Angle(C_tip_id, -np.pi / 2, np.arctan2(-c_m, u - c_u_id), -1, R, f'β<sub>{st}B</sub>', 'dash',
-					x=c_u_id, y=c_m, **(right | dict(yshift=24)))
+			# At the tip of C, from the C_m leg (pointing down) to C and W reversed, which is the same angle as from
+			# +C_m to C and W
+			_Angle(fig, C_tip, -np.pi / 2, np.arctan2(-c_m, -c_u), -1, grow * R_0, alpha, *args, -1, row, col)
+			_Angle(fig, C_tip, -np.pi / 2, np.arctan2(-c_m, u - c_u), -1, grow * R_0, beta, *args, 1, row, col)
 		else:
-			# alpha at the origin from +U, beta and beta_b at the tip of U from -U.
-			# Label shifts are in px from the arc midpoint (x right, y up), outside the triangle
-			Angle(O, 0, np.arctan2(c_m, c_u), 1, 0.25 * c_u, f'α<sub>{st}</sub>', xshift=-45, yshift=-30)
-			Angle(U_tip, np.pi, np.arctan2(c_m, c_u - u), -1, 0.25 * (u - c_u), f'β<sub>{st}</sub>', xshift=45, yshift=-30)
-			if ideal is not None:
-				# the ideal W is along the blade, so its angle is beta_b
-				Angle(U_tip, np.pi, np.arctan2(c_m, c_u_id - u), -1, 0.25 * (u - c_u_id), f'β<sub>{st}B</sub>', 'dash',
-					xshift=45, yshift=35)
+			_Angle(fig, O, 0, np.arctan2(c_m, c_u), 1, grow * R_alpha, alpha, *args, -1, row, col)
+			_Angle(fig, U_tip, np.pi, np.arctan2(c_m, c_u - u), -1, grow * R_beta, beta, *args, 1, row, col)
 
-		# Axes through the origin
-		fig.add_hline(y=0, line_width=0.8, layer='below', row=row, col=col)
-		fig.add_vline(x=0, line_width=0.8, layer='below', row=row, col=col)
+	# --- axes through the origin, equal scaling ---
+	fig.add_hline(y=0, line_width=0.8, layer='below', row=row, col=col)
+	fig.add_vline(x=0, line_width=0.8, layer='below', row=row, col=col)
+	xs = [0] + [p[0] for v in vectors for p in (v['U'][1], v['C'][1])]
+	pad = 0.2 * (max(xs) - min(xs))		# room on both sides for the angle labels
+	fig.update_xaxes(title_text=f'Tangential velocity [{unit}]', range=[min(xs) - pad, max(xs) + pad], row=row, col=col)
+	fig.update_yaxes(title_text=f'Meridional velocity [{unit}]', row=row, col=col,
+		scaleanchor='x' if row is None else fig.get_subplot(row, col).yaxis.anchor, scaleratio=1)
 
-		if axial:
-			convention_note = 'Angles from the meridional velocity C<sub>m</sub> to C and W, positive towards +U (blade motion)'
-		else:
-			convention_note = 'Angles from the tangential axis towards the meridional direction (α from +U, β and blade angle from −U)'
+	if new_fig:
+		fig.update_layout(title=f'{title}<br><sup>{CONVENTION_NOTES[convention]}</sup>', template='plotly_white')
+		fig.update_xaxes(showgrid=True, gridcolor='rgba(128,128,128,0.2)', zeroline=False)
+		fig.update_yaxes(showgrid=True, gridcolor='rgba(128,128,128,0.2)', zeroline=False)
 
-		# room on both sides for the angle labels
-		xs = [0, u, c_u] + ([c_u_id] if ideal is not None else [])
-		pad = 0.2 * (max(xs) - min(xs))
-
-		title = f'{title}<br><sup>{convention_note}</sup>'
-		if grid_passed:
-			fig.update_yaxes(
-				scaleanchor=fig.get_subplot(row, col).yaxis.anchor,
-				scaleratio=1,
-				row=row, col=col,
-            )
-		else:
-			fig.update_layout(
-				title=title,
-				xaxis=dict(title=f'Tangential velocity [{unit}]', showgrid=True,
-					gridcolor='rgba(128,128,128,0.2)', zeroline=False,
-					range=[min(xs) - pad, max(xs) + pad]),
-				yaxis=dict(title=f'Meridional velocity [{unit}]', showgrid=True,
-					gridcolor='rgba(128,128,128,0.2)', zeroline=False,
-					scaleanchor='x', scaleratio=1),  # equal axis scaling
-				template='plotly_white',
-			)
-		
-		return fig
+	return fig

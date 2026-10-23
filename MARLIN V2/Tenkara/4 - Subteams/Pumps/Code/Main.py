@@ -89,7 +89,9 @@ def CreatePump(propellant: str='LOX'):
 
 def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
-	
+
+	pump.Impeller.PlotOutletVelocities().show()
+
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 
@@ -116,4 +118,4 @@ def MakeDesign(propellant: str='LOX'):
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign('IPA')

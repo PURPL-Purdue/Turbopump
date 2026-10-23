@@ -6,7 +6,7 @@ from MeridionalDesign import MeridionalDesign
 from MeridionalContour import MeridionalCurve
 from PotentialFlow import Streamline
 from typing import Optional
-from VelocityTriangle import VelocityTriangle
+from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
 
 @dataclass
@@ -92,6 +92,10 @@ class ImpellerBladeDesign:
 		return Q_(np.arccos(min(cos_angle, 1.0)), 'rad').to('deg')
 
 	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1]) -> go.Figure:
+		"""
+			Inlet triangles where the leading edge crosses each streamline phi: upstream of the blades (1), just inside
+			them with the blade blockage (1'), and along the blade angle (1B), whose difference from 1' is the incidence
+		"""
 		# at most 3 rows, further triangles fill new columns
 		n_rows = min(len(phis), 3)
 		n_cols = -(-len(phis) // n_rows)
@@ -99,29 +103,21 @@ class ImpellerBladeDesign:
 		# plotly takes the titles row by row, the triangles fill column by column
 		titles = [''] * (n_rows * n_cols)
 		for i, phi in enumerate(phis):
-			titles[i % n_rows * n_cols + i // n_rows] = f'Inlet Velocity Triangles at Flow Fraction ϕ = {phi}'
+			titles[i % n_rows * n_cols + i // n_rows] = f'Flow Fraction ϕ = {phi}'
 
 		fig = subplots.make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
 		for i, phi in enumerate(phis):
 			prime, no_block, r, _ = self._SolveInletFlow(phi)
 			u = self.Pump.DP.N_shaft * r
+			triangles = [
+				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
+				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta, "<sub>1</sub>'"),
+				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta + Q_(self._INCIDENCE_PADDING, 'rad'), '<sub>1B</sub>'),
+				]
+			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1,
+				names=['upstream', 'inside blades', 'blade angle'])
 
-			no_block_w_u = no_block.c_m / np.tan(no_block.Beta)
-			
-			triangle = VelocityTriangle(
-				u=u, c_m=no_block.c_m,
-				c_u = u - no_block_w_u,	w=np.sqrt(no_block_w_u**2 + no_block.c_m**2),
-				beta_b=prime.Beta, station=1
-				)
-
-			triangle.Plot(
-				fig=fig,
-				row=i % n_rows + 1,
-				col=i // n_rows + 1
-				)
-
-		fig.update_layout(template='simple_white')
-		fig.update_xaxes(title_text='Tangential velocity (m/s)')
-		fig.update_yaxes(title_text='Meridional velocity (m/s)')
+		fig.update_layout(template='simple_white',
+			title=f'Inlet Velocity Triangles<br><sup>{CONVENTION_NOTES["centrifugal"]}</sup>')
 
 		return fig

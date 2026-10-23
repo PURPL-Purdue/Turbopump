@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 from pint import Quantity as Q_
-from VelocityTriangle import VelocityTriangle
+from VelocityTriangle import VelocityTriangle, PlotTriangles
+from plotly import graph_objects as go
 import numpy as np
 
 g = Q_(9.81, 'm/s^2')
@@ -72,9 +73,9 @@ class Impeller:
 		# AKA Flow factor: c / u
 		self.FlowCoefficient: float = (c_m2 / u_2).to('dimensionless').m
 		
-		self.OutletVelocityTriangleAtDesign = VelocityTriangle(
-			u=u_2, c_m=c_m2, c_u=c_u2, w=w_2, beta_b=self.Beta2B, station=2
-			)
+		self.OutletVelocityTriangleAtDesign = VelocityTriangle(u=u_2, c_m=c_m2, c_u=c_u2, notation='<sub>2</sub>')
+		# without slip: the relative flow leaves along the blade
+		self.OutletBladeTriangleAtDesign = VelocityTriangle.FromBeta(u=u_2, c_m=c_m2, beta=self.Beta2B, notation='<sub>2B</sub>')
 
 	@property
 	def HeadCoefficient(self):
@@ -97,6 +98,13 @@ class Impeller:
 			self.DP.N_shaft.to('rpm') * np.sqrt(self.DP.Q.to('m^3/s')) /
 			self.DP.H_rise.to('m')**0.75
 			).magnitude
+
+	def PlotOutletVelocities(self) -> go.Figure:
+		return PlotTriangles(
+			[self.OutletVelocityTriangleAtDesign, self.OutletBladeTriangleAtDesign],
+		    names=['Actual (with Wiesner slip)', 'Ideal no-slip'],
+		    title='Impeller Outlet Velocities'
+		    )
 
 	def GetOutletVelocities(self, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 		"""
