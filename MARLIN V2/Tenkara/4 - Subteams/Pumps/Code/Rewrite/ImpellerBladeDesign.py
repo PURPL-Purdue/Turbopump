@@ -1,73 +1,84 @@
 import numpy as np
 from pint import Quantity as Q_
-from Impeller import Impeller
-from Inducer import Inducer
+from plotly import graph_objects as go, subplots
 from InducerRadialEquilibrium import InducerRadialEquilibrium
 from MeridionalDesign import MeridionalDesign
 from MeridionalContour import MeridionalCurve
 from PotentialFlow import Streamline
 from typing import Optional
+from VelocityTriangle import VelocityTriangle
+from dataclasses import dataclass
+
+@dataclass
+class _TriInfo:
+	c_m: Q_
+	Beta: Q_
 
 class ImpellerBladeDesign:
 
-	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None):
+	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None,
+			n_streamlines: int = 11):
 
+		self.Pump = meridional_design.Pump
 		self._mer = meridional_design
 		self._rad_eq = inducer_radial_equilibrium
 		self.K_inlet = inducer_radial_equilibrium.GetOutletAngularMomentum() if inducer_radial_equilibrium is not None else Q_(0, 'm^2/s')
-
-		# blade angle, tilt of the blade surface to the stream surface and degree of blockage at the hub end of the leading
-		# edge, with the leading edge angle taken to the exact hub contour rather than to the polyline hub streamline
-		self._beta_1_hub, self._epsilon_1_hub, self._rho_1_hub = self._SolveInletBlockage(
-			self._mer.PotentialFlow.GetStreamline(0), self._GetLeadingEdgeAngle(self._mer.HubContour)
-		)
+		
+		# it's better to have slight positive incidence than slight negative incidence
+		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
 	def GetInletC_u(self, r: Q_):
 		return self.K_inlet / r
 
-	def _SolveInletBlockage(self, streamline: Streamline, lambda_1: Q_[float]) -> tuple[Q_[float], Q_[float], float]:
+	def _SolveInletFlow(self, phi: float) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
-			Blade angle beta_1', tilt epsilon_1 of the blade surface to the stream surface and degree of blockage rho_1
-			where the leading edge crosses streamline, with lambda_1 the angle between the leading edge and the streamline
-			in the meridional plane (Milos eqs. 31-33):
-				tan(beta_1') = v_m1 / (rho_1 (u_1 - c_u1))			eq. 33, with the preswirl c_u1 of eq. 42
-				tan(epsilon_1) = tan(lambda_1) / cos(beta_1')		own derivation, leading edge in a meridional plane
-				rho_1 = 1 - z s_1r / (2 pi r_1 sin(beta_1') sin(epsilon_1))		eq. 31
-			s_1r is the thickness normal to the blade surface, taken as blade_thick: constant from inlet to outlet (Milos p. 44).
-			Milos iterates on rho_1 from 0.8, which oscillates without converging when the blockage is heavy. Instead
-			beta_1' is found by bisection: as beta_1' grows, the rho_1 the velocity triangle needs falls and the rho_1 the
-			blades give (eq. 31) rises, so the two are equal at exactly one beta_1' between 0 and 90 deg.
+			Radius r_1 (m), flow angle beta_1' just inside the blades (rad, = blade angle at zero incidence) and degree of
+			blockage rho_1 where the leading edge crosses streamline phi. Tangential blockage (CFturbo; Hassan et al.,
+			Sci. Rep. 2024, eq. 17) with the meridional leading edge angle lambda_1, which slightly overestimates it:
+				rho_1 = 1 - a / sin(beta_1'),		a = z s / (pi d_1 sin(lambda_1)),	s = blade_thick
+				tan(beta_1') = tan(beta_1) / rho_1		(Milos eq. 33)
+			Solved explicitly (own derivation): sin(beta_1' - beta_1) = a cos(beta_1)
+		"""
+		streamline = self._mer.PotentialFlow.GetStreamline(phi)
+
+		# leading edge angle to the exact contours at the hub and shroud, to the polyline streamline in between
+		if phi == 0:
+			lambda_1 = self._GetLeadingEdgeAngle(self._mer.HubContour)
+		elif phi == 1:
+			lambda_1 = self._GetLeadingEdgeAngle(self._mer.ShroudContour)
+		else:
+			lambda_1 = self._GetLeadingEdgeAngle(streamline)
+
+		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline)
+		impeller = self._mer.Pump.Impeller
+
+		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
+		pitch = 2 * np.pi * r_1 / impeller.Z_blade
+		a: Q_[float] = impeller.blade_thick / (pitch * np.sin(lambda_1.to('rad').m))
+		assert a < 1, 'The blades fill the inlet circumference, reduce the blade number or thickness'
+
+		beta_1: Q_ = np.arctan2(c_m1, w_u1)							# without blockage
+		beta_1_prime = beta_1 + np.arcsin(a * np.cos(beta_1))		# with blockage
+		blockage_factor: float = (1 - a / np.sin(beta_1_prime)).to('dimensionless').m
+		c_m1_prime: Q_[float] = c_m1 / blockage_factor
+
+		return _TriInfo(c_m1_prime, beta_1_prime), _TriInfo(c_m1, beta_1), r_1, blockage_factor
+
+	def _GetLeadingEdgeFlow(self, streamline: Streamline) -> tuple[Q_, Q_, Q_]:
+		"""
+			Radius r_1 (m), meridional velocity c_m1 and relative swirl w_u1 = u_1 - c_u1 (m/s) where the leading edge
+			crosses streamline, without blade blockage
 		"""
 		hits = streamline.FindIntersect(self._mer.LeadingEdge)
 		assert len(hits) == 1, 'The leading edge must cross the streamline exactly once'
 		_, r_1, s, _ = hits[0]
 
-		impeller = self._mer.Pump.Impeller
-		v_m1 = streamline.Interpolate(streamline.v_m, s).to('m/s').m
-		w_u1 = (impeller.DP.N_shaft.to('rad/s').m * r_1.to('m').m) - self.GetInletC_u(r_1).to('m/s').m
-		blade_pitch_ratio = impeller.Z_blade * impeller.blade_thick.to('m').m / (2 * np.pi * r_1.to('m').m)	# z s_1r / (2 pi r_1)
-		tan_lambda = np.tan(lambda_1.to('rad').m)
+		omega = self._mer.Pump.Impeller.DP.N_shaft.to('rad/s')
+		c_m1: Q_[float] = streamline.Interpolate(streamline.v_m, s).to('m/s')
+		w_u1 = omega * r_1 - self.GetInletC_u(r_1).to('m/s')
 		assert w_u1 > 0, 'The preswirl exceeds the blade speed at the leading edge'
-		assert blade_pitch_ratio < 1, 'The blades fill the inlet circumference'
 
-		def Epsilon(beta: float) -> float:
-			return np.arctan2(tan_lambda, np.cos(beta))
-
-		def Mismatch(beta: float) -> float:
-			"""rho_1 the velocity triangle needs minus rho_1 the blades give, decreasing in beta"""
-			return v_m1 / (w_u1 * np.tan(beta)) - (1 - blade_pitch_ratio / (np.sin(beta) * np.sin(Epsilon(beta))))
-
-		beta_a, beta_b = 0, np.pi / 2
-		while beta_b - beta_a > 1e-12:
-			beta = (beta_a + beta_b) / 2
-			if Mismatch(beta) > 0:
-				beta_a = beta
-			else:
-				beta_b = beta
-		beta_1 = (beta_a + beta_b) / 2
-		rho_1 = v_m1 / (w_u1 * np.tan(beta_1))
-
-		return Q_(beta_1, 'rad').to('deg'), Q_(Epsilon(beta_1), 'rad').to('deg'), rho_1
+		return r_1, c_m1, w_u1
 
 	def _GetLeadingEdgeAngle(self, curve: MeridionalCurve) -> Q_[float]:
 		"""
@@ -80,4 +91,37 @@ class ImpellerBladeDesign:
 		cos_angle = abs(curve.Tangent(s_curve) @ self._mer.LeadingEdge.Tangent(s_LE))
 		return Q_(np.arccos(min(cos_angle, 1.0)), 'rad').to('deg')
 
-	
+	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1]) -> go.Figure:
+		# at most 3 rows, further triangles fill new columns
+		n_rows = min(len(phis), 3)
+		n_cols = -(-len(phis) // n_rows)
+
+		# plotly takes the titles row by row, the triangles fill column by column
+		titles = [''] * (n_rows * n_cols)
+		for i, phi in enumerate(phis):
+			titles[i % n_rows * n_cols + i // n_rows] = f'Inlet Velocity Triangles at Flow Fraction ϕ = {phi}'
+
+		fig = subplots.make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
+		for i, phi in enumerate(phis):
+			prime, no_block, r, _ = self._SolveInletFlow(phi)
+			u = self.Pump.DP.N_shaft * r
+
+			no_block_w_u = no_block.c_m / np.tan(no_block.Beta)
+			
+			triangle = VelocityTriangle(
+				u=u, c_m=no_block.c_m,
+				c_u = u - no_block_w_u,	w=np.sqrt(no_block_w_u**2 + no_block.c_m**2),
+				beta_b=prime.Beta, station=1
+				)
+
+			triangle.Plot(
+				fig=fig,
+				row=i % n_rows + 1,
+				col=i // n_rows + 1
+				)
+
+		fig.update_layout(template='simple_white')
+		fig.update_xaxes(title_text='Tangential velocity (m/s)')
+		fig.update_yaxes(title_text='Meridional velocity (m/s)')
+
+		return fig
