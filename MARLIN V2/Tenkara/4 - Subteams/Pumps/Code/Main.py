@@ -91,29 +91,34 @@ def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
 
 	pump.Impeller.PlotOutletVelocities().show()
-	
+
+	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 
+	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
-
 	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
+	pump.Impeller.PrintDimensionlessParameters()
+
+	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from InducerRadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	#print(inducer_eq.GetOutletAngularMomentum())
 
-	pump.Impeller.PrintDimensionlessParameters()
+	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
 	#pump_meridional.PotentialFlow.Plot().show()
 	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
+	# ----------------- IMPELLER BLADE DESIGN -----------------
 	from ImpellerBladeDesign import ImpellerBladeDesign
-
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
 	imp_blade_design.PlotInletTriangles().show()
+
 	return pump
 
 if __name__ == "__main__":
