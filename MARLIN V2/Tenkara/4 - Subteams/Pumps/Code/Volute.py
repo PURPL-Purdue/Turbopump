@@ -53,6 +53,18 @@ def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[f
     # [Charlie]: you don't have to convert the units each time, you can just wrap it all in parenthesis and convert once
     return radial_thrust
 
+def sizeDiffuserLength(At: Q_[float], D_target: Q_[float], theta: float) -> Q_[float]:
+    Dt = math.sqrt(4 * At / math.pi)
+    L = (D_target - Dt) / (2 * math.tan(theta))
+    return L
+
+def calcDiffuserPressures(stagnationP1: Q_[float], At: Q_[float],  targetA: Q_[float], avg_V: Q_[float], rho: Q_[float]) -> Q_[float]:
+    V2 = At / targetA * avg_V
+    
+    staticP2 = stagnationP1 - 1/2 * rho * V2**2
+
+    return staticP2
+    
 lox_pump = Main.CreatePump('LOX')
 radial_thrust = calcRadialThrust(
     lox_pump.DesignHeadRise,
