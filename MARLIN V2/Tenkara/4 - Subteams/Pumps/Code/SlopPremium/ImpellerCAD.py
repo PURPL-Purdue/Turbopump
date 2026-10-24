@@ -5,6 +5,7 @@ from cadquery.vis import show
 from cadquery.func import loft, fill, shell, solid
 from pint import Quantity as Q_
 from typing import Optional
+from pathlib import Path
 from ImpellerBladeDesign import ImpellerBladeDesign, BladeLine
 
 class ImpellerCAD:
@@ -153,5 +154,10 @@ class ImpellerCAD:
 		show(self.Assembly(shroud), title='Impeller')
 
 	def ExportSTEP(self, path: str):
-		"""Writes the impeller parts to a STEP file, in mm, as separate solids (not fused)"""
-		self.Assembly().export(path)
+		"""
+			Writes the impeller parts to the STEP file path, in mm, as separate solids (not fused). CadQuery writes
+			nothing and raises no error when path is a folder, hence the check.
+		"""
+		self.Assembly().export(path, exportType='STEP')
+		assert Path(path).is_file(), f'No STEP file was written to {path}: give a file path, not a folder'
+		print(f'Saved impeller CAD file to {path}')

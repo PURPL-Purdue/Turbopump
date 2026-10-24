@@ -8,7 +8,8 @@ import MeridionalDesign
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Inputs package imports when run directly
+directory_path = str(Path(__file__).resolve().parents[2])
+sys.path.append(directory_path)	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
 
 #print(Inputs)
@@ -127,8 +128,11 @@ def MakeDesign(propellant: str='LOX'):
 		bore_diameter=Q_(0.4, 'in'))
 	imp_cad.Show()
 
+	file_path = str(Path(directory_path) / 'Outputs' / f'{propellant}_impeller.step')
+	imp_cad.ExportSTEP(file_path)
+	
 	return pump
 
 if __name__ == "__main__":
-	#MakeDesign('LOX')
+	MakeDesign('LOX')
 	MakeDesign('IPA')
