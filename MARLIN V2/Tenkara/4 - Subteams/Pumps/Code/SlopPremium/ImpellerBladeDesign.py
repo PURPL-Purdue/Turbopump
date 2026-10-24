@@ -155,11 +155,9 @@ class ImpellerBladeDesign:
 			u = self.Pump.DP.N_shaft * r
 			triangles = [
 				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
-				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta, "<sub>1</sub>'"),
-				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta + Q_(self._INCIDENCE_PADDING, 'rad'), '<sub>1B</sub>'),
+				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta, "<sub>1</sub>'", Q_(self._INCIDENCE_PADDING, 'rad')),
 				]
-			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1,
-				names=['upstream', 'inside blades', 'blade angle'])
+			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1, names=['upstream', 'inside blades'])
 
 		fig.update_layout(template='simple_white',
 			title=f'Inlet Velocity Triangles<br><sup>{CONVENTION_NOTES["centrifugal"]}</sup>')

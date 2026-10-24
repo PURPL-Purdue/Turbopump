@@ -92,8 +92,9 @@ class ImpellerBladeDesign:
 
 	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1]) -> go.Figure:
 		"""
-			Inlet triangles where the leading edge crosses each streamline phi: upstream of the blades (1), just inside
-			them with the blade blockage (1'), and along the blade angle (1B), whose difference from 1' is the incidence
+			Inlet triangles where the leading edge crosses each streamline phi: upstream of the blades (1) and just inside
+			them with the blade blockage (1'), with the blade direction at the incidence i = beta_1B - beta_1' from W_1'
+			(Gülich Fig. 3.1)
 		"""
 		# at most 3 rows, further triangles fill new columns
 		n_rows = min(len(phis), 3)
@@ -110,11 +111,9 @@ class ImpellerBladeDesign:
 			u = self.Pump.DP.N_shaft * r
 			triangles = [
 				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
-				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta, "<sub>1</sub>'"),
-				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta + Q_(self._INCIDENCE_PADDING, 'rad'), '<sub>1B</sub>'),
+				VelocityTriangle.FromBeta(u, prime.c_m, prime.Beta, "<sub>1</sub>'", Q_(self._INCIDENCE_PADDING, 'rad')),
 				]
-			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1,
-				names=['upstream', 'inside blades', 'blade angle'])
+			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1, names=['upstream', 'inside blades'])
 
 		fig.update_layout(template='simple_white',
 			title=f'Inlet Velocity Triangles<br><sup>{CONVENTION_NOTES["centrifugal"]}</sup>')

@@ -2,6 +2,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from pint import Quantity as Q_
+from typing import Optional
 
 # one colour per vector: its line, arrowhead and label share it
 COLORS = dict(
@@ -15,6 +16,9 @@ COLORS = dict(
 # line dash of each superimposed triangle, in order. '6px,4px' is a short dash, so one always reaches the arrowhead
 DASHES = ['solid', '6px,4px', 'dot', 'dashdot']
 
+# the blade direction of a triangle with an incidence: thin, black and long dash-dot, unlike any vector or triangle
+BLADE_LINE = dict(width=1, color='black', dash='longdashdot')
+
 # how the angles are measured, printed under the title (see PlotTriangles)
 CONVENTION_NOTES = dict(
 	centrifugal='Angles from the tangential axis towards the meridional direction (α from +U, β from −U)',
@@ -25,6 +29,8 @@ class VelocityTriangle:
 	"""
 		Velocity triangle c = u + w at one station. Angles from the tangent towards +c_m (centrifugal convention):
 		alpha from +u to c, beta from -u to w, so tan(beta) = c_m / (u - c_u)
+		The optional incidence i is the blade angle minus the flow angle, beta_B = beta + i (Gülich Fig. 3.1), positive
+		when the blade is steeper than w. PlotTriangles then draws the blade direction
 	"""
 	u: Q_[float]
 	c: Q_[float]
@@ -34,8 +40,9 @@ class VelocityTriangle:
 	beta: Q_[float]
 	alpha: Q_[float]
 	notation: str		# HTML after each symbol in the plot labels, e.g. '<sub>2B</sub>' or "<sub>1</sub><sup>'</sup>"
+	incidence: Optional[Q_[float]]		# blade angle minus beta, None to draw no blade
 
-	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], notation: str=''):
+	def __init__(self, u: Q_[float], c_m: Q_[float], c_u: Q_[float], notation: str='', incidence: Optional[Q_[float]]=None):
 		self.notation = notation
 		self.u = u
 		self.c_m = c_m
@@ -45,11 +52,12 @@ class VelocityTriangle:
 		self.alpha = np.arctan2(self.c_m, self.c_u)
 		self.w = np.sqrt(c_m**2 + (u - self.c_u)**2)
 		self.c = np.sqrt(c_m**2 + self.c_u**2)
+		self.incidence = incidence
 
 	@classmethod
-	def FromBeta(cls, u: Q_[float], c_m: Q_[float], beta: Q_[float], notation: str='') -> 'VelocityTriangle':
+	def FromBeta(cls, u: Q_[float], c_m: Q_[float], beta: Q_[float], notation: str='', incidence: Optional[Q_[float]]=None) -> 'VelocityTriangle':
 		"""Triangle whose relative flow leaves at beta from the tangent: c_u = u - c_m / tan(beta)"""
-		return cls(u, c_m, u - c_m / np.tan(beta.to('rad')), notation)
+		return cls(u, c_m, u - c_m / np.tan(beta.to('rad')), notation, incidence)
 
 	def _Vectors(self, unit: str) -> dict[str, tuple[np.ndarray, np.ndarray]]:
 		"""
@@ -76,9 +84,10 @@ def _Arrow(fig: go.Figure, p0, p1, color: str, dash: str, text: str, group: str,
 		line=dict(width=0))), row=row, col=col)
 
 def _Label(fig: go.Figure, x, y, nx, ny, text: str, color: str, row: int|None, col: int|None, pad: float=6):
-	# text sits at (x, y) pushed by pad px along the unit direction (nx, ny)
+	# text sits at (x, y) pushed by pad px along the unit direction (nx, ny). It is centred only beside a nearly level
+	# line (within ~6°): half a wide label beside a steeper line would reach back across it
 	fig.add_annotation(x=x, y=y, text=text, showarrow=False, font=dict(size=14, color=color),
-		xanchor='left' if nx > 0.3 else 'right' if nx < -0.3 else 'center',
+		xanchor='left' if nx > 0.1 else 'right' if nx < -0.1 else 'center',
 		yanchor='bottom' if ny > 0.3 else 'top' if ny < -0.3 else 'middle',
 		xshift=pad * nx, yshift=pad * ny, row=row, col=col)
 
@@ -135,6 +144,11 @@ def PlotTriangles(triangles: list[VelocityTriangle], fig: go.Figure|None=None, r
 		first triangle on top. The legend shows the names (or else the notations) once per figure, and clicking an
 		entry toggles that triangle in every subplot.
 
+		A triangle with an incidence also gets its blade direction, as in Gülich Fig. 3.1: a line (BLADE_LINE) from the
+		vertex of beta at beta + i, which is W turned by i towards the meridional for i > 0, labelled with beta + i at
+		its end. Its arc i from W is stacked under the triangle's beta, and a W label on the blade's side goes beyond the
+		blade line.
+
 		convention sets how the angles are measured (CONVENTION_NOTES):
 		- 'centrifugal': from the tangential axis towards the meridional direction, positive for normal pump flow.
 		  alpha from +u at the origin, beta from -u (the blade tangent) at the tip of U.
@@ -160,6 +174,18 @@ def PlotTriangles(triangles: list[VelocityTriangle], fig: go.Figure|None=None, r
 	vectors = [tri._Vectors(unit) for tri in triangles]
 	scale = max(np.hypot(*(p1 - p0)) for v in vectors for p0, p1 in v.values())
 	tol = 1e-6 * scale
+
+	# beta at its vertex, clockwise from the reference ray th_ref to W in both conventions (plot angles, rad), and the
+	# blade direction at beta + i, which is clockwise from W by i
+	betas = []
+	for tri, v in zip(triangles, vectors):
+		U_tip, C_tip = v['W']
+		if axial:
+			vertex, th_ref, (dx, dy) = C_tip, -np.pi / 2, U_tip - C_tip		# W reversed, from the tip of C
+		else:
+			vertex, th_ref, (dx, dy) = U_tip, np.pi, C_tip - U_tip
+		th_w = np.arctan2(dy, dx)
+		betas.append((vertex, th_ref, th_w, None if tri.incidence is None else th_w - tri.incidence.to('rad').m))
 
 	# --- legend: one entry per triangle, once per figure ---
 	if n > 1 or names is not None:
@@ -209,8 +235,15 @@ def PlotTriangles(triangles: list[VelocityTriangle], fig: go.Figure|None=None, r
 			color = COLORS['c_u' if kind == 'C_m' else kind.lower()]
 			# a shared vector stays when one of its triangles is toggled off
 			_Arrow(fig, p0, p1, color, dashes[i], text, groups[i] if len(sharing) == 1 else '', row, col)
-			x, y = p0 + t * (p1 - p0)
-			_Label(fig, x, y, normal[0], normal[1], text, color, row, col)
+			at = p0 + t * (p1 - p0)
+			# a W label on the side of its blade line goes beyond it, at the same distance from the vertex
+			if kind == 'W':
+				for vertex, _, _, th_blade in (betas[k] for k in sharing):
+					if th_blade is not None:
+						on_blade = vertex + np.hypot(*(at - vertex)) * np.array([np.cos(th_blade), np.sin(th_blade)])
+						if normal @ (on_blade - at) > 0:
+							at = on_blade
+			_Label(fig, at[0], at[1], normal[0], normal[1], text, color, row, col)
 
 	# --- angles: nested arcs, values stacked above the vertex, the first triangle on top ---
 	if axial:
@@ -218,27 +251,44 @@ def PlotTriangles(triangles: list[VelocityTriangle], fig: go.Figure|None=None, r
 	else:
 		R_alpha = 0.2 * min(min(np.hypot(*v['U'][1]), np.hypot(*v['C'][1])) for v in vectors)
 		R_beta = 0.2 * min(min(np.hypot(*v['U'][1]), np.hypot(*(v['W'][1] - v['W'][0]))) for v in vectors)
-	for i, (tri, v) in enumerate(zip(triangles, vectors)):
-		O, U_tip = v['U']
-		C_tip = v['C'][1]
-		c_u, c_m = C_tip
-		u = U_tip[0]
-		level, grow = n - 1 - i, 1 + 0.3 * i
+	n_beta = n + sum(tri.incidence is not None for tri in triangles)		# lines in the beta stack: each beta, then its i
+	line = 0
+	blade_ends = []
+	for i, (tri, v, (vertex, th_ref, th_w, th_blade)) in enumerate(zip(triangles, vectors, betas)):
+		O = v['U'][0]
+		c_u, c_m = v['C'][1]
+		grow = 1 + 0.3 * i
 		alpha, beta = 'α' + tri.notation, 'β' + tri.notation
-		args = (dashes[i], groups[i], level)
+		args = (dashes[i], groups[i])
 		if axial:
 			# At the tip of C, from the C_m leg (pointing down) to C and W reversed, which is the same angle as from
 			# +C_m to C and W
-			_Angle(fig, C_tip, -np.pi / 2, np.arctan2(-c_m, -c_u), -1, grow * R_0, alpha, *args, -1, row, col)
-			_Angle(fig, C_tip, -np.pi / 2, np.arctan2(-c_m, u - c_u), -1, grow * R_0, beta, *args, 1, row, col)
+			_Angle(fig, vertex, -np.pi / 2, np.arctan2(-c_m, -c_u), -1, grow * R_0, alpha, *args, n - 1 - i, -1, row, col)
+			R = grow * R_0
 		else:
-			_Angle(fig, O, 0, np.arctan2(c_m, c_u), 1, grow * R_alpha, alpha, *args, -1, row, col)
-			_Angle(fig, U_tip, np.pi, np.arctan2(c_m, c_u - u), -1, grow * R_beta, beta, *args, 1, row, col)
+			_Angle(fig, O, 0, np.arctan2(c_m, c_u), 1, grow * R_alpha, alpha, *args, n - 1 - i, -1, row, col)
+			R = grow * R_beta
+		_Angle(fig, vertex, th_ref, th_w, -1, R, beta, *args, n_beta - 1 - line, 1, row, col)
+		line += 1
+
+		if th_blade is not None:
+			# The line overshoots W. Its arc is solid, as it is too short for a dash, and near the far end, where the
+			# small angle opens widest
+			W = np.hypot(*(v['W'][1] - v['W'][0]))
+			end = vertex + 1.15 * W * np.array([np.cos(th_blade), np.sin(th_blade)])
+			text = f'blade, {beta} + i{tri.notation} = {np.degrees(th_ref - th_blade):.1f}°'
+			fig.add_trace(go.Scatter(x=[vertex[0], end[0]], y=[vertex[1], end[1]], mode='lines', legendgroup=groups[i],
+				showlegend=False, hovertemplate=f'{text}<extra></extra>', line=BLADE_LINE), row=row, col=col)
+			_Label(fig, end[0], end[1], np.cos(th_blade), np.sin(th_blade), text, 'black', row, col)
+			_Angle(fig, vertex, th_w, th_blade, -1, 0.75 * W, 'i' + tri.notation, 'solid', groups[i], n_beta - 1 - line, 1,
+				row, col)
+			line += 1
+			blade_ends.append(end)
 
 	# --- axes through the origin, equal scaling ---
 	fig.add_hline(y=0, line_width=0.8, layer='below', row=row, col=col)
 	fig.add_vline(x=0, line_width=0.8, layer='below', row=row, col=col)
-	xs = [0] + [p[0] for v in vectors for p in (v['U'][1], v['C'][1])]
+	xs = [0] + [p[0] for v in vectors for p in (v['U'][1], v['C'][1])] + [end[0] for end in blade_ends]
 	pad = 0.2 * (max(xs) - min(xs))		# room on both sides for the angle labels
 	fig.update_xaxes(title_text=f'Tangential velocity [{unit}]', range=[min(xs) - pad, max(xs) + pad], row=row, col=col)
 	fig.update_yaxes(title_text=f'Meridional velocity [{unit}]', row=row, col=col,

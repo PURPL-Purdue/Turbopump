@@ -70,7 +70,7 @@ Preliminary design code for the LOX and IPA pumps: 1D impeller sizing and H-Q cu
   - `.x`: arclength from the impeller inlet;
   - `.v_m`: meridional velocity;
   - `.Impeller`: the impeller part only.
-- `VelocityTriangle.py`: `VelocityTriangle(u, c_m, c_u)`, `VelocityTriangle.FromBeta`, `PlotTriangles`, `CONVENTION_NOTES`.
+- `VelocityTriangle.py`: `VelocityTriangle(u, c_m, c_u)`, `VelocityTriangle.FromBeta`, `PlotTriangles`, `CONVENTION_NOTES`. An optional `incidence` (blade angle = β + i) makes `PlotTriangles` draw the blade direction and the arc i, as in Gülich Fig. 3.1; `PlotInletTriangles` uses it on the 1′ triangle.
 - `Bezier.py`: `bez(P, t)` and `dbez(P, t)` for cubic Beziers, by Bezier parameter t. Use `BezierCurve` when you need a curve evaluated by arclength.
 - `Volute.py`, `VolutePlot.py`, `Sizing/`: see Running.
 
