@@ -90,11 +90,12 @@ def CreatePump(propellant: str='LOX'):
 def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
 
-	pump.Impeller.PlotOutletVelocities().show()
+	pump.Impeller.PlotOutletVelocities()#.show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
+	print(Pump1D.GetTorque(pump))
 	print(Pump1D.GuessInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
@@ -118,10 +119,10 @@ def MakeDesign(propellant: str='LOX'):
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	from ImpellerBladeDesign import ImpellerBladeDesign
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
-	imp_blade_design.PlotInletTriangles().show()
+	imp_blade_design.PlotInletTriangles()#.show()
 
 	return pump
 
 if __name__ == "__main__":
-	#MakeDesign('LOX')
+	MakeDesign('LOX')
 	MakeDesign('IPA')

@@ -20,7 +20,8 @@ def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional
 	return (pump.DP.mass_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
-	return (GetPowerConsumption(pump, Q_flow, N_speed) / N_speed).to('kN*m')
+	if N_speed is None: N_speed = pump.DP.N_shaft
+	return (GetPowerConsumption(pump, Q_flow, N_speed) / N_speed).to('N*m')
 
 def GetEulerHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	return (GetSpecificWork(pump, Q_flow, N_speed) / g).to('m')
