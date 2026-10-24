@@ -95,6 +95,7 @@ def MakeDesign(propellant: str='LOX'):
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
+	print(Pump1D.GuessInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
@@ -122,5 +123,5 @@ def MakeDesign(propellant: str='LOX'):
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	#MakeDesign('LOX')
+	MakeDesign('IPA')
