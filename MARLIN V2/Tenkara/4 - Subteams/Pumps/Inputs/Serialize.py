@@ -3,7 +3,7 @@ import yaml
 from pint import Quantity as Q_
 
 script_dir = Path(__file__).resolve().parent
-yaml_path = script_dir / "InputsNEW.yaml" ## TODO change this in the future
+yaml_path = script_dir / "Inputs.yaml"
 
 
 def ToQuantities(node):

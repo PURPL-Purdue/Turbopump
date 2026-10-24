@@ -5,11 +5,11 @@ import Impeller
 import Inducer
 from CoolProp import CoolProp as CP
 import MeridionalDesign
-import Pump1D
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Inputs package imports when run directly
+directory_path = str(Path(__file__).resolve().parents[2])
+sys.path.append(directory_path)	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
 
 #print(Inputs)
@@ -20,7 +20,7 @@ basic_impeller_geometry = {
 	'LOX': Impeller.InputGeometry(
 		eta_hyd = 0.50,					# hydraulic efficiency at BEP
 		Z_blade = 6,					# integer number of blades
-		Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
+		Beta2B = Q_(30,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.07, 'in'),			# impeller outlet height
@@ -31,7 +31,7 @@ basic_impeller_geometry = {
 	'IPA': Impeller.InputGeometry(
 		eta_hyd = 0.50,					# hydraulic efficiency at BEP
 		Z_blade = 6,					# integer number of blades
-		Beta2B = Q_(25,'deg').to('rad'),# blade angle at exit, relative to tangent
+		Beta2B = Q_(40,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.08, 'in'),			# impeller outlet height
@@ -91,29 +91,48 @@ def CreatePump(propellant: str='LOX'):
 def MakeDesign(propellant: str='LOX'):
 	pump = CreatePump(propellant)
 
+	# ----------------- PUMP 1D ANALYSIS -----------------
+	pump.Impeller.PlotOutletVelocities()#.show()
+	import Pump1D
 	Pump1D.PlotHQ(pump).show()
 
+	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
-
 	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
+	pump.Impeller.PrintDimensionlessParameters()
+
+	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from InducerRadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	#print(inducer_eq.GetOutletAngularMomentum())
 
-	pump.Impeller.PrintDimensionlessParameters()
+	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
 	#pump_meridional.PotentialFlow.Plot().show()
-	pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
+	# ----------------- IMPELLER BLADE DESIGN -----------------
 	from ImpellerBladeDesign import ImpellerBladeDesign
-
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
+	#imp_blade_design.PlotInletTriangles().show()
+	imp_blade_design.PlotPlanView().show()
+	imp_blade_design.PlotBladeLoading().show()
 
+	# ----------------- IMPELLER 3D GEOMETRY ------------------
+	from ImpellerCAD import ImpellerCAD
+	imp_cad = ImpellerCAD(
+		blade_design=imp_blade_design,
+		bore_diameter=Q_(0.4, 'in'))
+	imp_cad.Show()
+
+	file_path = str(Path(directory_path) / 'Outputs' / f'{propellant}_impeller.step')
+	imp_cad.ExportSTEP(file_path)
+	
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign('IPA')
