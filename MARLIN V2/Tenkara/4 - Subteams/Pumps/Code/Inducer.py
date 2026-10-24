@@ -16,11 +16,11 @@ class InducerInletDesignConstraints:
     sigma: float = 0.06          #design cavitation parameter (sheet uses 0.03 to 0.06)
     K: float = 1.1               #empirical constant in phi = sqrt(sigma / (2 (K + sigma)))
     psi_1: float = 0.08          #assumed baseline head coefficient of the untapered inducer
-    axial_length_ratio: float = 1.0   #L_a / D_t (axial length as a multiple of tip diameter)
+    axial_length_ratio: float = 0.6   #L_a / D_t (axial length as a multiple of tip diameter)
 
 
 constraints = InducerInletDesignConstraints(
-    hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=1.0,
+    hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=0.6,
 )
 
 class Inducer:
@@ -102,8 +102,8 @@ class Inducer:
         self.W_1 = np.sqrt(self.C_m1**2 + (self.U_tip - self.C_u1)**2)
         self.W_2 = np.sqrt(self.C_m2**2 + (self.U_tip - self.C_u2)**2)
         # Relative flow angles measured from the negative tangential direction.
-        gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
-        gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
+        self.gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
+        self.gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
 
 
 def print_parameters(inducer: Inducer, name: str = 'Inducer') -> None:
