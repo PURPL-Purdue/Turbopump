@@ -17,7 +17,7 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	return (u_2 * c_u2).to('kJ/kg')
 
 def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
-	return (pump.DP.mass_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	if N_speed is None: N_speed = pump.DP.N_shaft
