@@ -19,13 +19,6 @@ class InputGeometry:
 	blade_thick: Q_[float]			# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
 
-	# shroud_fullness: tuple[float, float] = (1, 0.3)
-	# hub_fullness: tuple[float, float] = (0.5, 0.7)
-	# # contour angles from radial at the outlet, positive leaning downstream (+z), see BuildMeridian
-	# shroud_outlet_angle: Q_[float] = Q_(5, 'deg')
-	# hub_outlet_angle: Q_[float] = Q_(0, 'deg')
-	# hub_taper_ratio: float = 0.3
-
 @dataclass
 class DesignPoint:
 	Q: Q_[float]			# volumetric flowrate
