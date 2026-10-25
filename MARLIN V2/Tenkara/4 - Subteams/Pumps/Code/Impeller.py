@@ -9,14 +9,13 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InputGeometry:
-
 	eta_hyd: float			# impeller hydraulic efficiency at BEP
 	Z_blade: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
 	d_1: Q_[float]			# impeller inlet diameter
 	d_2: Q_[float]			# impeller outlet diameter
 	b_2: Q_[float]			# impeller outlet height
-	blade_thick: Q_[float]			# blade thickness at exit
+	blade_thick: Q_[float]	# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
 
 @dataclass
