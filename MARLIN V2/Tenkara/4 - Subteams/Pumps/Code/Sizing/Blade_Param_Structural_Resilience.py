@@ -29,7 +29,7 @@ def main():
  
     r = np.linspace(H_Radius, T_Radius, 500)  
  
-    Blade_Lead = r * np.tan(Blade_Angle_rad) #SP 8052
+    Blade_Lead = 2 * np.pi * r * np.tan(Blade_Angle_rad) #SP 8052
     Cascade_Solidity = 2.5 #SP 8052
     Blade_Num = 3 #Investigation of Inducer Geometry Variations on Centrifugal Pump Hydraulic Performance: Numerical Approach
     Blade_Spacing = (np.pi * T_Diameter) / Blade_Num  #SP 8052
