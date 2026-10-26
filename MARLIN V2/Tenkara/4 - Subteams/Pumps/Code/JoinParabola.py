@@ -35,12 +35,12 @@ def JoinParabola(y0: float, yf: float, xj: float, xf: float) -> Callable[[float 
 	"""
 
 	A = np.array([
-		[2*xj, -2*xj, 1, -1, 0, 0],
-		[xj**2, -xj**2, xj, -xj, 1, -1],
-		[0, 0, 1, 0, 0, 0],
-		[0, 0, 0, 0, 1, 0],
-		[0, 2*xf, 0, 1, 0, 0],
-		[0, xf**2, 0, xf, 0, 1]
+		[2*xj,	-2*xj,	1,	-1,  0,  0],
+		[xj**2,	-xj**2, xj, -xj, 1,	-1],
+		[0,		0,		1,	0, 	 0,	 0],
+		[0,		0,		0,	0,   1,	 0],
+		[0,		2*xf,	0,	1,   0,  0],
+		[0,		xf**2,	0,	xf,  0,  1]
 	], dtype=float)
 
 	b = np.array([0, 0, 0, y0, 0, yf])
