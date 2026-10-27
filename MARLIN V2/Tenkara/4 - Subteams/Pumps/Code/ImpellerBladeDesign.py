@@ -34,8 +34,19 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
-	def GetInletC_u(self, r: Q_):
-		return self.K_inlet / r
+	def GetInletC_u(self, r: Q_, free_vortex: bool=False):
+
+		if free_vortex:
+			# free vortex:
+			return self.K_inlet/r
+
+		# superimpose inducer outlet velocity distribution
+		if r < self._rad_eq.inducer.R_hub_2:
+			r = self._rad_eq.inducer.R_hub_2
+		elif r > self._rad_eq.inducer.D_tip/2:
+			r = self._rad_eq.inducer.D_tip/2
+		
+		return self._rad_eq.c_theta(r, self._rad_eq.inducer.L_ax)
 
 	def _SolveInletFlow(self, streamline: MeridionalCurve) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
@@ -133,33 +144,38 @@ class ImpellerBladeDesign:
 
 		# approximate wrap angle using trapezoidal Riemann sum
 		# Milo's pg. 51, eq 51 and 52
-		x = np.linspace(0, x_f, 200)
+		x = np.linspace(0, x_f, len(r))
 		Beta = GetBeta(x)
 
 		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x), BetaDistribution(
 			Get=GetBeta, Domain=(0, x_f)
 		)
 
-	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> BetaDistribution:
+	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> tuple[BetaDistribution, float]:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
 
 		beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
 		blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r = blade_stream.Points(np.linspace(0, blade_stream.length_m, 200))[:, 1]	# same 200 stations as _GetWrap
+		r = blade_stream.Points(np.linspace(0, blade_stream.length_m, 200))[:, 1]
 
-		wrap_high = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_high)[0]
-		wrap_low = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_low)[0]
+		wrap_high, beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_high)
+		wrap_low, beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_low)
 
 		residual_new = float('inf')
 		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
-		assert residual_high * residual_low <= 0, 'The target wrap is out of reach by moving sj alone'
+		# same sign at both ends: the target is not between them, take the closer end
+		if residual_high * residual_low > 0:
+			print('The target wrap is out of reach by moving sj alone')
+			if np.abs(residual_high) > np.abs(residual_low):
+				return beta_low, wrap_low
+			return beta_high, wrap_high
 
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
-			wrap_new, BetaDistribution = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=new_guess)
+			wrap_new, beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=new_guess)
 			residual_new = wrap_new - target_wrap
 
 			if residual_new * residual_low > 0:
@@ -167,7 +183,7 @@ class ImpellerBladeDesign:
 			else:
 				guess_high, residual_high = new_guess, residual_new
 
-		return BetaDistribution
+		return beta_dis, wrap_new
 
 	def Uh(self):
 		meanstream = self._mer.PotentialFlow.GetStreamline(0.5)
@@ -186,13 +202,21 @@ class ImpellerBladeDesign:
 
 			if phi != 0.5:
 				streamline = self._mer.PotentialFlow.GetStreamline(phi)
-				beta_dis = self._SetWrap(streamline, meanflow_wrap)
+				beta_dis, wrap = self._SetWrap(streamline, meanflow_wrap)
 			else:
-				beta_dis = mean_beta_dis
+				beta_dis, wrap = mean_beta_dis, meanflow_wrap
 
 			x=np.linspace(*beta_dis.Domain, 200)
 			fig.add_trace(go.Scatter(
-				x=x, y=beta_dis.Get(x)
+				x=Q_(x, 'm').to('in').m,
+				y=np.rad2deg(beta_dis.Get(x)),
+			name=f'Phi = {phi:.2f}, Wrap = {(wrap * 180/np.pi):.1f} °'
+			))
+
+			fig.update_layout(dict(
+				template='plotly_white',
+				xaxis_title=r'$\text{Arclength } x \text{ (in.)}$',
+				yaxis_title=r'$\text{Blade angle } β \text{ (°)}$'
 			))
 
 		fig.show()
