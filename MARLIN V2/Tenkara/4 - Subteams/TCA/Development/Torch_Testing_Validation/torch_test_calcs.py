@@ -1,7 +1,6 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from rocketcea.cea_obj import CEA_Obj
 import cea as cea
 from pyfluids import Fluid, FluidsList, Input
 import pandas as pd
@@ -44,16 +43,111 @@ R_FJ = 518.28        #[J / kg - K]
 FEED_TEMP = 293.15    #Degrees Kelvin
 OX_DIA = 0.063          #inches
 FUEL_DIA = 0.059        #inches
-CD = 0.6
+CD = 0.8
+CSTAR_EFF = 0.9
 K_F = 1.31  # ch4 specific heat ratio
 K_OX = 1.40 # gox specific heat ratio  
+P_OX = 400  #setpoint P_ox (psia)
+P_F = 400  #setpoint P_ox (psia)\
 
+D_TORCH = 0.2 #in
 
+A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
+A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
+A_f = np.pi * ((FUEL_DIA / (m2in * 2)))**2
 
+mdot_set = 0.0783 * lbm2kg     #lbm/s to kg/s
+OF_set = 1.5
+md_ox_set = mdot_set / (OF_set + 1)
+md_f_set = mdot_set - md_ox_set
 
+p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
+p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
 
+print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
 
+pox_arr = [P_OX, (P_OX * 1.15), P_OX, (P_OX * 0.85), P_OX, (P_OX * 1.10), (P_OX * 0.90)]
+pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
 
+pox_arr = np.array(pox_arr) * psi2Pa
+pf_arr = np.array(pf_arr) * psi2Pa
+
+mdot_oxs = pox_arr / (np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1)))))
+mdot_fs = pf_arr / (np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1)))))
+
+ofs = mdot_oxs / mdot_fs
+
+mdot_total = mdot_oxs + mdot_fs
+
+c_ratio_ox = (2 / (K_OX+1)) ** (K_OX / (K_OX - 1)) 
+c_ratio_f = (2 / (K_F+1)) ** (K_F / (K_F - 1)) 
+
+###############################
+# CEA C-STAR & PC CALCULATION
+###############################
+
+# Reactants and solver setup
+reac_names = ["CH4", "O2"]
+T_reactant = np.array([FEED_TEMP, FEED_TEMP])  # Reactant temperatures (K)
+fuel_weights = np.array([1.0, 0.0])
+ox_weights = np.array([0.0, 1.0])
+
+reac = cea.Mixture(reac_names)
+prod = cea.Mixture(reac_names, products_from_reactants=True)
+solver = cea.RocketSolver(prod, reactants=reac)
+solution = cea.RocketSolution(solver)
+
+# Estimate chamber pressure for CEA solver (in bar)
+# Typically ~50% to 70% of feed pressure for a choked torch
+p_c_guess_bar = (200.0 * psi2Pa) / bar2pa
+
+A_throat = A_torch
+
+cstars = []
+T_combs = []
+T_exit = []
+for of in ofs:
+    # 1. Convert O/F ratio to mass fractions
+    weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=of)
+
+    # 2. Compute reactant mixture enthalpy
+    hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R
+
+    # 3. Solve the rocket equilibrium state
+    solver.solve(solution, weights, p_c_guess_bar, hc=hc, iac=True)
+
+    # 4. Extract characteristic exhaust velocity (m/s)
+    cstar = solution.c_star
+    cstars.append(cstar[-1])
+
+    Temp = solution.T
+    T_combs.append(Temp[0])
+    T_exit.append(Temp[-1])
+
+cstars = np.array(cstars) * CSTAR_EFF
+T_combs = np.array(T_combs)
+T_exit = np.array(T_exit)
+
+P_c_arr = (mdot_oxs + mdot_fs) * cstars / A_throat
+
+###############################
+# EXPORT RESULTS TO CSV
+###############################
+
+df_results = pd.DataFrame({
+    'Pinj_ox': pox_arr / psi2Pa,   # Or keep in Pa: pox_arr
+    'Pinj_f': pf_arr / psi2Pa,     # Or keep in Pa: pf_arr
+    'Pc': P_c_arr / psi2Pa,        # Or keep in Pa: P_c_arr
+    'Cstar': cstars,               # m/s
+    'O/F': ofs,
+    'Tc': T_combs,                 # K
+    'Te': T_exit                   # K
+})
+
+output_csv_filename = r"Outputs/torch_test_matrix_results.csv"
+df_results.to_csv(output_csv_filename, index=False)
+print(f"Results successfully exported to {output_csv_filename}")
+print(df_results)
 
 ###############################
 #DEFINE SUBFUNCTIONS
@@ -67,7 +161,7 @@ K_OX = 1.40 # gox specific heat ratio
 ###############################
 #MAIN FUNCTION
 ###############################
-
+'''
 def main():
 
     G_ox = np.sqrt(K_OX / R_OXJ) * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1)))
@@ -121,3 +215,4 @@ def main():
             p_line_f = (1 + stiffness_f) * c_ratio_f**-1 * pc_target
 
     return
+'''
