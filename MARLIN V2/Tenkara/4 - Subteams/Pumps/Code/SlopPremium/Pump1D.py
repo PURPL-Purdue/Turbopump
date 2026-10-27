@@ -17,10 +17,12 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	return (u_2 * c_u2).to('kJ/kg')
 
 def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
-	return (pump.DP.mass_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+	if Q_flow is None: Q_flow = pump.DesignFlowRate
+	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
-	return (GetPowerConsumption(pump, Q_flow, N_speed) / N_speed).to('kN*m')
+	if N_speed is None: N_speed = pump.DP.N_shaft
+	return (GetPowerConsumption(pump, Q_flow, N_speed) / N_speed).to('N*m')
 
 def GetEulerHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	return (GetSpecificWork(pump, Q_flow, N_speed) / g).to('m')
@@ -122,6 +124,6 @@ def GetInducerHeadRequirement(pump: Pump) -> Q_:
 if __name__ == '__main__':
 	import Main
 	lox_pump = Main.CreatePump('LOX')
-	#lox_pump.Impeller.OutletVelocityTriangleAtDesign.Plot().show()
+	#VelocityTriangle.PlotTriangles([lox_pump.Impeller.OutletVelocityTriangleAtDesign, lox_pump.Impeller.OutletBladeTriangleAtDesign], names=['with slip', 'no slip']).show()
 	#PlotHQ(lox_pump).show()
 	GuessInducerlessNPSH_r(lox_pump)

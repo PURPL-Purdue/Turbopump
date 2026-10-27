@@ -21,11 +21,6 @@ class MeridionalGeometry:
 class MeridionalDesign:
 
 	def __init__(self, pump: Pump, geometry: MeridionalGeometry=MeridionalGeometry()):
-			# shroud_flat_ratio: float = 0.2, hub_flat_ratio: float = 0.0, taper_ratio: float = 0.3,
-			# shroud_fullness: tuple[float, float] = (1, 0.3),
-			# hub_fullness: tuple[float, float] = (0.5, 0.7),
-			# shroud_outlet_angle: Q_[float] = Q_(5, 'deg'),
-			# hub_outlet_angle: Q_[float] = Q_(0, 'deg')):
 		"""
 			Shroud: inlet radius d_1/2 -> outlet at (Z_e, d_2/2)
 			Hub: inlet radius d_hub/2 -> outlet at (Z_e + b_2, d_2/2)
@@ -99,10 +94,6 @@ class MeridionalDesign:
 		contours = (self.HubContour, self.MeanContour, self.ShroudContour)
 		s_LE = (GetLeadingEdge(self.HubContour), GetLeadingEdge(self.MeanContour), s_LE_shroud)
 		zr_LE = np.array([[q.m for q in contour(s)] for contour, s in zip(contours, s_LE)])	# (3, 2) (z, r) in m
-		
-		hub_LE, shroud_LE = zr_LE[0], zr_LE[len(zr_LE) - 1]
-		LE_line = hub_LE - shroud_LE
-		self.lambdaLE = Q_(np.atan(-LE_line[1] / LE_line[0]), 'rad').to('deg')
 		
 		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
 		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)

@@ -43,6 +43,14 @@ class MeridionalCurve:
 			return Q_(z[0], 'm'), Q_(r[0], 'm')
 		return Q_(z, 'm'), Q_(r, 'm')
 
+	def Tangent(self, s: float, ds: float = 1e-4) -> np.ndarray:
+		"""
+			Unit tangent (z, r) at normalized arclength s, toward increasing s, by central differences over ds (one-sided
+			at the ends of the curve)
+		"""
+		a, b = self.Points(np.clip([s - ds, s + ds], 0, 1) * self.length_m)
+		return (b - a) / np.linalg.norm(b - a)
+
 	def StaticMoment(self, s_1: float = 0, s_2: float = 1, n: int = 1001) -> Q_[float]:
 		"""
 			Static moment about the axis between normalized arclengths s_1 and s_2, S = integral(r dx) with x the
@@ -122,6 +130,22 @@ class MeridionalCurve:
 				found.append((s_a, s_b))
 
 		return [(*self(a), float(a), float(b)) for a, b in sorted(found)]
+
+	def Crop(self, s_1: float, s_2: float) -> 'SubCurve':
+		"""The part of this curve between normalized arclengths s_1 < s_2, as a curve of its own"""
+		return SubCurve(self, s_1, s_2)
+
+	def Between(self, a: 'MeridionalCurve', b: 'MeridionalCurve') -> 'SubCurve':
+		"""
+			The part of this curve between where it crosses the curves a and b, once each: e.g. a streamline between
+			the leading and trailing edges, streamline.Between(LeadingEdge, TrailingEdge)
+		"""
+		s = []
+		for other in (a, b):
+			hits = self.FindIntersect(other)
+			assert len(hits) == 1, 'The curve must cross each bound exactly once'
+			s.append(hits[0][2])
+		return self.Crop(*s)
 
 	def Trace(self, l: str = 'in', n: int = 200, **scatter) -> go.Scatter:
 		"""
@@ -222,6 +246,26 @@ class SegmentChain(MeridionalCurve):
 			on_seg = i_seg == i
 			pts[on_seg] = seg.Points(s_m[on_seg] - self.s_m[i])
 		return pts
+
+class SubCurve(MeridionalCurve):
+	"""
+		Part of the curve Parent between its normalized arclengths s_1 < s_2, evaluated by arclength from s_1 (see
+		MeridionalCurve.Crop and Between). ToParent maps back to the parent, e.g. to interpolate a streamline's v_m.
+	"""
+
+	def __init__(self, parent: MeridionalCurve, s_1: float, s_2: float):
+		assert 0 <= s_1 < s_2 <= 1, 'Need 0 <= s_1 < s_2 <= 1'
+		self.Parent = parent
+		self.s_1, self.s_2 = s_1, s_2
+		self.length_m = (s_2 - s_1) * parent.length_m
+
+	def Points(self, s_m: np.ndarray) -> np.ndarray:
+		"""(n, 2) array of (z, r) at arclengths s_m (n,) in [0, length_m] from s_1 on the parent"""
+		return self.Parent.Points(self.s_1 * self.Parent.length_m + np.asarray(s_m, float))
+
+	def ToParent(self, s: float | np.ndarray) -> float | np.ndarray:
+		"""Normalized arclength on the parent of normalized arclength s on this curve"""
+		return self.s_1 + np.asarray(s, float) * (self.s_2 - self.s_1)
 
 class MeridionalContour(SegmentChain):
 	"""

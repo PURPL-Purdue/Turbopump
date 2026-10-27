@@ -1,5 +1,6 @@
 import Impeller
 import Inducer
+import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
 
@@ -7,6 +8,7 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class PumpDesignPoint:
+	eta_overall: float					# assumed overall efficiency of the pump
 	feed_pressure: Q_[float]			# feed pressure (tank pressure)
 	discharge_pressure: Q_[float]		# desired outlet pressure
 	inlet_vapor_pressure: Q_[float]		# vapor pressure of the working fluid at the inlet
@@ -39,4 +41,20 @@ class Pump:
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
 				)
 		)
+
+	@property
+	def n_s(self) -> float:
+		"""Imperial specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DesignFlowRate.to('gallon/min').m) /
+			self.DesignHeadRise.to('ft').m**0.75
+			)
+
+	@property
+	def n_q(self) -> float:
+		"""Metric specific speed"""
+		return (
+			self.DP.N_shaft.to('rpm').m * np.sqrt(self.DesignFlowRate.to('m^3/s').m) /
+			self.DesignHeadRise.to('m').m**0.75
+			)
 		

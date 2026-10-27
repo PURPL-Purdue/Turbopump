@@ -43,6 +43,14 @@ class MeridionalCurve:
 			return Q_(z[0], 'm'), Q_(r[0], 'm')
 		return Q_(z, 'm'), Q_(r, 'm')
 
+	def Tangent(self, s: float, ds: float = 1e-4) -> np.ndarray:
+		"""
+			Unit tangent (z, r) at normalized arclength s, toward increasing s, by central differences over ds (one-sided
+			at the ends of the curve)
+		"""
+		a, b = self.Points(np.clip([s - ds, s + ds], 0, 1) * self.length_m)
+		return (b - a) / np.linalg.norm(b - a)
+
 	def StaticMoment(self, s_1: float = 0, s_2: float = 1, n: int = 1001) -> Q_[float]:
 		"""
 			Static moment about the axis between normalized arclengths s_1 and s_2, S = integral(r dx) with x the

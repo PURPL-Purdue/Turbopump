@@ -165,19 +165,22 @@ if __name__ == "__main__":
     lox_pump.AddInducer(Q_(65, 'm'))
     ipa_pump.AddInducer(Q_(80, 'm'))
     
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-    for ax, inducer in zip(axes, (lox_pump.Inducer, ipa_pump.Inducer)):
+    fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
+    for col, inducer in zip(axes.T, (lox_pump.Inducer, ipa_pump.Inducer)):
 
         eq = InducerRadialEquilibrium(inducer, incidence_ratio=None, blade_number=3, blade_thickness=Q_(0.5, 'mm')) # Assuming 3 blades with 0.5 mm constant thickness
         print(f"beta1 = {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
         for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
             z = inducer.L_ax * frac
             r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)
-            ax.plot(r * 1e3, eq.c_theta(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
-        ax.set_title("Uhhh inducer?")
-        ax.set_xlabel("r [mm]")
-        ax.grid(True, linestyle='--', alpha=0.5)
-        ax.legend()
-    axes[0].set_ylabel("$c_\\theta$ [m/s]")
+            col[0].plot(r * 1e3, eq.c_theta(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
+            col[1].plot(r * 1e3, eq.c_axial(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
+        col[0].set_title("Uhhh inducer?")
+        col[1].set_xlabel("r [mm]")
+        for ax in col:
+            ax.grid(True, linestyle='--', alpha=0.5)
+            ax.legend()
+    axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
+    axes[1, 0].set_ylabel("$c_a$ [m/s]")
     plt.tight_layout()
     plt.show()

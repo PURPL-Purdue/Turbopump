@@ -21,7 +21,7 @@ class InducerInletDesignConstraints:
     sigma: float = 0.06          #design cavitation parameter (sheet uses 0.03 to 0.06)
     K: float = 1.1               #empirical constant in phi = sqrt(sigma / (2 (K + sigma)))
     psi_1: float = 0.08          #assumed baseline head coefficient of the untapered inducer
-    axial_length_ratio: float = 1.0   #L_a / D_t (axial length as a multiple of tip diameter)
+    axial_length_ratio: float = 0.6   #L_a / D_t (axial length as a multiple of tip diameter)
 
 @dataclass
 class InducerGeometry:
@@ -390,7 +390,7 @@ design_points = {
     ),
 }
 constraints = InducerInletDesignConstraints(
-    hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=1.0,
+    hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=0.6,
 )
 
 
