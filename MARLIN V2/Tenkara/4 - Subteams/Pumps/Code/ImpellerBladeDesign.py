@@ -9,11 +9,18 @@ from typing import Optional
 from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
 from JoinParabola import JoinParabola
+from collections.abc import Callable
+from plotly import graph_objects as go
 
 @dataclass
 class _TriInfo:
 	c_m: Q_
 	Beta: Q_
+
+@dataclass
+class BetaDistribution:
+	Get: Callable[[float], float]
+	Domain: tuple[float, float]
 
 class ImpellerBladeDesign:
 
@@ -113,28 +120,79 @@ class ImpellerBladeDesign:
 
 		return fig
 
-	def _GetWrap(self, flow_frac: float, xj: float=None) -> float:
+	def _GetWrap(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> tuple[float, BetaDistribution]:
 		"""
 			Returns the wrap angle (in radians) of a blade streamline at the specified flow_fraction, from the leading
 			to the trailing edge. xj (m from the leading edge) is where the two beta parabolas join, Milos's x_3;
 			defaults to mid-blade
 		"""
-
-		streamline = self._mer.PotentialFlow.GetStreamline(phi=flow_frac)
-		inlet_tri = self._SolveInletFlow(streamline)[0]
-
-		beta_1: float = inlet_tri.Beta.to('rad').m # TODO add incidence padding, negligible for now
 		beta_2: float = self.Pump.Impeller.Beta2B.to('rad').m
 
-		blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		x_f = blade_stream.length_m
-		if xj is None: xj = x_f/2
-		BetaDistribution = JoinParabola(y0=beta_1, yf=beta_2, xj=xj, xf=x_f)
+		x_j = x_f * sj if sj is not None else x_f * 0.5
+		GetBeta = JoinParabola(y0=beta_1, yf=beta_2, xj=x_j, xf=x_f)
 
 		# approximate wrap angle using trapezoidal Riemann sum
 		# Milo's pg. 51, eq 51 and 52
 		x = np.linspace(0, x_f, 200)
-		r = blade_stream.Points(x)[:, 1] # get only the 2nd column
-		Beta = BetaDistribution(x)
+		Beta = GetBeta(x)
 
-		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x)
+		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x), BetaDistribution(
+			Get=GetBeta, Domain=(0, x_f)
+		)
+
+	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> BetaDistribution:
+		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
+		guess_high = 0.99
+		guess_low = 0.01
+
+		beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
+		blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+		r = blade_stream.Points(np.linspace(0, blade_stream.length_m, 200))[:, 1]	# same 200 stations as _GetWrap
+
+		wrap_high = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_high)[0]
+		wrap_low = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_low)[0]
+
+		residual_new = float('inf')
+		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
+		assert residual_high * residual_low <= 0, 'The target wrap is out of reach by moving sj alone'
+
+		# bisection: keep the half of the bracket where the residual changes sign
+		while abs(residual_new) > 1e-4:
+			new_guess: float = (guess_high + guess_low) / 2
+			wrap_new, BetaDistribution = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=new_guess)
+			residual_new = wrap_new - target_wrap
+
+			if residual_new * residual_low > 0:
+				guess_low, residual_low = new_guess, residual_new
+			else:
+				guess_high, residual_high = new_guess, residual_new
+
+		return BetaDistribution
+
+	def Uh(self):
+		meanstream = self._mer.PotentialFlow.GetStreamline(0.5)
+
+		beta_1 = self._SolveInletFlow(meanstream)[0].Beta.to('rad').m
+		blade_meanstream = meanstream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+		r = blade_meanstream.Points(np.linspace(0, blade_meanstream.length_m, 200))[:, 1]
+
+		meanflow_wrap, mean_beta_dis = self._GetWrap(
+			r=r, beta_1=beta_1, x_f=blade_meanstream.length_m, sj=0.5
+			)
+
+		fig = go.Figure()
+
+		for phi in np.linspace(0, 1, 5):
+
+			if phi != 0.5:
+				streamline = self._mer.PotentialFlow.GetStreamline(phi)
+				beta_dis = self._SetWrap(streamline, meanflow_wrap)
+			else:
+				beta_dis = mean_beta_dis
+
+			x=np.linspace(*beta_dis.Domain, 200)
+			fig.add_trace(go.Scatter(
+				x=x, y=beta_dis.Get(x)
+			))
+
+		fig.show()

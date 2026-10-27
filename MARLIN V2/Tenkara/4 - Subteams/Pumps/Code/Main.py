@@ -119,9 +119,7 @@ def MakeDesign(propellant: str='LOX'):
 	from ImpellerBladeDesign import ImpellerBladeDesign
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
 	imp_blade_design.PlotInletTriangles()#.show()
-	# print(imp_blade_design._GetWrap(0) * 180/np.pi)
-	# print(imp_blade_design._GetWrap(0.5) * 180/np.pi)
-	# print(imp_blade_design._GetWrap(1) * 180/np.pi)
+	print(imp_blade_design.Uh())
 	return pump
 
 if __name__ == "__main__":
