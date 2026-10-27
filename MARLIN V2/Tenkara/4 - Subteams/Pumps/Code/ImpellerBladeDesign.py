@@ -215,8 +215,8 @@ class ImpellerBladeDesign:
 
 			fig.update_layout(dict(
 				template='plotly_white',
-				xaxis_title=r'$\text{Arclength } x \text{ (in.)}$',
-				yaxis_title=r'$\text{Blade angle } β \text{ (°)}$'
+				xaxis_title=r'Arclength <i>x</i> (in.)',
+				yaxis_title=r'Blade angle <i>β</i> (°)'
 			))
 
 		fig.show()
