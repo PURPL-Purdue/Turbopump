@@ -17,6 +17,7 @@ class MeridionalGeometry:
 	hub_taper_ratio: float = 0.3
 
 	Z_e_factor: float = 1
+	shroud_flat: float = 0.1
 
 class MeridionalDesign:
 
@@ -51,7 +52,7 @@ class MeridionalDesign:
 
 		self.ShroudContour = MeridionalContour(
 			r_in=impeller.d_1/2, z_out=self.Z_e, r_out=r_2, outlet_angle=geometry.shroud_outlet_angle,
-			flat=0.2 * b_1, fullness=geometry.shroud_fullness
+			flat=geometry.shroud_flat * b_1, fullness=geometry.shroud_fullness
 		)
 		self.HubContour = MeridionalContour(
 			r_in=impeller.d_hub/2, z_out=self.Z_e + impeller.b_2, r_out=r_2, outlet_angle=geometry.hub_outlet_angle,

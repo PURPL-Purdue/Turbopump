@@ -22,7 +22,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.07, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness
+		blade_thick = Q_(0.8, 'mm'),	# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
@@ -32,7 +32,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.08, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness at exit
+		blade_thick = Q_(0.8, 'mm'),	# blade thickness at exit
 		d_hub=Q_(0.7, 'in'),			# hub diameter
 	)
 }
@@ -112,8 +112,8 @@ def MakeDesign(propellant: str='LOX'):
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot()#.show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	from ImpellerBladeDesign import ImpellerBladeDesign

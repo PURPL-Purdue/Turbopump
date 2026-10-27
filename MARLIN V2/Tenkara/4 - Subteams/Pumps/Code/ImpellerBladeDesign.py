@@ -23,6 +23,12 @@ class BetaDistribution:
 	Get: Callable[[float], float]
 	Domain: tuple[float, float]
 
+def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: str='grey', dash: str='dot') -> go.Scatter:
+	return go.Scatter(
+		x=r * np.cos(t), y=r * np.sin(t),
+		mode='lines', line=dict(dash=dash, color=color), name=name
+	)
+
 class ImpellerBladeDesign:
 
 	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None):
@@ -203,7 +209,7 @@ class ImpellerBladeDesign:
 		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, 200))[:, 1]
 
 		ref_wrap, mean_beta_dis = self._GetWrap(
-			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.2
+			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.1
 			)
 
 		fig = go.Figure()
@@ -223,10 +229,10 @@ class ImpellerBladeDesign:
 				r_start = r[0]
 				arc_lead = np.sin(lead_sweep) * (r_start - r_ref_start)
 				theta_offset = arc_lead / r_start
-				target_wrap = ref_wrap + theta_offset
 
 				beta_dis, wrap = self._SetWrap(
-					beta_1=beta_1, r=r, x_f=blade_stream.length_m, target_wrap=target_wrap
+					beta_1=beta_1, r=r, x_f=blade_stream.length_m,
+					target_wrap=ref_wrap + theta_offset
 				)
 			else:
 				beta_dis, wrap, r = mean_beta_dis, ref_wrap, r_ref
@@ -243,10 +249,17 @@ class ImpellerBladeDesign:
 
 			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
 			theta += ref_wrap - wrap
-			
+
+			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade
+			Z = self.Pump.Impeller.Z_blade
+
+			# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
+			theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(Z)])
+			r_n = np.tile(np.append(r, np.nan), Z)
+
 			pfig.add_trace(go.Scatter(
-				x=Q_(r * np.cos(theta), 'm').to('in').m,
-				y=Q_(r * np.sin(theta), 'm').to('in').m,
+				x=Q_(r_n * np.cos(theta_n), 'm').to('in').m,
+				y=Q_(r_n * np.sin(theta_n), 'm').to('in').m,
 				name=trace_name
 			))
 
@@ -257,6 +270,25 @@ class ImpellerBladeDesign:
 		))
 
 		R_MAX = self.Pump.Impeller.d_2.to('in').m / 2 * 1.2
+
+		t = np.linspace(0, 2*np.pi, 100)
+
+		pfig.add_trace(_TraceCircle(
+			r=self.Pump.Impeller.d_1.to('in').m / 2,
+			t=t, name=r'd<sub>1</sub>', dash='longdash'
+		))
+
+		pfig.add_trace(_TraceCircle(
+			r=self.Pump.Impeller.d_hub.to('in').m / 2,
+			t=t, name=r'd<sub>hub</sub>', dash='dash'
+		))
+
+		pfig.add_trace(_TraceCircle(
+			r=self.Pump.Impeller.d_2.to('in').m / 2,
+			t=t, name=r'd<sub>2</sub>', dash='longdashdot', color='black'
+		))
+
+
 		pfig.update_layout(dict(
 			template='plotly_white',
 			xaxis_title=r'<i>x</i> (in.)',
@@ -266,4 +298,4 @@ class ImpellerBladeDesign:
 		))
 		
 		pfig.show()
-		fig.show()
+		#fig.show()
