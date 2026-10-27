@@ -57,11 +57,13 @@ Preliminary design code for the LOX and IPA pumps: 1D impeller sizing and H-Q cu
     - `StaticMoment(s_1, s_2)` returns ∫r dx;
     - `FindIntersect(other)` returns an `IntersectResults`: a list of `(z, r, s_1, s_2)` tuples ordered by `s_1` (normalized arclength on this curve, `s_2` on `other`), empty when the curves don't cross. A start or end of one curve lying on the other (within 1 µm) counts, with `s` exactly 0 or 1. Overlapping stretches and a curve with itself are not handled;
     - `Closest(p)` returns the distance from a point (Quantity or m) to the curve and the normalized arclength of the closest point;
+    - `Crop(s_1, s_2)` returns the part between two normalized arclengths as a `SubCurve`; `Between(a, b)` the part between where the curve crosses `a` and `b` once each, e.g. `streamline.Between(LeadingEdge, TrailingEdge)` for the blade part of a streamline;
     - `Trace(l, **scatter)` returns the curve as a plotly line.
   - Subclasses (a new kind of curve only needs `length_m` and `Points`):
     - `Polyline`: straight lines through points; two points make a straight line. `Interpolate(values, s)` interpolates per-point data, such as a streamline's `v_m`, at normalized arclength the same way as the points;
     - `BezierCurve`: cubic Bezier by arclength, with `ControlPoints`. `BezierCurve.ThroughPoints(P_a, P_m, P_b)` is a quadratic through three points;
     - `SegmentChain`: any curves joined end to end, chains included. `Segments` holds the pieces and `s_m` the arclength (m) of each joint;
+    - `SubCurve`: part of a `Parent` curve, from `Crop`/`Between`. `ToParent(s)` maps normalized arclength back to the parent, e.g. to interpolate a streamline's `v_m`;
     - `MeridionalContour(SegmentChain)`: a flat `Polyline`, then the bend `Bend` (a `BezierCurve`), then an outlet `Polyline`;
     - `MeanCurve(a, b)` returns a `Polyline`.
   - `Cross(a, b)` is the 2D cross product, used by `FindIntersect` and the mesh.
