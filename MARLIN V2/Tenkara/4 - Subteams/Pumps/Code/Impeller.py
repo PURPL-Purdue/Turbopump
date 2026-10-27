@@ -9,7 +9,6 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InputGeometry:
-	eta_hyd: float			# impeller hydraulic efficiency at BEP
 	Z_blade: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
 	d_1: Q_[float]			# impeller inlet diameter
@@ -48,7 +47,6 @@ class Impeller:
 		)
 		self.Area2: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2) - exit_blockage_area
 
-		self.eta_hyd = geometry.eta_hyd
 		self.Z_blade = geometry.Z_blade
 		self.Beta2B = geometry.Beta2B
 		self.d_1 = geometry.d_1

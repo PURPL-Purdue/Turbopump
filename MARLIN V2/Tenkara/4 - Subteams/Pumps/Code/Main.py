@@ -17,9 +17,8 @@ atm_pressure = Q_(1, 'atm').to('Pa')
 
 basic_impeller_geometry = {
 	'LOX': Impeller.InputGeometry(
-		eta_hyd = 0.50,					# hydraulic efficiency at BEP
 		Z_blade = 6,					# integer number of blades
-		Beta2B = Q_(20,'deg').to('rad'),# blade angle at exit, relative to tangent
+		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.07, 'in'),			# impeller outlet height
@@ -28,9 +27,8 @@ basic_impeller_geometry = {
 	),
 
 	'IPA': Impeller.InputGeometry(
-		eta_hyd = 0.50,					# hydraulic efficiency at BEP
 		Z_blade = 6,					# integer number of blades
-		Beta2B = Q_(25,'deg').to('rad'),# blade angle at exit, relative to tangent
+		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.08, 'in'),			# impeller outlet height
@@ -76,6 +74,7 @@ color = dict(LOX='blue', IPA='green')
 def CreatePump(propellant: str='LOX'):
 	return Pump.Pump(
 		design_point=Pump.PumpDesignPoint(
+			eta_overall=0.50,
 			feed_pressure=Inputs[propellant]['feed_pressure'],
 			discharge_pressure=Inputs[propellant]['discharge_pressure'],
 			mass_flow=Inputs[propellant]['mass_flow'],
@@ -120,7 +119,9 @@ def MakeDesign(propellant: str='LOX'):
 	from ImpellerBladeDesign import ImpellerBladeDesign
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
 	imp_blade_design.PlotInletTriangles()#.show()
-	print(imp_blade_design._GetWrap(0) * 180/np.pi)
+	# print(imp_blade_design._GetWrap(0) * 180/np.pi)
+	# print(imp_blade_design._GetWrap(0.5) * 180/np.pi)
+	# print(imp_blade_design._GetWrap(1) * 180/np.pi)
 	return pump
 
 if __name__ == "__main__":
