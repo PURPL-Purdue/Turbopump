@@ -35,7 +35,7 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
-	def GetInletC_u(self, r: Q_, free_vortex: bool=False):
+	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
 		if free_vortex:
 			# free vortex:
@@ -48,6 +48,14 @@ class ImpellerBladeDesign:
 			r = self._rad_eq.inducer.D_tip/2
 		
 		return self._rad_eq.c_theta(r, self._rad_eq.inducer.L_ax)
+
+	def _GetInletC_m(self, r: Q_) -> Q_:
+		if r < self._rad_eq.inducer.R_hub_2:
+			r = self._rad_eq.inducer.R_hub_2
+		elif r > self._rad_eq.inducer.D_tip/2:
+			r = self._rad_eq.inducer.D_tip/2
+
+		return self._rad_eq.c_axial(r, self._rad_eq.inducer.L_ax)
 
 	def _SolveInletFlow(self, streamline: MeridionalCurve) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
@@ -85,8 +93,11 @@ class ImpellerBladeDesign:
 		_, r_1, s, _ = hits[0]
 
 		omega = self._mer.Pump.Impeller.DP.N_shaft.to('rad/s')
+
+		#c_m1: Q_[float] = self._GetInletC_m(r_1)
 		c_m1: Q_[float] = streamline.Interpolate(streamline.v_m, s).to('m/s')
-		w_u1 = omega * r_1 - self.GetInletC_u(r_1).to('m/s')
+		
+		w_u1 = omega * r_1 - self._GetInletC_u(r_1)
 		assert w_u1 > 0, 'The preswirl exceeds the blade speed at the leading edge'
 
 		return r_1, c_m1, w_u1
@@ -152,17 +163,13 @@ class ImpellerBladeDesign:
 			Get=GetBeta, Domain=(0, x_f)
 		)
 
-	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> tuple[BetaDistribution, float, np.ndarray[float]]:
+	def _SetWrap(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> tuple[BetaDistribution, float]:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
 
-		beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
-		blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r = blade_stream.Points(np.linspace(0, blade_stream.length_m, 200))[:, 1]
-
-		wrap_high, beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_high)
-		wrap_low, beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=guess_low)
+		wrap_high, beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
+		wrap_low, beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
 
 		residual_new = float('inf')
 		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
@@ -170,13 +177,13 @@ class ImpellerBladeDesign:
 		if residual_high * residual_low > 0:
 			print('The target wrap is out of reach by moving sj alone')
 			if np.abs(residual_high) > np.abs(residual_low):
-				return beta_low, wrap_low, r
-			return beta_high, wrap_high, r
+				return beta_low, wrap_low
+			return beta_high, wrap_high
 
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
-			wrap_new, beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=blade_stream.length_m, sj=new_guess)
+			wrap_new, beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
 			residual_new = wrap_new - target_wrap
 
 			if residual_new * residual_low > 0:
@@ -184,30 +191,45 @@ class ImpellerBladeDesign:
 			else:
 				guess_high, residual_high = new_guess, residual_new
 
-		return beta_dis, wrap_new, r
+		return beta_dis, wrap_new
 
 	def Uh(self):
-		meanstream = self._mer.PotentialFlow.GetStreamline(0.5)
+		lead_sweep: float = np.deg2rad(20)
+		ref_phi = 1
+		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
 
-		beta_1 = self._SolveInletFlow(meanstream)[0].Beta.to('rad').m
-		blade_meanstream = meanstream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r_mean = blade_meanstream.Points(np.linspace(0, blade_meanstream.length_m, 200))[:, 1]
+		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
+		ref_bladestream = ref_stream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, 200))[:, 1]
 
-		target_wrap, mean_beta_dis = self._GetWrap(
-			r=r_mean, beta_1=beta_1, x_f=blade_meanstream.length_m, sj=0.5
+		ref_wrap, mean_beta_dis = self._GetWrap(
+			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.2
 			)
 
 		fig = go.Figure()
 		pfig = go.Figure()
 
-		for phi in np.linspace(0, 1, 5):
+		for phi in np.linspace(0, 1, 10):
 
-			if phi != 0.5:
+			if phi != ref_phi:
+
 				streamline = self._mer.PotentialFlow.GetStreamline(phi)
-				beta_dis, wrap, r = self._SetWrap(streamline, target_wrap)
-			else:
-				beta_dis, wrap, r = mean_beta_dis, target_wrap, r_mean
+				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
+				blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+				
+				r = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))[:, 1]
 
+				r_ref_start = r_ref[0]
+				r_start = r[0]
+				arc_lead = np.sin(lead_sweep) * (r_start - r_ref_start)
+				theta_offset = arc_lead / r_start
+				target_wrap = ref_wrap + theta_offset
+
+				beta_dis, wrap = self._SetWrap(
+					beta_1=beta_1, r=r, x_f=blade_stream.length_m, target_wrap=target_wrap
+				)
+			else:
+				beta_dis, wrap, r = mean_beta_dis, ref_wrap, r_ref
 			
 			arc_x=np.linspace(*beta_dis.Domain, len(r))
 			beta = beta_dis.Get(arc_x)
@@ -220,7 +242,7 @@ class ImpellerBladeDesign:
 			))
 
 			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
-			theta += target_wrap - wrap
+			theta += ref_wrap - wrap
 			
 			pfig.add_trace(go.Scatter(
 				x=Q_(r * np.cos(theta), 'm').to('in').m,
@@ -234,7 +256,7 @@ class ImpellerBladeDesign:
 			yaxis_title=r'Blade angle <i>β</i> (°)'
 		))
 
-		R_MAX = self.Pump.Impeller.d_2.to('in').m / 2 * 1.5
+		R_MAX = self.Pump.Impeller.d_2.to('in').m / 2 * 1.2
 		pfig.update_layout(dict(
 			template='plotly_white',
 			xaxis_title=r'<i>x</i> (in.)',
