@@ -126,15 +126,15 @@ class ImpellerBladeDesign:
 		beta_1: float = inlet_tri.Beta.to('rad').m # TODO add incidence padding, negligible for now
 		beta_2: float = self.Pump.Impeller.Beta2B.to('rad').m
 
-		blade = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		x_f = blade.length_m
+		blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+		x_f = blade_stream.length_m
 		if xj is None: xj = x_f/2
 		BetaDistribution = JoinParabola(y0=beta_1, yf=beta_2, xj=xj, xf=x_f)
 
 		# approximate wrap angle using trapezoidal Riemann sum
 		# Milo's pg. 51, eq 51 and 52
 		x = np.linspace(0, x_f, 200)
-		r = blade.Points(x)[:, 1] # get only the 2nd column
+		r = blade_stream.Points(x)[:, 1] # get only the 2nd column
 		Beta = BetaDistribution(x)
 
 		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x)
