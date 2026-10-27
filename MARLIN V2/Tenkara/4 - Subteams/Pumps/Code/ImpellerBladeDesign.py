@@ -8,6 +8,7 @@ from PotentialFlow import Streamline
 from typing import Optional
 from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
+from JoinParabola import JoinParabola
 
 @dataclass
 class _TriInfo:
@@ -29,7 +30,7 @@ class ImpellerBladeDesign:
 	def GetInletC_u(self, r: Q_):
 		return self.K_inlet / r
 
-	def _SolveInletFlow(self, phi: float) -> tuple[_TriInfo, _TriInfo, Q_, float]:
+	def _SolveInletFlow(self, streamline: MeridionalCurve) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
 			Radius r_1 (m), flow angle beta_1' just inside the blades (rad, = blade angle at zero incidence) and degree of
 			blockage rho_1 where the leading edge crosses streamline phi. Tangential blockage (CFturbo; Hassan et al.,
@@ -38,15 +39,7 @@ class ImpellerBladeDesign:
 				tan(beta_1') = tan(beta_1) / rho_1		(Milos eq. 33)
 			Solved explicitly (own derivation): sin(beta_1' - beta_1) = a cos(beta_1)
 		"""
-		streamline = self._mer.PotentialFlow.GetStreamline(phi)
-
-		# leading edge angle to the exact contours at the hub and shroud, to the polyline streamline in between
-		if phi == 0:
-			lambda_1 = self._GetLeadingEdgeAngle(self._mer.HubContour)
-		elif phi == 1:
-			lambda_1 = self._GetLeadingEdgeAngle(self._mer.ShroudContour)
-		else:
-			lambda_1 = self._GetLeadingEdgeAngle(streamline)
+		lambda_1 = self._GetLeadingEdgeAngle(streamline)
 
 		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline)
 		impeller = self._mer.Pump.Impeller
@@ -107,7 +100,7 @@ class ImpellerBladeDesign:
 
 		fig = subplots.make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
 		for i, phi in enumerate(phis):
-			prime, no_block, r, _ = self._SolveInletFlow(phi)
+			prime, no_block, r, _ = self._SolveInletFlow(self._mer.PotentialFlow.GetStreamline(phi))
 			u = self.Pump.DP.N_shaft * r
 			triangles = [
 				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
@@ -119,3 +112,26 @@ class ImpellerBladeDesign:
 			title=f'Inlet Velocity Triangles<br><sup>{CONVENTION_NOTES["centrifugal"]}</sup>')
 
 		return fig
+
+	def _GetWrap(self, flow_frac: float, xj: float=None) -> float:
+		"""
+			Returns the wrap angle (in radians) of a blade streamline at the specified flow_fraction
+		"""
+			
+		streamline = self._mer.PotentialFlow.GetStreamline(phi=flow_frac)
+		inlet_tri = self._SolveInletFlow(streamline)[0]
+
+		beta_1: float = inlet_tri.Beta.to('rad').m
+		beta_2: float = self.Pump.Impeller.Beta2B.to('rad').m
+
+		x_f = streamline.length_m
+		if xj is None: xj = x_f/2
+		BetaDistribution = JoinParabola(y0=beta_1, yf=beta_2, xj=xj, xf=x_f)
+
+		# approximate wrap angle using trapezoidal Riemann sum
+		# Milo's pg. 51, eq 51 and 52
+		x = np.linspace(0, x_f, 200)
+		r = streamline.Points(x)[:, 1] # get only the 2nd column
+		Beta = BetaDistribution(x)
+
+		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x)
