@@ -152,7 +152,7 @@ class ImpellerBladeDesign:
 			Get=GetBeta, Domain=(0, x_f)
 		)
 
-	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> tuple[BetaDistribution, float]:
+	def _SetWrap(self, streamline: MeridionalCurve, target_wrap: float) -> tuple[BetaDistribution, float, np.ndarray[float]]:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
@@ -170,8 +170,8 @@ class ImpellerBladeDesign:
 		if residual_high * residual_low > 0:
 			print('The target wrap is out of reach by moving sj alone')
 			if np.abs(residual_high) > np.abs(residual_low):
-				return beta_low, wrap_low
-			return beta_high, wrap_high
+				return beta_low, wrap_low, r
+			return beta_high, wrap_high, r
 
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
@@ -184,17 +184,17 @@ class ImpellerBladeDesign:
 			else:
 				guess_high, residual_high = new_guess, residual_new
 
-		return beta_dis, wrap_new
+		return beta_dis, wrap_new, r
 
 	def Uh(self):
 		meanstream = self._mer.PotentialFlow.GetStreamline(0.5)
 
 		beta_1 = self._SolveInletFlow(meanstream)[0].Beta.to('rad').m
 		blade_meanstream = meanstream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r = blade_meanstream.Points(np.linspace(0, blade_meanstream.length_m, 200))[:, 1]
+		r_mean = blade_meanstream.Points(np.linspace(0, blade_meanstream.length_m, 200))[:, 1]
 
-		meanflow_wrap, mean_beta_dis = self._GetWrap(
-			r=r, beta_1=beta_1, x_f=blade_meanstream.length_m, sj=0.5
+		target_wrap, mean_beta_dis = self._GetWrap(
+			r=r_mean, beta_1=beta_1, x_f=blade_meanstream.length_m, sj=0.5
 			)
 
 		fig = go.Figure()
@@ -204,9 +204,9 @@ class ImpellerBladeDesign:
 
 			if phi != 0.5:
 				streamline = self._mer.PotentialFlow.GetStreamline(phi)
-				beta_dis, wrap = self._SetWrap(streamline, meanflow_wrap)
+				beta_dis, wrap, r = self._SetWrap(streamline, target_wrap)
 			else:
-				beta_dis, wrap = mean_beta_dis, meanflow_wrap
+				beta_dis, wrap, r = mean_beta_dis, target_wrap, r_mean
 
 			
 			arc_x=np.linspace(*beta_dis.Domain, len(r))
@@ -220,6 +220,7 @@ class ImpellerBladeDesign:
 			))
 
 			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
+			theta += target_wrap - wrap
 			
 			pfig.add_trace(go.Scatter(
 				x=Q_(r * np.cos(theta), 'm').to('in').m,
@@ -233,10 +234,13 @@ class ImpellerBladeDesign:
 			yaxis_title=r'Blade angle <i>β</i> (°)'
 		))
 
+		R_MAX = self.Pump.Impeller.d_2.to('in').m / 2 * 1.5
 		pfig.update_layout(dict(
 			template='plotly_white',
 			xaxis_title=r'<i>x</i> (in.)',
-			yaxis_title=r'<i>y</i> (in.)'
+			yaxis_title=r'<i>y</i> (in.)',
+			yaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain', scaleanchor='x', scaleratio=1),
+			xaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain')
 		))
 		
 		pfig.show()
