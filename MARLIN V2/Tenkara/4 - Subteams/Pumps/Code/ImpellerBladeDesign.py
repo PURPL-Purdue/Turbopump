@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from JoinParabola import JoinParabola
 from collections.abc import Callable
 from plotly import graph_objects as go
+from scipy import integrate
 
 @dataclass
 class _TriInfo:
@@ -197,6 +198,7 @@ class ImpellerBladeDesign:
 			)
 
 		fig = go.Figure()
+		pfig = go.Figure()
 
 		for phi in np.linspace(0, 1, 5):
 
@@ -206,17 +208,36 @@ class ImpellerBladeDesign:
 			else:
 				beta_dis, wrap = mean_beta_dis, meanflow_wrap
 
-			x=np.linspace(*beta_dis.Domain, 200)
+			
+			arc_x=np.linspace(*beta_dis.Domain, len(r))
+			beta = beta_dis.Get(arc_x)
+
+			trace_name = f'Phi = {phi:.2f}, Wrap = {(wrap * 180/np.pi):.1f} °'
 			fig.add_trace(go.Scatter(
-				x=Q_(x, 'm').to('in').m,
-				y=np.rad2deg(beta_dis.Get(x)),
-			name=f'Phi = {phi:.2f}, Wrap = {(wrap * 180/np.pi):.1f} °'
+				x=Q_(arc_x, 'm').to('in').m,
+				y=np.rad2deg(beta),
+				name=trace_name
 			))
 
-			fig.update_layout(dict(
-				template='plotly_white',
-				xaxis_title=r'Arclength <i>x</i> (in.)',
-				yaxis_title=r'Blade angle <i>β</i> (°)'
+			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
+			
+			pfig.add_trace(go.Scatter(
+				x=Q_(r * np.cos(theta), 'm').to('in').m,
+				y=Q_(r * np.sin(theta), 'm').to('in').m,
+				name=trace_name
 			))
 
+		fig.update_layout(dict(
+			template='plotly_white',
+			xaxis_title=r'Arclength <i>x</i> (in.)',
+			yaxis_title=r'Blade angle <i>β</i> (°)'
+		))
+
+		pfig.update_layout(dict(
+			template='plotly_white',
+			xaxis_title=r'<i>x</i> (in.)',
+			yaxis_title=r'<i>y</i> (in.)'
+		))
+		
+		pfig.show()
 		fig.show()
