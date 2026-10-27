@@ -181,7 +181,7 @@ class ImpellerBladeDesign:
 		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
 		# same sign at both ends: the target is not between them, take the closer end
 		if residual_high * residual_low > 0:
-			print('The target wrap is out of reach by moving sj alone')
+			print(f'The target wrap {target_wrap*180/np.pi:.1f} is out of reach by moving sj alone')
 			if np.abs(residual_high) > np.abs(residual_low):
 				return beta_low, wrap_low
 			return beta_high, wrap_high
@@ -200,7 +200,7 @@ class ImpellerBladeDesign:
 		return beta_dis, wrap_new
 
 	def Uh(self):
-		lead_sweep: float = np.deg2rad(20)
+		lead_sweep: float = np.deg2rad(10)
 		ref_phi = 1
 		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
 
@@ -209,7 +209,7 @@ class ImpellerBladeDesign:
 		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, 200))[:, 1]
 
 		ref_wrap, mean_beta_dis = self._GetWrap(
-			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.1
+			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.05
 			)
 
 		fig = go.Figure()
@@ -285,7 +285,7 @@ class ImpellerBladeDesign:
 
 		pfig.add_trace(_TraceCircle(
 			r=self.Pump.Impeller.d_2.to('in').m / 2,
-			t=t, name=r'd<sub>2</sub>', dash='longdashdot', color='black'
+			t=t, name=r'd<sub>2</sub>', dash='longdash'
 		))
 
 
@@ -298,4 +298,4 @@ class ImpellerBladeDesign:
 		))
 		
 		pfig.show()
-		#fig.show()
+		fig.show()
