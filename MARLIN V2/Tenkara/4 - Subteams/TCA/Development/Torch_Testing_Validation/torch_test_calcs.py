@@ -58,7 +58,7 @@ A_f = np.pi * ((FUEL_DIA / (m2in * 2)))**2
 
 mdot_set = 0.0783 * lbm2kg     #lbm/s to kg/s
 OF_set = 1.5
-md_ox_set = mdot_set / (OF_set + 1)
+md_ox_set = OF_set * mdot_set / (OF_set + 1)
 md_f_set = mdot_set - md_ox_set
 
 p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
