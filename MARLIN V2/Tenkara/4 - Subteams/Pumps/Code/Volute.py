@@ -45,11 +45,15 @@ def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant 
     return avg_V
 
 def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float], n_volutes: int) -> Q_[float]:  # Get areas as a function of angle
-    if e < Q_(1, 'degrees'):
-        A = (Q_(1, 'degrees') / e_sp) * (Q / (n_volutes * avg_V))
-        print(e, A)
-        return A
+    #if e < Q_(1, 'degrees'):
+    #    A = (Q_(1, 'degrees') / e_sp) * (Q / (n_volutes * avg_V))
+    #    print(e, A)
+    #    return A
     A = (e / e_sp) * (Q / (n_volutes * avg_V))
+
+    min_gap = Q_(1, "mm")
+    if np.sqrt(A) < min_gap:
+        A = min_gap**2
     return A
 
 def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[float], Q: Q_[float], Q_bep: Q_[float]) -> Q_[float]:
@@ -59,21 +63,20 @@ def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[f
     return radial_thrust
 
 def sizeDiffuserLength(At: Q_[float], D_target: Q_[float], diffuserTheta: float) -> Q_[float]:
-    Dt = math.sqrt(4 * At / math.pi)
-    L = (D_target - Dt) / (2 * math.tan(diffuserTheta))
+    Dt = np.sqrt(4 * At / math.pi)
+    L = (D_target - Dt) / (2 * np.tan(diffuserTheta))
     return L
 
 def calcDiffuserPressures(stagnationP1: Q_[float], At: Q_[float],  targetA: Q_[float], avg_V: Q_[float], rho: Q_[float]) -> Q_[float]:
-    V2 = At / targetA * avg_V
-    
-    staticP2 = stagnationP1 - 1/2 * rho * V2**2
-
+    V2 = At / targetA * avg_V    
+    staticP2 = stagnationP1 - (1/2 * rho * V2**2)
     return staticP2
     
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         self.K_v = getKv(self.N_s)
         self.avg_V = getVoluteVelocity(self.K_v, self.H)
+        self.n_volutes = 2
 
         for theta in np.linspace(0, self.e_sp.magnitude, 100):
             self.A_theta = getAreaAtAngle(self.Q, self.avg_V, Q_(theta, 'radians'), self.e_sp, self.n_volutes)
@@ -81,23 +84,41 @@ class Volute:
         self.diffuserLength = sizeDiffuserLength(self.At, self.D_target, self.diffuserTheta)
         self.staticP2 = calcDiffuserPressures(self.stagnationP1, self.At, self.targetA, self.avg_V, self.rho)
 
-
 if __name__ == "__main__":
-    lox_pump = Main.CreatePump('LOX')
+    lox_pump = Main.MakeDesign('LOX')
+    lox_feed_P = lox_pump.DP.feed_pressure
     lox_H = lox_pump.DesignHeadRise
     lox_D2 = lox_pump.Impeller.d_2
     lox_B2_total = lox_pump.Impeller.b_2
     lox_rho = lox_pump.DP.rho
     lox_Q = lox_pump.DesignFlowRate
     lox_N_s = lox_pump.n_s
+    lox_N_q = lox_pump.n_q
+    _, lox_cm2, lox_cu2, _ = lox_pump.Impeller.GetOutletVelocities()
+    lox_c2 = np.sqrt(lox_cm2**2 + lox_cu2**2)
     K_v = getKv(lox_N_s)
     avg_V = getVoluteVelocity(K_v, lox_H)
     plt.figure()
     A_array = []
+    thetas = []
     for theta in np.linspace(0, 360, 361):
         A_theta = getAreaAtAngle(lox_Q, avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), 1)
-        
         A_array.append(A_theta.to('cm^2').m)
+        if A_theta == Q_(1, 'mm^2'):
+            thetas.append(theta)
+
+    stagnationP1 = lox_H * lox_rho * g
+    impellerStaticP = Q_(stagnationP1 - (1/2 * lox_rho * lox_c2**2), "bar")
+    staticP1 = Q_(stagnationP1 - (1/2 * lox_rho * avg_V**2), "bar")
+    lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
+    throatA = Q_(A_array[-1], "cm^2")
+    staticP2 = calcDiffuserPressures(stagnationP1, throatA, lox_targetA, avg_V, lox_rho)
+    
+    #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
+    #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
+    #lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
+    #throatA = Q_(A_array[-1], "m^2")
+    #staticP2 = calcDiffuserPressures(stagnationP1, throatA, lox_targetA.to("m^2"), avg_V.to("m/s"), lox_rho.to("kg/m^3"))
 
     #plt.plot(np.linspace(0, 360, 361), A_array)
     #plt.xlabel = 'Volute wrap angle (degrees)'
@@ -107,24 +128,29 @@ if __name__ == "__main__":
     #plt.show()
 
     print(f"Specific speed: {lox_N_s:.4f}")
+    print(f"Nq metric specific speed: {lox_N_q:.4f}")
     print(f"LOX pump head rise: {lox_H.to('m'):.4f}")
     print(f"LOX pump diameter: {lox_D2.to('m'):.4f}")
     print(f"Lox pump width: {lox_B2_total.to('m'):.4f}")
     print(f"K_v: {K_v:.4f}")
+    print(f"Impeller static pressure: {impellerStaticP.to('bar'):.4f}")
     print(f"Average velocity: {avg_V.to('m/s'):.4f}")
-    print(f"Start area: {Q_(A_array[0], 'mm^2'):.4f}")
+    print(f"Tongue placement angle: {Q_(thetas[-1], "degrees").to("degrees"):.4f}")
+    print(f"Start area: {Q_(A_array[0], "cm^2").to('mm^2'):.4f}")
+    print(f"Throat area: {Q_(A_array[-1], "cm^2").to("in^2"):.4f}")
+    print(f"Static pressure inside LOX volute: {staticP1.to('bar'):.4f}")
+    print(f"Static pressure at LOX diffuser exit: {staticP2.to('bar'):.4f}")
 
-    radial_thrust = calcRadialThrust(
-        lox_pump.DesignHeadRise,
-        lox_pump.Impeller.d_2,
-        lox_pump.Impeller.b_2,
-        lox_pump.DP.rho,
-        0 * lox_pump.DesignFlowRate,
-        lox_pump.DesignFlowRate
-        )
-    print(f"Radial_thrust: {radial_thrust.to('N'):.4f}")
+    #radial_thrust = calcRadialThrust(
+    #    lox_pump.DesignHeadRise,
+    #    lox_pump.Impeller.d_2,
+    #    lox_pump.Impeller.b_2,
+    #    lox_pump.DP.rho,
+    #    0 * lox_pump.DesignFlowRate,
+    #    lox_pump.DesignFlowRate
+    #    )
+    #print(f"Radial_thrust: {radial_thrust.to('N'):.4f}")
 
-    
 # System inputs
 #Q_design = Q_(1.78, 'liters/second')
 #H_design = Q_(294.8, 'meters')
