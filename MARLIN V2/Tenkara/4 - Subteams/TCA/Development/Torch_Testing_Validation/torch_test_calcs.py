@@ -42,15 +42,15 @@ R_FJ = 518.28        #[J / kg - K]
 
 FEED_TEMP = 293.15    #Degrees Kelvin
 OX_DIA = 0.063          #inches
-FUEL_DIA = 0.059        #inches
+FUEL_DIA = 0.063        #inches
 CD = 0.8
 CSTAR_EFF = 0.9
 K_F = 1.31  # ch4 specific heat ratio
 K_OX = 1.40 # gox specific heat ratio  
 P_OX = 400  #setpoint P_ox (psia)
-P_F = 400  #setpoint P_ox (psia)\
+P_F = 400  #setpoint P_ox (psia)
 
-D_TORCH = 0.2 #in
+D_TORCH = 0.25 #in
 
 A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
 A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
