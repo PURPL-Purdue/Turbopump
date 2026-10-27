@@ -144,9 +144,9 @@ df_results = pd.DataFrame({
     'Te': T_exit                   # K
 })
 
-output_csv_filename = r"Outputs/torch_test_matrix_results.csv"
-df_results.to_csv(output_csv_filename, index=False)
-print(f"Results successfully exported to {output_csv_filename}")
+#output_csv_filename = r"Outputs/torch_test_matrix_results.csv"
+#df_results.to_csv(output_csv_filename, index=False)
+#print(f"Results successfully exported to {output_csv_filename}")
 print(df_results)
 
 ###############################
