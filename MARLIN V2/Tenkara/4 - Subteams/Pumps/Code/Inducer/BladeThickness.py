@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
- 
+
  
 def get_float(prompt: str) -> float:
     """Keep asking until the user enters a valid number."""

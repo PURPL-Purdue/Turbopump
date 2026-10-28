@@ -1,5 +1,5 @@
 import Impeller
-import Inducer
+import Inducer.Inducer as Inducer
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
