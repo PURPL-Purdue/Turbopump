@@ -1,5 +1,5 @@
 ## GG V2.0 Film Cooling Sizing Script
-# Authors: Miles Cohen & Lily Brideou
+# Authors: Miles Cohen & Lily Brideau
 # Updated on: 9/23/2026
 # Description: Script for sizing film cooling in the Gas Generator V2.0
 # Method: Given input mass flow rates and temperatures, this script
@@ -129,6 +129,9 @@ psi2pa = 6894.757
 # Feed pressures
 LOx_feed_pressure = 3430000     #pa
 IPA_feed_pressure = 3430000     #pa
+# Film cooling insert label
+insert_id = '35%'
+film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
 # IPA inlet temp
 IPA_temp = 298                   # K
 #IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
@@ -148,7 +151,7 @@ Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
 # Solve for mass flows into the chamber
 mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
 mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
-mdot_film = mdot(config['film_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
 print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
 print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
 print(f'Total OF Ratio: {(mdot_ox/(mdot_IPA + mdot_film)):.3f}')
