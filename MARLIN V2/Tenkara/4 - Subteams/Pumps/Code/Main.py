@@ -54,7 +54,7 @@ meridional_geometry = {
 
 blade_params = {
 	'LOX': BladeParams(
-		sj=0.1,
+		sj=0.07,
 		lead_sweep=Q_(10, 'deg')
 	),
 
