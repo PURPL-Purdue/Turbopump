@@ -29,10 +29,15 @@ def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: s
 		mode='lines', line=dict(dash=dash, color=color), name=name
 	)
 
+@dataclass
+class BladeParams:
+	pass
+
 class ImpellerBladeDesign:
 
-	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None):
+	def __init__(self, meridional_design: MeridionalDesign, inducer_radial_equilibrium: Optional[InducerRadialEquilibrium]=None, blade_params: BladeParams = BladeParams()):
 
+		self._params = blade_params
 		self.Pump = meridional_design.Pump
 		self._mer = meridional_design
 		self._rad_eq = inducer_radial_equilibrium

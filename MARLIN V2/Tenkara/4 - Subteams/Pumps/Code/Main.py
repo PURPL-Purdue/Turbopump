@@ -2,7 +2,7 @@ import numpy as np
 from pint import Quantity as Q_
 import Pump
 import Impeller
-import Inducer
+from ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
 from CoolProp import CoolProp as CP
 import MeridionalDesign
 import sys
@@ -49,6 +49,16 @@ meridional_geometry = {
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(5, 'deg')
+	)
+}
+
+blade_params = {
+	'LOX': BladeParams(
+
+	),
+
+	'IPA': BladeParams(
+		
 	)
 }
 
@@ -116,7 +126,6 @@ def MakeDesign(propellant: str='LOX'):
 	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
-	from ImpellerBladeDesign import ImpellerBladeDesign
 	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
 	imp_blade_design.PlotInletTriangles()#.show()
 	imp_blade_design.Uh()
