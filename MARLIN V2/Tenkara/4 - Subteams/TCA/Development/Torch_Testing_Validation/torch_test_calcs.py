@@ -50,7 +50,7 @@ K_OX = 1.40 # gox specific heat ratio
 P_OX = 400  #setpoint P_ox (psia)
 P_F = 400  #setpoint P_ox (psia)
 
-D_TORCH = 0.25 #in
+D_TORCH = 0.268 #in
 
 A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
 A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
@@ -65,6 +65,9 @@ p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX +
 p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
 
 print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
+
+P_OX = p_ox_set / psi2Pa
+P_F= p_f_set / psi2Pa
 
 pox_arr = [P_OX, (P_OX * 1.15), P_OX, (P_OX * 0.85), P_OX, (P_OX * 1.10), (P_OX * 0.90)]
 pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
