@@ -204,7 +204,7 @@ OUT_COLS = [
     "cooling_pct", "OF_overall",
     "mdot_ox_kg_s", "mdot_fuel_kg_s", "mdot_film_kg_s",
     "P_ox_Pa", "P_fuel_Pa", "P_c_Pa",
-    "cstar_eff_ms", "dP_ox_over_Pc", "dP_fuel_over_Pc",
+    "cstar_ms", "dP_ox_over_Pc", "dP_fuel_over_Pc",
     "P_man_psia", "dP_insert_psi",
     "warnings",
 ]
@@ -241,7 +241,7 @@ def to_row(mdot: float, of_core: float, insert_id: str, r: dict) -> dict:
         "P_ox_Pa": r["P_ox"],
         "P_fuel_Pa": r["P_fuel"],
         "P_c_Pa": r["P_c"],
-        "cstar_eff_ms": r["cstar"],
+        "cstar_ms": r["cstar"],
         "dP_ox_over_Pc": r["dp_ox_over_pc"],
         "dP_fuel_over_Pc": r["dp_fuel_over_pc"],
         "P_man_psia": psi(r["P_man"]),
@@ -251,9 +251,8 @@ def to_row(mdot: float, of_core: float, insert_id: str, r: dict) -> dict:
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", default="GG_hardware_definition.yaml")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--config", default="../Inputs/GG_hardware_definition.yaml")
     ap.add_argument("--input", default="TestMatrix_Inputs.csv")
     ap.add_argument("--output", default="TestMatrix_Outputs.csv")
     args = ap.parse_args()
