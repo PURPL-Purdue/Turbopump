@@ -1,7 +1,7 @@
 import numpy as np
 from pint import Quantity as Q_
 from plotly import graph_objects as go, subplots
-from InducerRadialEquilibrium import InducerRadialEquilibrium
+from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 from MeridionalDesign import MeridionalDesign
 from MeridionalContour import MeridionalCurve
 from PotentialFlow import Streamline

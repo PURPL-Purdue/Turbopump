@@ -2,7 +2,6 @@ import numpy as np
 from pint import Quantity as Q_
 import Pump
 import Impeller
-import Inducer
 from CoolProp import CoolProp as CP
 import MeridionalDesign
 import sys
@@ -105,7 +104,7 @@ def MakeDesign(propellant: str='LOX'):
 	pump.Impeller.PrintDimensionlessParameters()
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
-	from InducerRadialEquilibrium import InducerRadialEquilibrium
+	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
 
 	#print(inducer_eq.GetOutletAngularMomentum())
