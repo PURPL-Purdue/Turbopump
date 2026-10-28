@@ -1,4 +1,4 @@
-Chamber Pressure (psi), OF Ratio, Cooling %
-300, 0.3, 25
-350, 0.5, 35
-400, 0.7, 40
+Mass Flow Rate (kg/s), Core OF Ratio
+0.2170, 0.3
+0.3170, 0.5
+0.4170, 0.7
