@@ -77,10 +77,11 @@ def Pc(LOx_feed, IPA_feed, Pc_in, pcA):
     #Recursivly solves for chamber pressure
     mdot_ox = mdot(config['LOx_Cda'],  LOx_feed, Pc_in, config['LOx_rho'])
     mdot_ipa = mdot(config['fuel_Cda'], IPA_feed, Pc_in, config['IPA_rho'])
-    OF = mdot_ox/max(mdot_ipa, 0.000000000001)
+    mdot_film = mdot(film_total_cda, IPA_feed, Pc_in, config['IPA_rho'])
+    OF = mdot_ox/max(mdot_ipa+mdot_film, 0.000000000001)
     #print(f'mdots {mdot_ox} and {mdot_ipa}')
     cstar = 0.3048 * config['CSTAR_eff'] * cea.get_Cstar(Pc_in/psi2pa, OF)
-    Pc_f = cstar * (mdot_ox+mdot_ipa) / config['stator_throat_area']
+    Pc_f = cstar * (mdot_ox+mdot_ipa+mdot_film) / config['stator_throat_area']
     pcA.append(Pc_f)
     #print(len(pcA))
     #if len(pcA) == 500:
