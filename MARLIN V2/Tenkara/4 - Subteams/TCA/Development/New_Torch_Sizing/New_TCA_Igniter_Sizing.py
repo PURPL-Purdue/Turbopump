@@ -154,7 +154,7 @@ def main():
     #mdot_100psi =  0.01760    #kg/s MDOT @ 20% heat transfer efficiency, 100psi pc
     #mdot =  0.00352    #kg/s MDOT @ 100% heat transfer efficiency, 100psi pc
 
-    OF = 2.0                       # OF ratio
+    OF = 1.5                       # OF ratio
 
     Cd = 0.9                       # Discharge Coefficient
     choked = 1

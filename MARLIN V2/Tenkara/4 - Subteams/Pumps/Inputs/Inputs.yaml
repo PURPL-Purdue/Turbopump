@@ -1,10 +1,11 @@
-design_point:
-  N_shaft: 35000              # RPM
+N_shaft: [35000, 'rpm']
     
-  LOX:
-    mass_flow: 2.03           # kg/s
-    discharge_pressure: 43.41 # bar
+LOX:
+  feed_pressure: [100, 'psi'] # can be as high as 150 psi, lowered for margin
+  mass_flow: [2.03, 'kg/s']
+  discharge_pressure: [43.41, 'bar']
 
-  IPA:
-    mass_flow: 2.15           # kg/s
-    discharge_pressure: 54.97 # bar
+IPA:
+  feed_pressure: [100, 'psi'] # can be as high as 150 psi, lowered for margin
+  mass_flow: [2.15, 'kg/s']
+  discharge_pressure: [54.97, 'bar']
