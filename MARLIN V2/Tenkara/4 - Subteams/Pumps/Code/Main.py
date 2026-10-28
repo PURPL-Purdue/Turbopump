@@ -54,11 +54,13 @@ meridional_geometry = {
 
 blade_params = {
 	'LOX': BladeParams(
-
+		sj=0.1,
+		lead_sweep=Q_(10, 'deg')
 	),
 
 	'IPA': BladeParams(
-		
+		sj=0.3,
+		lead_sweep=Q_(0, 'deg')
 	)
 }
 
@@ -126,11 +128,15 @@ def MakeDesign(propellant: str='LOX'):
 	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
-	imp_blade_design = ImpellerBladeDesign(pump_meridional, inducer_eq)
-	imp_blade_design.PlotInletTriangles()#.show()
+	imp_blade_design = ImpellerBladeDesign(
+		pump_meridional,
+		inducer_eq,
+		blade_params=blade_params[propellant]
+	)
+	imp_blade_design.PlotInletTriangles().show()
 	imp_blade_design.Uh()
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign('IPA')

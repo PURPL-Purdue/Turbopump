@@ -31,7 +31,8 @@ def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: s
 
 @dataclass
 class BladeParams:
-	pass
+	sj: float = 0.05
+	lead_sweep: Q_[float] = Q_(10, 'deg')
 
 class ImpellerBladeDesign:
 
@@ -205,7 +206,7 @@ class ImpellerBladeDesign:
 		return beta_dis, wrap_new
 
 	def Uh(self):
-		lead_sweep: float = np.deg2rad(10)
+		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1
 		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
 
@@ -214,7 +215,7 @@ class ImpellerBladeDesign:
 		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, 200))[:, 1]
 
 		ref_wrap, mean_beta_dis = self._GetWrap(
-			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=0.05
+			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=self._params.sj
 			)
 
 		fig = go.Figure()
@@ -229,11 +230,9 @@ class ImpellerBladeDesign:
 				blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
 				
 				r = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))[:, 1]
-
-				r_ref_start = r_ref[0]
-				r_start = r[0]
-				arc_lead = np.sin(lead_sweep) * (r_start - r_ref_start)
-				theta_offset = arc_lead / r_start
+				
+				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
+				theta_offset = arc_lead / r[0]
 
 				beta_dis, wrap = self._SetWrap(
 					beta_1=beta_1, r=r, x_f=blade_stream.length_m,
