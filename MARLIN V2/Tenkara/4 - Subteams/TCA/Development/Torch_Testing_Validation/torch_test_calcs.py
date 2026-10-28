@@ -56,6 +56,14 @@ A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
 A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
 A_f = np.pi * ((FUEL_DIA / (m2in * 2)))**2
 
+fuel_PYF = Fluid(FluidsList.Methane).with_state(Input.pressure(p_line), Input.temperature(T_AMB_CELSIUS))
+ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_line), Input.temperature(T_AMB_CELSIUS))
+
+rho_f = fuel_PYF.density            # [kg/m^3]
+rho_ox = ox_PYF.density             # [kg/m^3]
+sonic_f = fuel_PYF.sound_speed      # [m/s]
+sonic_ox = ox_PYF.sound_speed       # [m/s]
+
 mdot_set = 0.0783 * lbm2kg     #lbm/s to kg/s
 OF_set = 1.5
 md_ox_set = OF_set * mdot_set / (OF_set + 1)
@@ -63,6 +71,8 @@ md_f_set = mdot_set - md_ox_set
 
 p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
 p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
+
+p_ox_set = (md_ox_set)**2 / ((CD * A_ox)**2 * np.sqrt(K_OX * rho_ox * ( 2 / (K_OX + 1))**((K_OX + 1)/(K_OX - 1))))
 
 print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
 
