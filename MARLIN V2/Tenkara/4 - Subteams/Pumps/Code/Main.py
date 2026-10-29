@@ -54,8 +54,8 @@ meridional_geometry = {
 
 blade_params = {
 	'LOX': BladeParams(
-		sj=0.07,
-		lead_sweep=Q_(10, 'deg')
+		sj=0.06,
+		lead_sweep=Q_(15, 'deg')
 	),
 
 	'IPA': BladeParams(
@@ -133,10 +133,10 @@ def MakeDesign(propellant: str='LOX'):
 		inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	imp_blade_design.PlotInletTriangles().show()
+	imp_blade_design.PlotInletTriangles()#.show()
 	imp_blade_design.Uh()
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	MakeDesign('IPA')
+	#MakeDesign('IPA')
