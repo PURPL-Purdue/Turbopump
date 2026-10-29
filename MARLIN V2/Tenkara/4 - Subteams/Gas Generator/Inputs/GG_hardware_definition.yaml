@@ -9,8 +9,20 @@ LOx_Cda:  0.00000142        # (m^2) Assumed Cd of 0.5
 fuel_Cda: 0.00000342      # (m^2) Assumed Cd of 0.5
                               # Last updated: Sept 24th, 2026 by Miles Cohen
 
-film_Cda: 0.0000028      # (m^2) Assumed Cd of 0.5
-                              # TENTATIVE/Symbolic
+film_Cda: 0.00000791      # (m^2) Assumed Cd of 0.5
+                              # Last updated: Oct 28th, 2026 by Arvin Peng
+
+film_insert_Cda:               # (m^2) Assumed Cd = 0.55
+  "0%":  0
+  "5%":  0.0000002678
+  "10%": 0.0000006026
+  "15%": 0.0000009719
+  "20%": 0.000001366
+  "25%": 0.000001728
+  "30%": 0.000002285
+  "35%": 0.000002920
+  "40%": 0.000003888
+                        # Last updated: Oct 28th, 2026 by Arvin Peng
 
 # Stator Hardware Definition
 stator_throat_area: 0.000077 # (m^2) Assumed to be the same as the injector area
@@ -36,12 +48,13 @@ combustion_chamber_diameter: 0.03388 # (m) This is the iternal diameter of the c
                                # Last updated: Sept 28th, 2026 by Miles Cohen
 
 GG_fuel_type: "Isopropanol"
+IPA_rho: 785                     # kg/m^3
 cp_IPA_l: 0.1933                 # kJ/mol K
 h_vap_IPA: 45                    # kj/mol 
-IPA_rho: 785                     # kg/m^3
 Hvap: 45                         # kJ/mol K
 cp_fuel_g_m: 0.0001331           # linear model for cp of gassous ipa
 cp_fuel_g_b: 0.06588             # Cp(K) is in kJ/mol K
+
 GG_ox_type: "LO2"
 LOx_rho: 1141                    # kg/m^3
 
@@ -67,4 +80,4 @@ torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch t
                                # Last updated: May 25th, 2026 by Miles Cohen
 
 torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
-torch_os_type: "O2"
+torch_ox_type: "O2"

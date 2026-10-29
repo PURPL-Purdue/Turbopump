@@ -1,5 +1,5 @@
 import Impeller
-import Inducer
+import Inducer.Inducer as Inducer
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
@@ -8,6 +8,7 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class PumpDesignPoint:
+	eta_overall: float					# assumed overall efficiency of the pump
 	feed_pressure: Q_[float]			# feed pressure (tank pressure)
 	discharge_pressure: Q_[float]		# desired outlet pressure
 	inlet_vapor_pressure: Q_[float]		# vapor pressure of the working fluid at the inlet

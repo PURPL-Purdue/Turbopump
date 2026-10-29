@@ -1,10 +1,22 @@
 # Radial equilibrium c_theta(r, z) for a tapered-hub inducer (NASA SP-8052 sec. 2.2.1, eqs. 33-41, 74).
+import sys
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from pint import Quantity as Q_
 from scipy.optimize import brentq
 
-from Inducer import Inducer, InducerDesignPoint, InducerInletDesignConstraints
+if not __package__:
+    # Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
+    _here = Path(__file__).resolve().parent
+    sys.path[:] = [p for p in sys.path if Path(p or '.').resolve() != _here]
+    sys.path.insert(0, str(_here.parent))
+
+from Inducer.Inducer import Inducer
+from Inducer.MeanlineTriangle import MeanlineTriangle
+from VelocityTriangle import PlotTriangles, VelocityTriangle
 
 _trapz = np.trapezoid
 
@@ -14,7 +26,8 @@ class InducerRadialEquilibrium:
 
     Lead follows beta(z) = beta1 + (beta2 - beta1) (z/L)^2 at the rms radius; beta2 is solved so the
     mass-averaged outlet Euler head equals H_rise / eta_bl. Blade blockage uses N blades of constant
-    normal thickness; blade_thickness=None disables it.
+    normal thickness at the tip, tapering linearly to hub_thickness_ratio times that at the hub (sec. 3.1.11,
+    eq. 42; SP-8052 recommends thicker at the hub); blade_thickness=None disables it.
     incidence_ratio (alpha/beta, ~0.425) offsets the flow angle from the blade angle at the inlet,
     fading linearly to zero at the outlet; None disables it.
 
@@ -22,10 +35,14 @@ class InducerRadialEquilibrium:
     """
 
     def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None,
-                 blade_number: int = 3, blade_thickness: Q_ | None = None):
+                 blade_number: int = 3, blade_thickness: Q_ | None = None,
+                 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
         self.inducer = inducer
+        self.hub_thickness_ratio = hub_thickness_ratio
         self.eta_bl = eta_bl
-        self.incidence_ratio = incidence_ratio
+        # The blade inlet angle comes from the zero-blockage inlet meanline triangle
+        self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
+        self.incidence_ratio = self.meanline.incidence_ratio
         self.N_blades = blade_number
         self.t = None if blade_thickness is None else blade_thickness.to('m').magnitude
 
@@ -38,14 +55,14 @@ class InducerRadialEquilibrium:
         g_dh = 9.81 * inducer.DP.H_rise.to('m').magnitude
         self.target_euler_head = g_dh / eta_bl  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u), eta_bl = 0.85 (sec. 2.2.6)
 
-        # Zero-swirl inlet (c_theta = 0), uniform c_a = Q/A1 (eq. 23); flow lead lambda = c_a/omega (eq. 39 with psi=0)
-        lam0 = self._lam_flow(0.0)
-        gamma1 = np.arctan(lam0 / self._r_ms(0.0))
-        if incidence_ratio is None:
+        # Blade inlet angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0);
+        # the meanline triangle is the zero-blockage version and only supplies the incidence ratio
+        gamma1 = np.arctan(self._lam_flow(0.0) / self._r_ms(0.0))
+        if self.incidence_ratio is None:
             self.beta1, self.alpha1 = gamma1, 0.0
         else:
-            self.beta1 = gamma1 / (1.0 - incidence_ratio)  # gamma = beta - alpha, alpha/beta from sec. 2.1.9 / 3.1.9
-            self.alpha1 = incidence_ratio * self.beta1
+            self.beta1 = gamma1 / (1.0 - self.incidence_ratio)
+            self.alpha1 = self.incidence_ratio * self.beta1
         self.beta2 = self._solve_beta2()
 
     # ---- SI-float internals -------------------------------------------------
@@ -64,7 +81,8 @@ class InducerRadialEquilibrium:
         # Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
         dA = 2.0 * np.pi * r
         if self.t is not None:
-            dA = dA - self.N_blades * self.t * np.sqrt(r**2 + lam**2) / lam
+            thickness = 0.5e-3 # Assumed constant thickness for now (0.5 mm)
+            dA = dA - self.N_blades * thickness * np.sqrt(r**2 + lam**2) / lam
             if strict and np.any(dA <= 0.0):
                 raise ValueError("Blade blockage closes the passage; reduce thickness or blade number.")
         return dA
@@ -133,6 +151,10 @@ class InducerRadialEquilibrium:
     def hub_radius(self, z: Q_) -> Q_:
         return Q_(self._r_hub(z.to('m').magnitude), 'm')
 
+    def mean_radius(self, z: Q_) -> Q_:
+        """Root-mean-square radius, which splits the annulus into equal areas."""
+        return Q_(self._r_ms(z.to('m').magnitude), 'm')
+
     def blade_angle(self, z: Q_) -> Q_:
         return Q_(np.degrees(self._beta(z.to('m').magnitude, self.beta2)), 'deg')
 
@@ -156,30 +178,63 @@ class InducerRadialEquilibrium:
         """Mass-averaged r*c_theta at the outlet; equals g*H_rise / (eta_bl*omega) through the choice of beta2."""
         return Q_(self._avg_angular_momentum(self.beta2), 'm^2/s')
 
+    def MeanlineTriangle(self, z: Q_, notation: str = '') -> VelocityTriangle:
+        """Absolute-frame velocity triangle on the rms-radius meanline at axial position z."""
+        r_mean = self.mean_radius(z)
+        return VelocityTriangle(
+            u=Q_(self.omega, 'rad/s') * r_mean,
+            c_m=self.c_axial(r_mean, z),
+            c_u=self.c_theta(r_mean, z),
+            notation=notation,
+        )
+
+    def TipTriangle(self, z: Q_, notation: str = '') -> VelocityTriangle:
+        """Absolute-frame velocity triangle at the tip radius at axial position z."""
+        R_t = Q_(self.R_t, 'm')
+        return VelocityTriangle(
+            u=Q_(self.omega, 'rad/s') * R_t,
+            c_m=self.c_axial(R_t, z),
+            c_u=self.c_theta(R_t, z),
+            notation=notation,
+        )
+
+    def PlotMeanlineTriangles(self, title: str = 'Inducer meanline velocity triangles') -> go.Figure:
+        """Inlet (z = 0) and outlet (z = L_ax) meanline triangles overlaid."""
+        triangles = [
+            self.MeanlineTriangle(Q_(0, 'm'), '<sub>1</sub>'),
+            self.MeanlineTriangle(Q_(self.L, 'm'), '<sub>2</sub>'),
+        ]
+        return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
 if __name__ == "__main__":
     g = Q_(9.81, 'm/s^2')
     import Main
+
     lox_pump = Main.CreatePump('LOX')
     ipa_pump = Main.CreatePump('IPA')
     lox_pump.AddInducer(Q_(65, 'm'))
     ipa_pump.AddInducer(Q_(80, 'm'))
     
     fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
-    for col, inducer in zip(axes.T, (lox_pump.Inducer, ipa_pump.Inducer)):
+    for col, propellant, inducer in zip(axes.T, ('LOX', 'IPA'), (lox_pump.Inducer, ipa_pump.Inducer)):
 
-        eq = InducerRadialEquilibrium(inducer, incidence_ratio=None, blade_number=3, blade_thickness=Q_(0.5, 'mm')) # Assuming 3 blades with 0.5 mm constant thickness
-        print(f"beta1 = {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
+        eq = InducerRadialEquilibrium(inducer, incidence_ratio=0, blade_number=3, blade_thickness=Q_(0.5, 'mm'))
+        print(f"{propellant}: beta1 =  {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
         for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
             z = inducer.L_ax * frac
             r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)
             col[0].plot(r * 1e3, eq.c_theta(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
             col[1].plot(r * 1e3, eq.c_axial(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
-        col[0].set_title("Uhhh inducer?")
+        col[0].set_title(f"{propellant} inducer")
         col[1].set_xlabel("r [mm]")
         for ax in col:
             ax.grid(True, linestyle='--', alpha=0.5)
             ax.legend()
+
+        PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
+                f"{propellant} inducer meanline velocity triangles"
+            ).show()
+        
     axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
     axes[1, 0].set_ylabel("$c_a$ [m/s]")
     plt.tight_layout()

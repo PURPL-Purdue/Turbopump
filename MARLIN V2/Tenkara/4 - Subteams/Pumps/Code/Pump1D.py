@@ -17,7 +17,8 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	return (u_2 * c_u2).to('kJ/kg')
 
 def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
-	return (pump.DP.mass_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+	if Q_flow is None: Q_flow = pump.DesignFlowRate
+	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	if N_speed is None: N_speed = pump.DP.N_shaft
@@ -26,16 +27,16 @@ def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None)
 def GetEulerHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	return (GetSpecificWork(pump, Q_flow, N_speed) / g).to('m')
 
-def GetActualHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+def GetActualHeadRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None, eta_BEP: float=None) -> Q_:
 
 	if Q_flow is None: Q_flow = pump.DesignFlowRate
 	if N_speed is None: N_speed = pump.DP.N_shaft
 
 	f = (EmpiricalRelations.FlowSpeedRatio(Q_flow, N_speed, pump.DesignFlowRate, pump.DP.N_shaft)).to('dimensionless').m
 	euler_head = GetEulerHeadRise(pump, Q_flow, N_speed)
-	eta_hydraulic = pump.Impeller.eta_hyd * EmpiricalRelations.HydraulicEfficiency(f)
+	efficiency = (pump.DP.eta_overall if eta_BEP is None else eta_BEP) * EmpiricalRelations.HydraulicEfficiency(f)
 
-	return eta_hydraulic * euler_head
+	return efficiency * euler_head
 
 def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figure:
 

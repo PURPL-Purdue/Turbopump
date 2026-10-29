@@ -27,7 +27,8 @@ class Inducer:
     def __init__(self, design_point: InducerDesignPoint, constraints: InducerInletDesignConstraints=constraints):
         self.DP = design_point
         self.C = constraints
-        # ---------------------------------------------------------
+        # --------------
+        # -------------------------------------------
         # Unit conversions (sheet methodology is SI with N in rpm)
         # ---------------------------------------------------------
         q_m3s = self.DP.Q.to('m^3/s').magnitude
@@ -102,8 +103,8 @@ class Inducer:
         self.W_1 = np.sqrt(self.C_m1**2 + (self.U_tip - self.C_u1)**2)
         self.W_2 = np.sqrt(self.C_m2**2 + (self.U_tip - self.C_u2)**2)
         # Relative flow angles measured from the negative tangential direction.
-        self.gamma_1 = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
-        self.gamma_2 = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
+        self.gamma_1: Q_[float] = np.arctan2(self.C_m1, self.U_tip - self.C_u1).to('deg')
+        self.gamma_2: Q_[float] = np.arctan2(self.C_m2, self.U_tip - self.C_u2).to('deg')
 
 
 def print_parameters(inducer: Inducer, name: str = 'Inducer') -> None:

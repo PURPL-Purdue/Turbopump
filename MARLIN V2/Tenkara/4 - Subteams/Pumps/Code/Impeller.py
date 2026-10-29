@@ -9,22 +9,13 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InputGeometry:
-
-	eta_hyd: float			# impeller hydraulic efficiency at BEP
 	Z_blade: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
 	d_1: Q_[float]			# impeller inlet diameter
 	d_2: Q_[float]			# impeller outlet diameter
 	b_2: Q_[float]			# impeller outlet height
-	blade_thick: Q_[float]			# blade thickness at exit
+	blade_thick: Q_[float]	# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
-
-	# shroud_fullness: tuple[float, float] = (1, 0.3)
-	# hub_fullness: tuple[float, float] = (0.5, 0.7)
-	# # contour angles from radial at the outlet, positive leaning downstream (+z), see BuildMeridian
-	# shroud_outlet_angle: Q_[float] = Q_(5, 'deg')
-	# hub_outlet_angle: Q_[float] = Q_(0, 'deg')
-	# hub_taper_ratio: float = 0.3
 
 @dataclass
 class DesignPoint:
@@ -56,7 +47,6 @@ class Impeller:
 		)
 		self.Area2: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2) - exit_blockage_area
 
-		self.eta_hyd = geometry.eta_hyd
 		self.Z_blade = geometry.Z_blade
 		self.Beta2B = geometry.Beta2B
 		self.d_1 = geometry.d_1
