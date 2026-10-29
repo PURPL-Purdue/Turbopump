@@ -1,5 +1,5 @@
 ## GG V2.0 Film Cooling Sizing Script
-# Authors: Miles Cohen & Lily Brideou
+# Authors: Miles Cohen & Lily Brideau
 # Updated on: 9/23/2026
 # Description: Script for sizing film cooling in the Gas Generator V2.0
 # Method: Given input mass flow rates and temperatures, this script
@@ -77,10 +77,11 @@ def Pc(LOx_feed, IPA_feed, Pc_in, pcA):
     #Recursivly solves for chamber pressure
     mdot_ox = mdot(config['LOx_Cda'],  LOx_feed, Pc_in, config['LOx_rho'])
     mdot_ipa = mdot(config['fuel_Cda'], IPA_feed, Pc_in, config['IPA_rho'])
-    OF = mdot_ox/max(mdot_ipa, 0.000000000001)
+    mdot_film = mdot(film_total_cda, IPA_feed, Pc_in, config['IPA_rho'])
+    OF = mdot_ox/max(mdot_ipa+mdot_film, 0.000000000001)
     #print(f'mdots {mdot_ox} and {mdot_ipa}')
     cstar = 0.3048 * config['CSTAR_eff'] * cea.get_Cstar(Pc_in/psi2pa, OF)
-    Pc_f = cstar * (mdot_ox+mdot_ipa) / config['stator_throat_area']
+    Pc_f = cstar * (mdot_ox+mdot_ipa+mdot_film) / config['stator_throat_area']
     pcA.append(Pc_f)
     #print(len(pcA))
     #if len(pcA) == 500:
@@ -129,6 +130,9 @@ psi2pa = 6894.757
 # Feed pressures
 LOx_feed_pressure = 3430000     #pa
 IPA_feed_pressure = 3430000     #pa
+# Film cooling insert label
+insert_id = '35%'
+film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
 # IPA inlet temp
 IPA_temp = 298                   # K
 #IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
@@ -148,7 +152,7 @@ Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
 # Solve for mass flows into the chamber
 mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
 mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
-mdot_film = mdot(config['film_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
 print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
 print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
 print(f'Total OF Ratio: {(mdot_ox/(mdot_IPA + mdot_film)):.3f}')

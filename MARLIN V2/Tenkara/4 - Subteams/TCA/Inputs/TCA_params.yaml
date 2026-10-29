@@ -104,16 +104,16 @@ stiffness:
 # =====================================================================================
 
 torch_pressures:
-  chamber_pressure: 184.1                                                               # Torch chamber pressure (psia)
-  ox_inlet_pressure: 505.9                                                              # Torch oxidizer inlet pressure (psia)
-  fuel_inlet_pressure: 416.0                                                            # Torch fuel inlet pressure (psia)
+  chamber_pressure: 200                                                               # Torch chamber pressure (psia)
+  ox_inlet_pressure: 570                                                              # Torch oxidizer inlet pressure (psia)
+  fuel_inlet_pressure: 550                                                            # Torch fuel inlet pressure (psia)
 
 torch_mass_flows:
-  torch_mdot: 0.025                                                                   #Torch oxidizer inlet mass flow rate (kg/s)
+  torch_mdot: 0.0355                                                                   #Torch oxidizer inlet mass flow rate (kg/s)
 
 orifice_diameters:
   oxidizer: 0.063                                                                       # Torch oxidizer orifice diameter (in)
-  fuel: 0.059                                                                           # Torch fuel orifice diameter (in)
+  fuel: 0.063                                                                           # Torch fuel orifice diameter (in)
 
 torch_of_ratio: 1.5                                                                       # Torch Oxidizer/Fuel Ratio (dimensionless)
 
