@@ -135,6 +135,11 @@ def MakeDesign(propellant: str='LOX'):
 	)
 	imp_blade_design.PlotInletTriangles()#.show()
 	imp_blade_design.PlotBladeLines().show()
+
+	# ---------------- IMPELLER CAD ------------------------
+	import ImpellerCAD
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design)
+
 	return pump
 
 if __name__ == "__main__":

@@ -344,6 +344,3 @@ class ImpellerBladeDesign:
 			template='plotly_white', title_text=f'{propellant} Impeller Blade Layout'
 		))
 		return fig
-
-	def Create3D(self):
-		pass
