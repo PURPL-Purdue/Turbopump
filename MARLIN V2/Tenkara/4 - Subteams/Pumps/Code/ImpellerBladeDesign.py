@@ -42,7 +42,7 @@ class ImpellerBladeDesign:
 
 		self._params = blade_params
 		self.Pump = meridional_design.Pump
-		self._mer = meridional_design
+		self.MeridionalDesign = meridional_design
 		self._rad_eq = inducer_radial_equilibrium
 		self.K_inlet = inducer_radial_equilibrium.GetOutletAngularMomentum() if inducer_radial_equilibrium is not None else Q_(0, 'm^2/s')
 		
@@ -83,7 +83,7 @@ class ImpellerBladeDesign:
 		lambda_1 = self._GetLeadingEdgeAngle(streamline)
 
 		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline)
-		impeller = self._mer.Pump.Impeller
+		impeller = self.MeridionalDesign.Pump.Impeller
 
 		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
 		pitch = 2 * np.pi * r_1 / impeller.Z_blade
@@ -102,11 +102,11 @@ class ImpellerBladeDesign:
 			Radius r_1 (m), meridional velocity c_m1 and relative swirl w_u1 = u_1 - c_u1 (m/s) where the leading edge
 			crosses streamline, without blade blockage
 		"""
-		hits = streamline.FindIntersect(self._mer.LeadingEdge)
+		hits = streamline.FindIntersect(self.MeridionalDesign.LeadingEdge)
 		assert len(hits) == 1, 'The leading edge must cross the streamline exactly once'
 		_, r_1, s, _ = hits[0]
 
-		omega = self._mer.Pump.Impeller.DP.N_shaft.to('rad/s')
+		omega = self.MeridionalDesign.Pump.Impeller.DP.N_shaft.to('rad/s')
 
 		#c_m1: Q_[float] = self._GetInletC_m(r_1)
 		c_m1: Q_[float] = streamline.Interpolate(streamline.v_m, s).to('m/s')
@@ -121,10 +121,10 @@ class ImpellerBladeDesign:
 			Acute angle in the meridional plane between the leading edge and curve (the hub or shroud contour, or a
 			streamline) where they meet, from the unit tangents of both: arccos|t_LE . t_curve|
 		"""
-		hits = curve.FindIntersect(self._mer.LeadingEdge)
+		hits = curve.FindIntersect(self.MeridionalDesign.LeadingEdge)
 		assert len(hits) == 1, 'The leading edge must meet the curve exactly once'
 		_, _, s_curve, s_LE = hits[0]
-		cos_angle = abs(curve.Tangent(s_curve) @ self._mer.LeadingEdge.Tangent(s_LE))
+		cos_angle = abs(curve.Tangent(s_curve) @ self.MeridionalDesign.LeadingEdge.Tangent(s_LE))
 		return Q_(np.arccos(min(cos_angle, 1.0)), 'rad').to('deg')
 
 	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1]) -> go.Figure:
@@ -144,7 +144,7 @@ class ImpellerBladeDesign:
 
 		fig = subplots.make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
 		for i, phi in enumerate(phis):
-			prime, no_block, r, _ = self._SolveInletFlow(self._mer.PotentialFlow.GetStreamline(phi))
+			prime, no_block, r, _ = self._SolveInletFlow(self.MeridionalDesign.PotentialFlow.GetStreamline(phi))
 			u = self.Pump.DP.N_shaft * r
 			triangles = [
 				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
@@ -223,10 +223,10 @@ class ImpellerBladeDesign:
 
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1 # shroud streamline
-		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
+		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
 
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
-		ref_bladestream = ref_stream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+		ref_bladestream = ref_stream.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 		ref_stream_zr = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))
 		r_ref = ref_stream_zr[:, 1]
 
@@ -241,9 +241,9 @@ class ImpellerBladeDesign:
 
 			if phi != ref_phi:
 
-				streamline = self._mer.PotentialFlow.GetStreamline(phi)
+				streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
-				blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
+				blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
 				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))
 				r = stream_zr[:, 1]
