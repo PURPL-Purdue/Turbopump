@@ -209,6 +209,14 @@ class ImpellerBladeDesign:
 
 	def CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
+			Plan view (r, theta) of the blade along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each
+			sampled at resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
+				beta(x)  = JoinParabola from beta_1' to Beta2B, joined at x_j = sj x_f
+				theta(x) = theta_1 + integral_0^x dx / (r tan(beta))
+			The shroud is the reference (sj = BladeParams.sj, theta_1 = 0). On the other streamlines sj is bisected so
+			every trailing edge ends at the shroud's wrap (radial in plan view) and the leading edge sweeps:
+				theta_1  = sin(lead_sweep) (r_1,shroud - r_1) / r_1
+			Returns r (m), theta (rad) and the BetaDistribution of each streamline, hub first
 		"""
 
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
