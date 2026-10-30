@@ -157,7 +157,7 @@ class ImpellerBladeDesign:
 
 		return fig
 
-	def _GetWrap(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> BetaDistribution:
+	def _GetBetaDistribution(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> BetaDistribution:
 		"""
 			Returns the wrap angle (in radians) of a blade streamline at the specified flow_fraction, from the leading
 			to the trailing edge. xj (m from the leading edge) is where the two beta parabolas join, Milos's x_3;
@@ -179,13 +179,13 @@ class ImpellerBladeDesign:
 			Get=GetBeta, Domain=(0, x_f), TotalWrap=total_wrap
 		)
 
-	def _SetWrap(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> BetaDistribution:
+	def _SolveBetaDistribution(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> BetaDistribution:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
 
-		beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
-		beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
+		beta_high = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
+		beta_low = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
 
 		residual_new = float('inf')
 		residual_high, residual_low = beta_high.TotalWrap - target_wrap, beta_low.TotalWrap - target_wrap
@@ -197,7 +197,7 @@ class ImpellerBladeDesign:
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
-			beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
+			beta_dis = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
 			residual_new = beta_dis.TotalWrap - target_wrap
 
 			if residual_new * residual_low > 0:
@@ -219,7 +219,7 @@ class ImpellerBladeDesign:
 		ref_bladestream = ref_stream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
 		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))[:, 1]
 
-		ref_beta_dis = self._GetWrap(
+		ref_beta_dis = self._GetBetaDistribution(
 			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=self._params.sj
 			)
 
@@ -240,7 +240,7 @@ class ImpellerBladeDesign:
 				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
 				theta_offset = arc_lead / r[0]
 
-				beta_dis = self._SetWrap(
+				beta_dis = self._SolveBetaDistribution(
 					beta_1=beta_1, r=r, x_f=blade_stream.length_m,
 					target_wrap=ref_beta_dis.TotalWrap + theta_offset
 				)
