@@ -114,7 +114,7 @@ def MakeDesign(propellant: str='LOX'):
 	print(f'{propellant} inducer desired head:', inducer_head)
 	pump.AddInducer(inducer_head)
 	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
-	pump.Impeller.PrintDimensionlessParameters()
+	#pump.Impeller.PrintDimensionlessParameters()
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
@@ -134,7 +134,7 @@ def MakeDesign(propellant: str='LOX'):
 		blade_params=blade_params[propellant]
 	)
 	imp_blade_design.PlotInletTriangles()#.show()
-	imp_blade_design.PlotBladeLines()
+	imp_blade_design.PlotBladeLines().show()
 	return pump
 
 if __name__ == "__main__":

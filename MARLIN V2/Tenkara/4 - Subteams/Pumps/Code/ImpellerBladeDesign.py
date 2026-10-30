@@ -1,6 +1,6 @@
 import numpy as np
 from pint import Quantity as Q_
-from plotly import graph_objects as go, subplots
+from plotly import graph_objects as go, subplots, express
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 from MeridionalDesign import MeridionalDesign
 from MeridionalContour import MeridionalCurve
@@ -12,6 +12,7 @@ from JoinParabola import JoinParabola
 from collections.abc import Callable
 from plotly import graph_objects as go
 from scipy import integrate
+from warnings import warn
 
 @dataclass
 class _TriInfo:
@@ -27,7 +28,7 @@ class BetaDistribution:
 def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: str='grey', dash: str='dot') -> go.Scatter:
 	return go.Scatter(
 		x=r * np.cos(t), y=r * np.sin(t),
-		mode='lines', line=dict(dash=dash, color=color), name=name
+		mode='lines', line=dict(dash=dash, color=color), name=name,
 	)
 
 @dataclass
@@ -190,11 +191,9 @@ class ImpellerBladeDesign:
 		residual_high, residual_low = beta_high.TotalWrap - target_wrap, beta_low.TotalWrap - target_wrap
 		# same sign at both ends: the target is not between them, take the closer end
 		if residual_high * residual_low > 0:
-			print(f'The target wrap {target_wrap*180/np.pi:.1f} is out of reach by moving sj alone')
-			if np.abs(residual_high) > np.abs(residual_low):
-				return beta_low
-			return beta_high
-
+			beta=beta_low if np.abs(residual_high) > np.abs(residual_low) else beta_high
+			warn(f'The target wrap {np.rad2deg(target_wrap):.1f} deg is out of reach by moving sj alone, resorting to {np.rad2deg(beta.TotalWrap)} deg')
+			return beta
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
@@ -260,12 +259,16 @@ class ImpellerBladeDesign:
 
 		return rs, thetas, betas
 
-	def PlotBladeLines(self, num_streams: int=10) -> tuple[go.Figure, go.Figure]:
+	def PlotBladeLines(self, num_streams: int=10, unit:str='in.', propellant: str='') -> go.Figure:
 
-		bfig = go.Figure()
-		pfig = go.Figure()
+		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
+				subplot_titles=(f'{propellant} Impeller Plan View', r'Variation of <i>β</i>')
+			)
 
 		rs, thetas, betas = self.CreateBladeLines(num_streams)
+
+		colors = express.colors.qualitative.Plotly
+
 		for i in range(num_streams):
 
 			phi: float = i / num_streams
@@ -275,11 +278,6 @@ class ImpellerBladeDesign:
 			beta = beta_dis.Get(arc_x)
 
 			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
-			bfig.add_trace(go.Scatter(
-				x=Q_(arc_x, 'm').to('in').m,
-				y=np.rad2deg(beta),
-				name=trace_name
-			))
 
 			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade
 			Z = self.Pump.Impeller.Z_blade
@@ -288,45 +286,51 @@ class ImpellerBladeDesign:
 			theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(Z)])
 			r_n = np.tile(np.append(r, np.nan), Z)
 
-			pfig.add_trace(go.Scatter(
-				x=Q_(r_n * np.cos(theta_n), 'm').to('in').m,
-				y=Q_(r_n * np.sin(theta_n), 'm').to('in').m,
-				name=trace_name
-			))
+			color = colors[i % len(colors)]
+			fig.add_trace(go.Scatter(
+				x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
+				y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
+				name=trace_name, legendgroup=f'{i}', line=dict(color=color)
+			), row=1, col=1)
 
-		bfig.update_layout(dict(
-			template='plotly_white',
-			xaxis_title=r'Arclength <i>x</i> (in.)',
-			yaxis_title=r'Blade angle <i>β</i> (°)'
-		))
+			fig.add_trace(go.Scatter(
+				x=Q_(arc_x, 'm').to(unit).m, y=np.rad2deg(beta),
+				name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+			), row=1, col=2)
 
-		R_MAX = self.Pump.Impeller.d_2.to('in').m / 2 * 1.2
+		fig.update_xaxes(title_text=rf'Arclength <i>x</i> ({unit})', row=1, col=2)
+		fig.update_yaxes(title_text=r'Blade angle <i>β</i> (°)', row=1, col=2)
+
+		R_MAX = self.Pump.Impeller.d_2.to(unit).m / 2 * 1.2
 
 		t = np.linspace(0, 2*np.pi, 100)
+		fig.add_traces(
+			(
+				_TraceCircle(
+					r=self.Pump.Impeller.d_1.to(unit).m / 2,
+					t=t, name=r'd<sub>1</sub>', dash='longdash'
+				),
+				_TraceCircle(
+					r=self.Pump.Impeller.d_hub.to(unit).m / 2,
+					t=t, name=r'd<sub>hub</sub>', dash='dash'
+				),
+				_TraceCircle(
+					r=self.Pump.Impeller.d_2.to(unit).m / 2,
+					t=t, name=r'd<sub>2</sub>', dash='longdash'
+				)
+			), rows=1, cols=1
+		)
 
-		pfig.add_trace(_TraceCircle(
-			r=self.Pump.Impeller.d_1.to('in').m / 2,
-			t=t, name=r'd<sub>1</sub>', dash='longdash'
+		fig.update_xaxes(
+			title_text=rf'<i>x</i> ({unit})', row=1, col=1,
+			range=[-R_MAX, R_MAX], zeroline=True, constrain='domain'
+			)
+		fig.update_yaxes(
+			title_text=rf'<i>y</i> ({unit})', row=1, col=1,
+			range=[-R_MAX, R_MAX], zeroline=True, constrain='domain', scaleanchor='x', scaleratio=1
+			)
+
+		fig.update_layout(dict(
+			template='plotly_white', title_text=f'{propellant} Impeller Blade Layout'
 		))
-
-		pfig.add_trace(_TraceCircle(
-			r=self.Pump.Impeller.d_hub.to('in').m / 2,
-			t=t, name=r'd<sub>hub</sub>', dash='dash'
-		))
-
-		pfig.add_trace(_TraceCircle(
-			r=self.Pump.Impeller.d_2.to('in').m / 2,
-			t=t, name=r'd<sub>2</sub>', dash='longdash'
-		))
-
-
-		pfig.update_layout(dict(
-			template='plotly_white',
-			xaxis_title=r'<i>x</i> (in.)',
-			yaxis_title=r'<i>y</i> (in.)',
-			yaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain', scaleanchor='x', scaleratio=1),
-			xaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain')
-		))
-
-		pfig.show(); bfig.show()
-		return pfig, bfig
+		return fig
