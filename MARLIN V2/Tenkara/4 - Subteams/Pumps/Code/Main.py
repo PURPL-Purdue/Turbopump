@@ -107,7 +107,7 @@ def MakeDesign(propellant: str='LOX'):
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GuessInducerlessNPSH_r(pump))
+	print(Pump1D.GetInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
