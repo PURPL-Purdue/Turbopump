@@ -207,16 +207,18 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[np.ndarray[float]], list[BetaDistribution]]:
+	def CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
-			Plan view (r, theta) of the blade along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each
-			sampled at resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
+			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
+			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
 				beta(x)  = JoinParabola from beta_1' to Beta2B, joined at x_j = sj x_f
 				theta(x) = theta_1 + integral_0^x dx / (r tan(beta))
 			The shroud is the reference (sj = BladeParams.sj, theta_1 = 0). On the other streamlines sj is bisected so
 			every trailing edge ends at the shroud's wrap (radial in plan view) and the leading edge sweeps:
 				theta_1  = sin(lead_sweep) (r_1,shroud - r_1) / r_1
-			Returns r (m), theta (rad) and the BetaDistribution of each streamline, hub first
+			Returns two lists, one entry per streamline, hub first:
+				points: (resolution, 3) arrays of (z, r, theta), in m, m and rad
+				betas:  the BetaDistribution, whose Get(x) is beta (rad) at x (m) on its Domain
 		"""
 
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
@@ -225,15 +227,15 @@ class ImpellerBladeDesign:
 
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
 		ref_bladestream = ref_stream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))[:, 1]
+		ref_stream_zr = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))
+		r_ref = ref_stream_zr[:, 1]
 
 		ref_beta_dis = self._GetBetaDistribution(
 			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=self._params.sj
 			)
 
 		betas: list[BetaDistribution] = []
-		rs: list[np.ndarray[float]] = []
-		thetas: list[np.ndarray[float]] = []
+		points_3d: list[np.ndarray[float]] = []
 
 		for phi in np.linspace(0, 1, num_streams):
 
@@ -242,8 +244,9 @@ class ImpellerBladeDesign:
 				streamline = self._mer.PotentialFlow.GetStreamline(phi)
 				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
 				blade_stream = streamline.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-				
-				r = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))[:, 1]
+
+				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))
+				r = stream_zr[:, 1]
 				
 				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
 				theta_offset = arc_lead / r[0]
@@ -253,7 +256,7 @@ class ImpellerBladeDesign:
 					target_wrap=ref_beta_dis.TotalWrap + theta_offset
 				)
 			else:
-				beta_dis, r = ref_beta_dis, r_ref
+				beta_dis, stream_zr, r = ref_beta_dis, ref_stream_zr, r_ref
 			
 			arc_m=np.linspace(*beta_dis.Domain, len(r))
 			beta = beta_dis.Get(arc_m)
@@ -262,10 +265,9 @@ class ImpellerBladeDesign:
 			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)
-			rs.append(r)
-			thetas.append(theta)
+			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		return rs, thetas, betas
+		return points_3d, betas
 
 	def PlotBladeLines(self, num_streams: int=10, unit:str='in.', propellant: str='') -> go.Figure:
 
@@ -273,14 +275,14 @@ class ImpellerBladeDesign:
 				subplot_titles=(f'{propellant} Impeller Plan View', r'Variation of <i>β</i>')
 			)
 
-		rs, thetas, betas = self.CreateBladeLines(num_streams)
+		points, betas = self.CreateBladeLines(num_streams)
 
 		colors = express.colors.qualitative.Plotly
 
 		for i in range(num_streams):
 
 			phi: float = i / num_streams
-			r, theta, beta_dis = rs[i], thetas[i], betas[i]
+			r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
 			arc_m=np.linspace(*beta_dis.Domain, len(r))
 			beta = beta_dis.Get(arc_m)
