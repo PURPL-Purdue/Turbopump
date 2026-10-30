@@ -207,7 +207,7 @@ class ImpellerBladeDesign:
 
 	def Uh(self):
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
-		ref_phi = 1
+		ref_phi = 1 # shroud streamline
 		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
 
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
