@@ -20,6 +20,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from rocketcea.cea_obj import CEA_Obj, add_new_fuel
 
+class InvalidCEAStateError(ValueError):
+    pass
+
 # --------------------------------------------------------------------------
 # USER INPUTS
 # --------------------------------------------------------------------------
@@ -34,9 +37,9 @@ IPA_MW_KG_MOL = 0.060095          # [kg/mol]
 IPA_HF_KJ_MOL = -318.1            # standard enthalpy of formation, liquid [kJ/mol]
 IPA_T_K = 298.15                  # fuel inlet temperature [K]
 
-D_MAX_KJ_KG = 4200.0   # largest enthalpy deficit swept [kJ per kg of propellant]
+D_MAX_KJ_KG = 5000.0   # largest enthalpy deficit swept [kJ per kg of propellant]
 N_POINTS = 60
-ETA_MIN_PLOT = 0.4    # drop points below this c* efficiency
+ETA_MIN_PLOT = 0.2    # drop points below this c* efficiency
 
 # Optional: if you define an "ideal heat release" Q_ideal [kJ/kg propellant]
 # you get eta_Q = 1 - deficit/Q_ideal in the output table. Left as None because
@@ -57,7 +60,7 @@ _counter = itertools.count()
 # --------------------------------------------------------------------------
 # CEA HELPERS
 # --------------------------------------------------------------------------
-def make_cea_obj(deficit_kj_per_kg_prop: float) -> CEA_Obj:
+def make_cea_obj(deficit_kj_per_kg_prop: float, OF: float = OF) -> CEA_Obj:
     """LOX + IPA whose enthalpy is lowered so the mixture releases less energy.
 
     The deficit is given per kg of total propellant. Because CEA takes the
@@ -77,14 +80,21 @@ h,cal={h_cal_per_mol:.3f}  t(k)={IPA_T_K}
     return CEA_Obj(oxName="LOX", fuelName=name)
 
 
-def chamber_state(deficit_kj_per_kg_prop: float) -> dict:
-    cea = make_cea_obj(deficit_kj_per_kg_prop)
+def chamber_state(deficit_kj_per_kg_prop: float, OF: float = OF, PC_PSIA: float = PC_PSIA) -> dict:
+    cea = make_cea_obj(deficit_kj_per_kg_prop, OF)
     t_k = float(cea.get_Tcomb(PC_PSIA, OF)) * RANKINE_TO_K
     cstar = float(cea.get_Cstar(PC_PSIA, OF)) * FT_TO_M
     mw, gam = cea.get_Chamber_MolWt_gamma(PC_PSIA, OF, EPS)
     mw, gam = float(mw), float(gam)
-    r_gas = R_UNIV / mw                                     # [J/(kg K)]
+                                         # [J/(kg K)]
 
+    if not np.all(np.isfinite([t_k, cstar, mw, gam])):
+        raise InvalidCEAStateError("CEA returned a non-finite result")
+    if t_k <= 0 or cstar <= 0 or mw <= 0 or gam <= 1:
+        raise InvalidCEAStateError(
+            f"CEA returned invalid values: T={t_k}, c*={cstar}, MW={mw}, gamma={gam}"
+    )
+    r_gas = R_UNIV / mw
     # Closed-form c* from chamber R, T, gamma, for cross-checking CEA.
     # (CEA's c* uses throat conditions, so expect a small mismatch.)
     f_gamma = gam * (2.0 / (gam + 1.0)) ** ((gam + 1.0) / (gam - 1.0))
@@ -97,19 +107,60 @@ def chamber_state(deficit_kj_per_kg_prop: float) -> dict:
 # --------------------------------------------------------------------------
 # SWEEP
 # --------------------------------------------------------------------------
-def run_sweep() -> dict:
-    rows = [chamber_state(d) for d in np.linspace(0.0, D_MAX_KJ_KG, N_POINTS)]
-    data = {k: np.array([r[k] for r in rows]) for k in rows[0]}
+# def run_sweep(OF: float = OF, PC_PSIA: float = PC_PSIA) -> dict:
+#     rows = [chamber_state(d, OF, PC_PSIA) for d in np.linspace(0.0, D_MAX_KJ_KG, N_POINTS)]
+#     data = {k: np.array([r[k] for r in rows]) for k in rows[0]}
+#     data["eta"] = data["cstar"] / data["cstar"][0]
+
+#     keep = data["eta"] >= ETA_MIN_PLOT
+#     data = {k: v[keep] for k, v in data.items()}
+#     return data
+
+import warnings  # Add with the other imports
+
+def run_sweep(OF: float = OF, PC_PSIA: float = PC_PSIA) -> dict:
+    rows = []
+    for deficit in np.linspace(0.0, D_MAX_KJ_KG, N_POINTS):
+        try:
+            rows.append(chamber_state(deficit, OF, PC_PSIA))
+        except InvalidCEAStateError as exc:
+            warnings.warn(
+                f"Stopping sweep at deficit {deficit:.1f} kJ/kg: {exc}",
+                RuntimeWarning,
+            )
+            break
+
+    if len(rows) < 2:
+        raise RuntimeError(
+            "Fewer than two valid CEA points; cannot interpolate."
+        )
+
+    data = {key: np.array([row[key] for row in rows]) for key in rows[0]}
     data["eta"] = data["cstar"] / data["cstar"][0]
-
     keep = data["eta"] >= ETA_MIN_PLOT
-    data = {k: v[keep] for k, v in data.items()}
-    return data
+    data = {key: values[keep] for key, values in data.items()}
 
+    if len(data["eta"]) < 2:
+        raise RuntimeError(
+            "Fewer than two valid points remain after the efficiency filter."
+        )
+    if np.any(np.diff(data["eta"]) > 0):
+        warnings.warn("eta is not monotonic in deficit; interpolation may be ambiguous",
+                  RuntimeWarning)
+    return data
 
 def t_at_eta(data: dict, eta_target: float) -> float:
     """Interpolate chamber temperature [K] at a requested c* efficiency."""
     order = np.argsort(data["eta"])
+    eta_temporary = data["eta"][order]
+    temperature_temporary = data["T"][order]
+
+    if not eta_temporary[0] <= eta_target <= eta_temporary[-1]:
+            raise ValueError(
+                f"eta_target {eta_target} is outside the computed range "
+                f"{eta_temporary[0]:.4f} to {eta_temporary[-1]:.4f}"
+        )
+
     return float(np.interp(eta_target, data["eta"][order], data["T"][order]))
 
 
@@ -139,11 +190,14 @@ def make_plots(d: dict, fname: str = "tc_vs_cstar_efficiency.png") -> None:
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.8))
 
-    ax1.plot(eta * 100, d["T"], "o-", label="CEA, reduced energy release (R, gamma updated)")
-    ax1.plot(eta * 100, t0 * eta**2, "--",
+    ax1.plot(eta * 100, 100 * (d["T"]/t0), "o-", label="CEA, reduced energy release (R, gamma updated)")
+    ax1.plot(eta * 100, 100 * eta**2, "--",
              label=r"constant R, gamma:  T = eta$^2$ T$_{CEA}$")
+    #A=100.0
+    
+    #ax1.plot(eta * 100, A*(eta-1) +100, "--", label="constant R, gamma:  T = A*(eta-100)^(-B)+100")
     ax1.set_xlabel("c* efficiency [%]")
-    ax1.set_ylabel("Chamber temperature [K]")
+    ax1.set_ylabel("Chamber temperature Correction Factor[% of T$_{CEA}$]")
     ax1.set_title(f"LOX/IPA, Pc = {PC_PSIA:.0f} psia, O/F = {OF:.2f}")
     ax1.grid(True, alpha=0.3)
     ax1.legend(fontsize=8)
@@ -161,11 +215,27 @@ def make_plots(d: dict, fname: str = "tc_vs_cstar_efficiency.png") -> None:
     fig.savefig(fname, dpi=200)
     print(f"\nSaved {fname}")
 
+def get_temp_at_eta(eta_target: float, OF: float = OF, PC_PSIA: float = PC_PSIA) -> float:
+    """Interpolate chamber temperature at a requested c* efficiency."""
+    if not 0.0 < eta_target <= 1.0:
+        raise ValueError(f"eta_target {eta_target} must be in (0, 1]")
+    if not 0.01 <= OF <= 1.0:
+        raise ValueError(f"OF {OF} must be in [0.01, 1.0]")
+    if not 1.0 <= PC_PSIA <= 1000.0:
+        raise ValueError(f"PC_PSIA {PC_PSIA} must be in [1, 1000]")
+    OF = np.clip(OF, 0.01, 1.0)
+    data = run_sweep(OF, PC_PSIA)
+    order = np.argsort(data["eta"])
+    t_at_eta_target = t_at_eta(data, eta_target)
+    return t_at_eta_target
+
 
 if __name__ == "__main__":
+    
     data = run_sweep()
     print_table(data)
     for e in (0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60):
-        print(f"eta_c* = {e:.2f}  ->  Tc = {t_at_eta(data, e):7.1f} K")
+        print(f"eta_c* = {e:.2f}  ->  Tc Factor = {t_at_eta(data, e)/t_at_eta(data, 1.0):7.3f} ")
+        
     make_plots(data)
     plt.show()
