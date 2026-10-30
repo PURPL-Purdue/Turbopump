@@ -11,7 +11,7 @@ Unknowns: mdot_ox, mdot_fuel, mdot_film, P_ox, P_fuel, P_c.
   - Orifice:   mdot = CdA * sqrt(2 * rho * dP)
   - Core OF:   mdot_ox / mdot_fuel = OF_core
   - Mass bal.: mdot_total = mdot_ox + mdot_fuel + mdot_film
-  - c*:        P_c = c* * eff * mdot_total / A_t
+  - c*:        P_c = c* * eta * mdot_total / A_t
 
 Usage
 -----
@@ -69,11 +69,6 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
     # Insert IDs are compared as strings so 1, "1" and " 1 " all match
     inserts = {str(k).strip(): v for k, v in cfg["film_insert_Cda"].items()}
     key = str(insert_id).strip()
-    if key not in inserts:
-        raise ValueError(f"insert_id '{key}' not found in film_insert_Cda "
-                         f"(available: {', '.join(inserts)})")
-    if inserts[key] is None:
-        raise ValueError(f"film_insert_Cda for insert '{key}' is empty in the YAML")
 
     return Hardware(
         cda_ox=cfg["LOx_Cda"],
@@ -82,7 +77,7 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
         cda_film=cfg["film_Cda"],
         rho_ox=cfg["LOx_rho"],
         rho_fuel=cfg["IPA_rho"],
-        throat_cda=cfg["stator_throat_area"],   # taken as the total nozzle CdA
+        throat_cda=cfg["stator_throat_area"],
         cstar_eff=cfg["CSTAR_eff"],
         cea_ox=cfg["GG_ox_type"],
         cea_fuel=cfg["GG_fuel_type"],
@@ -121,11 +116,7 @@ def cooling_percent(mdot_film: float, mdot_total: float) -> float:
 
 def make_cstar_fn(hw: Hardware) -> Callable[[float, float], float]:
     """Return c*(OF, P_c[Pa]) -> m/s (ideal, from NASA CEA via RocketCEA)."""
-    try:
-        from rocketcea.cea_obj import CEA_Obj
-    except ImportError:
-        sys.exit("rocketcea is not installed. Run: pip install rocketcea")
-
+    from rocketcea.cea_obj import CEA_Obj
     cea = CEA_Obj(oxName=hw.cea_ox, fuelName=hw.cea_fuel)
 
     def cstar(of: float, pc_pa: float) -> float:
@@ -137,7 +128,7 @@ def make_cstar_fn(hw: Hardware) -> Callable[[float, float], float]:
 
 def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
                      cstar_fn: Callable[[float, float], float],
-                     tol: float = 1e-4, max_iter: int = 100):
+                     tol: float = 1e-4, max_iter: int = 1000):
     """Fixed-point iteration on P_c = c*(OF, P_c) * eff * mdot / (Cd*A_t)."""
     pc = CEA_PC_GUESS_PA
     for _ in range(max_iter):
@@ -161,9 +152,6 @@ def solve(mdot_total: float, of_core: float, hw: Hardware,
     p_ox = pc + dp_ox
     p_fuel = pc + dp_fuel    # inlet pressure feeding both the core and film paths
 
-    # Film path internals: inlet -> insert -> manifold -> film orifices -> chamber
-    # (with a solid insert there is no flow: manifold sits at P_c and the whole
-    #  P_fuel - P_c drop is across the insert)
     dp_film_orifice = orifice_dp(flows["mdot_film"], hw.cda_film, hw.rho_fuel)
     p_man = pc + dp_film_orifice
     dp_insert = p_fuel - p_man
@@ -200,13 +188,11 @@ IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id"]
 
 OUT_COLS = [
     "mdot_total_kg_s", "OF_core", "insert_id",
-    "P_ox_psia", "P_fuel_psia", "P_c_psia",
+    "P_c_psia", "P_ox_psia", "P_fuel_psia",
     "cooling_pct", "OF_overall",
     "mdot_ox_kg_s", "mdot_fuel_kg_s", "mdot_film_kg_s",
-    "P_ox_Pa", "P_fuel_Pa", "P_c_Pa",
-    "cstar_ms", "dP_ox_over_Pc", "dP_fuel_over_Pc",
-    "P_man_psia", "dP_insert_psi",
-    "warnings",
+    "cstar_ms",
+    "warnings"
 ]
 
 
@@ -238,14 +224,7 @@ def to_row(mdot: float, of_core: float, insert_id: str, r: dict) -> dict:
         "mdot_ox_kg_s": r["mdot_ox"],
         "mdot_fuel_kg_s": r["mdot_fuel"],
         "mdot_film_kg_s": r["mdot_film"],
-        "P_ox_Pa": r["P_ox"],
-        "P_fuel_Pa": r["P_fuel"],
-        "P_c_Pa": r["P_c"],
         "cstar_ms": r["cstar"],
-        "dP_ox_over_Pc": r["dp_ox_over_pc"],
-        "dP_fuel_over_Pc": r["dp_fuel_over_pc"],
-        "P_man_psia": psi(r["P_man"]),
-        "dP_insert_psi": psi(r["dp_insert"]),
         "warnings": r["warnings"],
     }
 
