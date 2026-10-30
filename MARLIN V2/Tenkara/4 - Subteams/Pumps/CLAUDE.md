@@ -31,7 +31,7 @@ Preliminary design code for the LOX and IPA pumps: 1D impeller sizing and H-Q cu
 - `Main.py`: per-propellant `Impeller.InputGeometry` and `MeridionalDesign.MeridionalGeometry`, fluid properties (LOX vapor pressure from CoolProp), `CreatePump`, `MakeDesign`.
 - `Pump.py`: `PumpDesignPoint` and `Pump`, which holds `.Impeller` and, after `AddInducer`, `.Inducer`. It also has the design head rise and flow, `NPSH_a`, `n_s` and `n_q`.
 - `Impeller.py`: `InputGeometry` (`Z_blade`, `Beta2B`, `d_1`, `d_2`, `b_2`, `blade_thick`, `d_hub`), `DesignPoint` (`Q`, `N_shaft`, `H_rise`) and `Impeller`. `Impeller` covers Wiesner slip, exit blade blockage, the outlet velocities and triangles, and the dimensionless numbers.
-- `Pump1D.py`: Euler head, power and torque, `PlotHQ` (empirical H-Q curve), `GuessInducerlessNPSH_r` (CFturbo), `GetInducerHeadRequirement` (rounded to 5 m).
+- `Pump1D.py`: Euler head, power and torque, `PlotHQ` (empirical H-Q curve), `GetInducerlessNPSH_r` (CFturbo), `GetInducerHeadRequirement` (rounded to 5 m).
 - `EmpiricalRelations.py`: flow-speed ratio, PUMPA slip and efficiency correlations, the volute K_v fit.
 - `Inducer.py`: inducer sizing (tip and hub diameter, N_ss, NPSH_3, hub taper, velocity triangles).
 - `InducerRadialEquilibrium.py`: c_θ(r, z) behind the tapered-hub inducer (NASA SP-8052). `GetOutletAngularMomentum()` gives the impeller inlet preswirl.

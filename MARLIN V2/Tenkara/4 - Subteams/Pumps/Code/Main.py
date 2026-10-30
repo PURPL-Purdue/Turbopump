@@ -54,8 +54,8 @@ meridional_geometry = {
 
 blade_params = {
 	'LOX': BladeParams(
-		sj=0.07,
-		lead_sweep=Q_(10, 'deg')
+		sj=0.06,
+		lead_sweep=Q_(15, 'deg')
 	),
 
 	'IPA': BladeParams(
@@ -107,7 +107,7 @@ def MakeDesign(propellant: str='LOX'):
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GuessInducerlessNPSH_r(pump))
+	print(Pump1D.GetInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
@@ -133,10 +133,10 @@ def MakeDesign(propellant: str='LOX'):
 		inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	imp_blade_design.PlotInletTriangles().show()
+	imp_blade_design.PlotInletTriangles()#.show()
 	imp_blade_design.Uh()
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	MakeDesign('IPA')
+	#MakeDesign('IPA')
