@@ -91,7 +91,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	return fig
 
-def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0, blade_blockage_factor: float=0.7) -> Q_:
+def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0, blade_blockage_factor: float=0.7) -> Q_:
 
 	"""
 		This method of calculating NPSH_i accounts for inlet velocity and losses.
@@ -115,7 +115,7 @@ def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0,
 	return (1/(2 * g) * (lambda_c * c_m1**2 + lambda_w * w_1**2)).to('m')
 
 def GetInducerHeadRequirement(pump: Pump) -> Q_:
-	no_inducer_NPSH_r: Q_[float] = GuessInducerlessNPSH_r(pump)
+	no_inducer_NPSH_r: Q_[float] = GetInducerlessNPSH_r(pump)
 	difference = (no_inducer_NPSH_r - pump.NPSH_a).to('m')
 	# round to the nearest 5 m
 	# this is to prevent the inducer requirements from changing too much with small changes in design point
@@ -126,4 +126,4 @@ if __name__ == '__main__':
 	lox_pump = Main.CreatePump('LOX')
 	#VelocityTriangle.PlotTriangles([lox_pump.Impeller.OutletVelocityTriangleAtDesign, lox_pump.Impeller.OutletBladeTriangleAtDesign], names=['with slip', 'no slip']).show()
 	#PlotHQ(lox_pump).show()
-	GuessInducerlessNPSH_r(lox_pump)
+	GetInducerlessNPSH_r(lox_pump)
