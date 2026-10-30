@@ -374,7 +374,10 @@ if __name__ == '__main__':
 	if USE_PUMP:
 		import sys
 		from pathlib import Path
-		sys.path.append(str(Path(__file__).resolve().parent.parent))
+		# Put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported by Pump.py
+		_here = Path(__file__).resolve().parent
+		sys.path[:] = [p for p in sys.path if Path(p or '.').resolve() != _here]
+		sys.path.insert(0, str(_here.parent))
 		import Main
 		for name in ('LOX', 'IPA'):
 			sizing = SizeInducerFromPump(Main.CreatePump(name), tolerance=tolerance)		# tolerance=None keeps the impeller as it is

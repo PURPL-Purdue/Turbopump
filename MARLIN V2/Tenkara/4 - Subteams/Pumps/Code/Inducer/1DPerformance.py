@@ -64,10 +64,13 @@ def Print1DPerformance(p: Inducer1D, name: str = 'Inducer') -> None:
 if __name__ == '__main__':
 	import sys
 	from pathlib import Path
-	sys.path.append(str(Path(__file__).resolve().parent.parent))		# Code folder, where Main.py sits
+	# Put Code/ (where Main.py sits) first and drop this folder so the Inducer package (not Inducer.py) is imported by Pump.py
+	_here = Path(__file__).resolve().parent
+	sys.path[:] = [p for p in sys.path if Path(p or '.').resolve() != _here]
+	sys.path.insert(0, str(_here.parent))
 	import Main
 	# Runs the sizing for the cases in Sizing.py and prints the 1D performance of each result
-	from Sizing import (constants, ImpellerInlet, InducerDesignPoint, InletTolerance, HeadRequirementModel,
+	from Inducer.Sizing import (constants, ImpellerInlet, InducerDesignPoint, InletTolerance, HeadRequirementModel,
 		OptimizeImpellerInlet)
 
 	cases = {

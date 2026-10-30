@@ -255,10 +255,10 @@ class ImpellerBladeDesign:
 			else:
 				beta_dis, r = ref_beta_dis, r_ref
 			
-			arc_x=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_x)
+			arc_m=np.linspace(*beta_dis.Domain, len(r))
+			beta = beta_dis.Get(arc_m)
 
-			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
+			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
 			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)
@@ -282,8 +282,8 @@ class ImpellerBladeDesign:
 			phi: float = i / num_streams
 			r, theta, beta_dis = rs[i], thetas[i], betas[i]
 
-			arc_x=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_x)
+			arc_m=np.linspace(*beta_dis.Domain, len(r))
+			beta = beta_dis.Get(arc_m)
 
 			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
@@ -302,11 +302,11 @@ class ImpellerBladeDesign:
 			), row=1, col=1)
 
 			fig.add_trace(go.Scatter(
-				x=Q_(arc_x, 'm').to(unit).m, y=np.rad2deg(beta),
+				x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
 				name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
 			), row=1, col=2)
 
-		fig.update_xaxes(title_text=rf'Arclength <i>x</i> ({unit})', row=1, col=2)
+		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)
 		fig.update_yaxes(title_text=r'Blade angle <i>β</i> (°)', row=1, col=2)
 
 		R_MAX = self.Pump.Impeller.d_2.to(unit).m / 2 * 1.2
@@ -342,3 +342,6 @@ class ImpellerBladeDesign:
 			template='plotly_white', title_text=f'{propellant} Impeller Blade Layout'
 		))
 		return fig
+
+	def Create3D(self):
+		pass
