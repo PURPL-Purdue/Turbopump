@@ -134,7 +134,7 @@ def MakeDesign(propellant: str='LOX'):
 		blade_params=blade_params[propellant]
 	)
 	imp_blade_design.PlotInletTriangles()#.show()
-	imp_blade_design.Uh()
+	imp_blade_design.PlotBladeLines()
 	return pump
 
 if __name__ == "__main__":

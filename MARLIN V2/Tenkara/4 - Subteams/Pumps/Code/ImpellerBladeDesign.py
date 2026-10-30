@@ -22,6 +22,7 @@ class _TriInfo:
 class BetaDistribution:
 	Get: Callable[[float], float]
 	Domain: tuple[float, float]
+	TotalWrap: float
 
 def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: str='grey', dash: str='dot') -> go.Scatter:
 	return go.Scatter(
@@ -155,7 +156,7 @@ class ImpellerBladeDesign:
 
 		return fig
 
-	def _GetWrap(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> tuple[float, BetaDistribution]:
+	def _GetWrap(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> BetaDistribution:
 		"""
 			Returns the wrap angle (in radians) of a blade streamline at the specified flow_fraction, from the leading
 			to the trailing edge. xj (m from the leading edge) is where the two beta parabolas join, Milos's x_3;
@@ -171,57 +172,63 @@ class ImpellerBladeDesign:
 		x = np.linspace(0, x_f, len(r))
 		Beta = GetBeta(x)
 
-		return np.trapezoid(y=1/(r * np.tan(Beta)), x=x), BetaDistribution(
-			Get=GetBeta, Domain=(0, x_f)
+		total_wrap = np.trapezoid(y=1/(r * np.tan(Beta)), x=x)
+
+		return BetaDistribution(
+			Get=GetBeta, Domain=(0, x_f), TotalWrap=total_wrap
 		)
 
-	def _SetWrap(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> tuple[BetaDistribution, float]:
+	def _SetWrap(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> BetaDistribution:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
 
-		wrap_high, beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
-		wrap_low, beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
+		beta_high = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
+		beta_low = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
 
 		residual_new = float('inf')
-		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
+		residual_high, residual_low = beta_high.TotalWrap - target_wrap, beta_low.TotalWrap - target_wrap
 		# same sign at both ends: the target is not between them, take the closer end
 		if residual_high * residual_low > 0:
 			print(f'The target wrap {target_wrap*180/np.pi:.1f} is out of reach by moving sj alone')
 			if np.abs(residual_high) > np.abs(residual_low):
-				return beta_low, wrap_low
-			return beta_high, wrap_high
+				return beta_low
+			return beta_high
 
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
-			wrap_new, beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
-			residual_new = wrap_new - target_wrap
+			beta_dis = self._GetWrap(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
+			residual_new = beta_dis.TotalWrap - target_wrap
 
 			if residual_new * residual_low > 0:
 				guess_low, residual_low = new_guess, residual_new
 			else:
 				guess_high, residual_high = new_guess, residual_new
 
-		return beta_dis, wrap_new
+		return beta_dis
 
-	def Uh(self):
+	def CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[np.ndarray[float]], list[BetaDistribution]]:
+		"""
+		"""
+
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1 # shroud streamline
 		ref_stream = self._mer.PotentialFlow.GetStreamline(ref_phi)
 
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
 		ref_bladestream = ref_stream.Between(self._mer.LeadingEdge, self._mer.TrailingEdge)
-		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, 200))[:, 1]
+		r_ref = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))[:, 1]
 
-		ref_wrap, mean_beta_dis = self._GetWrap(
+		ref_beta_dis = self._GetWrap(
 			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=self._params.sj
 			)
 
-		fig = go.Figure()
-		pfig = go.Figure()
+		betas: list[BetaDistribution] = []
+		rs: list[np.ndarray[float]] = []
+		thetas: list[np.ndarray[float]] = []
 
-		for phi in np.linspace(0, 1, 10):
+		for phi in np.linspace(0, 1, num_streams):
 
 			if phi != ref_phi:
 
@@ -234,25 +241,45 @@ class ImpellerBladeDesign:
 				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
 				theta_offset = arc_lead / r[0]
 
-				beta_dis, wrap = self._SetWrap(
+				beta_dis = self._SetWrap(
 					beta_1=beta_1, r=r, x_f=blade_stream.length_m,
-					target_wrap=ref_wrap + theta_offset
+					target_wrap=ref_beta_dis.TotalWrap + theta_offset
 				)
 			else:
-				beta_dis, wrap, r = mean_beta_dis, ref_wrap, r_ref
+				beta_dis, r = ref_beta_dis, r_ref
 			
 			arc_x=np.linspace(*beta_dis.Domain, len(r))
 			beta = beta_dis.Get(arc_x)
 
-			trace_name = f'Phi = {phi:.2f}, Wrap = {(wrap * 180/np.pi):.1f} °'
-			fig.add_trace(go.Scatter(
+			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
+			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
+
+			betas.append(beta_dis)
+			rs.append(r)
+			thetas.append(theta)
+
+		return rs, thetas, betas
+
+	def PlotBladeLines(self, num_streams: int=10) -> tuple[go.Figure, go.Figure]:
+
+		bfig = go.Figure()
+		pfig = go.Figure()
+
+		rs, thetas, betas = self.CreateBladeLines(num_streams)
+		for i in range(num_streams):
+
+			phi: float = i / num_streams
+			r, theta, beta_dis = rs[i], thetas[i], betas[i]
+
+			arc_x=np.linspace(*beta_dis.Domain, len(r))
+			beta = beta_dis.Get(arc_x)
+
+			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+			bfig.add_trace(go.Scatter(
 				x=Q_(arc_x, 'm').to('in').m,
 				y=np.rad2deg(beta),
 				name=trace_name
 			))
-
-			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_x, initial=0)
-			theta += ref_wrap - wrap
 
 			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade
 			Z = self.Pump.Impeller.Z_blade
@@ -267,7 +294,7 @@ class ImpellerBladeDesign:
 				name=trace_name
 			))
 
-		fig.update_layout(dict(
+		bfig.update_layout(dict(
 			template='plotly_white',
 			xaxis_title=r'Arclength <i>x</i> (in.)',
 			yaxis_title=r'Blade angle <i>β</i> (°)'
@@ -300,6 +327,6 @@ class ImpellerBladeDesign:
 			yaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain', scaleanchor='x', scaleratio=1),
 			xaxis=dict(range=[-R_MAX, R_MAX], zeroline=True, constrain='domain')
 		))
-		
-		pfig.show()
-		fig.show()
+
+		pfig.show(); bfig.show()
+		return pfig, bfig
