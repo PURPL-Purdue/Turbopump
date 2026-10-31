@@ -279,7 +279,7 @@ class ImpellerBladeDesign:
 	def PlotBladeLines(self, unit:str='in.', propellant: str='') -> go.Figure:
 
 		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
-				subplot_titles=(f'{propellant} Impeller Plan View', r'Variation of <i>β</i>')
+				subplot_titles=(f'{propellant} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
 
 		points, betas = self.GetBladeLines()
