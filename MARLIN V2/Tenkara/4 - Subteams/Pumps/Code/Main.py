@@ -56,13 +56,15 @@ blade_params = {
 	'LOX': BladeParams(
 		sj=0.06,
 		lead_sweep=Q_(15, 'deg'),
-		target_wrap = Q_(120, 'deg')
+		target_wrap = Q_(115, 'deg'), # cubic only
+		use_cubic = False
 	),
 
 	'IPA': BladeParams(
-		sj=0.3,
+		sj=0.1,
 		lead_sweep=Q_(0, 'deg'),
-		target_wrap = Q_(120, 'deg')
+		target_wrap = Q_(140, 'deg'),
+		use_cubic = False
 	)
 }
 
@@ -146,4 +148,4 @@ def MakeDesign(propellant: str='LOX'):
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign('IPA')

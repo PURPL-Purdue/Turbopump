@@ -38,6 +38,7 @@ class BladeParams:
 	lead_sweep: Q_[float] = Q_(10, 'deg')
 	resolution: int = 200
 	target_wrap: Q_[float] = Q_(120, 'deg')
+	use_cubic: bool = True
 
 class ImpellerBladeDesign:
 
@@ -51,8 +52,10 @@ class ImpellerBladeDesign:
 		
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
-
-		self._CreateBladeLines2(resolution=self._params.resolution)
+		if self._params.use_cubic:
+			self._CreateBladeLines2(resolution=self._params.resolution)
+		else:
+			self._CreateBladeLines(resolution=self._params.resolution)
 
 	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
