@@ -49,5 +49,10 @@ class ImpellerCAD:
 			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION)
 			)
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
-		
-		show(blade_edges, shroud_edge, shroud_surface, hub_edge, hub_surface, blades, alpha=0.3)
+
+		# L = 1000  # mm, just bigger than the impeller
+		# quadrant = cadquery.Solid.makeBox(L, L, 2 * L, pnt=cadquery.Vector(0, 0, -L))
+
+		impeller = cadquery.func.compound([hub_surface, shroud_surface, blades])
+
+		show(impeller, alpha=0.5)
