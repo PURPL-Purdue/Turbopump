@@ -3,9 +3,9 @@ from pint import Quantity as Q_
 import Pump
 from Pump import Propellant
 import Impeller
-from ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
+from ImpellerDesign.ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
 from CoolProp import CoolProp as CP
-import MeridionalDesign
+import ImpellerDesign.MeridionalDesign as MeridionalDesign
 import sys
 from pathlib import Path
 
@@ -143,7 +143,7 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	import ImpellerCAD
+	import ImpellerDesign.ImpellerCAD as ImpellerCAD
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design)
 
 	return pump

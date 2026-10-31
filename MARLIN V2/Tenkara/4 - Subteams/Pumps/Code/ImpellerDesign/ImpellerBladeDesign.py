@@ -2,18 +2,18 @@ import numpy as np
 from pint import Quantity as Q_
 from plotly import graph_objects as go, subplots, express
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
-from MeridionalDesign import MeridionalDesign
-from MeridionalContour import MeridionalCurve
-from PotentialFlow import Streamline
 from typing import Optional
 from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
-from JoinParabola import JoinParabola
 from collections.abc import Callable
 from plotly import graph_objects as go
 from scipy import integrate
 from warnings import warn
-from ConformalMapping import ConformalMapping, BetaCMM
+from .ConformalMapping import ConformalMapping, BetaCMM
+from .MeridionalDesign import MeridionalDesign
+from .MeridionalContour import MeridionalCurve
+from .PotentialFlow import Streamline
+from .JoinParabola import JoinParabola
 
 @dataclass
 class _TriInfo:
@@ -390,6 +390,6 @@ class ImpellerBladeDesign:
 			)
 
 		fig.update_layout(dict(
-			template='plotly_white', title_text=f'{self.Pump.Propellant} Impeller Blade Layout'
+			template='plotly_white', title_text=f'{self.Pump.Propellant.name} Impeller Blade Layout'
 		))
 		return fig

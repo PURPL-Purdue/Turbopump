@@ -1,9 +1,9 @@
-import ImpellerBladeDesign
 import numpy as np
 import cadquery
 import cadquery.func
 from cadquery.vis import show
-from MeridionalContour import MeridionalContour
+from .MeridionalContour import MeridionalContour
+from . import ImpellerBladeDesign
 
 def _ToCartesian(points_zrt: np.ndarray) -> list[cadquery.Vector]:
 	z, r, theta = points_zrt.T

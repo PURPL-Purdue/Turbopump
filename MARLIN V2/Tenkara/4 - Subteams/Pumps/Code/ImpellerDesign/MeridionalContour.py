@@ -1,8 +1,7 @@
-import Bezier
 import numpy as np
 from pint import Quantity as Q_
 import plotly.graph_objects as go
-
+from . import Bezier
 # (z, r, s_1, s_2) of each intersection of two curves: the point, and its normalized arclength on the curve FindIntersect is
 # called on (s_1) and on the other curve (s_2). Ordered by s_1, empty when the curves do not intersect.
 IntersectResults = list[tuple[Q_[float], Q_[float], float, float]]

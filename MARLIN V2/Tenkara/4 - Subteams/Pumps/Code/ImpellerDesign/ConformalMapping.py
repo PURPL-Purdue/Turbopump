@@ -81,5 +81,3 @@ class ConformalMapping:
 		#fig.show()
 
 		return beta_dis
-
-		

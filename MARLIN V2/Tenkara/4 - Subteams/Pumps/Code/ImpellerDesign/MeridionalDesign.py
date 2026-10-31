@@ -2,8 +2,8 @@ from plotly import graph_objects as go
 from Pump import Pump
 from Impeller import Impeller
 from pint import Quantity as Q_
-from MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve, Polyline
-from PotentialFlow import PotentialFlow
+from .MeridionalContour import MeridionalContour, MeridionalCurve, FlowDomain, MeanCurve, BezierCurve, Polyline
+from .PotentialFlow import PotentialFlow
 import numpy as np
 from dataclasses import dataclass
 
