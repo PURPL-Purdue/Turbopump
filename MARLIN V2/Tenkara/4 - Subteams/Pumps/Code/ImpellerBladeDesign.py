@@ -233,7 +233,7 @@ class ImpellerBladeDesign:
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=np.deg2rad(95) + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=np.deg2rad(120) + theta_offset, radii=r
 				)
 			
 			beta_dis: BetaCMM = cm.SolveDistribution()

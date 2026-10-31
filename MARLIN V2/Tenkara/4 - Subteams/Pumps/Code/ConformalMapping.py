@@ -44,9 +44,9 @@ class ConformalMapping:
 
 		# A(x_0 = 0) = 0
 		# A(x_f) = A_f
-		# A'(x_0) = tan(beta_1)
-		# A'(x_f) = tan(beta_2)
-		rhs = np.array([0, A_f, np.tan(self.beta_1), np.tan(self.beta_2)])
+		# A'(x_0) = 1/tan(beta_1)
+		# A'(x_f) = 1/tan(beta_2)
+		rhs = np.array([0, A_f, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)])
 		return np.linalg.solve(lhs, rhs)
 
 	def _GetDistribution(self, A_f: float) -> BetaCMM:
@@ -56,7 +56,7 @@ class ConformalMapping:
 		theta = scipy.integrate.cumulative_trapezoid(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
 
 		def GetBeta(x: float) -> float:
-			return np.atan(1 / (coeffs[0] * x**2 + coeffs[1] * x + coeffs[2]))
+			return np.atan(1 / (3 * coeffs[0] * x**2 + 2 * coeffs[1] * x + coeffs[2]))
 
 		return BetaCMM(GetBeta, theta, (0, self._arclen))
 
