@@ -50,7 +50,7 @@ class ConformalMapping:
 		theta = scipy.integrate.cumulative_trapezoid(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
 
 		def GetBeta(x: float) -> float:
-			return np.atan(1 / (5*coeffs[5]*x**4 + 4*coeffs[4]*x**3 + 3*coeffs[3]*x**2 + 2*coeffs[2]*x + coeffs[1]))
+			return np.atan(1 / np.polyval(np.polyder(coeffs), x))
 
 		return BetaCMM(GetBeta, theta, (0, self._arclen)), coeffs
 

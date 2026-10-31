@@ -51,7 +51,7 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
-		self._CreateBladeLines(resolution=self._params.resolution)
+		self._CreateBladeLines2(resolution=self._params.resolution)
 
 	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
@@ -216,10 +216,12 @@ class ImpellerBladeDesign:
 		points_3d: list[np.ndarray[float]] = []
 		lead_sweep = 0#self._params.lead_sweep.to('rad').m
 
+		TARGET_WRAP = np.deg2rad(95) # temp
+
 		for i in range(num_streams):
 
 			phi = i/(num_streams - 1)
-			#print(phi)
+			
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
@@ -233,7 +235,7 @@ class ImpellerBladeDesign:
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=np.deg2rad(120) + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=TARGET_WRAP + theta_offset, radii=r
 				)
 			
 			beta_dis: BetaCMM = cm.SolveDistribution()
@@ -323,7 +325,7 @@ class ImpellerBladeDesign:
 		for i in range(num_streams):
 
 			phi: float = i / (num_streams - 1)
-			print(phi)
+			
 			r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
 			arc_m=np.linspace(*beta_dis.Domain, len(r))
