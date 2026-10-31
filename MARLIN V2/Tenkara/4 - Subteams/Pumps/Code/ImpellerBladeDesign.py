@@ -317,10 +317,10 @@ class ImpellerBladeDesign:
 	def GetBladeLines(self):
 		return self._bladelines
 
-	def PlotBladeLines(self, unit:str='in.', propellant: str='') -> go.Figure:
+	def PlotBladeLines(self, unit:str='in') -> go.Figure:
 
 		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
-				subplot_titles=(f'{propellant} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
+				subplot_titles=(f'{self.Pump.Propellant.name} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
 
 		points, betas = self.GetBladeLines()
@@ -390,6 +390,6 @@ class ImpellerBladeDesign:
 			)
 
 		fig.update_layout(dict(
-			template='plotly_white', title_text=f'{propellant} Impeller Blade Layout'
+			template='plotly_white', title_text=f'{self.Pump.Propellant} Impeller Blade Layout'
 		))
 		return fig

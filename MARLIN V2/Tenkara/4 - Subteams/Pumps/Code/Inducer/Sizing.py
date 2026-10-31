@@ -379,7 +379,7 @@ if __name__ == '__main__':
 		sys.path[:] = [p for p in sys.path if Path(p or '.').resolve() != _here]
 		sys.path.insert(0, str(_here.parent))
 		import Main
-		for name in ('LOX', 'IPA'):
+		for name in (Main.Propellant.LOX, Main.Propellant.IPA):
 			sizing = SizeInducerFromPump(Main.CreatePump(name), tolerance=tolerance)		# tolerance=None keeps the impeller as it is
 			PrintInletSizing(sizing, name)
 			PlotContour(sizing, name=name).show()

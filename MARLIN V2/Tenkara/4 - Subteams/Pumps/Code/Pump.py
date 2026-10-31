@@ -3,6 +3,7 @@ import Inducer.Inducer as Inducer
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
+from enum import Enum
 
 g = Q_(9.81, 'm/s^2')
 
@@ -16,10 +17,15 @@ class PumpDesignPoint:
 	mass_flow: Q_[float]				# mass flow rate (strictly speaking inlet, should be almost equal to outlet)
 	rho: Q_[float]						# average fluid density
 
+class Propellant(Enum):
+	LOX = 1
+	IPA = 2
+
 class Pump:
 
-	def __init__(self, design_point: PumpDesignPoint, impeller_geometry: Impeller.InputGeometry):
+	def __init__(self, propellant: Propellant, design_point: PumpDesignPoint, impeller_geometry: Impeller.InputGeometry):
 		self.DP = design_point
+		self.Propellant = propellant
 
 		self.DesignHeadRise = (self.DP.discharge_pressure - self.DP.feed_pressure) / self.DP.rho / g
 		self.DesignFlowRate = self.DP.mass_flow / self.DP.rho

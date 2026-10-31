@@ -123,7 +123,7 @@ def GetInducerHeadRequirement(pump: Pump) -> Q_:
 
 if __name__ == '__main__':
 	import Main
-	lox_pump = Main.CreatePump('LOX')
+	lox_pump = Main.CreatePump(Main.Propellant.LOX)
 	#VelocityTriangle.PlotTriangles([lox_pump.Impeller.OutletVelocityTriangleAtDesign, lox_pump.Impeller.OutletBladeTriangleAtDesign], names=['with slip', 'no slip']).show()
 	#PlotHQ(lox_pump).show()
 	GetInducerlessNPSH_r(lox_pump)
