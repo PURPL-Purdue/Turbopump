@@ -55,8 +55,8 @@ meridional_geometry = {
 
 blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.06,
-		lead_sweep=Q_(15, 'deg'),
+		sj=0.1,
+		lead_sweep=Q_(10, 'deg'),
 		target_wrap = Q_(115, 'deg'), # cubic only
 		use_cubic = False
 	),
@@ -123,7 +123,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
-	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
+	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
 
 	#print(inducer_eq.GetOutletAngularMomentum())
 
@@ -138,7 +138,8 @@ def MakeDesign(propellant: Propellant):
 		inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	imp_blade_design.PlotInletTriangles()#.show()
+	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
@@ -149,4 +150,4 @@ def MakeDesign(propellant: Propellant):
 
 if __name__ == "__main__":
 	MakeDesign(Propellant.LOX)
-	MakeDesign(Propellant.IPA)
+	#MakeDesign(Propellant.IPA)

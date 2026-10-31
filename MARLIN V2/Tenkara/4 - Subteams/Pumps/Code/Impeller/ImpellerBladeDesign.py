@@ -57,29 +57,18 @@ class ImpellerBladeDesign:
 		else:
 			self._CreateBladeLines(resolution=self._params.resolution)
 
-	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
+	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
+		if radius < self._rad_eq.inducer.R_hub_2:
+			radius = self._rad_eq.inducer.R_hub_2
+			warn(f'Querying radius value less than inducer hub radius')
+		elif radius > self._rad_eq.inducer.D_tip/2:
+			radius = self._rad_eq.inducer.D_tip/2
+			warn(f'Querying radius value greater than inducer tip radius')
 
-		if free_vortex:
-			# free vortex:
-			return self.K_inlet/r
+		return (self._rad_eq.c_theta(radius, self._rad_eq.inducer.L_ax),
+		        self._rad_eq.c_axial(radius, self._rad_eq.inducer.L_ax, blockage=False))
 
-		# superimpose inducer outlet velocity distribution
-		if r < self._rad_eq.inducer.R_hub_2:
-			r = self._rad_eq.inducer.R_hub_2
-		elif r > self._rad_eq.inducer.D_tip/2:
-			r = self._rad_eq.inducer.D_tip/2
-		
-		return self._rad_eq.c_theta(r, self._rad_eq.inducer.L_ax)
-
-	def _GetInletC_m(self, r: Q_) -> Q_:
-		if r < self._rad_eq.inducer.R_hub_2:
-			r = self._rad_eq.inducer.R_hub_2
-		elif r > self._rad_eq.inducer.D_tip/2:
-			r = self._rad_eq.inducer.D_tip/2
-
-		return self._rad_eq.c_axial(r, self._rad_eq.inducer.L_ax)
-
-	def _SolveInletFlow(self, streamline: MeridionalCurve) -> tuple[_TriInfo, _TriInfo, Q_, float]:
+	def _SolveInletFlow(self, streamline: MeridionalCurve, free_vortex: bool=True) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
 			Radius r_1 (m), flow angle beta_1' just inside the blades (rad, = blade angle at zero incidence) and degree of
 			blockage rho_1 where the leading edge crosses streamline phi. Tangential blockage (CFturbo; Hassan et al.,
@@ -90,7 +79,7 @@ class ImpellerBladeDesign:
 		"""
 		lambda_1 = self._GetLeadingEdgeAngle(streamline)
 
-		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline)
+		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline, free_vortex=free_vortex)
 		impeller = self.MeridionalDesign.Pump.Impeller
 
 		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
@@ -105,24 +94,29 @@ class ImpellerBladeDesign:
 
 		return _TriInfo(c_m1_prime, beta_1_prime), _TriInfo(c_m1, beta_1), r_1, blockage_factor
 
-	def _GetLeadingEdgeFlow(self, streamline: Streamline) -> tuple[Q_, Q_, Q_]:
+	def _GetLeadingEdgeFlow(self, streamline: Streamline, free_vortex: bool=True) -> tuple[Q_, Q_, Q_]:
 		"""
-			Radius r_1 (m), meridional velocity c_m1 and relative swirl w_u1 = u_1 - c_u1 (m/s) where the leading edge
+			Radius (m), meridional velocity c_m1 and relative swirl w_u1 = u_1 - c_u1 (m/s) where the leading edge
 			crosses streamline, without blade blockage
 		"""
 		hits = streamline.FindIntersect(self.MeridionalDesign.LeadingEdge)
 		assert len(hits) == 1, 'The leading edge must cross the streamline exactly once'
-		_, r_1, s, _ = hits[0]
+		axial_pos_z, radius, s, _ = hits[0]
 
 		omega = self.MeridionalDesign.Pump.Impeller.DP.N_shaft.to('rad/s')
+		u_1 = omega * radius # leading edge tangential speed
 
-		#c_m1: Q_[float] = self._GetInletC_m(r_1)
-		c_m1: Q_[float] = streamline.Interpolate(streamline.v_m, s).to('m/s')
+		if free_vortex:
+			# free vortex defines: c_u * r = k	=> constant specific angular momentum
+			c_u1 = self.K_inlet / radius
+			c_m1: Q_[float] = streamline.Interpolate(streamline.v_m, s).to('m/s')
+		else:
+			c_u1, c_m1 = self._GetInducerOutletC_uC_m(radius)
 		
-		w_u1 = omega * r_1 - self._GetInletC_u(r_1)
+		w_u1 = u_1 - c_u1
 		assert w_u1 > 0, 'The preswirl exceeds the blade speed at the leading edge'
 
-		return r_1, c_m1, w_u1
+		return radius, c_m1, w_u1
 
 	def _GetLeadingEdgeAngle(self, curve: MeridionalCurve) -> Q_[float]:
 		"""
@@ -135,7 +129,7 @@ class ImpellerBladeDesign:
 		cos_angle = abs(curve.Tangent(s_curve) @ self.MeridionalDesign.LeadingEdge.Tangent(s_LE))
 		return Q_(np.arccos(min(cos_angle, 1.0)), 'rad').to('deg')
 
-	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1]) -> go.Figure:
+	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1], free_vortex: bool=True) -> go.Figure:
 		"""
 			Inlet triangles where the leading edge crosses each streamline phi: upstream of the blades (1) and just inside
 			them with the blade blockage (1'), with the blade direction at the incidence i = beta_1B - beta_1' from W_1'
@@ -152,7 +146,7 @@ class ImpellerBladeDesign:
 
 		fig = subplots.make_subplots(rows=n_rows, cols=n_cols, subplot_titles=titles)
 		for i, phi in enumerate(phis):
-			prime, no_block, r, _ = self._SolveInletFlow(self.MeridionalDesign.PotentialFlow.GetStreamline(phi))
+			prime, no_block, r, _ = self._SolveInletFlow(self.MeridionalDesign.PotentialFlow.GetStreamline(phi), free_vortex)
 			u = self.Pump.DP.N_shaft * r
 			triangles = [
 				VelocityTriangle.FromBeta(u, no_block.c_m, no_block.Beta, '<sub>1</sub>'),
@@ -160,8 +154,9 @@ class ImpellerBladeDesign:
 				]
 			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1, names=['upstream', 'inside blades'])
 
+		inlet_model = f'Inlet velocity model: {'free vortex' if free_vortex else 'superimposed inducer outlet'}'
 		fig.update_layout(template='simple_white',
-			title=f'Inlet Velocity Triangles<br><sup>{CONVENTION_NOTES["centrifugal"]}</sup>')
+			title=f'{self.Pump.Propellant.name} Impeller Inlet Velocity Triangles<br><sup>{inlet_model}<br>{CONVENTION_NOTES["centrifugal"]}</sup>')
 
 		return fig
 
@@ -227,7 +222,7 @@ class ImpellerBladeDesign:
 			phi = i/(num_streams - 1)
 			
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
-			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
+			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
 			stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
@@ -269,7 +264,7 @@ class ImpellerBladeDesign:
 		ref_phi = 1 # shroud streamline
 		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
 
-		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m
+		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 		ref_bladestream = ref_stream.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 		ref_stream_zr = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))
 		r_ref = ref_stream_zr[:, 1]
@@ -286,7 +281,7 @@ class ImpellerBladeDesign:
 			if phi != ref_phi:
 
 				streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
-				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
+				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 				blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
 				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))

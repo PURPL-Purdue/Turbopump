@@ -44,7 +44,7 @@ class InducerRadialEquilibrium:
         self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
         self.incidence_ratio = self.meanline.incidence_ratio
         self.N_blades = blade_number
-        self.t = None if blade_thickness is None else blade_thickness.to('m').magnitude
+        self.t: float = None if blade_thickness is None else blade_thickness.to('m').magnitude
 
         self.R_t = inducer.D_tip.to('m').magnitude / 2.0
         self.R_h1 = inducer.R_hub_1.to('m').magnitude
@@ -80,9 +80,8 @@ class InducerRadialEquilibrium:
     def _dA(self, r, lam, strict=True):
         # Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
         dA = 2.0 * np.pi * r
-        if self.t is not None:
-            thickness = 0.5e-3 # Assumed constant thickness for now (0.5 mm)
-            dA = dA - self.N_blades * thickness * np.sqrt(r**2 + lam**2) / lam
+        if self.t is not None:# Assumed constant thickness for now
+            dA = dA - self.N_blades * self.t * np.sqrt(r**2 + lam**2) / lam
             if strict and np.any(dA <= 0.0):
                 raise ValueError("Blade blockage closes the passage; reduce thickness or blade number.")
         return dA
@@ -168,11 +167,18 @@ class InducerRadialEquilibrium:
         self._check(r_m, z_m)
         return Q_(self._psi(r_m, z_m, self.beta2) * np.asarray(r_m) * self.omega, 'm/s')
 
-    def c_axial(self, r: Q_, z: Q_) -> Q_:
+    def c_axial(self, r: Q_, z: Q_, blockage: bool=True) -> Q_:
         r_m, z_m = r.to('m').magnitude, z.to('m').magnitude
         self._check(r_m, z_m)
         psi = self._psi(r_m, z_m, self.beta2)
-        return Q_((1.0 - psi) * self._lead(z_m, self.beta2) * self.omega, 'm/s')
+        blocked_c_axial = Q_((1.0 - psi) * self._lead(z_m, self.beta2) * self.omega, 'm/s')
+
+        if blockage:
+            return blocked_c_axial
+        
+        lam = self._lead(z_m, self.beta2)
+        tau = self._dA(r_m, lam) / (2 * np.pi * r_m)    # open-area fraction, 1 = no blockage
+        return blocked_c_axial * tau        # circumferentially averaged c_axial
 
     def GetOutletAngularMomentum(self) -> Q_:
         """Mass-averaged r*c_theta at the outlet; equals g*H_rise / (eta_bl*omega) through the choice of beta2."""
