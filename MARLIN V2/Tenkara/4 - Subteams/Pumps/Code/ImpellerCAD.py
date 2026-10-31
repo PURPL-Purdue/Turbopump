@@ -24,6 +24,7 @@ class ImpellerCAD:
 
 	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign):
 		self._blade_design = blade_design
+		self.Impeller = self._blade_design.Pump.Impeller
 		RESOLUTION: int = 200
 
 		# blade_points is a list of points (ndarrays)
@@ -33,14 +34,20 @@ class ImpellerCAD:
 		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p), parameters=list(t)) for p in blade_points]
 		camber = cadquery.func.loft(blade_edges)
 
+		Z_blade: int = self.Impeller.Z_blade
+		# rotate the blades about the z-axis
+		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade) for n in range(Z_blade)])
+
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
 		shroud_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION)
 			)
+		shroud_surface = cadquery.func.revolve(shroud_edge, (0, 0, 0), (0, 0, 1))
 
 		hub_contour = self._blade_design.MeridionalDesign.HubContour
 		hub_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION)
 			)
+		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		
-		show(blade_edges, shroud_edge, hub_edge, camber)
+		show(blade_edges, shroud_edge, shroud_surface, hub_edge, hub_surface, blades, alpha=0.3)
