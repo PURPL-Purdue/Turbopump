@@ -21,7 +21,7 @@ basic_impeller_geometry = {
 		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
-		b_2 = Q_(0.07, 'in'),			# impeller outlet height
+		b_2 = Q_(0.08, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
@@ -144,4 +144,4 @@ def MakeDesign(propellant: str='LOX'):
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign('IPA')
