@@ -34,7 +34,8 @@ def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: s
 @dataclass
 class BladeParams:
 	sj: float = 0.05
-	lead_sweep: Q_[float] = Q_(10, 'deg')
+	lead_sweep: Q_[float] = Q_(10, 'deg'),
+	resolution: int = 200
 
 class ImpellerBladeDesign:
 
@@ -48,6 +49,8 @@ class ImpellerBladeDesign:
 		
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
+
+		self._CreateBladeLines(resolution=self._params.resolution)
 
 	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
@@ -207,7 +210,7 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
 			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
 			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
@@ -267,16 +270,20 @@ class ImpellerBladeDesign:
 			betas.append(beta_dis)
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		return points_3d, betas
+		self._bladelines = (points_3d, betas)
+		return self._bladelines
 
-	def PlotBladeLines(self, num_streams: int=10, unit:str='in.', propellant: str='') -> go.Figure:
+	def GetBladeLines(self):
+		return self._bladelines
+
+	def PlotBladeLines(self, unit:str='in.', propellant: str='') -> go.Figure:
 
 		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
 				subplot_titles=(f'{propellant} Impeller Plan View', r'Variation of <i>β</i>')
 			)
 
-		points, betas = self.CreateBladeLines(num_streams)
-
+		points, betas = self.GetBladeLines()
+		num_streams = len(points)
 		colors = express.colors.qualitative.Plotly
 
 		for i in range(num_streams):
