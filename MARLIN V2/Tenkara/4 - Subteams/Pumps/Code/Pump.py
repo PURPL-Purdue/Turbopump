@@ -1,4 +1,4 @@
-import Impeller
+import Impeller.Impeller as Impeller
 import Inducer.Inducer as Inducer
 import numpy as np
 from pint import Quantity as Q_
