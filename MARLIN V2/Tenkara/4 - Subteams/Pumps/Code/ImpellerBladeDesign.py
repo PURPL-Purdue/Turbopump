@@ -13,6 +13,7 @@ from collections.abc import Callable
 from plotly import graph_objects as go
 from scipy import integrate
 from warnings import warn
+from ConformalMapping import ConformalMapping, BetaCMM
 
 @dataclass
 class _TriInfo:
@@ -50,7 +51,7 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
-		self._CreateBladeLines(resolution=self._params.resolution)
+		self._CreateBladeLines2(resolution=self._params.resolution)
 
 	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
@@ -209,6 +210,39 @@ class ImpellerBladeDesign:
 				guess_high, residual_high = new_guess, residual_new
 
 		return beta_dis
+
+	def _CreateBladeLines2(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+		betas: list[BetaDistribution] = []
+		points_3d: list[np.ndarray[float]] = []
+		lead_sweep = self._params.lead_sweep.to('rad').m
+
+		for i in range(num_streams):
+
+			phi = i/num_streams
+
+			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
+			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
+			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+
+			stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
+			r = stream_zr[:, 1]
+
+			if i == 0: r_0 = r[0]
+			arc_lead = np.sin(lead_sweep) * (r[0] - r_0)
+			theta_offset = arc_lead / r[0]
+
+			cm = ConformalMapping(
+				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
+				arclen=blade_stream.length_m, target_wrap=np.deg2rad(95) + theta_offset, radii=r
+				)
+			
+			beta_dis: BetaCMM = cm.SolveDistribution()
+
+			betas.append(beta_dis)
+			points_3d.append(np.column_stack((stream_zr, beta_dis.Theta)))
+
+		self._bladelines = (points_3d, betas)
+		return self._bladelines
 
 	def _CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
