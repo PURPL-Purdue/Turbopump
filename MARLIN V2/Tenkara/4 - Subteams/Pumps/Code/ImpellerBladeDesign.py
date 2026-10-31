@@ -35,8 +35,9 @@ def _TraceCircle(r: float, t: list[float] | np.ndarray, name: str=None, color: s
 @dataclass
 class BladeParams:
 	sj: float = 0.05
-	lead_sweep: Q_[float] = Q_(10, 'deg'),
+	lead_sweep: Q_[float] = Q_(10, 'deg')
 	resolution: int = 200
+	target_wrap: Q_[float] = Q_(120, 'deg')
 
 class ImpellerBladeDesign:
 
@@ -214,9 +215,9 @@ class ImpellerBladeDesign:
 	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
-		lead_sweep = 0#self._params.lead_sweep.to('rad').m
+		lead_sweep = self._params.lead_sweep.to('rad').m
 
-		TARGET_WRAP = np.deg2rad(95) # temp
+		target_wrap: float = self._params.target_wrap.to('rad').m
 
 		for i in range(num_streams):
 
@@ -235,13 +236,14 @@ class ImpellerBladeDesign:
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=TARGET_WRAP + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=r
 				)
 			
 			beta_dis: BetaCMM = cm.SolveDistribution()
+			theta = beta_dis.Theta + target_wrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)
-			points_3d.append(np.column_stack((stream_zr, beta_dis.Theta)))
+			points_3d.append(np.column_stack((stream_zr, theta)))
 
 		self._bladelines = (points_3d, betas)
 		return self._bladelines
