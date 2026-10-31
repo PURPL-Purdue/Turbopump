@@ -125,7 +125,7 @@ def MakeDesign(propellant: str='LOX'):
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
 	pump_meridional.PotentialFlow.Plot()#.show()
-	pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -144,4 +144,4 @@ def MakeDesign(propellant: str='LOX'):
 
 if __name__ == "__main__":
 	MakeDesign('LOX')
-	MakeDesign('IPA')
+	#MakeDesign('IPA')

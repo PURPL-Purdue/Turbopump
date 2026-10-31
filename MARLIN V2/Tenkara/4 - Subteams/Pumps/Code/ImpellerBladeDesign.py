@@ -51,7 +51,7 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 
-		self._CreateBladeLines2(resolution=self._params.resolution)
+		self._CreateBladeLines(resolution=self._params.resolution)
 
 	def _GetInletC_u(self, r: Q_, free_vortex: bool=True) -> Q_:
 
@@ -211,15 +211,15 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def _CreateBladeLines2(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
-		lead_sweep = self._params.lead_sweep.to('rad').m
+		lead_sweep = 0#self._params.lead_sweep.to('rad').m
 
-		for i in range(num_streams + 1):
+		for i in range(num_streams):
 
-			phi = i/num_streams
-
+			phi = i/(num_streams - 1)
+			#print(phi)
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
@@ -244,7 +244,7 @@ class ImpellerBladeDesign:
 		self._bladelines = (points_3d, betas)
 		return self._bladelines
 
-	def _CreateBladeLines(self, num_streams: int=10, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
 			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
 			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
@@ -322,7 +322,8 @@ class ImpellerBladeDesign:
 
 		for i in range(num_streams):
 
-			phi: float = i / num_streams
+			phi: float = i / (num_streams - 1)
+			print(phi)
 			r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
 			arc_m=np.linspace(*beta_dis.Domain, len(r))

@@ -3,6 +3,7 @@ from collections.abc import Callable
 import warnings
 import scipy.integrate
 from dataclasses import dataclass
+from plotly import graph_objects as go
 
 class BetaCMM:
 	Get: Callable[[float], float]
@@ -14,9 +15,6 @@ class BetaCMM:
 		self.Domain = domain
 		self.Theta = wrap
 		self.TotalWrap = wrap[-1]
-
-def AofX(coeffs: np.ndarray[float], x: float | np.ndarray) -> float | np.ndarray:
-	return coeffs[0] * x**3 + coeffs[1] * x**2 + coeffs[2] * x + coeffs[3]
 
 class ConformalMapping:
 
@@ -30,35 +28,31 @@ class ConformalMapping:
 
 	def _SolveCoefficients(self, A_f: float) -> np.ndarray[float]:
 		"""
-		Returns a, b, c, and d wrapped in a 1D numpy array
-		A(x) = a * x^3 + b * x^2 + c * x + d
-		A'(x) = 3*a * x^2 + 2*b * x + c
+		A(x) = a x^5 + b x^4 + c x^3 + d x^2 + e x + f, coefficients highest power first (np.polyval order)
 		"""
 		x_f = self._arclen
 		lhs = np.array([
-			[0       ,      0,   0, 1],	# A(x_0 = 0)	= d
-			[x_f**3  , x_f**2, x_f, 1], # A(x_f)		= a * x_f^3 + b * x_f^2 + c * x_f + d
-			[0       ,      0,   1, 0],	# A'(x0 = 0) 	= c
-			[3*x_f**2,  2*x_f,   1, 0]	# A'(x_f) 		= 3*a * x_f^2 + 2 * b * x_f + c
+			[0        ,          0,          0,      0,   0, 1],	# A(0)
+			[x_f**5   ,     x_f**4,     x_f**3, x_f**2, x_f, 1],	# A(x_f)
+			[0        ,          0,          0,      0,   1, 0],	# A'(0)
+			[5*x_f**4 ,   4*x_f**3,   3*x_f**2,  2*x_f,   1, 0],	# A'(x_f)
+			[0        ,          0,          0,      2,   0, 0],	# A''(0)
+			[20*x_f**3,  12*x_f**2,      6*x_f,      2,   0, 0],	# A''(x_f)
 		])
-
-		# A(x_0 = 0) = 0
-		# A(x_f) = A_f
-		# A'(x_0) = 1/tan(beta_1)
-		# A'(x_f) = 1/tan(beta_2)
-		rhs = np.array([0, A_f, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)])
+		# A(0) = 0, A(x_f) = A_f, A' = 1/tan(beta) at both ends, A'' = 0 at both ends (dbeta/dx = 0)
+		rhs = np.array([0, A_f, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2), 0, 0])
 		return np.linalg.solve(lhs, rhs)
 
-	def _GetDistribution(self, A_f: float) -> BetaCMM:
+	def _GetDistribution(self, A_f: float) -> tuple[BetaCMM, np.ndarray]:
 
 		coeffs = self._SolveCoefficients(A_f)
-		A_array = AofX(coeffs, np.linspace(0, self._arclen, len(self._radii)))
+		A_array = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
 		theta = scipy.integrate.cumulative_trapezoid(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
 
 		def GetBeta(x: float) -> float:
-			return np.atan(1 / (3 * coeffs[0] * x**2 + 2 * coeffs[1] * x + coeffs[2]))
+			return np.atan(1 / (5*coeffs[5]*x**4 + 4*coeffs[4]*x**3 + 3*coeffs[3]*x**2 + 2*coeffs[2]*x + coeffs[1]))
 
-		return BetaCMM(GetBeta, theta, (0, self._arclen))
+		return BetaCMM(GetBeta, theta, (0, self._arclen)), coeffs
 
 	def SolveDistribution(self, target_wrap: float=None) -> BetaCMM:
 
@@ -68,8 +62,8 @@ class ConformalMapping:
 		A_f_max = self._arclen / np.tan(self.beta_2)
 		A_f_min = self._arclen / np.tan(self.beta_1)
 
-		beta_high = self._GetDistribution(A_f_max)
-		beta_low = self._GetDistribution(A_f_min)
+		beta_high, _ = self._GetDistribution(A_f_max)
+		beta_low, _ = self._GetDistribution(A_f_min)
 
 		residual_high = beta_high.TotalWrap - target_wrap
 		residual_low = beta_low.TotalWrap - target_wrap
@@ -85,13 +79,21 @@ class ConformalMapping:
 
 		while abs(residual_new) > 1e-4:
 			new_guess: float = (guess_high + guess_low) / 2
-			beta_dis: BetaCMM = self._GetDistribution(new_guess)
+			beta_dis, coeffs = self._GetDistribution(new_guess)
 			residual_new = beta_dis.TotalWrap - target_wrap
 
 			if residual_new * residual_low > 0:
 				guess_low, residual_low = new_guess, residual_new
 			else:
 				guess_high, residual_high = new_guess, residual_new
+
+		fig = go.Figure()
+		y=np.linspace(0, self._arclen, 100)
+		fig.add_trace(go.Scatter(
+			x = np.polyval(coeffs, y),
+			y = y
+		))
+		#fig.show()
 
 		return beta_dis
 
