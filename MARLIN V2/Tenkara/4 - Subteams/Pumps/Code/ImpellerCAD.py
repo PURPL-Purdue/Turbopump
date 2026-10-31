@@ -17,8 +17,6 @@ def _MeridionalContourToCartesian(contour: MeridionalContour, resolution: int=20
 	points_zr = contour.Points(np.linspace(0, contour.length_m, resolution))
 	z, r = points_zr.T
 	y=np.zeros(len(r))
-	print(y.shape)
-	print(r.shape)
 	points_xyz = np.column_stack((r, y, z)) * 1e3 # meter to mm
 	return [cadquery.Vector(*p) for p in points_xyz]
 
@@ -36,13 +34,13 @@ class ImpellerCAD:
 		camber = cadquery.func.loft(blade_edges)
 
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
-		shroud_edge = [cadquery.Edge.makeSpline(
+		shroud_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION)
-			)]
+			)
 
 		hub_contour = self._blade_design.MeridionalDesign.HubContour
-		hub_edge = [cadquery.Edge.makeSpline(
+		hub_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION)
-			)]
+			)
 		
-		show(blade_edges, shroud_edge + hub_edge, camber)
+		show(blade_edges, shroud_edge, hub_edge, camber)
