@@ -62,7 +62,7 @@ class MeanlineTriangle:
 if __name__ == "__main__":
     import Main
     print("--- Meanline values at incidence ratio of 0.425 ---")
-    for propellant, H in (('LOX', 65), ('IPA', 80)):
+    for propellant, H in ((Main.Propellant.LOX, 65), (Main.Propellant.IPA, 80)):
         pump = Main.CreatePump(propellant)
         pump.AddInducer(Q_(H, 'm'))
         ml = MeanlineTriangle(pump.Inducer, incidence_ratio=0.425)

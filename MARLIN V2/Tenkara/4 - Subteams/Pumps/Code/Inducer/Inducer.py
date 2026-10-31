@@ -18,13 +18,17 @@ class InducerInletDesignConstraints:
     psi_1: float = 0.08          #assumed baseline head coefficient of the untapered inducer
     axial_length_ratio: float = 0.6   #L_a / D_t (axial length as a multiple of tip diameter)
 
+@dataclass
+class InducerInputGeometry:
+    d_tip: Q_[float]
+    d_hub2: Q_[float]
 
 constraints = InducerInletDesignConstraints(
     hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=0.6,
 )
 
 class Inducer:
-    def __init__(self, design_point: InducerDesignPoint, constraints: InducerInletDesignConstraints=constraints):
+    def __init__(self, design_point: InducerDesignPoint, input_geo: InducerInputGeometry, constraints: InducerInletDesignConstraints=constraints):
         self.DP = design_point
         self.C = constraints
         # --------------
@@ -48,9 +52,12 @@ class Inducer:
         # ---------------------------------------------------------
         # D_t [m] = 3.25 * ( Q[m^3/s] / ( N[rpm] (1 - rho^2) ) )^(1/3) * ( (K + sigma) / sigma )^(1/6)
         # (3.25 is dimensional: it only holds for Q in m^3/s, N in rpm, D_t in m)
-        d_t_m = 3.25 * (q_m3s / (n_rpm * (1.0 - rho**2))) ** (1.0 / 3.0) * ((K + sigma) / sigma) ** (1.0 / 6.0)
+        #d_t_m = 3.25 * (q_m3s / (n_rpm * (1.0 - rho**2))) ** (1.0 / 3.0) * ((K + sigma) / sigma) ** (1.0 / 6.0)
 
-        self.D_tip: Q_[float] = Q_(d_t_m, 'm')
+        #self.D_tip: Q_[float] = Q_(d_t_m, 'm')
+        # what the fuck bro
+        self.D_tip: Q_[float] = input_geo.d_tip
+
         self.D_hub: Q_[float] = self.D_tip * rho
 
         # ---------------------------------------------------------
@@ -84,13 +91,15 @@ class Inducer:
         # R_h2 = sqrt( R_t^2 - (R_t^2 - R_h1^2) * sqrt(psi_1 / psi_2) )
         # alpha = atan( (R_h2 - R_h1) / L_a ),  L_a = axial_length_ratio * D_t
         r_h1_m = self.D_hub.to('m').magnitude / 2.0
-        r_h2_m = np.sqrt(r_t_m**2 - (r_t_m**2 - r_h1_m**2) * np.sqrt(self.C.psi_1 / self.psi_2))
+        #r_h2_m = np.sqrt(r_t_m**2 - (r_t_m**2 - r_h1_m**2) * np.sqrt(self.C.psi_1 / self.psi_2))
+
         l_ax_m = self.C.axial_length_ratio * self.D_tip.to('m').magnitude
 
         self.R_hub_1: Q_[float] = Q_(r_h1_m, 'm')
-        self.R_hub_2: Q_[float] = Q_(float(r_h2_m), 'm')
+        #self.R_hub_2: Q_[float] = Q_(float(r_h2_m), 'm')
+        self.R_hub_2: Q_[float] = input_geo.d_hub2/2
         self.L_ax: Q_[float] = Q_(l_ax_m, 'm')
-        self.alpha_taper: Q_[float] = Q_(float(np.degrees(np.arctan((r_h2_m - r_h1_m) / l_ax_m))), 'deg')
+        self.alpha_taper: Q_[float] = Q_(float(np.degrees(np.arctan((self.R_hub_2.to('m').m - r_h1_m) / l_ax_m))), 'deg')
 
         # Uniform annulus flow, constant tip radius, zero inlet prewhirl,
         # and ideal Euler head: g * H = U_tip * (C_u2 - C_u1).
