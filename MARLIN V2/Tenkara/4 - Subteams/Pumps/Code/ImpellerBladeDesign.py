@@ -216,7 +216,7 @@ class ImpellerBladeDesign:
 		points_3d: list[np.ndarray[float]] = []
 		lead_sweep = self._params.lead_sweep.to('rad').m
 
-		for i in range(num_streams):
+		for i in range(num_streams + 1):
 
 			phi = i/num_streams
 
