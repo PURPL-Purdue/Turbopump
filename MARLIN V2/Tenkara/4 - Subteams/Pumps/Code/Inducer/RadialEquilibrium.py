@@ -210,8 +210,8 @@ if __name__ == "__main__":
     g = Q_(9.81, 'm/s^2')
     import Main
 
-    lox_pump = Main.CreatePump('LOX')
-    ipa_pump = Main.CreatePump('IPA')
+    lox_pump = Main.CreatePump(Main.Propellant.LOX)
+    ipa_pump = Main.CreatePump(Main.Propellant.IPA)
     lox_pump.AddInducer(Q_(65, 'm'))
     ipa_pump.AddInducer(Q_(80, 'm'))
     

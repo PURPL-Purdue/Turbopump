@@ -5,7 +5,7 @@ Preliminary design code for the LOX and IPA pumps: 1D impeller sizing and H-Q cu
 ## Running
 
 - Use the local venv `env\Scripts\python.exe`. It is not in git, and it has numpy, scipy, pint, plotly, matplotlib, CoolProp, PyYAML and cadquery; the system Python lacks them. `requirements.txt` is UTF-16 encoded. cadquery is installed, but no current code uses it.
-- The entry point is `Code/Main.py`: `MakeDesign('LOX')` or `MakeDesign('IPA')`. `Code/README.md` says the code is designed to run from Main.py.
+- The entry point is `Code/Main.py`: `MakeDesign(LOX)` or `MakeDesign(IPA)`. `Code/README.md` says the code is designed to run from Main.py.
   - Files in `Code/` import each other by bare name (`import Pump`), so `Code/` must be the script directory or on `sys.path`.
   - Main.py adds the Pumps folder to `sys.path` for `from Inputs import Inputs`.
 - `MakeDesign` runs the pipeline in this order:

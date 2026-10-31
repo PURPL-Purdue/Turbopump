@@ -85,7 +85,7 @@ class Volute:
         self.staticP2 = calcDiffuserPressures(self.stagnationP1, self.At, self.targetA, self.avg_V, self.rho)
 
 if __name__ == "__main__":
-    lox_pump = Main.MakeDesign('LOX')
+    lox_pump = Main.MakeDesign(Main.Propellant.LOX)
     lox_feed_P = lox_pump.DP.feed_pressure
     lox_H = lox_pump.DesignHeadRise
     lox_D2 = lox_pump.Impeller.d_2
