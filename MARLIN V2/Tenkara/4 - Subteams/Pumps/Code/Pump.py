@@ -45,8 +45,13 @@ class Pump:
 		self.Inducer = Inducer.Inducer(
 			design_point=Inducer.InducerDesignPoint(
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
-				)
+				),
+			input_geo=Inducer.InducerInputGeometry(
+				d_tip=self.Impeller.d_1, d_hub2=self.Impeller.d_hub
+			)
 		)
+
+		self.Impeller.DP.H_rise = self.DesignHeadRise - inducer_head
 
 	@property
 	def n_s(self) -> float:

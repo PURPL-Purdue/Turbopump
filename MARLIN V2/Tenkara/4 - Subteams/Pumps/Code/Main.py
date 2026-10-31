@@ -119,7 +119,6 @@ def MakeDesign(propellant: Propellant):
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
 	pump.AddInducer(inducer_head)
-	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
 	#pump.Impeller.PrintDimensionlessParameters()
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
