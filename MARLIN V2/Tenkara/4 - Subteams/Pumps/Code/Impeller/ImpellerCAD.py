@@ -1,6 +1,5 @@
 from pathlib import Path
 import numpy as np
-import cadquery
 import cadquery.func
 from cadquery.vis import show
 from Pump import Propellant
