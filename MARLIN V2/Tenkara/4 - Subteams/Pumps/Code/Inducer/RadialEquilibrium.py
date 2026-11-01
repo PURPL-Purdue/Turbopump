@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from pint import Quantity as Q_
 from scipy.optimize import brentq
+from scipy import integrate
 
 if not __package__:
     # Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
@@ -212,6 +213,35 @@ class InducerRadialEquilibrium:
         ]
         return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
+    # TODO generalize for all radii
+    def GetBladeLines(self, resolution: int = 200) -> tuple[np.ndarray, np.ndarray]:
+        """Hub and tip blade lines, each a (resolution, 3) array of (z, r, theta) in m, m and rad, from the inlet."""
+        z = np.linspace(0, self.L, resolution)
+        r_h = self._r_hub(z)
+        r_t = np.full(resolution, self.R_t)
+        r_rms = self._r_ms(z)
+        lead = self._beta(z, self.beta2) * r_rms
+        beta_h = lead / r_h
+        beta_t = lead / r_t
+
+        # tan(Beta) = dz / (r * dtheta)
+        # r * dtheta = dz / tan(Beta)
+        # theta = integrate [1 / (r * tan(Beta))] dz
+        theta_hub = integrate.cumulative_trapezoid(y=1 / (r_h * np.tan(beta_h)), x=z, initial=0)
+        theta_tip = integrate.cumulative_trapezoid(y=1 / (r_t * np.tan(beta_t)), x=z, initial=0)
+        return np.column_stack((z, r_h, theta_hub)), np.column_stack((z, r_t, theta_tip))
+
+    # TODO generalize for all radii
+    def ShowBladeLines(self, resolution: int = 200):
+        """Hub and tip blade lines as cadquery splines (x = r cos theta, y = r sin theta, z, in mm), in the cadquery viewer."""
+        # Imported here so the pipeline doesn't load cadquery with this module
+        import cadquery
+        from cadquery.vis import show
+        from Impeller.ImpellerCAD import _ToCartesian
+
+        show(*[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in self.GetBladeLines(resolution)])
+
+
 if __name__ == "__main__":
     g = Q_(9.81, 'm/s^2')
     import Main
@@ -240,7 +270,8 @@ if __name__ == "__main__":
         PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
                 f"{propellant} inducer meanline velocity triangles"
             ).show()
-        
+        eq.ShowBladeLines()  # blocks until the viewer is closed
+
     axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
     axes[1, 0].set_ylabel("$c_a$ [m/s]")
     plt.tight_layout()

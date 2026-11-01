@@ -125,7 +125,7 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
-
+	inducer_eq.ShowBladeLines()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
