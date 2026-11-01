@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from pint import Quantity as Q_
 from scipy.optimize import brentq
 from scipy import integrate
+from warnings import warn
 
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
@@ -27,6 +28,20 @@ _trapz = np.trapezoid
 Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
 """
+
+def _uh(r_0: float, r_max: float, wrap_angle: float):
+	# r = r0 * sqrt(1 + (theta / theta_m)^2)
+	# r_max / r0 = sqrt(1 + (2*pi / theta_m)^2)
+	# theta_m = wrap_angle / sqrt((r_max / r0)^2 - 1)
+
+	# theta = sqrt((r / r0)^2 - 1) * theta_m
+
+	theta_m = wrap_angle / np.sqrt((r_max / r_0)**2 - 1)
+
+	def func(r: float) -> float:
+		return np.sqrt((r / r_0)**2 - 1) * theta_m
+
+	return func
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
@@ -232,14 +247,18 @@ class InducerRadialEquilibrium:
 		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
 		r_diff = r_tip - r_hub
 
-		lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
+		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
+		get_LE_theta = _uh(
+			r_hub[0], self.R_t, wrap_angle=np.deg2rad(120)
+			)
+		
 		for alpha in np.linspace(0, 1, num_lines):
 			
 			r_offset = alpha * r_diff
 			r = r_hub + r_offset
 
-			tan_beta = lead/r # more necessary than you think lol
+			tan_beta = radial_lead/r # more necessary than you think lol
 			
 			theta = integrate.cumulative_trapezoid(
 				y=1 / (r * tan_beta), x=z_ref, initial=0
@@ -247,7 +266,17 @@ class InducerRadialEquilibrium:
 			# adjust z such that meridional sweep is perpendicular to hub
 			z = z_ref - r_offset * hub_taper_slope
 
-			points_zrt.append(np.column_stack((z, r, theta)))  # (resolution, 3)
+			points = np.column_stack((z, r, theta)) # (resolution, 3)
+
+			# Angle past the leading edge curve, at each point's own radius: the blade line and the leading edge,
+			# projected on the polar (r, theta) plane, cross where it is zero
+			past_LE = theta - get_LE_theta(r)
+			i = np.argmax(past_LE > 0)		# first point behind the leading edge
+			# linear interpolation to the crossing
+			t = past_LE[i-1] / (past_LE[i-1] - past_LE[i])
+			leading_edge = points[i-1] + t * (points[i] - points[i-1])
+
+			points_zrt.append(np.vstack((leading_edge, points[i:])))
 
 		return points_zrt
 
