@@ -75,6 +75,9 @@ class ImpellerCAD:
 
 		show(self.Assembly)
 
+	def Show(self):
+		show(self.Assembly)
+
 	def SaveSTEP(self, path: str | Path | None = None):
 		"""Saves the assembly as a STEP file in mm, keeping the part names and colors.
 		By default it goes in the Impeller folder as <propellant>_impeller.step."""

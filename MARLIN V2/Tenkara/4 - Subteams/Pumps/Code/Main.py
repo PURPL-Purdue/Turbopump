@@ -144,7 +144,7 @@ def MakeDesign(propellant: Propellant):
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines().show()
+	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
@@ -155,11 +155,11 @@ def MakeDesign(propellant: Propellant):
 	# and moved so its outlet is axial_gap upstream of the impeller inlet
 	axial_gap = Q_(0, 'mm')
 	z_impeller_inlet = -pump_meridional.HubContour(0)[0]		# flipped
-	z_inducer_inlet = (z_impeller_inlet + axial_gap + pump.Inducer.L_ax).to('mm').m
+	z_inducer_inlet = (z_impeller_inlet + axial_gap + inducer_eq.inducer.L_ax).to('mm').m
 	pump_assembly = (
 		cadquery.Assembly()
 		.add(imp_cad.Assembly, name='impeller')
-		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 180))
+		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
 	)
 	show(pump_assembly)
 

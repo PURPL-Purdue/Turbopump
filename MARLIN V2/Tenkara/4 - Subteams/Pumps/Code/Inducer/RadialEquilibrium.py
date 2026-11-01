@@ -33,21 +33,12 @@ Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
 """
 
-def _uh(r_0: float, r_max: float, wrap_angle: float):
-	# r = r0 * sqrt(1 + (theta / theta_m)^2)
-	# r_max / r0 = sqrt(1 + (2*pi / theta_m)^2)
-	# theta_m = wrap_angle / sqrt((r_max / r0)^2 - 1)
-
-	# theta = sqrt((r / r0)^2 - 1) * theta_m
-
-	theta_m = wrap_angle / np.sqrt((r_max / r_0)**2 - 1)
-
-	def func(r: float) -> float:
-		return np.sqrt((r / r_0)**2 - 1) * theta_m
-
-	return func
-
 def _uh2(r_0: float, r_max: float, wrap_angle: float):
+	"""
+	@Charlie Zhu
+	Genuinely idk what i did here
+	Use Desmos graphing for better visualization
+	"""
 	# r = a*theta - r0
 
 	# r = r0 = a * theta1 - r0
@@ -273,7 +264,7 @@ class InducerRadialEquilibrium:
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
 		get_LE_theta = _uh2(
-			r_hub[0], self.R_t, wrap_angle=np.deg2rad(150)
+			r_hub[0], self.R_t, wrap_angle=np.deg2rad(120)
 			)
 		
 		for alpha in np.linspace(0, 1, num_lines):
@@ -311,16 +302,16 @@ class InducerRadialEquilibrium:
 		from Impeller.ImpellerCAD import _ToCartesian		# imported here: at module level it is circular through ImpellerBladeDesign
 
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines]
+		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p, True)) for p in blade_lines]
 		camber = cadquery.func.loft(blade_edges)
 		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)])
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
-		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]])))
+		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		assm = (cadquery.Assembly()
-			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
-			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7, 0.5))
+			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
+			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
 		)
 		show(assm, blade_edges)
 		return assm
