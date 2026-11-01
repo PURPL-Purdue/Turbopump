@@ -66,14 +66,14 @@ class ImpellerCAD:
 		# L = 1000  # mm, just bigger than the impeller
 		# quadrant = cadquery.Solid.makeBox(L, L, 2 * L, pnt=cadquery.Vector(0, 0, -L))
 
-		self._assembly = (
+		self.Assembly = (
 			cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
 			.add(shroud_surface, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
 			.add(blades, name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 		)
 
-		show(self._assembly)
+		show(self.Assembly)
 
 	def SaveSTEP(self, path: str | Path | None = None):
 		"""Saves the assembly as a STEP file in mm, keeping the part names and colors.
@@ -82,4 +82,4 @@ class ImpellerCAD:
 			path = GetSTEPPath(self._blade_design.Pump.Propellant)
 
 		print(f'Saved STEP to: {path.name}')
-		self._assembly.export(str(path), exportType='STEP', unit='MM')
+		self.Assembly.export(str(path), exportType='STEP', unit='MM')

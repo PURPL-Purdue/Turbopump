@@ -10,6 +10,10 @@ from scipy.optimize import brentq
 from scipy import integrate
 from warnings import warn
 
+# temporary, will move later
+import cadquery.func
+from cadquery.vis import show
+
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
 	_here = Path(__file__).resolve().parent
@@ -41,6 +45,25 @@ def _uh(r_0: float, r_max: float, wrap_angle: float):
 	def func(r: float) -> float:
 		return np.sqrt((r / r_0)**2 - 1) * theta_m
 
+	return func
+
+def _uh2(r_0: float, r_max: float, wrap_angle: float):
+	# r = a*theta - r0
+
+	# r = r0 = a * theta1 - r0
+	# r = r_max = a * theta2 - r0
+	# wrap = theta2 - theta1
+
+	# theta2 * a = r_max + r0
+	# theta1 * a = 2 * r0
+	# a * (theta2 - theta1) = a * wrap = r_max - r0
+
+	a = (r_max - r_0) / wrap_angle
+	theta_1 = 2 * r_0 / a
+
+	def func(r: float) -> float:
+		return (r + r_0) / a - theta_1
+	
 	return func
 
 class InducerRadialEquilibrium:
@@ -249,8 +272,8 @@ class InducerRadialEquilibrium:
 
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
-		get_LE_theta = _uh(
-			r_hub[0], self.R_t, wrap_angle=np.deg2rad(120)
+		get_LE_theta = _uh2(
+			r_hub[0], self.R_t, wrap_angle=np.deg2rad(150)
 			)
 		
 		for alpha in np.linspace(0, 1, num_lines):
@@ -280,14 +303,12 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def ShowBladeLines(self, num_lines: int=5, resolution: int=200):
+	def ShowBladeLines(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
 		"""
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API
 		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
-		import cadquery.func
-		from cadquery.vis import show
-		from Impeller.ImpellerCAD import _ToCartesian
+		from Impeller.ImpellerCAD import _ToCartesian		# imported here: at module level it is circular through ImpellerBladeDesign
 
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
 		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines]
@@ -299,9 +320,10 @@ class InducerRadialEquilibrium:
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		assm = (cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
-			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
+			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7, 0.5))
 		)
 		show(assm, blade_edges)
+		return assm
 
 
 if __name__ == "__main__":
