@@ -213,33 +213,37 @@ class InducerRadialEquilibrium:
         ]
         return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
-    # TODO generalize for all radii
-    def GetBladeLines(self, resolution: int = 200) -> tuple[np.ndarray, np.ndarray]:
-        """Hub and tip blade lines, each a (resolution, 3) array of (z, r, theta) in m, m and rad, from the inlet."""
+    def GetBladeLines(self, num_lines: int=2, resolution: int = 200) -> np.ndarray:
+        """
+        @Charlie zhu
+        Blade lines from hub to tip, a (num_lines, resolution, 3) array of (z, r, theta) in m, m and rad, from the inlet.
+        """
         z = np.linspace(0, self.L, resolution)
-        r_h = self._r_hub(z)
-        r_t = np.full(resolution, self.R_t)
-        r_rms = self._r_ms(z)
-        lead = self._beta(z, self.beta2) * r_rms
-        beta_h = lead / r_h
-        beta_t = lead / r_t
+        r_hub = self._r_hub(z)
+        r_tip = np.full(resolution, self.R_t)
+        alpha = np.linspace(0, 1, num_lines)[:, None] # creates 2D array
+        radii = r_hub * (1 - alpha) + r_tip * alpha
+        
+        lead = self._r_ms(z) * np.tan(self._beta(z, self.beta2))
+        tan_of_beta = lead / radii
 
         # tan(Beta) = dz / (r * dtheta)
         # r * dtheta = dz / tan(Beta)
         # theta = integrate [1 / (r * tan(Beta))] dz
-        theta_hub = integrate.cumulative_trapezoid(y=1 / (r_h * np.tan(beta_h)), x=z, initial=0)
-        theta_tip = integrate.cumulative_trapezoid(y=1 / (r_t * np.tan(beta_t)), x=z, initial=0)
-        return np.column_stack((z, r_h, theta_hub)), np.column_stack((z, r_t, theta_tip))
+        thetas = integrate.cumulative_trapezoid(
+            y=1 / (radii * tan_of_beta), x=z, initial=0
+            )
+        
+        return np.stack(np.broadcast_arrays(z, radii, thetas), axis=-1)
 
-    # TODO generalize for all radii
-    def ShowBladeLines(self, resolution: int = 200):
-        """Hub and tip blade lines as cadquery splines (x = r cos theta, y = r sin theta, z, in mm), in the cadquery viewer."""
-        # Imported here so the pipeline doesn't load cadquery with this module
+    def ShowBladeLines(self, num_lines: int=4, resolution: int=200):
+        """Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm), in the cadquery viewer."""
         import cadquery
         from cadquery.vis import show
         from Impeller.ImpellerCAD import _ToCartesian
 
-        show(*[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in self.GetBladeLines(resolution)])
+        blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
+        show(*[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines])
 
 
 if __name__ == "__main__":
