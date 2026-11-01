@@ -22,6 +22,7 @@ class InducerInletDesignConstraints:
 class InducerInputGeometry:
     d_tip: Q_[float]
     d_hub2: Q_[float]
+    Z_blades: int=2
 
 constraints = InducerInletDesignConstraints(
     hub_tip_ratio=0.5, sigma=0.03, K=1.1, psi_1=0.08, axial_length_ratio=0.6,
@@ -31,6 +32,7 @@ class Inducer:
     def __init__(self, design_point: InducerDesignPoint, input_geo: InducerInputGeometry, constraints: InducerInletDesignConstraints=constraints):
         self.DP = design_point
         self.C = constraints
+        self.Z_blades = input_geo.Z_blades
         # --------------
         # -------------------------------------------
         # Unit conversions (sheet methodology is SI with N in rpm)

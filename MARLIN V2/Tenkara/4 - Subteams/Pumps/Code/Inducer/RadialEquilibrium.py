@@ -35,8 +35,7 @@ class InducerRadialEquilibrium:
 	eta_bl = 0.85  # Blade efficiency, sec. 2.2.6
 	"""
 
-	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None,
-				 blade_number: int = 3, blade_thickness: Q_ | None = None,
+	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 		self.hub_thickness_ratio = hub_thickness_ratio
@@ -44,7 +43,7 @@ class InducerRadialEquilibrium:
 		# The blade inlet angle comes from the zero-blockage inlet meanline triangle
 		self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
 		self.incidence_ratio = self.meanline.incidence_ratio
-		self.N_blades = blade_number
+		self.Z_blades = self.inducer.Z_blades
 		self.t: float = None if blade_thickness is None else blade_thickness.to('m').magnitude
 
 		self.R_t = inducer.D_tip.to('m').magnitude / 2.0
@@ -82,7 +81,7 @@ class InducerRadialEquilibrium:
 		# Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
 		dA = 2.0 * np.pi * r
 		if self.t is not None:# Assumed constant thickness for now
-			dA = dA - self.N_blades * self.t * np.sqrt(r**2 + lam**2) / lam
+			dA = dA - self.Z_blades * self.t * np.sqrt(r**2 + lam**2) / lam
 			if strict and np.any(dA <= 0.0):
 				raise ValueError("Blade blockage closes the passage; reduce thickness or blade number.")
 		return dA
@@ -230,9 +229,10 @@ class InducerRadialEquilibrium:
 		lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
 		for alpha in np.linspace(0, 1, num_lines):
+			
 			r_offset = alpha * r_diff
 			r = r_hub + r_offset
-			
+
 			tan_beta = lead/r # more necessary than you think lol
 			
 			theta = integrate.cumulative_trapezoid(
@@ -245,20 +245,28 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def ShowBladeLines(self, num_lines: int=3, resolution: int=200):
-		"""Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
+	def ShowBladeLines(self, num_lines: int=5, resolution: int=200):
+		"""
+		@Charlie Zhu
+		Temporarily borrowing from impeller CAD API
+		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
 		import cadquery.func
 		from cadquery.vis import show
 		from Impeller.ImpellerCAD import _ToCartesian
 
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
+		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines]
+		camber = cadquery.func.loft(blade_edges)
+		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blades) for n in range(self.Z_blades)])
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
 		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]])))
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
-		hub = cadquery.Assembly().add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
-
-		show(hub, *[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines])
+		assm = (cadquery.Assembly()
+			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
+			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
+		)
+		show(assm, blade_edges)
 
 
 if __name__ == "__main__":
