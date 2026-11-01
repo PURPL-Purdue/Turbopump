@@ -13,6 +13,7 @@ from warnings import warn
 # temporary, will move later
 import cadquery.func
 from cadquery.vis import show
+from Helpers import CAD
 
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
@@ -306,16 +307,15 @@ class InducerRadialEquilibrium:
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API
 		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
-		from Impeller.ImpellerCAD import _ToCartesian		# imported here: at module level it is circular through ImpellerBladeDesign
 
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p, True)) for p in blade_lines]
+		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, True)) for p in blade_lines]
 		camber = cadquery.func.loft(blade_edges)
 		blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
 		blades = camber.moved(*blade_locations)
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
-		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
+		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		assm = (cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))

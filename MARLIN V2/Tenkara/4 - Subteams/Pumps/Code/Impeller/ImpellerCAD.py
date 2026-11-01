@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import cadquery.func
 from cadquery.vis import show
+from Helpers import CAD
 from Pump import Propellant
 from .MeridionalContour import MeridionalContour
 from . import ImpellerBladeDesign
@@ -15,14 +16,6 @@ Impeller CAD generation
 def GetSTEPPath(propellant: Propellant) -> Path:
 	"""Default STEP file of the impeller: <propellant>_impeller.step in the Impeller folder."""
 	return Path(__file__).parent / f'{propellant.name}_impeller.step'
-
-def _ToCartesian(points_zrt: np.ndarray, flip_z: bool=False) -> list[cadquery.Vector]:
-	z, r, theta = points_zrt.T
-	if flip_z: z = -z
-	x = r * np.cos(theta)
-	y = r * np.sin(theta)
-	points_xyz = np.column_stack((x, y, z)) * 1e3 # meter to mm
-	return [cadquery.Vector(*p) for p in points_xyz]
 
 def _MeridionalContourToCartesian(contour: MeridionalContour, resolution: int=200, flip_z: bool=False) -> list[cadquery.Vector]:
 	
@@ -44,7 +37,7 @@ class ImpellerCAD:
 		blade_points, _ = self._blade_design.GetBladeLines()
 
 		t = np.linspace(0, 1, RESOLUTION)
-		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
+		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
 		camber = cadquery.func.loft(blade_edges)
 
 		Z_blade: int = self.Impeller.Z_blade
