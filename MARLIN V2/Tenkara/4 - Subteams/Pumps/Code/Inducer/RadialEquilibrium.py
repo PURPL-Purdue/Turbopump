@@ -247,9 +247,9 @@ class InducerRadialEquilibrium:
 		"""
 		z_ref = np.linspace(0, self.L, resolution)
 
-		r_hub = self._r_hub(z_ref)
-		r_tip = np.full(resolution, self.R_t)
-		r_diff = r_tip - r_hub
+		r_hub: np.ndarray[float] = self._r_hub(z_ref)
+		r_tip: np.ndarray[float] = np.full(resolution, self.R_t)
+		r_diff: np.ndarray[float] = r_tip - r_hub
 
 		points_zrt = []
 		
@@ -260,9 +260,9 @@ class InducerRadialEquilibrium:
 		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
 		get_LE_theta = _uh4(self.R_h1, self.R_t, wrap_angle=self._sweepback)
-		theta = get_LE_theta(radii_LE)
-		assert theta[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
-		z_LE_ref = np.interp(theta, theta_ref, z_ref)		# theta_ref increases with z_ref
+		theta_LE = get_LE_theta(radii_LE)
+		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
+		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
 		
 		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
 		z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
