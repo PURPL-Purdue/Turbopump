@@ -35,7 +35,7 @@ stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
 stator_eff_combustion_volume: 0   # (m^3) This is the volume of the HGM that is effectivly used for combustion.
                                   # Last updated: May 25th, 2026 by Miles Cohen
 
-CSTAR_eff: 0.75                # Last updated October 9th by Miles Cohen
+CSTAR_eff: 0.7                # Last updated October 9th by Miles Cohen
 
 # Combustion Chamber Hardware Definition
 combustion_chamber_volume: 0.0001393   # (m^3) This is the total volume of the combustion chamber.

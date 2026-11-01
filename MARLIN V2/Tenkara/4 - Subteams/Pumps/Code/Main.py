@@ -1,12 +1,17 @@
 import numpy as np
 from pint import Quantity as Q_
+import Inducer.Inducer as Inducer
 import Pump
-import Impeller
-from ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
+from Pump import Propellant
+from Impeller.ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
+import Impeller.Impeller as Impeller
 from CoolProp import CoolProp as CP
-import MeridionalDesign
+import Impeller.MeridionalDesign as MeridionalDesign
 import sys
 from pathlib import Path
+import Impeller.ImpellerCAD as ImpellerCAD
+import cadquery
+from cadquery.vis import show
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
@@ -16,17 +21,17 @@ from Inputs import Inputs
 atm_pressure = Q_(1, 'atm').to('Pa')
 
 basic_impeller_geometry = {
-	'LOX': Impeller.InputGeometry(
+	Propellant.LOX: Impeller.InputGeometry(
 		Z_blade = 6,					# integer number of blades
 		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
-		b_2 = Q_(0.07, 'in'),			# impeller outlet height
+		b_2 = Q_(0.08, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
-	'IPA': Impeller.InputGeometry(
+	Propellant.IPA: Impeller.InputGeometry(
 		Z_blade = 6,					# integer number of blades
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
@@ -38,13 +43,13 @@ basic_impeller_geometry = {
 }
 
 meridional_geometry = {
-	'LOX': MeridionalDesign.MeridionalGeometry(
+	Propellant.LOX: MeridionalDesign.MeridionalGeometry(
 		Z_e_factor = 1.0,				# axial length extension factor, modifying Gulich formula
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 	),
-	'IPA': MeridionalDesign.MeridionalGeometry(
+	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
 		Z_e_factor = 1.2,
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
@@ -53,14 +58,18 @@ meridional_geometry = {
 }
 
 blade_params = {
-	'LOX': BladeParams(
-		sj=0.06,
-		lead_sweep=Q_(15, 'deg')
+	Propellant.LOX: BladeParams(
+		sj=0.1,
+		lead_sweep=Q_(10, 'deg'),
+		target_wrap = Q_(115, 'deg'), # cubic only
+		use_cubic = False
 	),
 
-	'IPA': BladeParams(
-		sj=0.3,
-		lead_sweep=Q_(0, 'deg')
+	Propellant.IPA: BladeParams(
+		sj=0.1,
+		lead_sweep=Q_(0, 'deg'),
+		target_wrap = Q_(140, 'deg'),
+		use_cubic = False
 	)
 }
 
@@ -70,26 +79,27 @@ lox_temp = CP.PropsSI('T', 'P', atm_pressure.m, 'Q', 0, 'O2')
 lox_vapor_pressure = Q_(CP.PropsSI('P', 'T', lox_temp, 'Q', 0, 'O2'), 'Pa')
 
 fluid_props = {
-	'LOX': dict(
+	Propellant.LOX: dict(
 		rho = Q_(1146, 'kg/m^3'),
 		vapor_pressure = lox_vapor_pressure
 	),
 
-	'IPA': dict(
+	Propellant.IPA: dict(
 		rho = Q_(786, 'kg/m^3'),
 		vapor_pressure = Q_(0.64, 'psi') # TODO make this procedural based on temperature
 	)
 }
 
-color = dict(LOX='blue', IPA='green')
+color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-def CreatePump(propellant: str='LOX'):
+def CreatePump(propellant: Propellant):
 	return Pump.Pump(
+		propellant=propellant,
 		design_point=Pump.PumpDesignPoint(
 			eta_overall=0.50,
-			feed_pressure=Inputs[propellant]['feed_pressure'],
-			discharge_pressure=Inputs[propellant]['discharge_pressure'],
-			mass_flow=Inputs[propellant]['mass_flow'],
+			feed_pressure=Inputs[propellant.name]['feed_pressure'],
+			discharge_pressure=Inputs[propellant.name]['discharge_pressure'],
+			mass_flow=Inputs[propellant.name]['mass_flow'],
 			N_shaft=Inputs['N_shaft'],
 			rho=fluid_props[propellant]['rho'],
 			inlet_vapor_pressure=fluid_props[propellant]['vapor_pressure']
@@ -98,7 +108,7 @@ def CreatePump(propellant: str='LOX'):
 		impeller_geometry=basic_impeller_geometry[propellant]
 	)
 
-def MakeDesign(propellant: str='LOX'):
+def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
 
 	pump.Impeller.PlotOutletVelocities()#.show()
@@ -113,13 +123,14 @@ def MakeDesign(propellant: str='LOX'):
 	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
 	print(f'{propellant} inducer desired head:', inducer_head)
 	pump.AddInducer(inducer_head)
-	pump.Impeller.DP.H_rise = pump.DesignHeadRise - inducer_head
-	pump.Impeller.PrintDimensionlessParameters()
+	#pump.Impeller.PrintDimensionlessParameters()
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
-	inducer_eq = InducerRadialEquilibrium(pump.Inducer)
-
+	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
+	inducer_assm = inducer_eq.CreateCAD()
+	inducer_eq.ShowCAD()
+	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
@@ -133,10 +144,29 @@ def MakeDesign(propellant: str='LOX'):
 		inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	imp_blade_design.PlotInletTriangles()#.show()
-	imp_blade_design.Uh()
+	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
+	imp_blade_design.PlotBladeLines()#.show()
+
+	# ---------------- IMPELLER CAD ------------------------
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
+	#imp_cad.SaveSTEP()
+
+	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
+	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
+	# and moved so its outlet is axial_gap upstream of the impeller inlet
+	axial_gap = Q_(0, 'mm')
+	z_impeller_inlet = -pump_meridional.HubContour(0)[0]		# flipped
+	z_inducer_inlet = (z_impeller_inlet + axial_gap + inducer_eq.inducer.L_ax).to('mm').m
+	pump_assembly = (
+		cadquery.Assembly()
+		.add(imp_cad.Assembly, name='impeller')
+		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
+	)
+	show(pump_assembly)
+
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign('LOX')
-	#MakeDesign('IPA')
+	MakeDesign(Propellant.LOX)
+	MakeDesign(Propellant.IPA)

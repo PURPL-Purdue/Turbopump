@@ -1,8 +1,9 @@
-import Impeller
+import Impeller.Impeller as Impeller
 import Inducer.Inducer as Inducer
 import numpy as np
 from pint import Quantity as Q_
 from dataclasses import dataclass
+from enum import Enum
 
 g = Q_(9.81, 'm/s^2')
 
@@ -16,10 +17,15 @@ class PumpDesignPoint:
 	mass_flow: Q_[float]				# mass flow rate (strictly speaking inlet, should be almost equal to outlet)
 	rho: Q_[float]						# average fluid density
 
+class Propellant(Enum):
+	LOX = 1
+	IPA = 2
+
 class Pump:
 
-	def __init__(self, design_point: PumpDesignPoint, impeller_geometry: Impeller.InputGeometry):
+	def __init__(self, propellant: Propellant, design_point: PumpDesignPoint, impeller_geometry: Impeller.InputGeometry):
 		self.DP = design_point
+		self.Propellant = propellant
 
 		self.DesignHeadRise = (self.DP.discharge_pressure - self.DP.feed_pressure) / self.DP.rho / g
 		self.DesignFlowRate = self.DP.mass_flow / self.DP.rho
@@ -35,12 +41,18 @@ class Pump:
 
 		self.NPSH_a = ((design_point.feed_pressure - design_point.inlet_vapor_pressure) / design_point.rho / g).to('m')
 
-	def AddInducer(self, inducer_head: Q_[float]) -> Inducer.Inducer:
+	def AddInducer(self, inducer_head: Q_[float], geometry: Inducer.InducerInputGeometry|None=None) -> Inducer.Inducer:
 		self.Inducer = Inducer.Inducer(
 			design_point=Inducer.InducerDesignPoint(
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
-				)
+				),
+			geometry=geometry if geometry is not None else Inducer.InducerInputGeometry(
+				d_tip=self.Impeller.d_1, d_hub_2=self.Impeller.d_hub,
+				d_hub_1=self.Impeller.d_hub if self.Propellant == Propellant.IPA else self.Impeller.d_1 * 0.4
+			)
 		)
+
+		self.Impeller.DP.H_rise = self.DesignHeadRise - inducer_head
 
 	@property
 	def n_s(self) -> float:
