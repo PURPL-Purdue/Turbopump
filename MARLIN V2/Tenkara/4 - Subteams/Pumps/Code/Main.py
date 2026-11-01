@@ -1,5 +1,6 @@
 import numpy as np
 from pint import Quantity as Q_
+import Inducer.Inducer as Inducer
 import Pump
 from Pump import Propellant
 from Impeller.ImpellerBladeDesign import ImpellerBladeDesign, BladeParams

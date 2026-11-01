@@ -47,7 +47,8 @@ class Pump:
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
 				),
 			geometry=geometry if geometry is not None else Inducer.InducerInputGeometry(
-				d_tip=self.Impeller.d_1, d_hub_2=self.Impeller.d_hub
+				d_tip=self.Impeller.d_1, d_hub_2=self.Impeller.d_hub,
+				d_hub_1=self.Impeller.d_hub if self.Propellant == Propellant.IPA else self.Impeller.d_1 * 0.4
 			)
 		)
 

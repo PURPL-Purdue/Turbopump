@@ -34,6 +34,25 @@ Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
 """
 
+def _uh2(r_0: float, r_max: float, wrap_angle: float) -> float:
+	# r = a*theta - r0
+
+	# r = r0 = a * theta1 - r0
+	# r = r_max = a * theta2 - r0
+	# wrap = theta2 - theta1
+
+	# theta2 * a = r_max + r0
+	# theta1 * a = 2 * r0
+	# a * (theta2 - theta1) = a * wrap = r_max - r0
+
+	a = (r_max - r_0) / wrap_angle
+	theta_1 = 2 * r_0 / a
+
+	def func(r: float) -> float:
+		return (r + r_0) / a - theta_1
+
+	return func
+
 def _uh4(r_0: float, r_max: float, wrap_angle: float, n: float = 2):
 	"""
 	Leading edge theta(r) from theta = 0 at r_0 to theta = wrap_angle at r_max, where it is tangent to the circle r_max (n > 1)
@@ -65,7 +84,7 @@ class InducerRadialEquilibrium:
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
-		self._sweepback = np.deg2rad(90)
+		self._sweepback = np.deg2rad(110)
 
 		self.hub_thickness_ratio = hub_thickness_ratio
 		self.eta_bl = eta_bl
