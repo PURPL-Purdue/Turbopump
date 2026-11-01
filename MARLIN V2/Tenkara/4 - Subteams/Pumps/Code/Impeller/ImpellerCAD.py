@@ -1,12 +1,19 @@
+from pathlib import Path
 import numpy as np
 import cadquery
 import cadquery.func
 from cadquery.vis import show
+from Pump import Propellant
 from .MeridionalContour import MeridionalContour
 from . import ImpellerBladeDesign
 
+def GetSTEPPath(propellant: Propellant) -> Path:
+	"""Default STEP file of the impeller: <propellant>_impeller.step in the Impeller folder."""
+	return Path(__file__).parent / f'{propellant.name}_impeller.step'
+
 def _ToCartesian(points_zrt: np.ndarray) -> list[cadquery.Vector]:
 	z, r, theta = points_zrt.T
+	z = -z
 	x = r * np.cos(theta)
 	y = r * np.sin(theta)
 	points_xyz = np.column_stack((x, y, z)) * 1e3 # meter to mm
@@ -16,6 +23,7 @@ def _MeridionalContourToCartesian(contour: MeridionalContour, resolution: int=20
 	
 	points_zr = contour.Points(np.linspace(0, contour.length_m, resolution))
 	z, r = points_zr.T
+	z = -z
 	y=np.zeros(len(r))
 	points_xyz = np.column_stack((r, y, z)) * 1e3 # meter to mm
 	return [cadquery.Vector(*p) for p in points_xyz]
@@ -53,6 +61,20 @@ class ImpellerCAD:
 		# L = 1000  # mm, just bigger than the impeller
 		# quadrant = cadquery.Solid.makeBox(L, L, 2 * L, pnt=cadquery.Vector(0, 0, -L))
 
-		impeller = cadquery.func.compound([hub_surface, shroud_surface, blades])
+		self._assembly = (
+			cadquery.Assembly()
+			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
+			.add(shroud_surface, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
+			.add(blades, name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
+		)
 
-		show(impeller, alpha=0.5)
+		show(self._assembly)
+
+	def SaveSTEP(self, path: str | Path | None = None):
+		"""Saves the assembly as a STEP file in mm, keeping the part names and colors.
+		By default it goes in the Impeller folder as <propellant>_impeller.step."""
+		if path is None:
+			path = GetSTEPPath(self._blade_design.Pump.Propellant)
+
+		print(f'Saved STEP to: {path.name}')
+		self._assembly.export(str(path), exportType='STEP', unit='MM')

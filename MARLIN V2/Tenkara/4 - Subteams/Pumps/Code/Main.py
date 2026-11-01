@@ -8,6 +8,7 @@ from CoolProp import CoolProp as CP
 import Impeller.MeridionalDesign as MeridionalDesign
 import sys
 from pathlib import Path
+import Impeller.ImpellerCAD as ImpellerCAD
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
@@ -143,11 +144,11 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	import Impeller.ImpellerCAD as ImpellerCAD
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design)
+	imp_cad.SaveSTEP()
 
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign(Propellant.LOX)
-	#MakeDesign(Propellant.IPA)
+	#MakeDesign(Propellant.LOX)
+	MakeDesign(Propellant.IPA)
