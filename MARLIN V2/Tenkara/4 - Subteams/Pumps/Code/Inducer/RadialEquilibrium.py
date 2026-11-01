@@ -267,7 +267,7 @@ class InducerRadialEquilibrium:
 		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
 		z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
 
-		arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta))**2))))
+		arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta_LE))**2))))
 		s = np.linspace(0, arclength_LE[-1], num_lines)
 		# keep z and r values at the arclengths specified s (linearly interpolated)
 		z_LE_ref, radii_LE = np.interp(s, arclength_LE, z_LE_ref), np.interp(s, arclength_LE, radii_LE)
