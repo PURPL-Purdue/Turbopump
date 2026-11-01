@@ -21,6 +21,10 @@ from VelocityTriangle import PlotTriangles, VelocityTriangle
 
 _trapz = np.trapezoid
 
+"""
+Core radial equilibrium implementation by @Andrew Fontanetta
+Modified by @Charlie Zhu to expose more API and for CAD generation
+"""
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
