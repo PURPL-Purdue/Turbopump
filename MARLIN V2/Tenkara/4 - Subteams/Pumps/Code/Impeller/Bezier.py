@@ -1,5 +1,8 @@
 import numpy as np
 
+"""
+@Amanjyoti Mridha
+"""
 
 # Cubic Bezier
 def bez(P: np.ndarray, t: np.ndarray | list[float]) -> np.ndarray:

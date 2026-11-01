@@ -15,6 +15,11 @@ from .MeridionalContour import MeridionalCurve
 from .PotentialFlow import Streamline
 from .JoinParabola import JoinParabola
 
+"""
+@Charlie Zhu
+Minimal AI
+"""
+
 @dataclass
 class _TriInfo:
 	c_m: Q_

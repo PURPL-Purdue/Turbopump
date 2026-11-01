@@ -6,6 +6,10 @@ from .PotentialFlow import PotentialFlow
 import numpy as np
 from dataclasses import dataclass
 
+"""
+@Charlie Zhu
+Minimal AI
+"""
 @dataclass
 class MeridionalGeometry:
 	shroud_fullness: tuple[float, float] = (1, 0.3)

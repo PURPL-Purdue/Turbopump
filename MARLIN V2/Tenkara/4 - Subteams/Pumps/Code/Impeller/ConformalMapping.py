@@ -5,6 +5,13 @@ import scipy.integrate
 from dataclasses import dataclass
 from plotly import graph_objects as go
 
+"""
+@Charlie Zhu
+Minimal AI
+Based on Milo's paper
+Conformal mapping for impeller blade design
+"""
+
 class BetaCMM:
 	Get: Callable[[float], float]
 	Theta: np.ndarray[float]

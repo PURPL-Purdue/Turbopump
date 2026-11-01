@@ -6,6 +6,12 @@ from Pump import Propellant
 from .MeridionalContour import MeridionalContour
 from . import ImpellerBladeDesign
 
+"""
+@Charlie Zhu
+Minimal AI
+Impeller CAD generation
+"""
+
 def GetSTEPPath(propellant: Propellant) -> Path:
 	"""Default STEP file of the impeller: <propellant>_impeller.step in the Impeller folder."""
 	return Path(__file__).parent / f'{propellant.name}_impeller.step'
