@@ -24,7 +24,7 @@ The git repository root is `Turbopump/`, and this folder is `MARLIN V2/Tenkara/4
   5. `ImpellerBladeDesign` with Main.py's `blade_params`, then `PlotInletTriangles` and `PlotBladeLines`;
   6. `ImpellerCAD`, which builds the CadQuery model and opens it in the cadquery viewer.
 
-  The inducer is sized on its own (Gülich tip diameter), so its tip and exit hub diameters don't match the impeller's `d_1` and `d_hub`. Only its outlet angular momentum reaches the impeller, as free-vortex preswirl. `Inducer/Sizing.py` matches the two, but the pipeline doesn't use it.
+  `AddInducer` takes the inducer's tip and outlet hub diameters from the impeller's `d_1` and `d_hub`. Its inlet hub and axial length are fixed fractions of the tip diameter (`hub_tip_ratio`, `axial_length_ratio`), not solved from the head. Only its outlet angular momentum reaches the impeller, as free-vortex preswirl. `Inducer/Sizing.py` solves the inlet hub from the hub taper instead, but the pipeline doesn't use it.
 
   Figures are shown by the `.show()` calls there, most of them commented out (currently all but `PlotBladeLines`). The cadquery viewer blocks until its window is closed, so the IPA design starts only after the LOX viewer is closed. A run takes a few seconds per propellant, about half of it in `ImpellerBladeDesign`; `MeridionalDesign`, FEM solve included, takes about 0.01 s.
 - There is no test suite; `test.py` in the Pumps folder is a pint scratch file. To check changes without windows popping up:
@@ -105,7 +105,10 @@ Top level:
 
 `Inducer/` (NASA SP-8052, whose PDF is in this folder):
 
-- `Inducer.py`: `InducerDesignPoint`, `InducerInletDesignConstraints` and `Inducer`, which does the inducer sizing (tip and hub diameter, N_ss, NPSH_3, hub taper, velocity triangles). `Inducer` defaults to the module-level `constraints` (hub-to-tip ratio 0.5, σ = 0.03), not to the dataclass defaults (0.3, 0.06).
+- `Inducer.py`: `InducerDesignPoint` (`Q`, `N_shaft`, `H_rise`), `InducerInputGeometry` (`d_tip`, `d_hub_2`, `Z_blade` = 2, `hub_tip_ratio` = 0.5, `axial_length_ratio` = 0.6) and `Inducer`, which holds the geometry (`DP`, `Z_blade`, `R_tip`, `R_hub_1`, `R_hub_2`, `L_ax`) and the suction metrics.
+  - The geometry names match the radius properties of `Sizing.InletSizing`.
+  - The suction metrics are `FlowCoefficient`, `N_ss` and `NPSH_3`, from the sheet relations with `lambda_c` = 1.1 and `lambda_w` = 0.03 (constructor arguments; they are K and σ). `NPSH_3` is backed out of `N_ss`.
+  - `FlowCoefficient` and `N_ss` depend only on `lambda_w`, `lambda_c` and `hub_tip_ratio`, not on the actual tip diameter. `1DPerformance.py` has the same relations for a `Sizing.InletSizing`.
 - `RadialEquilibrium.py`: `InducerRadialEquilibrium`, which gives c_θ(r, z) and c_axial(r, z) behind the tapered-hub inducer. `GetOutletAngularMomentum()` gives the impeller inlet preswirl.
 - `MeanlineTriangle.py`: `MeanlineTriangle`, the zero-blockage inlet triangle on the rms radius. It passes the incidence ratio to `InducerRadialEquilibrium`.
 - `Sizing.py`: sizes the inducer inlet to match the impeller inlet.
@@ -130,14 +133,14 @@ Outside `Code/`: `Inputs/` holds `Inputs.yaml`, and `Serialize.py`, which turns 
 - Normalized arclength s runs from 0 at the impeller inlet to 1 at the outlet on the contours and the meanline, and from the hub (0) to the shroud (1) on the leading and trailing edges. Streamlines span the whole FEM domain; use `Streamline.Impeller` for the impeller part. Along a blade line, x is the meridional arclength in m from the leading edge.
 - `phi` in the code is the flow fraction (stream function / its shroud value: 0 at the hub, 1 at the shroud). It is not Milos's velocity potential φ. In the inducer files, `phi` is the inducer flow coefficient instead.
 - `psi` is the stream function in `PotentialFlow`, but the swirl ratio c_u/(ω r) in `RadialEquilibrium.py`; `psi_1` and `psi_2` are inducer head coefficients.
-- In `Inducer/Sizing.py`, `SizingConstants.lambda_w` and `lambda_c` (0.03 and 1.1) are σ and K from `Inducer.py`. `HeadRequirementModel.lambda_w` and `lambda_c` (1.0 and 1.1) are the impeller NPSH coefficients of `Pump1D.GetInducerlessNPSH_r`.
+- In `Inducer/Sizing.py`, `SizingConstants.lambda_w` and `lambda_c` (0.03 and 1.1) are the design cavitation parameter σ and the empirical constant K in φ = √(σ / (2 (K + σ))). `HeadRequirementModel.lambda_w` and `lambda_c` (1.0 and 1.1) are the impeller NPSH coefficients of `Pump1D.GetInducerlessNPSH_r`.
 - Velocities:
   - `c` is the absolute-frame velocity in the sizing and velocity-triangle code (`c_m`, `c_u`). The inducer files also use SP-8052's `c_theta` and `c_axial`;
   - `PotentialFlow` deliberately keeps `v_z`, `v_r`, `v_m`.
 - Blade and flow angles β are measured from the tangential direction, as in `VelocityTriangle`: tan β = c_m / (u − c_u). Some references measure them from the meridional direction instead, such as NASA TN D-1562.
 - Style:
   - match the file's indentation. Most of `Code/` uses tabs. These files use spaces: `EmpiricalRelations.py`, `Volute.py`, `VolutePlot.py`, `Impeller/Bezier.py`, `Old/`, and `Inducer.py`, `RadialEquilibrium.py`, `MeanlineTriangle.py` and `BladeThickness.py` in `Inducer/`. The other two files in `Inducer/`, `Sizing.py` and `1DPerformance.py`, use tabs;
-  - CamelCase method names (`GetX`, `PlotX`) and object attributes (`HubContour`). The inducer files and `Volute.py` also have snake_case and camelCase names (`c_theta`, `print_parameters`, `getKv`); follow the file;
+  - CamelCase method names (`GetX`, `PlotX`) and object attributes (`HubContour`). The inducer files and `Volute.py` also have snake_case and camelCase names (`c_theta`, `hub_radius`, `getKv`); follow the file;
   - cite the source equation or page in docstrings.
 - Plots use plotly, mostly with `template='plotly_white'`; `PlotInletTriangles` uses `'simple_white'`. A length-unit argument `l` defaults to `'in'`; `PlotBladeLines` calls it `unit`, and the `Inducer/Sizing.py` plots default to `'mm'`. Meridional and plan views use equal axis scaling.
 
