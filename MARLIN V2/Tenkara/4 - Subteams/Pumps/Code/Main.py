@@ -144,7 +144,7 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design)
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
 	imp_cad.SaveSTEP()
 
 	return pump
