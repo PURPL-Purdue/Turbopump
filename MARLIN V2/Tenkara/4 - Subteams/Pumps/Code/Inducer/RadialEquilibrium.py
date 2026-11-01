@@ -264,7 +264,7 @@ class InducerRadialEquilibrium:
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
 		get_LE_theta = _uh2(
-			r_hub[0], self.R_t, wrap_angle=np.deg2rad(120)
+			r_hub[0], self.R_t, wrap_angle=np.deg2rad(70)
 			)
 		
 		for alpha in np.linspace(0, 1, num_lines):
@@ -294,7 +294,7 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def ShowBladeLines(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
+	def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
 		"""
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API
@@ -313,7 +313,7 @@ class InducerRadialEquilibrium:
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
 			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
 		)
-		show(assm, blade_edges)
+		
 		return assm
 
 

@@ -127,7 +127,7 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
-	inducer_assm = inducer_eq.ShowBladeLines()
+	inducer_assm = inducer_eq.CreateCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
@@ -167,4 +167,4 @@ def MakeDesign(propellant: Propellant):
 
 if __name__ == "__main__":
 	MakeDesign(Propellant.LOX)
-	#MakeDesign(Propellant.IPA)
+	MakeDesign(Propellant.IPA)

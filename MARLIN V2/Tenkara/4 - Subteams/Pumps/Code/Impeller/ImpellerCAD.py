@@ -73,8 +73,6 @@ class ImpellerCAD:
 			.add(blades, name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 		)
 
-		show(self.Assembly)
-
 	def Show(self):
 		show(self.Assembly)
 
