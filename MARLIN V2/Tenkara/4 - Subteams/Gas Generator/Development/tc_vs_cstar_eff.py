@@ -37,7 +37,7 @@ IPA_MW_KG_MOL = 0.060095          # [kg/mol]
 IPA_HF_KJ_MOL = -318.1            # standard enthalpy of formation, liquid [kJ/mol]
 IPA_T_K = 298.15                  # fuel inlet temperature [K]
 
-D_MAX_KJ_KG = 5000.0   # largest enthalpy deficit swept [kJ per kg of propellant]
+D_MAX_KJ_KG = 4200.0   # largest enthalpy deficit swept [kJ per kg of propellant]
 N_POINTS = 60
 ETA_MIN_PLOT = 0.2    # drop points below this c* efficiency
 
