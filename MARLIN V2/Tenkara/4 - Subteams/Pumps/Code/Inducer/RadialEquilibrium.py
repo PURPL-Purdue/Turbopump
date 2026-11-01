@@ -33,29 +33,19 @@ Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
 """
 
-def _uh2(r_0: float, r_max: float, wrap_angle: float):
+def _uh4(r_0: float, r_max: float, wrap_angle: float, n: float = 2):
 	"""
-	@Charlie Zhu
-	Genuinely idk what i did here
-	Use Desmos graphing for better visualization
+	Leading edge theta(r) from theta = 0 at r_0 to theta = wrap_angle at r_max, where it is tangent to the circle r_max (n > 1)
 	"""
-	# r = a*theta - r0
+	# r = r_max - (r_max - r0) * (1 - theta / wrap)^n
+	# dr/dtheta = n (r_max - r0) (1 - theta / wrap)^(n - 1) / wrap = 0 at theta = wrap
 
-	# r = r0 = a * theta1 - r0
-	# r = r_max = a * theta2 - r0
-	# wrap = theta2 - theta1
-
-	# theta2 * a = r_max + r0
-	# theta1 * a = 2 * r0
-	# a * (theta2 - theta1) = a * wrap = r_max - r0
-
-	a = (r_max - r_0) / wrap_angle
-	theta_1 = 2 * r_0 / a
-
+	# theta = wrap * (1 - ((r_max - r) / (r_max - r0))^(1/n))
 	def func(r: float) -> float:
-		return (r + r_0) / a - theta_1
-	
+		return wrap_angle * (1 - np.maximum((r_max - r) / (r_max - r_0), 0)**(1 / n))
+
 	return func
+
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
@@ -263,11 +253,9 @@ class InducerRadialEquilibrium:
 
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 
-		get_LE_theta = _uh2(
-			r_hub[0], self.R_t, wrap_angle=np.deg2rad(70)
-			)
-		
-		for alpha in np.linspace(0, 1, num_lines):
+		get_LE_theta = self._GetLETheta()
+
+		for alpha in self._GetSpanFractions(num_lines, resolution):
 			
 			r_offset = alpha * r_diff
 			r = r_hub + r_offset
@@ -294,6 +282,47 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
+	def _GetLETheta(self, wrap_angle: float=np.deg2rad(90)):
+		"""Leading edge curve theta_LE(r) in the polar (r, theta) plane, from the hub inlet radius to the tip"""
+		return _uh4(self.R_h1, self.R_t, wrap_angle=wrap_angle)
+
+	def GetLeadingEdge(self, resolution: int = 200) -> np.ndarray:
+		"""
+		Leading edge from hub to tip, a (resolution, 3) array of (z, r, theta) in m, m and rad, on the blade surface of GetBladeLines.
+		Along every blade line theta depends on z_ref only (r tan(beta) is the radial lead), so the leading edge point at
+		radius r is where theta(z_ref) = theta_LE(r).
+		"""
+		z_ref, r, theta = self._GetLeadingEdgeRef(resolution)
+		# same shift as GetBladeLines: the blade is perpendicular to the hub
+		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
+		z = z_ref - (r - self._r_hub(z_ref)) * hub_taper_slope
+		return np.column_stack((z, r, theta))
+
+	def _GetSpanFractions(self, num_lines: int, resolution: int) -> np.ndarray:
+		"""
+		Span fractions alpha (0 at the hub, 1 at the tip) of num_lines blade lines whose leading edge points are evenly spaced
+		along the leading edge. A loft through them follows the leading edge far better than through evenly spaced alpha.
+		"""
+		z_ref, r, theta = self._GetLeadingEdgeRef(resolution)
+		z = self.GetLeadingEdge(resolution)[:, 0]		# shifted z, for the true arclength
+		arclength = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
+		s = np.linspace(0, arclength[-1], num_lines)
+		z_ref, r = np.interp(s, arclength, z_ref), np.interp(s, arclength, r)
+		return (r - self._r_hub(z_ref)) / (self.R_t - self._r_hub(z_ref))
+
+	def _GetLeadingEdgeRef(self, resolution: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+		"""Leading edge from hub to tip as (z_ref, r, theta), before the hub-normal shift of z"""
+		z_ref = np.linspace(0, self.L, resolution)
+		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
+		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
+
+		# radii clustered toward the tip, where the leading edge turns tangent to the tip circle
+		r = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
+		theta = self._GetLETheta()(r)
+		assert theta[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
+		z_LE_ref = np.interp(theta, theta_ref, z_ref)		# theta_ref increases with z_ref
+		return z_LE_ref, r, theta
+
 	def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
 		"""
 		@Charlie Zhu
@@ -304,7 +333,8 @@ class InducerRadialEquilibrium:
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
 		blade_edges = [cadquery.Edge.makeSpline(_ToCartesian(p, True)) for p in blade_lines]
 		camber = cadquery.func.loft(blade_edges)
-		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)])
+		blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
+		blades = camber.moved(*blade_locations)
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
 		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
@@ -312,9 +342,14 @@ class InducerRadialEquilibrium:
 		assm = (cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
 			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
+			#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
 		)
-		
+		self._cad_assembly = assm
 		return assm
+
+	def ShowCAD(self):
+		if self._cad_assembly is None: self.CreateCAD()
+		show(self._cad_assembly)
 
 
 if __name__ == "__main__":
