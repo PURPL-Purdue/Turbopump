@@ -63,6 +63,9 @@ class InducerRadialEquilibrium:
 	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
+
+		self._sweepback = np.deg2rad(90)
+
 		self.hub_thickness_ratio = hub_thickness_ratio
 		self.eta_bl = eta_bl
 		# The blade inlet angle comes from the zero-blockage inlet meanline triangle
@@ -282,21 +285,9 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def _GetLETheta(self, wrap_angle: float=np.deg2rad(90)):
+	def _GetLETheta(self):
 		"""Leading edge curve theta_LE(r) in the polar (r, theta) plane, from the hub inlet radius to the tip"""
-		return _uh4(self.R_h1, self.R_t, wrap_angle=wrap_angle)
-
-	def GetLeadingEdge(self, resolution: int = 200) -> np.ndarray:
-		"""
-		Leading edge from hub to tip, a (resolution, 3) array of (z, r, theta) in m, m and rad, on the blade surface of GetBladeLines.
-		Along every blade line theta depends on z_ref only (r tan(beta) is the radial lead), so the leading edge point at
-		radius r is where theta(z_ref) = theta_LE(r).
-		"""
-		z_ref, r, theta = self._GetLeadingEdgeRef(resolution)
-		# same shift as GetBladeLines: the blade is perpendicular to the hub
-		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
-		z = z_ref - (r - self._r_hub(z_ref)) * hub_taper_slope
-		return np.column_stack((z, r, theta))
+		return _uh4(self.R_h1, self.R_t, wrap_angle=self._sweepback)
 
 	def _GetSpanFractions(self, num_lines: int, resolution: int) -> np.ndarray:
 		"""
@@ -304,7 +295,9 @@ class InducerRadialEquilibrium:
 		along the leading edge. A loft through them follows the leading edge far better than through evenly spaced alpha.
 		"""
 		z_ref, r, theta = self._GetLeadingEdgeRef(resolution)
-		z = self.GetLeadingEdge(resolution)[:, 0]		# shifted z, for the true arclength
+		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
+		z = z_ref - (r - self._r_hub(z_ref)) * hub_taper_slope
+
 		arclength = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
 		s = np.linspace(0, arclength[-1], num_lines)
 		z_ref, r = np.interp(s, arclength, z_ref), np.interp(s, arclength, r)
