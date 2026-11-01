@@ -246,19 +246,35 @@ class InducerRadialEquilibrium:
 		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
 		"""
 		z_ref = np.linspace(0, self.L, resolution)
+
 		r_hub = self._r_hub(z_ref)
 		r_tip = np.full(resolution, self.R_t)
-		
-		points_zrt = []
-
-		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
 		r_diff = r_tip - r_hub
 
+		points_zrt = []
+		
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
+		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
 
-		get_LE_theta = self._GetLETheta()
+		# radii clustered toward the tip, where the leading edge turns tangent to the tip circle
+		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
-		for alpha in self._GetSpanFractions(num_lines, resolution):
+		get_LE_theta = _uh4(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		theta = get_LE_theta(radii_LE)
+		assert theta[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
+		z_LE_ref = np.interp(theta, theta_ref, z_ref)		# theta_ref increases with z_ref
+		
+		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
+		z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
+
+		arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta))**2))))
+		s = np.linspace(0, arclength_LE[-1], num_lines)
+		# keep z and r values at the arclengths specified s (linearly interpolated)
+		z_LE_ref, radii_LE = np.interp(s, arclength_LE, z_LE_ref), np.interp(s, arclength_LE, radii_LE)
+
+		LE_span_fractions: np.ndarray[float] = (radii_LE - self._r_hub(z_LE_ref)) / (self.R_t - self._r_hub(z_LE_ref))
+
+		for alpha in LE_span_fractions:
 			
 			r_offset = alpha * r_diff
 			r = r_hub + r_offset
@@ -284,37 +300,6 @@ class InducerRadialEquilibrium:
 			points_zrt.append(np.vstack((leading_edge, points[i:])))
 
 		return points_zrt
-
-	def _GetLETheta(self):
-		"""Leading edge curve theta_LE(r) in the polar (r, theta) plane, from the hub inlet radius to the tip"""
-		return _uh4(self.R_h1, self.R_t, wrap_angle=self._sweepback)
-
-	def _GetSpanFractions(self, num_lines: int, resolution: int) -> np.ndarray:
-		"""
-		Span fractions alpha (0 at the hub, 1 at the tip) of num_lines blade lines whose leading edge points are evenly spaced
-		along the leading edge. A loft through them follows the leading edge far better than through evenly spaced alpha.
-		"""
-		z_ref, r, theta = self._GetLeadingEdgeRef(resolution)
-		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
-		z = z_ref - (r - self._r_hub(z_ref)) * hub_taper_slope
-
-		arclength = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
-		s = np.linspace(0, arclength[-1], num_lines)
-		z_ref, r = np.interp(s, arclength, z_ref), np.interp(s, arclength, r)
-		return (r - self._r_hub(z_ref)) / (self.R_t - self._r_hub(z_ref))
-
-	def _GetLeadingEdgeRef(self, resolution: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-		"""Leading edge from hub to tip as (z_ref, r, theta), before the hub-normal shift of z"""
-		z_ref = np.linspace(0, self.L, resolution)
-		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
-		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
-
-		# radii clustered toward the tip, where the leading edge turns tangent to the tip circle
-		r = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
-		theta = self._GetLETheta()(r)
-		assert theta[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
-		z_LE_ref = np.interp(theta, theta_ref, z_ref)		# theta_ref increases with z_ref
-		return z_LE_ref, r, theta
 
 	def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
 		"""
