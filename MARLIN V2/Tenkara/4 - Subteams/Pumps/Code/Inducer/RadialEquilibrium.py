@@ -216,34 +216,49 @@ class InducerRadialEquilibrium:
 	def GetBladeLines(self, num_lines: int=2, resolution: int = 200) -> list[np.ndarray]:
 		"""
 		@Charlie zhu
-		Blade lines from hub to tip, a (num_lines, resolution, 3) array of (z, r, theta) in m, m and rad, from the inlet.
+		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
 		"""
-		z = np.linspace(0, self.L, resolution)
-		r_hub = self._r_hub(z)
+		z_ref = np.linspace(0, self.L, resolution)
+		r_hub = self._r_hub(z_ref)
 		r_tip = np.full(resolution, self.R_t)
-
-		lead = self._r_ms(z) * np.tan(self._beta(z, self.beta2))
 		
 		points_zrt = []
-		
+
+		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
+		r_diff = r_tip - r_hub
+
+		lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
+
 		for alpha in np.linspace(0, 1, num_lines):
-			r = r_hub * (1 - alpha) + r_tip * alpha
-			tan_beta = lead/r
+			r_offset = alpha * r_diff
+			r = r_hub + r_offset
+			
+			tan_beta = lead/r # more necessary than you think lol
+			
 			theta = integrate.cumulative_trapezoid(
-				y=1 / (r * tan_beta), x=z, initial=0
+				y=1 / (r * tan_beta), x=z_ref, initial=0
 				)
+			# adjust z such that meridional sweep is perpendicular to hub
+			z = z_ref - r_offset * hub_taper_slope
+
 			points_zrt.append(np.column_stack((z, r, theta)))  # (resolution, 3)
 
 		return points_zrt
 
-	def ShowBladeLines(self, num_lines: int=4, resolution: int=200):
-		"""Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm), in the cadquery viewer."""
-		import cadquery
+	def ShowBladeLines(self, num_lines: int=3, resolution: int=200):
+		"""Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
+		import cadquery.func
 		from cadquery.vis import show
 		from Impeller.ImpellerCAD import _ToCartesian
 
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		show(*[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines])
+
+		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
+		hub_edge = cadquery.Edge.makeLine(*_ToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]])))
+		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
+		hub = cadquery.Assembly().add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
+
+		show(hub, *[cadquery.Edge.makeSpline(_ToCartesian(p)) for p in blade_lines])
 
 
 if __name__ == "__main__":
