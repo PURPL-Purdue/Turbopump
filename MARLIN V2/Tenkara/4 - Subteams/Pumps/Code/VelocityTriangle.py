@@ -112,6 +112,8 @@ def _LabelPlaces(group: list[tuple[np.ndarray, np.ndarray]], defaults: list[np.n
 		Labels sharing a side are spread along their vectors, the outermost nearest the start: vectors from a common
 		point are furthest apart near their ends, where the inner labels need the room.
 	"""
+	if not group:		# e.g. no C_m vector without swirl
+		return []
 	mids = [(p0 + p1) / 2 for p0, p1 in group]
 	centre = np.mean(mids, axis=0)
 	lefts = [np.array([p0[1] - p1[1], p1[0] - p0[0]]) / np.hypot(*(p1 - p0)) for p0, p1 in group]
