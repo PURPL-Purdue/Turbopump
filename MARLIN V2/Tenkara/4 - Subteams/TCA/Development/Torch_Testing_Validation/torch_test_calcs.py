@@ -47,8 +47,8 @@ CD = 0.8
 CSTAR_EFF = 0.9
 K_F = 1.31  # ch4 specific heat ratio
 K_OX = 1.40 # gox specific heat ratio  
-P_OX = 621  #setpoint P_ox (psia)
-P_F = 611  #setpoint P_ox (psia)
+P_OX = 570  #setpoint P_ox (psia)
+P_F = 550  #setpoint P_ox (psia)
 
 D_TORCH = 0.268 #in
 
@@ -69,15 +69,15 @@ OF_set = 1.5
 md_ox_set = OF_set * mdot_set / (OF_set + 1)
 md_f_set = mdot_set - md_ox_set
 
-p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
-p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
+#p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
+#p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
 
 #ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_ox_set), Input.temperature(FEED_TEMP))
 
 #rho_ox = ox_PYF.density             # [kg/m^3]
 #p_ox_set = (md_ox_set)**2 / ((CD * A_ox)**2 * (K_OX * rho_ox * ( 2 / (K_OX + 1))**((K_OX + 1)/(K_OX - 1))))
 
-print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
+#print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
 
 #P_OX = p_ox_set / psi2Pa
 #P_F= p_f_set / psi2Pa
@@ -122,29 +122,32 @@ A_throat = A_torch
 cstars = []
 T_combs = []
 T_exit = []
-for of in ofs:
-    # 1. Convert O/F ratio to mass fractions
+P_c_arr = []
+for m_dot, of in zip(mdot_total, ofs):
+    # 1. Mixture enthalpy for this O/F
     weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=of)
-
-    # 2. Compute reactant mixture enthalpy
     hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R
 
-    # 3. Solve the rocket equilibrium state
-    solver.solve(solution, weights, p_c_guess_bar, hc=hc, iac=True)
+    # 2. Iterate Pc to convergence (2-3 passes are sufficient)
+    pc_guess_Pa = 200.0 * psi2Pa  # Seed guess near nominal 200 psia
+    for _ in range(3):
+        pc_bar = pc_guess_Pa / bar2pa
+        solver.solve(solution, weights, pc_bar, hc=hc, iac=True)
+        cstar_eff = solution.c_star[-1] * CSTAR_EFF
+        pc_guess_Pa = (m_dot * cstar_eff) / A_throat
 
-    # 4. Extract characteristic exhaust velocity (m/s)
-    cstar = solution.c_star
-    cstars.append(cstar[-1])
+    # 3. Store converged state
+    cstars.append(cstar_eff)
+    T_combs.append(solution.T[0])
+    T_exit.append(solution.T[-1])
+    P_c_arr.append(pc_guess_Pa)
 
-    Temp = solution.T
-    T_combs.append(Temp[0])
-    T_exit.append(Temp[-1])
-
-cstars = np.array(cstars) * CSTAR_EFF
+cstars = np.array(cstars)
 T_combs = np.array(T_combs)
 T_exit = np.array(T_exit)
 
-P_c_arr = (mdot_oxs + mdot_fs) * cstars / A_throat
+P_c_arr = np.array(P_c_arr)
+#P_c_arr = (mdot_oxs + mdot_fs) * cstars / A_throat
 
 ###############################
 # EXPORT RESULTS TO CSV
