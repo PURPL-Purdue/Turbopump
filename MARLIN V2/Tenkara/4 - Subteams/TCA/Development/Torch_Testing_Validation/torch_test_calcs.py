@@ -24,37 +24,40 @@ m2in = 39.3701      # [m/in]
 bar2psi = 14.503773773    # [psi/bar]
 bar2pa = 100000           # [pa/bar]
 
-R2K = 0.555556      # [R/K] (5/9)
+psi2Pa = 6894.76     # [psi/Pa]
+lbm2kg = 0.453592    # [lbm/kg]
+m2in = 39.3701       # [m/in]
+bar2pa = 100000.0    # [Pa/bar]
 
-# Constants
-G0 = 9.81           # [m/s^2]
-P_ATM = 101325      # [Pa]
-
-R_OX = 0.25984      #[kJ / kg - K]
-R_F = .51828        #[kJ / kg - K]
-
-R_OXJ = 259.84      #[J / kg - K]
-R_FJ = 518.28        #[J / kg - K]
-
-###############################
-#DEFINE GLOBAL VARIABLES
-###############################
-
-FEED_TEMP = 293.15    #Degrees Kelvin
-OX_DIA = 0.063          #inches
-FUEL_DIA = 0.063        #inches
+FEED_TEMP = 293.15   # [K] (20 deg C)
 CD = 0.8
-CSTAR_EFF = 0.9
-K_F = 1.31  # ch4 specific heat ratio
-K_OX = 1.40 # gox specific heat ratio  
-P_OX = 570  #setpoint P_ox (psia)
-P_F = 550  #setpoint P_ox (psia)
+CSTAR_EFF = 0.90
 
-D_TORCH = 0.268 #in
+K_F = 1.30           # CH4 specific heat ratio
+K_OX = 1.40          # GOX specific heat ratio
+R_OXJ = 259.84       # [J / kg-K]
+R_FJ = 518.28        # [J / kg-K]
+
+OX_DIA = 0.063       # [in]
+FUEL_DIA = 0.063     # [in]
+
+D_TORCH = 0.268      # [in]
+P_OX = 570
+P_F = 550
 
 A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
 A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
 A_f = np.pi * ((FUEL_DIA / (m2in * 2)))**2
+
+def choked_pressure(mdot, area, k, T, R, Cd=1.0):
+    """Calculates upstream stagnation pressure required to choke mdot through an orifice."""
+    factor = (2.0 / (k + 1.0)) ** ((k + 1.0) / (2.0 * (k - 1.0)))
+    return mdot / (Cd * area * np.sqrt((k / (R * T)) * factor))
+
+def choked_mdot(pressure, area, k, T, R, Cd=1.0):
+    """Calculates choked mass flow given upstream stagnation pressure."""
+    factor = (2.0 / (k + 1.0)) ** ((k + 1.0) / (2.0 * (k - 1.0)))
+    return pressure * Cd * area * np.sqrt((k / (R * T)) * factor)
 
 #fuel_PYF = Fluid(FluidsList.Methane).with_state(Input.pressure(p_line), Input.temperature(FEED_TEMP))
 #ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_line), Input.temperature(FEED_TEMP))
@@ -69,8 +72,8 @@ OF_set = 1.5
 md_ox_set = OF_set * mdot_set / (OF_set + 1)
 md_f_set = mdot_set - md_ox_set
 
-#p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
-#p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
+p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
+p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
 
 #ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_ox_set), Input.temperature(FEED_TEMP))
 
@@ -79,8 +82,8 @@ md_f_set = mdot_set - md_ox_set
 
 #print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
 
-#P_OX = p_ox_set / psi2Pa
-#P_F= p_f_set / psi2Pa
+P_OX = p_ox_set / psi2Pa
+P_F= p_f_set / psi2Pa
 
 pox_arr = [P_OX, (P_OX * 1.15), P_OX, (P_OX * 0.85), P_OX, (P_OX * 1.10), (P_OX * 0.90)]
 pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
@@ -93,7 +96,7 @@ mdot_fs = pf_arr / (np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2
 
 ofs = mdot_oxs / mdot_fs
 
-mdot_total = mdot_oxs + mdot_fs
+mdot_totals = mdot_oxs + mdot_fs
 
 c_ratio_ox = (2 / (K_OX+1)) ** (K_OX / (K_OX - 1)) 
 c_ratio_f = (2 / (K_F+1)) ** (K_F / (K_F - 1)) 
@@ -118,33 +121,33 @@ solution = cea.RocketSolution(solver)
 p_c_guess_bar = (200.0 * psi2Pa) / bar2pa
 
 A_throat = A_torch
-
+Pc_set_Pa = 200 * psi2Pa
 cstars = []
 T_combs = []
-T_exit = []
+T_exits = []
 P_c_arr = []
-for m_dot, of in zip(mdot_total, ofs):
-    # 1. Mixture enthalpy for this O/F
+for m_dot, of in zip(mdot_totals, ofs):
     weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=of)
     hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R
 
-    # 2. Iterate Pc to convergence (2-3 passes are sufficient)
-    pc_guess_Pa = 200.0 * psi2Pa  # Seed guess near nominal 200 psia
-    for _ in range(3):
-        pc_bar = pc_guess_Pa / bar2pa
-        solver.solve(solution, weights, pc_bar, hc=hc, iac=True)
-        cstar_eff = solution.c_star[-1] * CSTAR_EFF
-        pc_guess_Pa = (m_dot * cstar_eff) / A_throat
+    # Evaluate c* at the nominal 200 psia pressure baseline
+    solver.solve(solution, weights, Pc_set_Pa / bar2pa, hc=hc, iac=True)
+    cstar_val = solution.c_star[-1] * CSTAR_EFF
 
-    # 3. Store converged state
-    cstars.append(cstar_eff)
+    # Back-calculate Pc from total mass flow, c*, and fixed sized throat
+    pc_val_Pa = (m_dot * cstar_val) / A_throat
+
+    cstars.append(cstar_val)
     T_combs.append(solution.T[0])
-    T_exit.append(solution.T[-1])
-    P_c_arr.append(pc_guess_Pa)
+    T_exits.append(solution.T[-1])
+    P_c_arr.append(pc_val_Pa)
+
+P_c_arr = np.array(P_c_arr)
+cstars = np.array(cstars)
 
 cstars = np.array(cstars)
 T_combs = np.array(T_combs)
-T_exit = np.array(T_exit)
+T_exit = np.array(T_exits)
 
 P_c_arr = np.array(P_c_arr)
 #P_c_arr = (mdot_oxs + mdot_fs) * cstars / A_throat
