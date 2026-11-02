@@ -23,15 +23,7 @@ import tc_vs_cstar_eff as tc
 #######################################
 #def_path = os.path.join(r'\MARLIN V2\Tenkara\4 - Subteams\Gas Generator\Inputs\GG_hardware_definitions.yaml')
 #def_path = 'C:\Users\miles\OneDrive\Documents\GitHub\Turbopump\MARLIN V2\Tenkara\4 - Subteams\Gas Generator\Inputs\GG_hardware_definitions.yaml'
-script_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(script_dir)  # Go up one level
-def_path = os.path.join(parent_dir, 'Inputs', 'GG_hardware_definition.yaml')
-print(def_path)
-config = yaml.safe_load(open(def_path, 'r'))
-#######################################
-# Function Definitions
-#######################################
-cea = CEA_Obj(config['GG_fuel_type'], config['GG_ox_type'], config['GG_fuel_type']) 
+
 
 
 def mdot(cda, pup, Pc, rho):
@@ -127,97 +119,107 @@ def IPA_satTemp(Pc):
 #####################################
 # Variable Definition
 #####################################
+def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(script_dir)  # Go up one level
+    def_path = os.path.join(parent_dir, 'Inputs', 'GG_hardware_definition.yaml')
+    print(def_path)
+    config = yaml.safe_load(open(def_path, 'r'))
+    #######################################
+    # Function Definitions
+    #######################################
+    cea = CEA_Obj(config['GG_fuel_type'], config['GG_ox_type'], config['GG_fuel_type']) 
 
-step_size = 0.01
-psi2pa = 6894.757
-# Feed pressures
-LOx_feed_pressure = 3430000     #pa
-IPA_feed_pressure = 3430000     #pa
-# Film cooling insert label
-insert_id = '5%'
-if insert_id != '0%': 
-    film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
-else:
-    film_total_cda = 0.00000000001 # m^2
-# IPA inlet temp
-IPA_temp = 298                   # K
-#IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
-IPA_MM = 60.1                    # g/mol
-#IPA_H = 1000 * IPA_H_mol / IPA_MM# kJ/kg
-# Chamber Pressure
-Pc_guess = 2400000              #pa  
-Pc_array = []
-film_temp = []
-gas_temp = []
+    step_size = 0.01
+    psi2pa = 6894.757
+    # Feed pressures
+    LOx_feed_pressure = 3430000     #pa
+    IPA_feed_pressure = 3430000     #pa
+    # Film cooling insert label
+    insert_id = '5%'
+    if insert_id != '0%': 
+        film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
+    else:
+        film_total_cda = 0.00000000001 # m^2
+    # IPA inlet temp
+    IPA_temp = 298                   # K
+    #IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
+    IPA_MM = 60.1                    # g/mol
+    #IPA_H = 1000 * IPA_H_mol / IPA_MM# kJ/kg
+    # Chamber Pressure
+    Pc_guess = 2400000              #pa  
+    Pc_array = []
+    film_temp = []
+    gas_temp = []
 
-##########################################
-# Define input states
-##########################################
-# Solve for chamber pressure
-Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
-# Solve for mass flows into the chamber
-mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
-mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
-mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
-print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
-print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
-print(f'Total OF Ratio: {(mdot_ox/(mdot_IPA + mdot_film)):.3f}')
-print(f'film cooling %: {100*(mdot_film / (mdot_film + mdot_ox+mdot_IPA)):.3f}')
-# Get combustion gas properties
-combustion_gas = CEA_init_state(mdot_ox, mdot_IPA, Pc_in)
-# Define film cooling initial properties
-Cp_IPA_l = 1000 * config['cp_IPA_l'] / IPA_MM             # 1000 * kJ/mol K * mol/ g = kJ/kg K
-film = [mdot_film, 0, IPA_temp, Cp_IPA_l]
-delta_T_init = abs(combustion_gas[2] - film[2])
-film_temp.append(film[2])
-gas_temp.append(combustion_gas[2])
-#####################################
-# Begin Simulation
-#####################################
-# subcooled liquid heating of the IPA
-if insert_id != '0%':
-    T_dif = IPA_satTemp(Pc_in) - film[2]
-    ##print(f'Temperature difference: {T_dif:.3f} K')
-    E_dif = T_dif * film[3] * film[0]
-    #print(f'Energy difference: {E_dif:.3f} kJ')
-    film = Heat_addition(film, E_dif)
-    combustion_gas = Heat_addition(combustion_gas, -E_dif)
+    ##########################################
+    # Define input states
+    ##########################################
+    # Solve for chamber pressure
+    Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
+    # Solve for mass flows into the chamber
+    mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
+    mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+    mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
+    print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
+    print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
+    print(f'Total OF Ratio: {(mdot_ox/(mdot_IPA + mdot_film)):.3f}')
+    print(f'film cooling %: {100*(mdot_film / (mdot_film + mdot_ox+mdot_IPA)):.3f}')
+    # Get combustion gas properties
+    combustion_gas = CEA_init_state(mdot_ox, mdot_IPA, Pc_in)
+    # Define film cooling initial properties
+    Cp_IPA_l = 1000 * config['cp_IPA_l'] / IPA_MM             # 1000 * kJ/mol K * mol/ g = kJ/kg K
+    film = [mdot_film, 0, IPA_temp, Cp_IPA_l]
+    delta_T_init = abs(combustion_gas[2] - film[2])
     film_temp.append(film[2])
     gas_temp.append(combustion_gas[2])
-    # vaporization of the IPA
-    E_vap = film[0] * (1000 * config['h_vap_IPA'] / IPA_MM)
-    film[1] = film[1] + E_vap
-    combustion_gas = Heat_addition(combustion_gas, -E_vap)
-    film_temp.append(film[2])
-    gas_temp.append(combustion_gas[2])
-    film[3] = IPA_Cp_gas(film[2])
-    step_num = 0
-    while abs(film[2] - combustion_gas[2]) > 1 and step_num < 2000:
-        E_trans = 0.5 * step_size * (combustion_gas[2] - film[2])
-        #print(f'E_trans {E_trans:.3f}')
-        film = Heat_addition(film, E_trans)
-        combustion_gas = Heat_addition(combustion_gas, -E_trans)
+    #####################################
+    # Begin Simulation
+    #####################################
+    # subcooled liquid heating of the IPA
+    if insert_id != '0%':
+        T_dif = IPA_satTemp(Pc_in) - film[2]
+        ##print(f'Temperature difference: {T_dif:.3f} K')
+        E_dif = T_dif * film[3] * film[0]
+        #print(f'Energy difference: {E_dif:.3f} kJ')
+        film = Heat_addition(film, E_dif)
+        combustion_gas = Heat_addition(combustion_gas, -E_dif)
+        film_temp.append(film[2])
+        gas_temp.append(combustion_gas[2])
+        # vaporization of the IPA
+        E_vap = film[0] * (1000 * config['h_vap_IPA'] / IPA_MM)
+        film[1] = film[1] + E_vap
+        combustion_gas = Heat_addition(combustion_gas, -E_vap)
         film_temp.append(film[2])
         gas_temp.append(combustion_gas[2])
         film[3] = IPA_Cp_gas(film[2])
-        step_num += 1
-#print('flag 7')
-    OutPut_gas = [film[0] + combustion_gas[0], film[1] + combustion_gas[1], film[2],
-               (film[0]*film[3]+combustion_gas[0]*combustion_gas[3])/(film[0]+combustion_gas[0])]
-else:
-    OutPut_gas = combustion_gas
+        step_num = 0
+        while abs(film[2] - combustion_gas[2]) > 1 and step_num < 2000:
+            E_trans = 0.5 * step_size * (combustion_gas[2] - film[2])
+            #print(f'E_trans {E_trans:.3f}')
+            film = Heat_addition(film, E_trans)
+            combustion_gas = Heat_addition(combustion_gas, -E_trans)
+            film_temp.append(film[2])
+            gas_temp.append(combustion_gas[2])
+            film[3] = IPA_Cp_gas(film[2])
+            step_num += 1
+    #print('flag 7')
+        OutPut_gas = [film[0] + combustion_gas[0], film[1] + combustion_gas[1], film[2],
+                (film[0]*film[3]+combustion_gas[0]*combustion_gas[3])/(film[0]+combustion_gas[0])]
+    else:
+        OutPut_gas = combustion_gas
 
-plt.plot(film_temp)
-plt.plot(gas_temp)
-plt.legend(['film','combustion gas'])
-plt.grid()
-plt.show()
+    plt.plot(film_temp)
+    plt.plot(gas_temp)
+    plt.legend(['film','combustion gas'])
+    plt.grid()
+    plt.show()
 
-print(f'Output mdot:  {OutPut_gas[0]:.3f} kg/s')
-print(f'Output Temp:  {OutPut_gas[2]:.3f} K')
-print(f'Chamber Pressure:  {Pc_in/psi2pa:.1f} psi')
-print(f'LOx Stiffness: {100 * (LOx_feed_pressure - Pc_in)/LOx_feed_pressure:2.1f} %')
-print(f'IPA Stiffness: {100 * (IPA_feed_pressure - Pc_in)/IPA_feed_pressure:2.1f} %')
+    print(f'Output mdot:  {OutPut_gas[0]:.3f} kg/s')
+    print(f'Output Temp:  {OutPut_gas[2]:.3f} K')
+    print(f'Chamber Pressure:  {Pc_in/psi2pa:.1f} psi')
+    print(f'LOx Stiffness: {100 * (LOx_feed_pressure - Pc_in)/LOx_feed_pressure:2.1f} %')
+    print(f'IPA Stiffness: {100 * (IPA_feed_pressure - Pc_in)/IPA_feed_pressure:2.1f} %')
 
 def film_core_mixed_temp(LOx_feed: float, IPA_feed: float, insert_id: str):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -291,6 +293,7 @@ def film_core_mixed_temp(LOx_feed: float, IPA_feed: float, insert_id: str):
 
     return OutPut_gas[2]
         
-        
+if __name__ == "__main__":
+    main()      
 
 
