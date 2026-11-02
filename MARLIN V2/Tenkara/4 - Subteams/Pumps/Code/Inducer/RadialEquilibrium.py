@@ -34,7 +34,12 @@ Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
 """
 
-def _uh2(r_0: float, r_max: float, wrap_angle: float) -> float:
+def _archimedian_spiral(r_0: float, r_max: float, wrap_angle: float) -> float:
+	"""
+	@Charlie Zhu
+	geninuely don't know what i did here
+	use Desmos for visualization
+	"""
 	# r = a*theta - r0
 
 	# r = r0 = a * theta1 - r0
@@ -53,7 +58,7 @@ def _uh2(r_0: float, r_max: float, wrap_angle: float) -> float:
 
 	return func
 
-def _uh4(r_0: float, r_max: float, wrap_angle: float, n: float = 2):
+def _tangent_transition_spiral(r_0: float, r_max: float, wrap_angle: float, n: float = 2):
 	"""
 	Leading edge theta(r) from theta = 0 at r_0 to theta = wrap_angle at r_max, where it is tangent to the circle r_max (n > 1)
 	"""
@@ -260,7 +265,7 @@ class InducerRadialEquilibrium:
 		]
 		return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
-	def GetBladeLines(self, num_lines: int=2, resolution: int = 200) -> list[np.ndarray]:
+	def GetBladeLines(self, num_lines: int=7, resolution: int = 200) -> list[np.ndarray]:
 		"""
 		@Charlie zhu
 		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
@@ -276,10 +281,10 @@ class InducerRadialEquilibrium:
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
 
-		# radii clustered toward the tip, where the leading edge turns tangent to the tip circle
+		# radii clustered toward the tip
 		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
-		get_LE_theta = _uh4(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
 		theta_LE = get_LE_theta(radii_LE)
 		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
 		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
@@ -341,12 +346,12 @@ class InducerRadialEquilibrium:
 			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
 			#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
 		)
-		self._cad_assembly = assm
+		self._cad = [assm, blade_edges]
 		return assm
 
 	def ShowCAD(self):
-		if self._cad_assembly is None: self.CreateCAD()
-		show(self._cad_assembly)
+		if self._cad is None: self.CreateCAD()
+		show(*self._cad)
 
 
 if __name__ == "__main__":
