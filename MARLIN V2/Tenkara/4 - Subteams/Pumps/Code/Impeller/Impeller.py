@@ -96,7 +96,7 @@ class Impeller:
 		    title='Impeller Outlet Velocities'
 		    )
 
-	def GetOutletVelocities(self, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+	def GetOutletVelocities(self, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> tuple[Q_, Q_, Q_, Q_]:
 		"""
 			Returns u, c_m, c_u, and w
 			at the outlet of the impeller, and at the specified flowrate and spin-speed

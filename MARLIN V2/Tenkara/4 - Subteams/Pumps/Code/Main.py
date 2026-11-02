@@ -1,5 +1,6 @@
 import numpy as np
 from pint import Quantity as Q_
+import Inducer.Inducer as Inducer
 import Pump
 from Pump import Propellant
 from Impeller.ImpellerBladeDesign import ImpellerBladeDesign, BladeParams
@@ -8,6 +9,9 @@ from CoolProp import CoolProp as CP
 import Impeller.MeridionalDesign as MeridionalDesign
 import sys
 from pathlib import Path
+import Impeller.ImpellerCAD as ImpellerCAD
+import cadquery
+from cadquery.vis import show
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
@@ -124,7 +128,9 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
-
+	inducer_assm = inducer_eq.CreateCAD()
+	inducer_eq.ShowCAD()
+	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
@@ -140,14 +146,27 @@ def MakeDesign(propellant: Propellant):
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines().show()
+	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	import Impeller.ImpellerCAD as ImpellerCAD
-	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design)
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
+	#imp_cad.SaveSTEP()
+
+	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
+	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
+	# and moved so its outlet is axial_gap upstream of the impeller inlet
+	axial_gap = Q_(0, 'mm')
+	z_impeller_inlet = -pump_meridional.HubContour(0)[0]		# flipped
+	z_inducer_inlet = (z_impeller_inlet + axial_gap + inducer_eq.inducer.L_ax).to('mm').m
+	pump_assembly = (
+		cadquery.Assembly()
+		.add(imp_cad.Assembly, name='impeller')
+		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
+	)
+	show(pump_assembly)
 
 	return pump
 
 if __name__ == "__main__":
 	MakeDesign(Propellant.LOX)
-	#MakeDesign(Propellant.IPA)
+	MakeDesign(Propellant.IPA)

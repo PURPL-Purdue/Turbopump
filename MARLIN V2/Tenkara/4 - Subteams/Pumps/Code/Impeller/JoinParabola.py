@@ -1,6 +1,11 @@
 import numpy as np
 from collections.abc import Callable
-
+"""
+@Charlie Zhu
+Minimal AI
+Based on Milo's paper
+parabola matching
+"""
 def JoinParabola(y0: float, yf: float, xj: float, xf: float) -> Callable[[float | np.ndarray], float | np.ndarray]:
 	"""
 		Creates two parabolas that when pieced together are continuous and tangent. Returns the piecewise curve as a function of ``x``.

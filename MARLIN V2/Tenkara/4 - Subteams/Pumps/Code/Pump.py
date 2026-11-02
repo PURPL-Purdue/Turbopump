@@ -41,13 +41,14 @@ class Pump:
 
 		self.NPSH_a = ((design_point.feed_pressure - design_point.inlet_vapor_pressure) / design_point.rho / g).to('m')
 
-	def AddInducer(self, inducer_head: Q_[float]) -> Inducer.Inducer:
+	def AddInducer(self, inducer_head: Q_[float], geometry: Inducer.InducerInputGeometry|None=None) -> Inducer.Inducer:
 		self.Inducer = Inducer.Inducer(
 			design_point=Inducer.InducerDesignPoint(
 				Q=self.DesignFlowRate, N_shaft=self.DP.N_shaft, H_rise=inducer_head
 				),
-			input_geo=Inducer.InducerInputGeometry(
-				d_tip=self.Impeller.d_1, d_hub2=self.Impeller.d_hub
+			geometry=geometry if geometry is not None else Inducer.InducerInputGeometry(
+				d_tip=self.Impeller.d_1, d_hub_2=self.Impeller.d_hub,
+				d_hub_1=self.Impeller.d_hub if self.Propellant == Propellant.IPA else self.Impeller.d_1 * 0.4
 			)
 		)
 

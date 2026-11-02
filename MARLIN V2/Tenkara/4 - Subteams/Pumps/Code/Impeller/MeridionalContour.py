@@ -6,6 +6,10 @@ from . import Bezier
 # called on (s_1) and on the other curve (s_2). Ordered by s_1, empty when the curves do not intersect.
 IntersectResults = list[tuple[Q_[float], Q_[float], float, float]]
 
+"""
+AI generated (but it's good)
+"""
+
 def Cross(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 	"""2D cross product a x b = a_z b_r - a_r b_z of (..., 2) arrays of (z, r), broadcast over the leading axes"""
 	return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]

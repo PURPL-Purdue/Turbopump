@@ -15,6 +15,11 @@ from .MeridionalContour import MeridionalCurve
 from .PotentialFlow import Streamline
 from .JoinParabola import JoinParabola
 
+"""
+@Charlie Zhu
+Minimal AI
+"""
+
 @dataclass
 class _TriInfo:
 	c_m: Q_
@@ -61,8 +66,8 @@ class ImpellerBladeDesign:
 		if radius < self._rad_eq.inducer.R_hub_2:
 			radius = self._rad_eq.inducer.R_hub_2
 			warn(f'Querying radius value less than inducer hub radius')
-		elif radius > self._rad_eq.inducer.D_tip/2:
-			radius = self._rad_eq.inducer.D_tip/2
+		elif radius > self._rad_eq.inducer.R_tip:
+			radius = self._rad_eq.inducer.R_tip
 			warn(f'Querying radius value greater than inducer tip radius')
 
 		return (self._rad_eq.c_theta(radius, self._rad_eq.inducer.L_ax),

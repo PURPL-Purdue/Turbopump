@@ -28,7 +28,7 @@ class MeanlineTriangle:
         self.inducer = inducer
         self.incidence_ratio = incidence_ratio
 
-        self.R_t = inducer.D_tip.to('m').magnitude / 2.0
+        self.R_t = inducer.R_tip.to('m').magnitude
         self.R_h1 = inducer.R_hub_1.to('m').magnitude
         self.omega = inducer.DP.N_shaft.to('rad/s').magnitude
         Q = inducer.DP.Q.to('m^3/s').magnitude
