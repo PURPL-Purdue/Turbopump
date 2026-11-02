@@ -66,7 +66,7 @@ CH4_Cda: 0                     # (m^2) Assumed Cd of 1.0
 GOx_Cda: 0                     # (m^2) Assumed Cd of 1.0
                                # Last updated: May 25th, 2026 by Miles Cohen
 
-torch_cstar_efficiency: 1.0    # (dimensionless) Assumed to be 1.0
+torch_cstar_eff: 0.9           # (dimensionless) Assumed to be 1.0
                                # Last updated: May 25th, 2026 by Miles Cohen
 
 torch_combustion_volume: 0     # (m^3) This is the volume of the torch that is used for combustion.
@@ -81,3 +81,5 @@ torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch t
 
 torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
 torch_ox_type: "O2"
+
+                      
