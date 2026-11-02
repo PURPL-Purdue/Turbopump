@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from typing import Callable
 import yaml
 
-from tc_vs_cstar_eff import get_temp_at_eta
+from GG_filmcooling import film_core_mixed_temp
 
 # --------------------------------------------------------------------------
 # Settings
@@ -48,6 +48,7 @@ class Hardware:
     cda_ox: float                 # m^2
     cda_fuel: float               # m^2 (core fuel orifices)
     cda_film: float               # m^2 (total Cda of film orifices + insert)
+    insert_id: str                  # identifier for the film insert
     rho_ox: float                 # kg/m^3
     rho_fuel: float               # kg/m^3
     throat_cda: float             # m^2 (total CdA of the stator nozzles)
@@ -87,6 +88,7 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
         cda_ox=cfg["LOx_Cda"],
         cda_fuel=cfg["fuel_Cda"],
         cda_film=cda_film,
+        insert_id=insert_id,
         rho_ox=cfg["LOx_rho"],
         rho_fuel=cfg["IPA_rho"],
         throat_cda=cfg["stator_throat_area"],
@@ -202,7 +204,7 @@ def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     stiff_fuel = stiffness(dp_fuel, p_fuel)
     stiff_film = stiffness(dp_film, p_fuel)
 
-    temp = get_temp_at_eta(hw.cstar_eff, of_core, pc / PA_PER_PSI)
+    temp = film_core_mixed_temp(p_ox, p_fuel, hw.insert_id)
 
     res = {
         **flows,
