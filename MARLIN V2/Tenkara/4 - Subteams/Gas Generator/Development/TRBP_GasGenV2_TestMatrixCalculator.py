@@ -21,6 +21,8 @@ Usage
 
 import argparse
 import csv
+from math import gamma
+from math import sqrt
 import sys
 from dataclasses import dataclass
 from typing import Callable
@@ -58,6 +60,10 @@ class Hardware:
     CdA_torch_ox: float           # m^2
     CdA_torch_fuel: float         # m^2
     torch_cstar_eff: float        # dimensionless
+    GOx_gamma: float
+    CH4_gamma: float
+    GOx_R: float
+    CH4_R: float
 
 
 def series_cda(*cdas: float) -> float:
@@ -93,6 +99,10 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
         CdA_torch_ox= cfg["GOx_Cda"],                    # m^2
         CdA_torch_fuel= cfg["CH4_Cda"],                  # m^2
         torch_cstar_eff= cfg["torch_cstar_eff"],         # dimensionless
+        GOx_gamma = cfg["GOx_gamma"]
+        CH4_gamma = cfg["CH4_gamma"]
+        GOx_R = cfg["GOx_R"]
+        CH4_R = cfg["CH4_R"]
     )
 
 
@@ -162,8 +172,10 @@ def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
     mdot_gox = mdot_torch * (of_torch/(1+of_torch))
     mdot_ch4 = mdot_torch * 1/(1+of_torch)
 
-    P_CH4 = 
-    P_GOx = 
+    T_up = 278   # Kelvin
+    
+    P_CH4 = (mdot_ch4 **2 / (hw.CdA_torch_fuel)) * sqrt(hw.CH4_R * T_up/hw.CH4_gamma) * (((hw.CH4_gamma + 1) / 2) ** ((hw.CH4_gamma + 1) / (hw.CH4_gamma - 1)))
+    P_GOx = (mdot_gox **2 / (hw.CdA_torch_ox)) * sqrt(hw.GOx_R * T_up/hw.GOx_gamma) * (((hw.GOx_gamma + 1) / 2) ** ((hw.GOx_gamma + 1) / (hw.GOx_gamma - 1)))
 
     outputs = {
         "mdot_torch": mdot_torch,
