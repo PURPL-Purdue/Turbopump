@@ -99,9 +99,9 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
         CdA_torch_ox= cfg["GOx_Cda"],                    # m^2
         CdA_torch_fuel= cfg["CH4_Cda"],                  # m^2
         torch_cstar_eff= cfg["torch_cstar_eff"],         # dimensionless
-        GOx_gamma = cfg["GOx_gamma"]
-        CH4_gamma = cfg["CH4_gamma"]
-        GOx_R = cfg["GOx_R"]
+        GOx_gamma = cfg["GOx_gamma"],
+        CH4_gamma = cfg["CH4_gamma"],
+        GOx_R = cfg["GOx_R"],
         CH4_R = cfg["CH4_R"]
     )
 
