@@ -346,12 +346,12 @@ class InducerRadialEquilibrium:
 			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
 			#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
 		)
-		self._cad_assembly = assm
+		self._cad = [assm, blade_edges]
 		return assm
 
 	def ShowCAD(self):
-		if self._cad_assembly is None: self.CreateCAD()
-		show(self._cad_assembly)
+		if self._cad is None: self.CreateCAD()
+		show(*self._cad)
 
 
 if __name__ == "__main__":
