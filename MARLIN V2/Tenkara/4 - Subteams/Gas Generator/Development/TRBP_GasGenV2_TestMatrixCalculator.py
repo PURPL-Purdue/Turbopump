@@ -141,7 +141,7 @@ def get_cstar(of: float, pc_pa: float, hw: Hardware) -> float:
     """Return c*(OF, P_c[Pa]) -> m/s (ideal, from NASA CEA via RocketCEA)."""
     from rocketcea.cea_obj import CEA_Obj
     cea = CEA_Obj(oxName=hw.cea_ox, fuelName=hw.cea_fuel)
-    cstar = cea.get_Cstar(Pc=pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
+    cstar = hw.cstar_eff * cea.get_Cstar(Pc=pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
     return cstar
 
 def get_torch_cstar(of: float, pc_pa: float, hw: Hardware):
@@ -156,7 +156,7 @@ def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
     """Fixed-point iteration on P_c = c*(OF, P_c) * eff * mdot / (Cd*A_t)."""
     pc = CEA_PC_GUESS_PA
     for _ in range(max_iter):
-        cstar = get_cstar(of_overall, pc, hw) * hw.cstar_eff
+        cstar = get_cstar(of_overall, pc, hw)
         pc_new = cstar * mdot_total / hw.throat_cda
         if abs(pc_new - pc) / pc_new < tol:
             return pc_new, cstar
@@ -169,7 +169,7 @@ def stiffness(dp: float, p_in: float) -> float:
     return dp / p_in
 
 def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
-    cstar = get_torch_cstar(of_torch, P_c_torch, hw)
+    cstar = get_torch_cstar(of_torch, P_c_torch * PA_PER_PSI, hw)
     mdot_torch = P_c_torch * PA_PER_PSI * hw.torch_throat_area / cstar    # mdot in kg/s
     mdot_gox = mdot_torch * (of_torch/(1+of_torch))
     mdot_ch4 = mdot_torch * 1/(1+of_torch)
@@ -178,6 +178,9 @@ def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
     
     P_CH4 = (mdot_ch4 **2 / (hw.CdA_torch_fuel)) * sqrt(hw.CH4_R * T_up/hw.CH4_gamma) * (((hw.CH4_gamma + 1) / 2) ** ((hw.CH4_gamma + 1) / (hw.CH4_gamma - 1)))
     P_GOx = (mdot_gox **2 / (hw.CdA_torch_ox)) * sqrt(hw.GOx_R * T_up/hw.GOx_gamma) * (((hw.GOx_gamma + 1) / 2) ** ((hw.GOx_gamma + 1) / (hw.GOx_gamma - 1)))
+
+    print(f"P_CH4: {P_CH4}")
+    print(f"P_GOx: {P_GOx}")
 
     outputs = {
         "mdot_torch": mdot_torch,
@@ -263,7 +266,7 @@ def read_cases(path: str):
         for i, row in enumerate(reader, start=2):
             try:
                 yield (float(row["mdot_total_kg_s"]), float(row["OF_core"]),
-                       row["insert_id"].strip(), float(row["P_purge"], float(row["P_c_torch"]), float(row["of_torch"])))
+                       row["insert_id"].strip(), float(row["P_purge"]), float(row["P_c_torch"]), float(row["of_torch"]))
             except ValueError:
                 sys.exit(f"Bad number in input CSV on line {i}: {row}")
 

@@ -76,9 +76,9 @@ torch_combustion_volume: 0     # (m^3) This is the volume of the torch that is u
 torch_throat_area: 0.000007917 # (m^2) This is the area of the torch throat.
                                # Last updated: Sept 28th, 2026 by Miles Cohen
 
-torch_eff_throat_area: 0       # (m^2) This is the effective area of the torch throat, accounting for any losses.
+torch_eff_throat_area: 0.000007917       # (m^2) This is the effective area of the torch throat, accounting for any losses.
                                # Efficiency is assumed to be 1.0
-                               # Last updated: May 25th, 2026 by Miles Cohen
+                               # Last updated: Sept 28th, 2026 by Miles Cohen
 
 torch_fuel_type: "CH4"         # NASA CEA input for torch propellant
 CH4_gamma: 1.304               # (dimensionless) Methane specific heat ratio
