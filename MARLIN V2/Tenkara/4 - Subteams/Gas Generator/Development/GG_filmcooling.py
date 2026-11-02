@@ -24,7 +24,26 @@ import tc_vs_cstar_eff as tc
 #def_path = os.path.join(r'\MARLIN V2\Tenkara\4 - Subteams\Gas Generator\Inputs\GG_hardware_definitions.yaml')
 #def_path = 'C:\Users\miles\OneDrive\Documents\GitHub\Turbopump\MARLIN V2\Tenkara\4 - Subteams\Gas Generator\Inputs\GG_hardware_definitions.yaml'
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(script_dir)  # Go up one level
+def_path = os.path.join(parent_dir, 'Inputs', 'GG_hardware_definition.yaml')
+config = yaml.safe_load(open(def_path, 'r'))
+cea = CEA_Obj(config['GG_fuel_type'], config['GG_ox_type'], config['GG_fuel_type']) 
+step_size = 0.01
+psi2pa = 6894.757
 
+# IPA inlet temp
+IPA_temp = 298                   # K
+#IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
+IPA_MM = 60.1                    # g/mol
+#IPA_H = 1000 * IPA_H_mol / IPA_MM# kJ/kg
+
+# Film cooling insert label
+insert_id = '5%'
+if insert_id != '0%': 
+    film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
+else:
+    film_total_cda = 0.00000000001 # m^2
 
 def mdot(cda, pup, Pc, rho):
     #print(f'cda: {cda} pup: {pup} Pc: {Pc} rho: {rho}')
@@ -221,26 +240,16 @@ def main():
     print(f'LOx Stiffness: {100 * (LOx_feed_pressure - Pc_in)/LOx_feed_pressure:2.1f} %')
     print(f'IPA Stiffness: {100 * (IPA_feed_pressure - Pc_in)/IPA_feed_pressure:2.1f} %')
 
-def film_core_mixed_temp(LOx_feed: float, IPA_feed: float, insert_id: str):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(script_dir)  # Go up one level
-    def_path = os.path.join(parent_dir, 'Inputs', 'GG_hardware_definition.yaml')
-    config = yaml.safe_load(open(def_path, 'r'))
-    cea = CEA_Obj(config['GG_fuel_type'], config['GG_ox_type'], config['GG_fuel_type']) 
-    step_size = 0.01
-    psi2pa = 6894.757
+def film_core_mixed_temp(LOx_feed_pressure: float, IPA_feed_pressure: float, insert_id: str):
     # Film cooling insert label
     if insert_id != '0%': 
         film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
     else:
         film_total_cda = 0.00000000001 # m^2
-    # IPA inlet temp
-    IPA_temp = 298                   # K
-    #IPA_H_mol = 318.2                # Enthalpy at 298K kJ/mol
-    IPA_MM = 60.1                    # g/mol
-    #IPA_H = 1000 * IPA_H_mol / IPA_MM# kJ/kg
+
     # Chamber Pressure
     Pc_guess = 2400000              #pa
+    Pc_array = []
     ##########################################
     # Define input states
     ##########################################
