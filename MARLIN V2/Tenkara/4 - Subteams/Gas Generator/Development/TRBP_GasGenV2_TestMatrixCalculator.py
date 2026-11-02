@@ -26,11 +26,13 @@ from dataclasses import dataclass
 from typing import Callable
 import yaml
 
+from tc_vs_cstar_eff import get_temp_at_eta
+
 # --------------------------------------------------------------------------
 # Settings
 # --------------------------------------------------------------------------
 # Warning thresholds
-MIN_DP_OVER_PC = 0.20     # feed-system decoupling rule of thumb
+MIN_STIFF = 0.20     # feed-system decoupling rule of thumb
 CEA_PC_GUESS_PA = 1.0e6   # starting guess for the P_c iteration
 # Unit conversions
 PA_PER_PSI = 6894.757
@@ -43,8 +45,7 @@ FT_TO_M = 0.3048
 class Hardware:
     cda_ox: float                 # m^2
     cda_fuel: float               # m^2 (core fuel orifices)
-    cda_insert: float             # m^2 (selected film orifice insert; 0 = solid)
-    cda_film: float               # m^2 (film orifices downstream of the manifold)
+    cda_film: float               # m^2 (total Cda of film orifices + insert)
     rho_ox: float                 # kg/m^3
     rho_fuel: float               # kg/m^3
     throat_cda: float             # m^2 (total CdA of the stator nozzles)
@@ -66,15 +67,14 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
     with open(path) as f:
         cfg = yaml.safe_load(f)
 
-    # Insert IDs are compared as strings so 1, "1" and " 1 " all match
-    inserts = {str(k).strip(): v for k, v in cfg["film_insert_Cda"].items()}
-    key = str(insert_id).strip()
+    cda_film_insert = cfg["film_insert_Cda"][insert_id]
+    cda_film_orifice = cfg["film_Cda"]
+    cda_film = series_cda(cda_film_insert, cda_film_orifice)
 
     return Hardware(
         cda_ox=cfg["LOx_Cda"],
         cda_fuel=cfg["fuel_Cda"],
-        cda_insert=inserts[key],
-        cda_film=cfg["film_Cda"],
+        cda_film=cda_film,
         rho_ox=cfg["LOx_rho"],
         rho_fuel=cfg["IPA_rho"],
         throat_cda=cfg["stator_throat_area"],
@@ -94,8 +94,7 @@ def orifice_dp(mdot: float, cda: float, rho: float) -> float:
 
 def mass_flow_calculation(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     """Closed-form mass flows. The film flow is set by geometry, not chosen."""
-    cda_film_path = series_cda(hw.cda_insert, hw.cda_film)
-    r = cda_film_path / hw.cda_fuel                  # mdot_film / mdot_fuel
+    r = hw.cda_film / hw.cda_fuel                  # mdot_film / mdot_fuel
     mdot_fuel = mdot_total / (of_core + 1.0 + r)
     return {
         "mdot_ox": of_core * mdot_fuel,
@@ -114,25 +113,20 @@ def cooling_percent(mdot_film: float, mdot_total: float) -> float:
     return 100.0 * mdot_film / mdot_total
 
 
-def make_cstar_fn(hw: Hardware) -> Callable[[float, float], float]:
+def get_cstar(of: float, pc_pa: float, hw: Hardware) -> float:
     """Return c*(OF, P_c[Pa]) -> m/s (ideal, from NASA CEA via RocketCEA)."""
     from rocketcea.cea_obj import CEA_Obj
     cea = CEA_Obj(oxName=hw.cea_ox, fuelName=hw.cea_fuel)
-
-    def cstar(of: float, pc_pa: float) -> float:
-        # RocketCEA takes Pc in psia and returns c* in ft/s
-        return cea.get_Cstar(Pc=pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
-
+    cstar = cea.get_Cstar(Pc=pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
     return cstar
 
 
 def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
-                     cstar_fn: Callable[[float, float], float],
                      tol: float = 1e-4, max_iter: int = 1000):
     """Fixed-point iteration on P_c = c*(OF, P_c) * eff * mdot / (Cd*A_t)."""
     pc = CEA_PC_GUESS_PA
     for _ in range(max_iter):
-        cstar = cstar_fn(of_overall, pc) * hw.cstar_eff
+        cstar = get_cstar(of_overall, pc, hw) * hw.cstar_eff
         pc_new = cstar * mdot_total / hw.throat_cda
         if abs(pc_new - pc) / pc_new < tol:
             return pc_new, cstar
@@ -140,43 +134,50 @@ def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
     raise RuntimeError(f"P_c iteration did not converge (last P_c = {pc:.0f} Pa)")
 
 
-def solve(mdot_total: float, of_core: float, hw: Hardware,
-          cstar_fn: Callable[[float, float], float]) -> dict:
+def stiffness(dp: float, p_in: float) -> float:
+    """Stiffness: dp / p_in."""
+    return dp / p_in
+
+
+def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     flows = mass_flow_calculation(mdot_total, of_core, hw)
     of_tot = overall_of(flows["mdot_ox"], flows["mdot_fuel"], flows["mdot_film"])
     cool_pct = cooling_percent(flows["mdot_film"], mdot_total)
-    pc, cstar = chamber_pressure(mdot_total, of_tot, hw, cstar_fn)
+    pc, cstar = chamber_pressure(mdot_total, of_tot, hw)
 
     dp_ox = orifice_dp(flows["mdot_ox"], hw.cda_ox, hw.rho_ox)
     dp_fuel = orifice_dp(flows["mdot_fuel"], hw.cda_fuel, hw.rho_fuel)
+    dp_film = orifice_dp(flows["mdot_film"], hw.cda_film, hw.rho_fuel)
+
     p_ox = pc + dp_ox
     p_fuel = pc + dp_fuel    # inlet pressure feeding both the core and film paths
 
-    dp_film_orifice = orifice_dp(flows["mdot_film"], hw.cda_film, hw.rho_fuel)
-    p_man = pc + dp_film_orifice
-    dp_insert = p_fuel - p_man
+    stiff_ox = stiffness(dp_ox, p_ox)
+    stiff_fuel = stiffness(dp_fuel, p_fuel)
+    stiff_film = stiffness(dp_film, p_fuel)
+
+    temp = get_temp_at_eta(hw.cstar_eff, of_core, pc / PA_PER_PSI)
 
     res = {
         **flows,
-        "cooling_pct": cool_pct,
-        "of_overall": of_tot,
         "P_c": pc,
+        "of_overall": of_tot,
+        "cooling_pct": cool_pct,
         "P_ox": p_ox,
         "P_fuel": p_fuel,
+        "stiff_ox": stiff_ox,
+        "stiff_fuel": stiff_fuel,
+        "stiff_film": stiff_film,
         "cstar": cstar,
-        "dp_ox_over_pc": dp_ox / pc,
-        "dp_fuel_over_pc": dp_fuel / pc,
-        "P_man": p_man,
-        "dp_insert": dp_insert,
-        "dp_film_orifice": dp_film_orifice,
+        "temp": temp,
     }
 
     # Warnings
     warn = []
-    if res["dp_ox_over_pc"] < MIN_DP_OVER_PC:
-        warn.append(f"LOX dP/Pc={res['dp_ox_over_pc']:.2f}<{MIN_DP_OVER_PC}")
-    if res["dp_fuel_over_pc"] < MIN_DP_OVER_PC:
-        warn.append(f"IPA dP/Pc={res['dp_fuel_over_pc']:.2f}<{MIN_DP_OVER_PC}")
+    if res["stiff_ox"] < MIN_STIFF:
+        warn.append(f"LOX dP/Pc={res['stiff_ox']:.2f}<{MIN_STIFF}")
+    if res["stiff_fuel"] < MIN_STIFF:
+        warn.append(f"IPA dP/Pc={res['stiff_fuel']:.2f}<{MIN_STIFF}")
     res["warnings"] = "; ".join(warn)
     return res
 
@@ -191,7 +192,8 @@ OUT_COLS = [
     "P_c_psia", "P_ox_psia", "P_fuel_psia",
     "cooling_pct", "OF_overall",
     "mdot_ox_kg_s", "mdot_fuel_kg_s", "mdot_film_kg_s",
-    "cstar_ms",
+    "stiff_ox", "stiff_fuel", "stiff_film",
+    "cstar_ms", "temp",
     "warnings"
 ]
 
@@ -224,7 +226,11 @@ def to_row(mdot: float, of_core: float, insert_id: str, r: dict) -> dict:
         "mdot_ox_kg_s": r["mdot_ox"],
         "mdot_fuel_kg_s": r["mdot_fuel"],
         "mdot_film_kg_s": r["mdot_film"],
+        "stiff_ox": r["stiff_ox"],
+        "stiff_fuel": r["stiff_fuel"],
+        "stiff_film": r["stiff_film"],
         "cstar_ms": r["cstar"],
+        "temp": r["temp"],
         "warnings": r["warnings"],
     }
 
@@ -245,10 +251,9 @@ def main():
             if insert_id not in hw_cache:
                 hw_cache[insert_id] = load_hardware(args.config, insert_id)
             hw = hw_cache[insert_id]
-            if cstar_fn is None:
-                cstar_fn = make_cstar_fn(hw)
+            
             rows.append(to_row(mdot, of_core, insert_id,
-                               solve(mdot, of_core, hw, cstar_fn)))
+                               solve(mdot, of_core, hw)))
         except Exception as e:   # keep going so one bad case doesn't kill the batch
             row = {c: None for c in OUT_COLS}
             row.update(mdot_total_kg_s=mdot, OF_core=of_core, insert_id=insert_id,
