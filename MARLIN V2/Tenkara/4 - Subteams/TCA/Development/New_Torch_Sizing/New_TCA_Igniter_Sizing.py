@@ -213,14 +213,14 @@ def main():
     T_reactant = np.array([T_AMB_KELVIN, T_AMB_KELVIN])  # Reactant temperatures (K)
     fuel_weights = np.array([1.0, 0.0])
     ox_weights = np.array([0.0, 1.0])
-    OF = 2.0
+    OF = 1.5
     p_c = p_c / bar2pa
 
     reac = cea.Mixture(reac_names)
     prod = cea.Mixture(reac_names, products_from_reactants=True)
     solver = cea.RocketSolver(prod, reactants=reac)
     solution = cea.RocketSolution(solver)
-    weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=2.5)
+    weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=OF)
 
     hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant)/cea.R
 
