@@ -265,7 +265,7 @@ class InducerRadialEquilibrium:
 		]
 		return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
-	def GetBladeLines(self, num_lines: int=2, resolution: int = 200) -> list[np.ndarray]:
+	def GetBladeLines(self, num_lines: int=7, resolution: int = 200) -> list[np.ndarray]:
 		"""
 		@Charlie zhu
 		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
@@ -281,7 +281,7 @@ class InducerRadialEquilibrium:
 		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
 		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
 
-		# radii clustered toward the tip, where the leading edge turns tangent to the tip circle
+		# radii clustered toward the tip
 		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
 		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
