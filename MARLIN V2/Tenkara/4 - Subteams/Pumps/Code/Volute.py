@@ -34,6 +34,8 @@ class VoluteDesignPoint:
 class VoluteGeometry:
     e_sp: Q_[float] # Wrap angle
     n_volutes: int # Number of volutes
+    b3: Q_[float] # Volute width at impeller outlet
+    h_gap: Q_[float] # Volute gap height at impeller outlet
 
 def getKv(N_s: float) -> float:
     a, b = emp.Kv()
@@ -43,6 +45,13 @@ def getKv(N_s: float) -> float:
 def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant velocity Stepanoff method
     avg_V = K_v * np.sqrt(2 * g.to('ft/s**2') * H.to('feet'))
     return avg_V
+
+def getThroatArea(Q: Q_[float], avg_V: Q_[float]) -> Q_[float]:
+    A_throat = Q / avg_V
+    return A_throat
+
+#def getRhombusSideLength
+
 
 def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float], n_volutes: int) -> Q_[float]:  # Get areas as a function of angle
     #if e < Q_(1, 'degrees'):
@@ -113,6 +122,7 @@ if __name__ == "__main__":
     lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
     throatA = Q_(A_array[-1], "cm^2")
     staticP2 = calcDiffuserPressures(stagnationP1, throatA, lox_targetA, avg_V, lox_rho)
+    diffuserL = sizeDiffuserLength(throatA, Q_(12/16, "inches"), Q_(15, "degrees")) # Placeholder diffuser length
     
     #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
@@ -140,6 +150,7 @@ if __name__ == "__main__":
     print(f"Throat area: {Q_(A_array[-1], "cm^2").to("in^2"):.4f}")
     print(f"Static pressure inside LOX volute: {staticP1.to('bar'):.4f}")
     print(f"Static pressure at LOX diffuser exit: {staticP2.to('bar'):.4f}")
+    print(f"Diffuser length: {diffuserL.to('millimeters'):.4f}")
 
     #radial_thrust = calcRadialThrust(
     #    lox_pump.DesignHeadRise,

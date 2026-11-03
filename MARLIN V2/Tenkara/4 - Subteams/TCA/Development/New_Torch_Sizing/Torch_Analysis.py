@@ -9,9 +9,11 @@ import cea as cea
 
 CM_TO_IN = 1 / 2.54          # Centimeters to Inches
 IN_TO_CM = 2.54              # Inches to Centimeters
+IN_TO_M = .0254
 BAR_TO_PA = 1e5              # Bar to Pascals
 PSI_TO_PA = 6894.757293      # PSI to Pascals
 PA_TO_PSI = 1 / PSI_TO_PA    # Pascals to PSI
+LBM_TO_KG = 0.453592         #Pound (mass) to Kg
 
 T_AMB_CELSIUS = 20           # [deg C]
 T_AMB_KELVIN = 293.15        # [K]
@@ -100,11 +102,11 @@ def main():
 
     ## Fixed torch parameters
 
-    D_t = 0.004781        # Throat diameter [m]
-    Df = 0.000849         # Fuel injector diameter [m]
-    Dox = 0.001135        # Oxidizer injector diameter [m]
+    D_t = 0.268 * IN_TO_M        # Throat diameter [m]
+    Df = 0.063 * IN_TO_M         # Fuel injector diameter [m]
+    Dox = 0.063 * IN_TO_M        # Oxidizer injector diameter [m]
 
-    Tc = 3205             # Chamber temperature [K]
+    Tc = 1879             # Chamber temperature [K]
     Tox = 22 + 273.15     # Oxidizer line temperature [K]
     Tf = 22 + 273.15      # Fuel line temperature [K]
 
@@ -112,10 +114,9 @@ def main():
     k_ox = 1.40           # Oxidizer gamma [--]
     k_fuel = 1.31         # Fuel gamma [--]
 
-    mdot = 0.01765        # Total mass flow rate [kg/s]
-    of_ratio = 2.5        # O/F Ratio [--]
+    mdot = 0.0783 * LBM_TO_KG        # Total mass flow rate [kg/s]
+    of_ratio = 1.5        # O/F Ratio [--]
     stiffness = 1.65      # System stiffness [--]
-
 
     # Split total mass flow
     mdot_ox = mdot * of_ratio / (of_ratio + 1)
@@ -125,10 +126,8 @@ def main():
     # Initial CEA estimate at 200 psi
     k_c, R = get_k(200 * PSI_TO_PA, of_ratio)
 
-
     # Iterate chamber pressure, gamma, and R
     k_c, R, Pc = solve_chamber_pressure(diameter_to_area(D_t), mdot, Tc, of_ratio, k_c, R)
-
 
     # Injector pressures required for given mass flow
     Pox = chamber_pressure(diameter_to_area(Dox), k_ox, mdot_ox, Tox, R_ox)
