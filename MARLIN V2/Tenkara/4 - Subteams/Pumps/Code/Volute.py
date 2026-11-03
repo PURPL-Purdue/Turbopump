@@ -37,6 +37,10 @@ class VoluteGeometry:
     b3: Q_[float] # Volute width at impeller outlet
     h_gap: Q_[float] # Volute gap height at impeller outlet
 
+b3 = Q_(2.4, "millimeters")
+h_gap = Q_(1, "millimeters")
+clearance = Q_(0.008, "inches")
+
 def getKv(N_s: float) -> float:
     a, b = emp.Kv()
     K_v = a * N_s**b
@@ -47,23 +51,33 @@ def getVoluteVelocity(K_v: float, H: Q_[float]) -> Q_[float]:   # Uses constant 
     return avg_V
 
 def getThroatArea(Q: Q_[float], avg_V: Q_[float]) -> Q_[float]:
-    A_throat = Q / avg_V
-    return A_throat
+    At = Q_(Q / avg_V, "in^2")
+    return At
 
-#def getRhombusSideLength
+def getMinAngle(b3: Q_[float], h_gap: Q_[float], At: Q_[float]) -> Q_[float]:
+    theta_min = (((b3 * h_gap) - ((b3**2) / 4) + ((b3**2) / 2)) / At) * Q_(360, "degrees")
+    return theta_min
 
+def getRhombusSideLength(At: Q_[float], theta: Q_[float], b3: Q_[float], h_gap: Q_[float]) -> Q_[float]:
+    a = np.sqrt((At * (theta / Q_(360, "degrees"))) + ((b3**2) / 4) - (b3 * h_gap))
+    return a
 
-def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float], n_volutes: int) -> Q_[float]:  # Get areas as a function of angle
-    #if e < Q_(1, 'degrees'):
-    #    A = (Q_(1, 'degrees') / e_sp) * (Q / (n_volutes * avg_V))
-    #    print(e, A)
+def getAreaAtAngle(Q: Q_[float], avg_V: Q_[float], e: Q_[float], e_sp: Q_[float], theta_min: Q_[float], b3: Q_[float], h_gap: Q_[float], n_volutes: int) -> Q_[float]:  # Get areas as a function of angle
+    #if e < theta_min:
+    #    A = (b3 * h_gap) + (e / theta_min) * ()
     #    return A
+    #else:
+    #    A = (e / e_sp) * (Q / (n_volutes * avg_V))
     A = (e / e_sp) * (Q / (n_volutes * avg_V))
-
-    min_gap = Q_(1, "mm")
-    if np.sqrt(A) < min_gap:
-        A = min_gap**2
     return A
+
+def getVoluteTipHeight(a: Q_[float], b3: Q_[float], h_gap: Q_[float], impeller_r: Q_[float], clearance: Q_[float]) -> Q_[float]:
+    h_top = (2 * a / np.sqrt(2)) - b3 / 2 + h_gap + impeller_r + clearance
+
+    if h_top < 1.05 * impeller_r:
+        print(f"!!! Below clearance !!!")
+
+    return h_top
 
 def calcRadialThrust(H: Q_[float], D2: Q_[float], B2_total: Q_[float], rho: Q_[float], Q: Q_[float], Q_bep: Q_[float]) -> Q_[float]:
     K = 0.36*(1 - (Q.to('gallons per minute') / Q_bep.to('gallons per minute'))**2)
@@ -86,9 +100,10 @@ class Volute:
         self.K_v = getKv(self.N_s)
         self.avg_V = getVoluteVelocity(self.K_v, self.H)
         self.n_volutes = 2
+        self.theta_min = getMinAngle(self.b3, self.h_gap, self.At)
 
         for theta in np.linspace(0, self.e_sp.magnitude, 100):
-            self.A_theta = getAreaAtAngle(self.Q, self.avg_V, Q_(theta, 'radians'), self.e_sp, self.n_volutes)
+            self.A_theta = getAreaAtAngle(self.Q, self.avg_V, Q_(theta, 'radians'), self.e_sp, self.theta_min, self.b3, self.h_gap, self.n_volutes)
 
         self.diffuserLength = sizeDiffuserLength(self.At, self.D_target, self.diffuserTheta)
         self.staticP2 = calcDiffuserPressures(self.stagnationP1, self.At, self.targetA, self.avg_V, self.rho)
@@ -108,10 +123,12 @@ if __name__ == "__main__":
     K_v = getKv(lox_N_s)
     avg_V = getVoluteVelocity(K_v, lox_H)
     plt.figure()
+    At = getThroatArea(lox_Q, avg_V)
+    theta_min = getMinAngle(b3, h_gap, At)
     A_array = []
     thetas = []
     for theta in np.linspace(0, 360, 361):
-        A_theta = getAreaAtAngle(lox_Q, avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), 1)
+        A_theta = getAreaAtAngle(lox_Q, avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), theta_min, b3, h_gap, 1)
         A_array.append(A_theta.to('cm^2').m)
         if A_theta == Q_(1, 'mm^2'):
             thetas.append(theta)
@@ -122,7 +139,7 @@ if __name__ == "__main__":
     lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
     throatA = Q_(A_array[-1], "cm^2")
     staticP2 = calcDiffuserPressures(stagnationP1, throatA, lox_targetA, avg_V, lox_rho)
-    diffuserL = sizeDiffuserLength(throatA, Q_(12/16, "inches"), Q_(15, "degrees")) # Placeholder diffuser length
+    diffuserL = sizeDiffuserLength(throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
     
     #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
@@ -145,7 +162,7 @@ if __name__ == "__main__":
     print(f"K_v: {K_v:.4f}")
     print(f"Impeller static pressure: {impellerStaticP.to('bar'):.4f}")
     print(f"Average velocity: {avg_V.to('m/s'):.4f}")
-    print(f"Tongue placement angle: {Q_(thetas[-1], "degrees").to("degrees"):.4f}")
+    print(f"Tongue placement angle: {theta_min.to("degrees"):.4f}")
     print(f"Start area: {Q_(A_array[0], "cm^2").to('mm^2'):.4f}")
     print(f"Throat area: {Q_(A_array[-1], "cm^2").to("in^2"):.4f}")
     print(f"Static pressure inside LOX volute: {staticP1.to('bar'):.4f}")
