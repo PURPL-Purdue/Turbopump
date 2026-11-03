@@ -179,9 +179,6 @@ def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
     P_CH4 = (mdot_ch4 / (hw.CdA_torch_fuel)) * sqrt(hw.CH4_R * T_up/hw.CH4_gamma) * (((hw.CH4_gamma + 1) / 2) ** ((hw.CH4_gamma + 1) / (2* (hw.CH4_gamma - 1))))
     P_GOx = (mdot_gox / (hw.CdA_torch_ox)) * sqrt(hw.GOx_R * T_up/hw.GOx_gamma) * (((hw.GOx_gamma + 1) / 2) ** ((hw.GOx_gamma + 1) / (2 * (hw.GOx_gamma - 1))))
 
-    print(f"P_CH4: {P_CH4}")
-    print(f"P_GOx: {P_GOx}")
-
     outputs = {
         "mdot_torch": mdot_torch,
         "P_CH4": P_CH4,
