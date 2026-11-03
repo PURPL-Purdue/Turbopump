@@ -135,8 +135,8 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
-	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GetInducerlessNPSH_r(pump))
+	#print(Pump1D.GetTorque(pump))
+	print(f'{propellant.name} inducer-less NPSH: {Pump1D.GetInducerlessNPSH_r(pump)}')
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = inducer_head_rise[propellant.name]	
@@ -169,7 +169,6 @@ def MakeDesign(propellant: Propellant):
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
-	#imp_cad.SaveSTEP()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
@@ -183,6 +182,11 @@ def MakeDesign(propellant: Propellant):
 		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
 	)
 	show(pump_assembly)
+
+	# Save STEP file
+	do_save = True if input('Save STEP? (y):\n') == 'y' else False
+	if do_save:
+		imp_cad.SaveSTEP()
 
 	return pump
 
