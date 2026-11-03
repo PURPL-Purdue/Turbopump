@@ -76,11 +76,12 @@ class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
 
 	Lead follows beta(z) = beta1 + (beta2b - beta1) (z/L)^2 at the rms radius; beta2b is solved so the
-	mass-averaged outlet Euler head equals H_rise / eta_bl. Blade blockage uses N blades of constant
+	mass-averaged outlet Euler head equals H_rise / eta_bl, with the flow leaving at beta2b - delta2 (Gülich deviation,
+	see _deviation); no deviation would assume SP-8052's perfect guidance. Blade blockage uses N blades of constant
 	normal thickness at the tip, tapering linearly to hub_thickness_ratio times that at the hub (sec. 3.1.11,
 	eq. 42; SP-8052 recommends thicker at the hub); blade_thickness=None disables it.
 	incidence_ratio (alpha/beta, ~0.425) offsets the flow angle from the blade angle at the inlet,
-	fading linearly to zero at the outlet; None disables it.
+	blending linearly into the deviation at the outlet; None disables it.
 
 	eta_bl = 0.85  # Blade efficiency, sec. 2.2.6
 	"""
@@ -117,6 +118,7 @@ class InducerRadialEquilibrium:
 			self.beta1 = gamma1 / (1.0 - self.incidence_ratio)
 			self.alpha1 = self.incidence_ratio * self.beta1
 		self.beta2b = self._solve_beta2b()
+		self.delta2 = self._deviation(self.beta2b)		# outlet deviation at the rms radius, the flow leaves at beta2b - delta2
 
 	# ---- SI-float internals -------------------------------------------------
 	def _r_hub(self, z):
@@ -129,6 +131,21 @@ class InducerRadialEquilibrium:
 	def _beta(self, z, beta2b):
 		# Parabolic camber distribution, SP-8052 eq. 74 (specified at the rms radius, sec. 3.1.12)
 		return self.beta1 + (beta2b - self.beta1) * (z / self.L) ** 2
+
+	def _deviation(self, beta2b):
+		# Outlet deviation on the rms line (Gülich, inducer design table), angles in degrees:
+		# delta_2 = (2 + (beta_2B - beta_1B) / 3) (t / L)^(1/3), with the outlet pitch t and the blade length L from the swept leading edge
+		z = np.linspace(0, self.L, 200)
+		r = self._r_ms(z)
+		tan_beta = np.tan(self._beta(z, beta2b))
+		theta = integrate.cumulative_trapezoid(1 / (r * tan_beta), z, initial=0)		# wrap, as in GetBladeLines
+		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		z_LE = np.interp(0, theta - get_LE_theta(r), z)
+		# blade arclength: dl^2 = dz^2 + dr^2 + (r dtheta)^2, with r dtheta = dz / tan(beta)
+		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + np.gradient(r, z)**2 + 1 / tan_beta**2), z, initial=0)
+		length = arclength[-1] - np.interp(z_LE, z, arclength)
+		pitch = 2 * np.pi * r[-1] / self.Z_blade
+		return np.radians((2 + np.degrees(beta2b - self.beta1) / 3) * (pitch / length)**(1 / 3))
 
 	def _dA(self, r, lam, strict=True):
 		# Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
@@ -152,7 +169,8 @@ class InducerRadialEquilibrium:
 		return lam
 
 	def _lead(self, z, beta2b):
-		gamma = self._beta(z, beta2b) - self.alpha1 * (1.0 - z / self.L)
+		# Flow angle: the blade angle less the incidence at the inlet and the deviation at the outlet, linearly in between (own choice)
+		gamma = self._beta(z, beta2b) - self.alpha1 * (1.0 - z / self.L) - self._deviation(beta2b) * z / self.L
 		lam_sched = self._r_ms(z) * np.tan(gamma)  # eq. 33: lambda = r tan(beta)
 		return max(lam_sched, self._lam_flow(z))  # lam below the zero-swirl lead would give negative swirl
 
@@ -166,7 +184,7 @@ class InducerRadialEquilibrium:
 		return max((A0 - self.Q / (self.omega * lam)) / A1, 0.0)
 
 	def _psi(self, r, z, beta2b):
-		# Eq. 38: psi_l = C/(r^2 + lambda^2), from radial equilibrium (eq. 34) with perfect guidance (eq. 35) and zero loss (eq. 36)
+		# Eq. 38: psi_l = C/(r^2 + lambda^2), from radial equilibrium (eq. 34) with guidance along the flow lead of _lead (eq. 35) and zero loss (eq. 36)
 		return self._C(z, beta2b) / (np.asarray(r) ** 2 + self._lead(z, beta2b) ** 2)
 
 	def _avg_angular_momentum(self, beta2b):
@@ -367,7 +385,7 @@ if __name__ == "__main__":
 	for col, propellant, inducer in zip(axes.T, ('LOX', 'IPA'), (lox_pump.Inducer, ipa_pump.Inducer)):
 
 		eq = InducerRadialEquilibrium(inducer, incidence_ratio=0, blade_thickness=Q_(0.5, 'mm'))
-		print(f"{propellant}: beta1 =  {np.degrees(eq.beta1):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg")
+		print(f"{propellant}: beta1 =  {np.degrees(eq.beta1):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg, delta2 = {np.degrees(eq.delta2):.2f} deg")
 		for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
 			z = inducer.L_ax * frac
 			r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)

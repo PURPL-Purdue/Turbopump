@@ -74,15 +74,15 @@ meridional_geometry = {
 
 blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.1,
-		lead_sweep=Q_(10, 'deg'),
-		target_wrap = Q_(115, 'deg'), # cubic only
+		sj=0.2,
+		lead_sweep=Q_(-20, 'deg'),
+		target_wrap = Q_(130, 'deg'), # cubic only
 		use_cubic = False
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.1,
-		lead_sweep=Q_(0, 'deg'),
+		sj=0.15,
+		lead_sweep=Q_(-20, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False
 	)
@@ -148,7 +148,7 @@ def MakeDesign(propellant: Propellant):
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
 	inducer_assm = inducer_eq.CreateCAD()
-	inducer_eq.ShowCAD()
+	#inducer_eq.ShowCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
@@ -164,8 +164,8 @@ def MakeDesign(propellant: Propellant):
 		blade_params=blade_params[propellant]
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines()#.show()
+	imp_blade_design.PlotInletTriangles(free_vortex=False).show()
+	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
