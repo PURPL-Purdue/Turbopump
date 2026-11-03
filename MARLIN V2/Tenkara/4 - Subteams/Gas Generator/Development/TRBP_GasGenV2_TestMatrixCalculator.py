@@ -15,7 +15,7 @@ Unknowns: mdot_ox, mdot_fuel, mdot_film, P_ox, P_fuel, P_c.
 
 Usage
 -----
-    python gg_injector_solver.py --config GG_hardware_definition.yaml \
+    python gg_injector_solver.py --config GG_hardware_definition.yaml 
                                  --input TestMatrix_Inputs.csv --output TestMatrix_Outputs.csv
 """
 
@@ -35,7 +35,7 @@ from GG_filmcooling import film_core_mixed_temp
 # --------------------------------------------------------------------------
 # Warning thresholds
 MIN_STIFF = 0.20     # feed-system decoupling rule of thumb
-CEA_PC_GUESS_PA = 1.0e6   # starting guess for the P_c iteration
+CEA_PC_GUESS_PA = 1.0e6   # starting guess for the P_c iterationpy
 # Unit conversions
 PA_PER_PSI = 6894.757
 FT_TO_M = 0.3048
