@@ -1,22 +1,20 @@
 """
 TRBP Gas Generator V2.0
-Injector Feed-Pressure Solver
+Injector Test Matrix Calculator
 
-Inputs : mdot_total_kg_s, OF_core, insert_id, P_purge, P_c_torch, OF_torch
-Outputs: upstream LOX and IPA pressure, chamber pressure, overall OF, film cooling %, 
-            torch CH4 and GOx pressures, cstar, temperature
+Inputs : Total mdot, core OF, insert label, Torch chamber pressure, Torch OF
+Outputs: LOX and IPA feed pressures, chamber pressure, overall OF, film cooling %, 
+            torch GOx and CH4 feed pressures, torch mass flow, and diagnostics
 
-Usage: python TRBP_GasGenV2_TestMatrixCalculator.py
-            --config GG_hardware_definition.yaml --input TestMatrix_Inputs.csv --output TestMatrix_Outputs.csv
+Usage : python TRBP_GasGenV2_TestMatrixCalculator.py
+--config GG_hardware_definition.yaml --input TestMatrix_Inputs.csv --output TestMatrix_Outputs.csv
 """
 
-import argparse
-import csv
-from math import gamma
-from math import sqrt
 import sys
+import csv
+import argparse
+from math import sqrt
 from dataclasses import dataclass
-from typing import Callable
 import yaml
 
 from GG_filmcooling import film_core_mixed_temp
@@ -24,8 +22,10 @@ from GG_filmcooling import film_core_mixed_temp
 # --------------------------------------------------------------------------
 # Settings
 # --------------------------------------------------------------------------
+
+# Warning thresholds
 MIN_STIFF = 0.20     # feed-system decoupling rule of thumb
-CEA_PC_GUESS_PA = 1.0e6   # starting guess for the P_c iteration
+
 # Unit conversions
 PA_PER_PSI = 6894.757
 FT_TO_M = 0.3048
@@ -61,7 +61,8 @@ def series_cda(*cdas: float) -> float:
     If any orifice is fully blocked (CdA = 0), nothing flows, so the result is 0."""
     if any(c <= 0.0 for c in cdas):
         return 0.0
-    return sum(1.0 / c**2 for c in cdas) ** -0.5
+    else:
+        return sum(1.0 / c**2 for c in cdas) ** -0.5
 
 def load_hardware(path: str, insert_id: str) -> Hardware:
     """Load the YAML and select the film insert named by insert_id."""
@@ -83,12 +84,12 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
         cstar_eff=cfg["CSTAR_eff"],
         cea_ox=cfg["GG_ox_type"],
         cea_fuel=cfg["GG_fuel_type"],
-        cea_torch_fuel= cfg["torch_fuel_type"],          # RocketCEA methane name
-        cea_torch_ox= cfg["torch_ox_type"],              # RocketCEA GOx name
-        torch_throat_area= cfg["torch_eff_throat_area"], # Effective torch throat area m^2
-        CdA_torch_ox= cfg["GOx_Cda"],                    # m^2
-        CdA_torch_fuel= cfg["CH4_Cda"],                  # m^2
-        torch_cstar_eff= cfg["torch_cstar_eff"],         # dimensionless
+        cea_torch_fuel= cfg["torch_fuel_type"],
+        cea_torch_ox= cfg["torch_ox_type"],
+        torch_throat_area= cfg["torch_eff_throat_area"],
+        CdA_torch_ox= cfg["GOx_Cda"],
+        CdA_torch_fuel= cfg["CH4_Cda"],
+        torch_cstar_eff= cfg["torch_cstar_eff"],
         GOx_gamma = cfg["GOx_gamma"],
         CH4_gamma = cfg["CH4_gamma"],
         GOx_R = cfg["GOx_R"],
@@ -100,7 +101,10 @@ def load_hardware(path: str, insert_id: str) -> Hardware:
 # --------------------------------------------------------------------------
 def orifice_dp(mdot: float, cda: float, rho: float) -> float:
     """Pressure drop (Pa) needed to pass mdot through an orifice of effective area cda."""
-    return (mdot / cda) ** 2 / (2.0 * rho)
+    if cda == 0.0:
+        return 0.0
+    else:
+        return (mdot / cda) ** 2 / (2.0 * rho)
 
 def mass_flow_calculation(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     """Closed-form mass flows. The film flow is set by geometry, not chosen."""
@@ -137,7 +141,7 @@ def get_torch_cstar(of: float, pc_pa: float, hw: Hardware):
 def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
                      tol: float = 1e-4, max_iter: int = 1000):
     """Fixed-point iteration on P_c = c*(OF, P_c) * eff * mdot / (Cd*A_t)."""
-    pc = CEA_PC_GUESS_PA
+    pc = 1.0e6
     for _ in range(max_iter):
         cstar = get_cstar(of_overall, pc, hw)
         pc_new = cstar * mdot_total / hw.throat_cda
@@ -204,9 +208,9 @@ def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     # Warnings
     warn = []
     if res["stiff_ox"] < MIN_STIFF:
-        warn.append(f"LOX dP/Pc={res['stiff_ox']:.2f}<{MIN_STIFF}")
+        warn.append(f"LOX stiff={res['stiff_ox']:.2f}<{MIN_STIFF}")
     if res["stiff_fuel"] < MIN_STIFF:
-        warn.append(f"IPA dP/Pc={res['stiff_fuel']:.2f}<{MIN_STIFF}")
+        warn.append(f"IPA stiff={res['stiff_fuel']:.2f}<{MIN_STIFF}")
     res["warnings"] = "; ".join(warn)
     return res
 
@@ -215,8 +219,8 @@ def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
 # --------------------------------------------------------------------------
 IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id", "P_purge", "P_c_torch", "of_torch"]
 
-## OLD ORDER, KEPT FOR REFERENCE
-#OUT_COLS = [
+# # OLD ORDER, KEPT FOR REFERENCE
+# OUT_COLS = [
 #     "mdot_total_kg_s", "OF_core", "insert_id",
 #     "P_c_psia", "P_ox_psia", "P_fuel_psia",
 #     "cooling_pct", "OF_overall",
@@ -293,6 +297,10 @@ def to_row(mdot: float, of_core: float, insert_id: str, P_purge: float, P_c_torc
         "cstar_ms": r["cstar"],
         "warnings": r["warnings"],
     }
+
+# --------------------------------------------------------------------------
+# Main
+# --------------------------------------------------------------------------
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
