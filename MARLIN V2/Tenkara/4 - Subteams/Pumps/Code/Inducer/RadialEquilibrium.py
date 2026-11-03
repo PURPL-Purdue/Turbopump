@@ -13,7 +13,6 @@ from warnings import warn
 # temporary, will move later
 import cadquery.func
 from cadquery.vis import show
-from Helpers import CAD
 
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
@@ -349,7 +348,7 @@ class InducerRadialEquilibrium:
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API
 		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
-
+		from Helpers import CAD
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
 		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, True)) for p in blade_lines]
 		camber = cadquery.func.loft(blade_edges)
@@ -400,7 +399,6 @@ if __name__ == "__main__":
 		PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
 				f"{propellant} inducer meanline velocity triangles"
 			).show()
-		eq.ShowBladeLines()  # blocks until the viewer is closed
 
 	axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
 	axes[1, 0].set_ylabel("$c_a$ [m/s]")
