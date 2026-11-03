@@ -135,15 +135,15 @@ def SizeInletForImpeller(design_point: InducerDesignPoint, base: SizingConstants
 
 def PrintInletSizing(sizing: InletSizing, name: str = 'Inducer') -> None:
 	print(f"\n===== {name} inducer inlet sized from the impeller inlet =====")
-	print(f"Impeller inlet (given)     d_1 = {sizing.D_tip.to('mm'):.3f}, d_hub = {sizing.D_hub_2.to('mm'):.3f}")
+	print(f"Impeller inlet (given)     d_1 = {sizing.D_tip.to('in'):.3f}, d_hub = {sizing.D_hub_2.to('in'):.3f}")
 	print(f"Required head coefficient  psi_2 = {sizing.psi_2:.4f} (psi_1 = {sizing.constants.psi_1}, sqrt ratio = {sizing.taper_ratio:.3f})")
-	print(f"Inlet hub radius           R_h1 = {sizing.R_hub_1.to('mm'):.3f}")
+	print(f"Inlet hub radius           R_h1 = {sizing.R_hub_1.to('in'):.3f}")
 	print(f"Hub to tip ratio           rho = {sizing.hub_tip_ratio:.4f}")
 	print(f"Cavitation parameter       lambda_w = {sizing.lambda_w:.4f} needed to make d_1 the optimum")
-	print(f"Optimal tip diameter       {sizing.D_opt_nominal.to('mm'):.3f} at nominal lambda_w, d_1 is {100 * sizing.tip_error:+.1f}% from it")
-	print(f"Optimal tip band           {sizing.D_opt_band[0].to('mm'):.3f} to {sizing.D_opt_band[1].to('mm'):.3f} over the lambda_w limits")
+	print(f"Optimal tip diameter       {sizing.D_opt_nominal.to('in'):.3f} at nominal lambda_w, d_1 is {100 * sizing.tip_error:+.1f}% from it")
+	print(f"Optimal tip band           {sizing.D_opt_band[0].to('in'):.3f} to {sizing.D_opt_band[1].to('in'):.3f} over the lambda_w limits")
 	print(f"Hub taper angle            alpha = {sizing.alpha_taper:.2f}")
-	print(f"Axial length               L_a = {sizing.L_ax.to('mm'):.3f}, L_a / D_t = {sizing.constants.axial_length_ratio:.3f}")
+	print(f"Axial length               L_a = {sizing.L_ax.to('in'):.3f}, L_a / D_t = {sizing.constants.axial_length_ratio:.3f}")
 	for warning in sizing.Warnings:
 		print(f"WARNING: {warning}")
 
@@ -312,8 +312,8 @@ def PrintOptimizedInlet(result: OptimizedInlet, baseline: ImpellerInlet, name: s
 	imp = result.Impeller
 	change = lambda new, old: 100 * (new.to('m').m / old.to('m').m - 1)
 	print(f"\n#### {name}: {'largest feasible' if result.Feasible else 'NO FEASIBLE'} impeller inlet ####")
-	print(f"Impeller d_1               {imp.d_1.to('mm'):.3f} ({change(imp.d_1, baseline.d_1):+.1f}% from baseline {baseline.d_1.to('mm'):.3f})")
-	print(f"Impeller d_hub             {imp.d_hub.to('mm'):.3f} ({change(imp.d_hub, baseline.d_hub):+.1f}% from baseline {baseline.d_hub.to('mm'):.3f})")
+	print(f"Impeller d_1               {imp.d_1.to('in'):.3f} ({change(imp.d_1, baseline.d_1):+.1f}% from baseline {baseline.d_1.to('in'):.3f})")
+	print(f"Impeller d_hub             {imp.d_hub.to('in'):.3f} ({change(imp.d_hub, baseline.d_hub):+.1f}% from baseline {baseline.d_hub.to('in'):.3f})")
 	print(f"Inducer head requirement   H_rise = {result.H_rise.to('m'):.1f}")
 	for item in result.Binding:
 		print(f"Binding: {item}")
@@ -356,20 +356,20 @@ if __name__ == '__main__':
 	# ------------------------------------------------------------------------------------------
 	cases = {
 		'LOx': dict(
-			design_point=InducerDesignPoint(Q=Q_(1.771, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(0, 'm')),		# H_rise is solved
+			design_point=InducerDesignPoint(Q=Q_(1.771, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(30, 'm')),		# H_rise is solved
 			NPSH_a=Q_(52.3, 'm'),		# the pump's NPSH_a (Pump.NPSH_a)
 			baseline=ImpellerInlet(d_1=Q_(1, 'in'), d_hub=Q_(0.6, 'in'))		# from Main.py basic_impeller_geometry
 		),
 		'IPA': dict(
-			design_point=InducerDesignPoint(Q=Q_(2.735, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(0, 'm')),
+			design_point=InducerDesignPoint(Q=Q_(2.735, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(30, 'm')),
 			NPSH_a=Q_(88.8, 'm'),
 			baseline=ImpellerInlet(d_1=Q_(1.2, 'in'), d_hub=Q_(0.7, 'in'))
 		),
 	}
-	tolerance = InletTolerance(d_1=0.20, d_hub=0.20)		# how far the impeller inlet may move from the baseline
+	tolerance = InletTolerance(d_1=0.2, d_hub=0.2)		# how far the impeller inlet may move from the baseline
 	# ------------------------------------------------------------------------------------------
 
-	USE_PUMP = True		# True: take the impeller inlet, flow, speed and NPSH_a from the pump built in Main.py instead of the cases above
+	USE_PUMP = False		# True: take the impeller inlet, flow, speed and NPSH_a from the pump built in Main.py instead of the cases above
 
 	if USE_PUMP:
 		import sys
