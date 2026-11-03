@@ -42,6 +42,21 @@ basic_impeller_geometry = {
 	)
 }
 
+# the inducer exit has to match the impeller inlet: d_tip = impeller d_1 and d_hub_2 = impeller d_hub
+basic_inducer_geometry = {
+	Propellant.LOX: Inducer.InducerInputGeometry(
+		d_tip = Q_(0.951, 'in'),			# inducer tip diameter
+		d_hub_1 = Q_(0.47, 'in'),		# hub diameter at the inducer inlet
+		d_hub_2 = Q_(0.72, 'in'),		# hub diameter at the inducer exit
+	),
+
+	Propellant.IPA: Inducer.InducerInputGeometry(
+		d_tip = Q_(1.072, 'in'),			# inducer tip diameter
+		d_hub_1 = Q_(0.464, 'in'),		# hub diameter at the inducer inlet
+		d_hub_2 = Q_(0.84, 'in'),		# hub diameter at the inducer exit
+	)
+}
+
 meridional_geometry = {
 	Propellant.LOX: MeridionalDesign.MeridionalGeometry(
 		Z_e_factor = 1.0,				# axial length extension factor, modifying Gulich formula
@@ -90,7 +105,11 @@ fluid_props = {
 	)
 }
 
+
+
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
+
+inducer_head_rise = dict(LOX=Q_(30, 'm'), IPA=Q_(30, 'm'))
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(
@@ -120,9 +139,9 @@ def MakeDesign(propellant: Propellant):
 	print(Pump1D.GetInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
-	inducer_head = Pump1D.GetInducerHeadRequirement(pump)
+	inducer_head = inducer_head_rise[propellant.name]	
 	print(f'{propellant} inducer desired head:', inducer_head)
-	pump.AddInducer(inducer_head)
+	pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
 	#pump.Impeller.PrintDimensionlessParameters()
 
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
