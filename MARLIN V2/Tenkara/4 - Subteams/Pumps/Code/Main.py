@@ -45,15 +45,15 @@ basic_impeller_geometry = {
 # the inducer exit has to match the impeller inlet: d_tip = impeller d_1 and d_hub_2 = impeller d_hub
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
-		d_tip = Q_(0.951, 'in'),			# inducer tip diameter
-		d_hub_1 = Q_(0.47, 'in'),		# hub diameter at the inducer inlet
-		d_hub_2 = Q_(0.72, 'in'),		# hub diameter at the inducer exit
+		d_tip = Q_(0.92, 'in'),			# inducer tip diameter (Constrained Option: 1)
+		d_hub_1 = Q_(0.372, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_2 = Q_(0.62, 'in'),		# hub diameter at the inducer exit (Constrained Option: 0.733)
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
-		d_tip = Q_(1.072, 'in'),			# inducer tip diameter
-		d_hub_1 = Q_(0.464, 'in'),		# hub diameter at the inducer inlet
-		d_hub_2 = Q_(0.84, 'in'),		# hub diameter at the inducer exit
+		d_tip = Q_(1.133, 'in'),			# inducer tip diameter (Constrained Option: 1.162)
+		d_hub_1 = Q_(0.63, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
+		d_hub_2 = Q_(0.716, 'in'),		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
 }
 
@@ -109,7 +109,7 @@ fluid_props = {
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-inducer_head_rise = dict(LOX=Q_(30, 'm'), IPA=Q_(30, 'm'))
+inducer_head_rise = dict(LOX=Q_(35, 'm'), IPA=Q_(30, 'm'))  # lambda_w of 0.7 for impeller
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(

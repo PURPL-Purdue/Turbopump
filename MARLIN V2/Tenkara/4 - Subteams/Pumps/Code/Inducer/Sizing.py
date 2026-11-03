@@ -357,12 +357,12 @@ if __name__ == '__main__':
 	cases = {
 		'LOx': dict(
 			design_point=InducerDesignPoint(Q=Q_(1.771, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(30, 'm')),		# H_rise is solved
-			NPSH_a=Q_(70.32, 'm'),		# the pump's NPSH_a (Pump.NPSH_a)
+			NPSH_a=Q_(52.3, 'm'),		# the pump's NPSH_a (Pump.NPSH_a)
 			baseline=ImpellerInlet(d_1=Q_(1, 'in'), d_hub=Q_(0.6, 'in'))		# from Main.py basic_impeller_geometry
 		),
 		'IPA': dict(
 			design_point=InducerDesignPoint(Q=Q_(2.735, 'L/s'), N_shaft=Q_(35000, 'rpm'), H_rise=Q_(30, 'm')),
-			NPSH_a=Q_(70.32, 'm'),
+			NPSH_a=Q_(88.8, 'm'),
 			baseline=ImpellerInlet(d_1=Q_(1.2, 'in'), d_hub=Q_(0.7, 'in'))
 		),
 	}
