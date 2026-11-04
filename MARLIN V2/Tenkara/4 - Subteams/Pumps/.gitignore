@@ -9,4 +9,5 @@ __pycache__/
 # png files
 *.png
 
-.step
+*.step
+*.prt
