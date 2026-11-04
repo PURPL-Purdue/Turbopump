@@ -45,15 +45,15 @@ basic_impeller_geometry = {
 # the inducer exit has to match the impeller inlet: d_tip = impeller d_1 and d_hub_2 = impeller d_hub
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
-		d_tip = Q_(0.92, 'in'),			# inducer tip diameter (Constrained Option: 1)
+		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
 		d_hub_1 = Q_(0.372, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
-		d_hub_2 = Q_(0.62, 'in'),		# hub diameter at the inducer exit (Constrained Option: 0.733)
+		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
-		d_tip = Q_(1.133, 'in'),			# inducer tip diameter (Constrained Option: 1.162)
+		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
 		d_hub_1 = Q_(0.63, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
-		d_hub_2 = Q_(0.716, 'in'),		# hub diameter at the inducer exit (Constrained Option: 0.76)
+		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
 }
 
@@ -136,10 +136,11 @@ def MakeDesign(propellant: Propellant):
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GetInducerlessNPSH_r(pump))
+	#print(Pump1D.GetInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
-	inducer_head = inducer_head_rise[propellant.name]	
+	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
+	print('Inducer required head:', inducer_head)	
 	print(f'{propellant} inducer desired head:', inducer_head)
 	pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
 	#pump.Impeller.PrintDimensionlessParameters()
@@ -147,6 +148,7 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
+	inducer_eq.PlotBladeAngle("LOX inducer blade angle")
 	inducer_assm = inducer_eq.CreateCAD()
 	inducer_eq.ShowCAD()
 	#exit()
