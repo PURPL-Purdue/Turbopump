@@ -46,8 +46,8 @@ OX_DIA = 0.063       # [in]
 FUEL_DIA = 0.063     # [in]
 
 D_TORCH = 0.268      # [in]
-P_OX = 570
-P_F = 550
+P_OX = 590
+P_F = 570
 
 A_torch = np.pi * ((D_TORCH / (m2in * 2)))**2
 A_ox = np.pi * ((OX_DIA / (m2in * 2)))**2
@@ -63,31 +63,10 @@ def choked_mdot(pressure, area, k, T, R, Cd=1.0):
     factor = (2.0 / (k + 1.0)) ** ((k + 1.0) / (2.0 * (k - 1.0)))
     return pressure * Cd * area * np.sqrt((k / (R * T)) * factor)
 
-#fuel_PYF = Fluid(FluidsList.Methane).with_state(Input.pressure(p_line), Input.temperature(FEED_TEMP))
-#ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_line), Input.temperature(FEED_TEMP))
-
-#rho_f = fuel_PYF.density            # [kg/m^3]
-#rho_ox = ox_PYF.density             # [kg/m^3]
-#sonic_f = fuel_PYF.sound_speed      # [m/s]
-#sonic_ox = ox_PYF.sound_speed       # [m/s]
-
 mdot_set = 0.0783 * lbm2kg     #lbm/s to kg/s
 OF_set = 1.5
 md_ox_set = OF_set * mdot_set / (OF_set + 1)
 md_f_set = mdot_set - md_ox_set
-
-#p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
-#p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
-
-#ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_ox_set), Input.temperature(FEED_TEMP))
-
-#rho_ox = ox_PYF.density             # [kg/m^3]
-#p_ox_set = (md_ox_set)**2 / ((CD * A_ox)**2 * (K_OX * rho_ox * ( 2 / (K_OX + 1))**((K_OX + 1)/(K_OX - 1))))
-
-#print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
-
-#P_OX = p_ox_set / psi2Pa
-#P_F= p_f_set / psi2Pa
 
 pox_arr = [P_OX, (P_OX * 1.15), P_OX, (P_OX * 0.85), P_OX, (P_OX * 1.10), (P_OX * 0.90)]
 pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
@@ -95,12 +74,23 @@ pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
 pox_arr = np.array(pox_arr) * psi2Pa
 pf_arr = np.array(pf_arr) * psi2Pa
 
-mdot_oxs = pox_arr / (np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1)))))
-mdot_fs = pf_arr / (np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1)))))
+#mdot_oxs = pox_arr / (np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1)))))
+#mdot_fs = pf_arr / (np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1)))))
 
-ofs = mdot_oxs / mdot_fs
+mdot_ox2 = []
+mdot_f2 = []
 
-mdot_totals = mdot_oxs + mdot_fs
+for p in pox_arr:
+    mdot_ox2.append(choked_mdot(p, A_ox, K_OX, FEED_TEMP, R_OXJ, CD))
+mdot_ox2 = np.array(mdot_ox2)
+
+for p in pf_arr:
+    mdot_f2.append(choked_mdot(p, A_f, K_F, FEED_TEMP, R_FJ, CD))
+mdot_f2 = np.array(mdot_f2)
+
+ofs = mdot_ox2 / mdot_f2
+
+mdot_totals = mdot_ox2 + mdot_f2
 mdot_totals = np.array(mdot_totals)
 
 c_ratio_ox = (2 / (K_OX+1)) ** (K_OX / (K_OX - 1)) 
@@ -168,11 +158,11 @@ df_results = pd.DataFrame({
     'Pinj_ox': pox_arr / psi2Pa,   # Or keep in Pa: pox_arr
     'Pinj_f': pf_arr / psi2Pa,     # Or keep in Pa: pf_arr
     'Pc': P_c_arr / psi2Pa,        # Or keep in Pa: P_c_arr
-    'Cstar': cstars,               # m/s
+    'Cstar': cstars / ft2m,               # m/s
     'O/F': ofs,
-    'Tc': T_combs,                 # K
-    'Te': T_exit,                   # K
-    'mdot': mdot_totals
+    'Tc': T_combs,                 # F
+    'Te': T_exit,                   # F
+    'mdot': mdot_totals / lbm2kg    #lbm/s
 })
 
 #output_csv_filename = r"Outputs/torch_test_matrix_results.csv"

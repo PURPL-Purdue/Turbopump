@@ -43,7 +43,7 @@ def main():
     #hardware definition
     dt = 0.268 #in 
     df = 63 #thou
-    dox = 63 #thou
+    dox = 100 #thou
     Cdf = 0.8
     Cdox = 0.8
     eta_cstar = 0.9
@@ -94,8 +94,8 @@ def main():
     # determine line pressures
     ## Get fluid properties to size orifice/throat areas ##
     #pyfluids for ox and fuel
-    Pox = choked_pressure(mdotox, Aox, kox, T_AMB_KELVIN, Rox, Cdox)
-    Pf = choked_pressure(mdotf, Af, kf, T_AMB_KELVIN, Rf, Cdf)
+    Pox = choked_pressure(mdotox, Aox, kox, T_AMB_KELVIN + T_AMB_CELSIUS, Rox, Cdox)
+    Pf = choked_pressure(mdotf, Af, kf, T_AMB_KELVIN + T_AMB_CELSIUS, Rf, Cdf)
 
     print("Pressures")
     print(f"  Ox: {Pox/PSI2PA:0.1f} psi [Stiffness: {(Pox-Pc)/Pc*100:0.0f}%]")
