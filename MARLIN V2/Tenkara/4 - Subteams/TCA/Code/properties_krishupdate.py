@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 # Read x/y from a CSV and normalize their units to millimeters.
 def read_geometry_csv(path):
@@ -43,10 +45,21 @@ def validate_geometry(geometry):
         df[name] = pd.to_numeric(df[name], errors='raise')
     df = df.sort_values('x_mm').reset_index(drop=True)
 
-    if len(df) < 4 or df['x_mm'].duplicated().any():
-        raise ValueError('Provide at least four distinct axial stations.')
     if not np.isfinite(df.to_numpy()).all() or (df.y_mm <= 0).any():
         raise ValueError('Geometry must have finite coordinates and positive radii.')
+    # Adjacent contour segments can repeat their shared endpoint. Merge only
+    # matching radii, allowing negligible floating-point rounding in millimeters.
+    duplicates = df.loc[df.x_mm.duplicated(keep=False)]
+    for xpos, group in duplicates.groupby('x_mm'):
+        radii = group.y_mm.to_numpy(dtype=float)
+        if not np.allclose(radii, radii[0], rtol=1e-9, atol=1e-9):
+            raise ValueError(
+                f'Conflicting radii at x={xpos:.12g} mm; '
+                'each axial station must have a single radius.'
+            )
+    df = df.drop_duplicates(subset='x_mm', keep='first').reset_index(drop=True)
+    if len(df) < 4:
+        raise ValueError('Provide at least four distinct axial stations.')
     if not (df.x_mm.min() < 0 < df.x_mm.max()):
         raise ValueError('Geometry must include points on both sides of x=0.')
 
@@ -82,10 +95,9 @@ def make_reactant(spec, cea):
 
 
 # Run CEA on each geometry station and save the resulting gas properties.
-def generate_properties(geometry, params_path='Inputs/TCA_params.yaml',
+def generate_properties(geometry, params_path=PROJECT_ROOT / 'Inputs' / 'TCA_params.yaml',
                         output_path=None, log=print):
     """Return gas-property DataFrame; also write output_path.
-
     Chamber pressure is interpreted as psi (absolute), CEA Cp as kJ/kg/K,
     viscosity as millipoise, and conductivity as W/cm/K (as in the original).
     These source-unit assumptions should be verified for your CEA installation.
@@ -154,7 +166,7 @@ def generate_properties(geometry, params_path='Inputs/TCA_params.yaml',
             'Cp [(KJ/kg-K)]': float(solution.cp[-1]),
             'k [W/m-K]': float(solution.conductivity_eq[-1]) * 100.0,
             'MW [kg/kmol]': float(solution.MW[-1]),
-            'R [kJ/kg-K]': float(cea.R / solution.MW[-1]),
+            'R [J/kg-K]': float(cea.R / solution.MW[-1]),
             'T_local [K]': float(solution.T[-1]),
             'P_local [bar]': float(solution.P[-1]),
             'ae_at': float(solution.ae_at[-1]),
@@ -176,6 +188,6 @@ def generate_properties(geometry, params_path='Inputs/TCA_params.yaml',
 
 
 if __name__ == '__main__':
-    result = generate_properties(read_geometry_csv('Outputs/contour.csv'))
+    result = generate_properties(read_geometry_csv(PROJECT_ROOT / 'Outputs' / 'contour.csv'))
     print(result.head())
     print('No files saved. Use thermal_gui.py to export.')

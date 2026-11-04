@@ -123,9 +123,14 @@ class App(tk.Tk):
         ttk.Label(paths, text='Engine YAML').grid(row=0, column=0, sticky='w')
         ttk.Entry(paths, textvariable=self.yaml_path).grid(row=0, column=1, sticky='ew', padx=8)
         ttk.Button(paths, text='Browse', command=self._browse_yaml).grid(row=0, column=2)
-        ttk.Label(paths, text='Properties CSV').grid(row=1, column=0, sticky='w')
-        ttk.Entry(paths, textvariable=self.properties_path).grid(row=1, column=1, sticky='ew', padx=8)
-        ttk.Button(paths, text='Browse', command=self._browse_properties).grid(row=1, column=2)
+        self.properties_widgets = (
+            ttk.Label(paths, text='Properties CSV'),
+            ttk.Entry(paths, textvariable=self.properties_path),
+            ttk.Button(paths, text='Browse', command=self._browse_properties),
+        )
+        self.properties_widgets[0].grid(row=1, column=0, sticky='w')
+        self.properties_widgets[1].grid(row=1, column=1, sticky='ew', padx=8)
+        self.properties_widgets[2].grid(row=1, column=2)
         ttk.Label(paths, text='Wall temperature [K]').grid(row=2, column=0, sticky='w')
         ttk.Entry(paths, textvariable=self.wall_temp, width=16).grid(row=2, column=1, sticky='w', padx=8)
         ttk.Label(paths, text='Constant value applied to every station').grid(row=2, column=2, sticky='w')
@@ -361,6 +366,7 @@ class App(tk.Tk):
     def _clear(self):
         """Restore the startup inputs, empty geometry, and unused analysis state."""
         self.mode.set('properties')
+        self._update_properties_visibility()
         self.properties_path.set('Outputs/properties.csv')
         self.wall_temp.set('800')
         self.chamber_roughness.set('6.35')
@@ -385,7 +391,15 @@ class App(tk.Tk):
         if val:
             self.properties_path.set(val)
 
+    def _update_properties_visibility(self):
+        for widget in self.properties_widgets:
+            if self.mode.get() == 'properties':
+                widget.grid()
+            else:
+                widget.grid_remove()
+
     def _mode_changed(self):
+        self._update_properties_visibility()
         self.last_result = None
         self.export_button.configure(state='disabled')
         self.lookup_button.configure(state='disabled')

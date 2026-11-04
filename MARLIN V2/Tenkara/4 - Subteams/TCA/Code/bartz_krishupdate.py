@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 from scipy.interpolate import CubicSpline
 
 
@@ -138,7 +140,7 @@ def bartz_correlation_rpe(*, x, y, tw, gamma, cp, T, mu_local, mu_am, pr, mach,
             * (rho_free * u)**0.8 * (rho_am / rho_free)
             * (mu_am / mu0)**0.2)
 
-def calculate_bartz(properties, wall_temperature, params_path='Inputs/TCA_params.yaml',
+def calculate_bartz(properties, wall_temperature, params_path=PROJECT_ROOT / 'Inputs' / 'TCA_params.yaml',
                     output_dir='Outputs', log=print, contour_geometry=None,
                     chamber_roughness_m=6.35e-6):
     """Return (heat_df, props_df, (x_ansys, hg_ansys, Tr_ansys))."""
@@ -159,33 +161,54 @@ def calculate_bartz(properties, wall_temperature, params_path='Inputs/TCA_params
         raise ValueError('Chamber pressure and cstar must be positive.')
     x = props.x_m.to_numpy()
     y = props.y_m.to_numpy()
-    # Use the original full geometry for throat curvature when available:
-    # the CEA properties output excludes the throat station.
-    if contour_geometry is not None:
-        geom = contour_geometry.sort_values('x_mm')
-        xs = geom.x_mm.to_numpy(dtype=float) / 1000
-        ys = geom.y_mm.to_numpy(dtype=float) / 1000
+    # Preserve contour-derived dimensions in exported properties. Reconstructing
+    # a spline after CEA drops throat stations changes its second derivative.
+    geometry_columns = ('Bartz throat radius [m]', 'Bartz throat curvature radius [m]',
+                        'Bartz chamber diameter [m]', 'Bartz convergence start [m]')
+    present = [column in props for column in geometry_columns]
+    if contour_geometry is None and any(present):
+        if not all(present):
+            raise ValueError('Incomplete saved Bartz geometry; all four dimensions are required.')
+        dimensions = []
+        for column in geometry_columns:
+            values = pd.to_numeric(props[column], errors='raise').to_numpy(dtype=float)
+            if not np.isfinite(values).all() or not np.allclose(values, values[0], rtol=1e-12, atol=1e-15):
+                raise ValueError(f'{column} must be finite and constant across stations.')
+            dimensions.append(float(values[0]))
+        rt, rc, dc, start_x = dimensions
+        if min(rt, rc, dc) <= 0 or not x.min() <= start_x <= 0:
+            raise ValueError('Invalid saved Bartz geometry dimensions.')
+        log('Using saved contour-derived Bartz geometry from properties.')
     else:
-        xs, ys = x, y
-    xu, ind = np.unique(xs, return_index=True)
-    if len(xu) < 4:
-        raise ValueError('Need at least 4 distinct geometry stations.')
-    spline = CubicSpline(xu, ys[ind])
-    rt = float(spline(0.0))
-    if rt <= 0 or not np.isfinite(rt):
-        raise ValueError('Invalid throat radius.')
-    curvature = abs(float(spline(0., 2)))
-    if curvature < 1e-12:
-        raise ValueError('Throat curvature is near zero; cannot calculate rc.')
-    rc = (1 + float(spline(0., 1))**2)**1.5 / curvature
+        if contour_geometry is not None:
+            from properties_krishupdate import validate_geometry
+            geom = validate_geometry(contour_geometry)
+            xs = geom.x_mm.to_numpy(dtype=float) / 1000
+            ys = geom.y_mm.to_numpy(dtype=float) / 1000
+        else:
+            xs, ys = x, y
+            log('Legacy properties lack saved Bartz geometry: estimating throat curvature '
+                'from CSV stations. Results may differ from the full contour.')
+        xu, ind = np.unique(xs, return_index=True)
+        if len(xu) < 4:
+            raise ValueError('Need at least 4 distinct geometry stations.')
+        spline = CubicSpline(xu, ys[ind])
+        rt = float(spline(0.0))
+        if rt <= 0 or not np.isfinite(rt):
+            raise ValueError('Invalid throat radius.')
+        curvature = abs(float(spline(0., 2)))
+        if curvature < 1e-12:
+            raise ValueError('Throat curvature is near zero; cannot calculate rc.')
+        rc = (1 + float(spline(0., 1))**2)**1.5 / curvature
+        start_index = find_converging_start(xs, ys)
+        dc = 2 * float(ys[np.flatnonzero(xs < 0)[0]])
+        start_x = float(xs[start_index])
+        # Only label dimensions as preserved geometry when a contour was given.
+        if contour_geometry is not None:
+            for column, value in zip(geometry_columns, (rt, rc, dc, start_x)):
+                props[column] = value
     dt = 2 * rt
-    # Do not apply the Bartz calculation to the straight combustion chamber.
-    # Detect the beginning of convergence from the original contour if supplied,
-    # otherwise from the geometry embedded in the properties CSV.
-    start_index = find_converging_start(xs, ys)
-    # Use the upstream chamber radius before restricting the thermal domain.
-    dc = 2 * float(ys[np.flatnonzero(xs < 0)[0]])  # chamber diameter [m]
-    start_x = float(xs[start_index])
+    log(f'Bartz geometry: rt={rt:.9g} m, rc={rc:.9g} m, Dc={dc:.9g} m.')
     active = x >= start_x
     if np.count_nonzero(active) < 4:
         raise ValueError('Fewer than four stations remain from convergence onward.')
@@ -269,6 +292,6 @@ def calculate_bartz(properties, wall_temperature, params_path='Inputs/TCA_params
     return heat, props, (x_ansys, hg_ansys, tr_ansys)
 
 if __name__ == '__main__':
-    heat, _, _ = calculate_bartz('Outputs/properties.csv', 800)
+    heat, _, _ = calculate_bartz(PROJECT_ROOT / 'Outputs' / 'properties.csv', 800)
     print(heat.head())
     print('No files saved. Use thermal_gui.py to export.')
