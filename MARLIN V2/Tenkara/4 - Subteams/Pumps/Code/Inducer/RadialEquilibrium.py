@@ -89,7 +89,7 @@ class InducerRadialEquilibrium:
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
-		self._sweepback = np.deg2rad(110)
+		self._sweepback = np.deg2rad(90)
 
 		self.hub_thickness_ratio = hub_thickness_ratio
 		self.eta_bl = eta_bl
