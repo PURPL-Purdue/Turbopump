@@ -23,7 +23,9 @@ void Actuators_Initialize(void)
 void Actuators_Apply(const ecu_command_t *command)
 {
   (void)command;
-  /* TODO: drive the outputs. */
+  /* TODO: drive the outputs.  Depends on the autosequencer layout and the
+   * actuator ordering, neither of which is final; mapping command entries to
+   * physical actuators may need to be independent of that ordering. */
 }
 
 const actuator_t *Actuators_Get(actuator_id_t id)

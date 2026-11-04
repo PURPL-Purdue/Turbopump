@@ -10,5 +10,5 @@ void ExternalInput_Initialize(void)
 void ExternalInput_Poll(void)
 {
   /* TODO: read each received frame from the Ethernet RX buffers, decode it
-   * into an ecu_inbound_frame_t and AppTasks_SubmitInbound() it. */
+   * into an ecu_inbound_frame_t and command AppTasks_SubmitInbound() for it. */
 }

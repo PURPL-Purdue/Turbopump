@@ -3,6 +3,13 @@
 #include <stddef.h>
 
 /*
+ * Outputs driven on entering STANDBY (and at boot): each entry is that
+ * actuator's safe value.  PLACEHOLDER (all de-energized) until the valve list
+ * is final; e.g. vents may need to be commanded open here.
+ */
+static const ecu_command_t standby_safe_command = {0};
+
+/*
  * Run the sequence: hold the active step's outputs until its exit conditions
  * are met, then advance.
  */
@@ -37,17 +44,37 @@ void ControlStateMachine_Initialize(control_state_machine_t *machine,
   machine->sequence = sequence;
   machine->state = ECU_STATE_STANDBY; //On boot start in STANDBY
   machine->previous_state = ECU_STATE_STANDBY;
+  /* Booting into STANDBY is not an entry (state == previous_state), so set
+   * its safe outputs here. */
+  machine->output_command = standby_safe_command;
+}
+
+void ControlStateMachine_ClockSynced(control_state_machine_t *machine)
+{
+  machine->clock_synced = true;
 }
 
 void ControlStateMachine_StartSequence(control_state_machine_t *machine)
+{
+  /* Needs: only start from STANDBY, once the clock is synced and a
+   * sequence with at least one step is loaded. */
+  if ((machine->state != ECU_STATE_STANDBY) || !machine->clock_synced ||
+      (machine->sequence == NULL) || (machine->sequence->length == 0U))
+  {
+    return;
+  }
+  machine->state = ECU_STATE_STARTUP;
+}
+
+void ControlStateMachine_ManualCommand(control_state_machine_t *machine,
+                                       const ecu_command_t *command)
 {
   if (machine->state != ECU_STATE_STANDBY)
   {
     return;
   }
-  /* TODO: interlock - only start once clock synced and a valid sequence is
-   * loaded. */
-  machine->state = ECU_STATE_STARTUP;
+  machine->manual_command = *command;
+  machine->manual_pending = true;
 }
 
 void ControlStateMachine_Fault(control_state_machine_t *machine)
@@ -81,9 +108,14 @@ void ControlStateMachine_Update(control_state_machine_t *machine,
       if (entering)
       {
         machine->step_index = 0U;
-        /* TODO: outputs on entering STANDBY. */
+        machine->output_command = standby_safe_command;
       }
-      /* TODO: manual actuator commands from Mission Control. */
+      /* After the entry, so a manual command in the cycle STANDBY is entered
+       * still applies.  Latched: output_command holds it until the next. */
+      if (machine->manual_pending)
+      {
+        machine->output_command = machine->manual_command;
+      }
       break;
 
     case ECU_STATE_STARTUP:
@@ -121,4 +153,8 @@ void ControlStateMachine_Update(control_state_machine_t *machine,
       machine->state = ECU_STATE_FAULT;
       break;
   }
+
+  /* A manual command is for this cycle only: one accepted in a cycle that
+   * then left STANDBY must not be applied on a later STANDBY entry. */
+  machine->manual_pending = false;
 }

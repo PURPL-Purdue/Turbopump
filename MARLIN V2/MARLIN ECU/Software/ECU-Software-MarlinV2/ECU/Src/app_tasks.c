@@ -52,7 +52,8 @@ typedef struct
   bool clock_sync;
   bool start_sequence;
   bool clear_fault;
-  /* TODO: further requests (manual valve commands, ...). */
+  bool manual_actuators;
+  ecu_command_t manual_command; /* Only valid when manual_actuators is set. */
 } control_requests_t;
 
 static void sync_clock(void)
@@ -68,7 +69,30 @@ static void read_commands(control_requests_t *requests)
   *requests = (control_requests_t){0};
   while (osMessageQueueGet(inbound_queue, &frame, NULL, 0U) == osOK)
   {
-    /* TODO: decode frame into requests. */
+    switch (frame.type)
+    {
+      case ECU_CMD_CLOCK_SYNC:
+        requests->clock_sync = true;
+        break;
+
+      case ECU_CMD_START_SEQUENCE:
+        requests->start_sequence = true;
+        break;
+
+      case ECU_CMD_CLEAR_FAULT:
+        requests->clear_fault = true;
+        break;
+
+      case ECU_CMD_MANUAL_ACTUATORS:
+        /* Several in one cycle: the last one wins. */
+        requests->manual_actuators = true;
+        requests->manual_command = frame.actuators;
+        break;
+
+      default:
+        /* ECU_CMD_NONE or unknown: ignore. */
+        break;
+    }
   }
 }
 
@@ -140,6 +164,7 @@ void AppControlTask_Run(void *argument)
     if (requests.clock_sync && (state_machine.state == ECU_STATE_STANDBY))
     {
       sync_clock();
+      ControlStateMachine_ClockSynced(&state_machine);
     }
 
     /* 3. Read sensors into the local snapshot and frame.
@@ -148,10 +173,11 @@ void AppControlTask_Run(void *argument)
     (void)Sensors_Read(&sensors);
     frame_set_sensors(&frame, &sensors);
 
-    /* 4. Transitions: start request, clear-fault request, then fault logic.
-     *    Start before clear, so FAULT cannot go to STARTUP in one cycle;
-     *    fault logic last, so a fault always wins and a fault that is still
-     *    present re-enters FAULT straight after a clear. */
+    /* 4. Transitions: start request, clear-fault request, manual command,
+     *    then fault logic.  Start before clear, so FAULT cannot go to STARTUP
+     *    in one cycle; fault logic last, so a fault always wins (over a manual
+     *    command too) and a fault that is still present re-enters FAULT
+     *    straight after a clear. */
     if (requests.start_sequence)
     {
       ControlStateMachine_StartSequence(&state_machine);
@@ -159,6 +185,10 @@ void AppControlTask_Run(void *argument)
     if (requests.clear_fault)
     {
       ControlStateMachine_ClearFault(&state_machine);
+    }
+    if (requests.manual_actuators)
+    {
+      ControlStateMachine_ManualCommand(&state_machine, &requests.manual_command);
     }
     if (FailureMonitor_Evaluate(&sensors, state_machine.state))
     {
@@ -213,7 +243,7 @@ void AppTelemetryTask_Run(void *argument)
       Telemetry_Process(&frame);
     }
 
-    /* TODO: network stack timers (TCP retransmit, keepalive). */
+    /* TODO: TCP stuff */
 
     (void)osDelay(1U);
   }

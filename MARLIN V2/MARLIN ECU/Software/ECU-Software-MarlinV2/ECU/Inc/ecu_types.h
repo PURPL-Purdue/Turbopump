@@ -68,13 +68,24 @@ typedef struct
   uint32_t timestamp_ms;   /* Synced clock. */
 } sensor_data_t;
 
+/* What an inbound frame asks the ECU to do. */
+typedef enum
+{
+  ECU_CMD_NONE = 0,
+  ECU_CMD_CLOCK_SYNC,
+  ECU_CMD_START_SEQUENCE,
+  ECU_CMD_CLEAR_FAULT,
+  ECU_CMD_MANUAL_ACTUATORS
+} ecu_command_type_t;
+
 /*
  * Frame received from Mission Control, delivered to the control task through
- * the inbound queue.  Contents not defined yet.
+ * the inbound queue.  Decoded from the wire format by external_input.c.
  */
 typedef struct
 {
-  uint8_t placeholder; /* TODO: define inbound frame fields. */
+  ecu_command_type_t type;
+  ecu_command_t actuators; /* Only for ECU_CMD_MANUAL_ACTUATORS: every output. */
 } ecu_inbound_frame_t;
 
 /*

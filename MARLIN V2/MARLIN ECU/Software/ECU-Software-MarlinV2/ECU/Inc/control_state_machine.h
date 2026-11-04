@@ -10,7 +10,7 @@
  *   - then Update() runs the active state and sets output_command,
  * then output_command goes to the actuators.
  *
- * Control logic not defined yet.  Only STANDBY has been designed.
+ * STANDBY is implemented; the other states' control logic is not defined yet.
  */
 
 #include <stdbool.h>
@@ -26,6 +26,10 @@ typedef struct
   uint32_t step_index;              /* Active step of the sequence.           */
 
   const autosequencer_table_t *sequence;
+  bool clock_synced;                /* Required before a start is accepted.   */
+
+  bool manual_pending;              /* manual_command arrived this cycle.     */
+  ecu_command_t manual_command;     /* Mission Control's vector for STANDBY.  */
 
   ecu_command_t output_command;     /* What goes to the actuators this cycle. */
 } control_state_machine_t;
@@ -39,8 +43,17 @@ void ControlStateMachine_Initialize(control_state_machine_t *machine,
  * actions on its first cycle there.
  */
 
-/* Move to STARTUP.  Ignored outside STANDBY. */
+/* Record that the clock has been synced with Mission Control. */
+void ControlStateMachine_ClockSynced(control_state_machine_t *machine);
+
+/* Move to STARTUP.  Ignored outside STANDBY, before the clock is synced, or
+ * without a non-empty sequence. */
 void ControlStateMachine_StartSequence(control_state_machine_t *machine);
+
+/* Set every output from Mission Control's vector; it stays latched until the
+ * next manual command or STANDBY is re-entered.  Ignored outside STANDBY. */
+void ControlStateMachine_ManualCommand(control_state_machine_t *machine,
+                                       const ecu_command_t *command);
 
 /* Move to FAULT.  Safe to call every cycle a fault is present: already being
  * in FAULT is not a new entry, so the fault section is not restarted. */
