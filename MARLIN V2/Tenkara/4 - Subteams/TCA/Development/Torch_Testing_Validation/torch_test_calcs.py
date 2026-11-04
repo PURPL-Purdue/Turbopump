@@ -3,9 +3,11 @@ import math
 import matplotlib.pyplot as plt
 import cea as cea
 from pyfluids import Fluid, FluidsList, Input
+from rocketcea.cea_obj import CEA_Obj
 import pandas as pd
 import yaml
 
+cea = CEA_Obj(fuelName='CH4', oxName='GOX')
 
 ###############################
 #DEFINE CONSTANTS
@@ -28,6 +30,8 @@ psi2Pa = 6894.76     # [psi/Pa]
 lbm2kg = 0.453592    # [lbm/kg]
 m2in = 39.3701       # [m/in]
 bar2pa = 100000.0    # [Pa/bar]
+
+r2f = -458.67
 
 FEED_TEMP = 293.15   # [K] (20 deg C)
 CD = 0.8
@@ -72,8 +76,8 @@ OF_set = 1.5
 md_ox_set = OF_set * mdot_set / (OF_set + 1)
 md_f_set = mdot_set - md_ox_set
 
-p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
-p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
+#p_ox_set = md_ox_set * np.sqrt(FEED_TEMP * R_OXJ / K_OX) / (CD * A_ox * ((K_OX + 1) / 2) ** (-(K_OX + 1) / (2 * (K_OX - 1))))
+#p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2) ** (-(K_F + 1) / (2 * (K_F - 1))))
 
 #ox_PYF = Fluid(FluidsList.Oxygen).with_state(Input.pressure(p_ox_set), Input.temperature(FEED_TEMP))
 
@@ -82,8 +86,8 @@ p_f_set = md_f_set * np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 
 
 #print(f"The setpoint feed pressures are {(p_ox_set / psi2Pa) : .3f} for Ox and {(p_f_set / psi2Pa) : .3f} for fuel")
 
-P_OX = p_ox_set / psi2Pa
-P_F= p_f_set / psi2Pa
+#P_OX = p_ox_set / psi2Pa
+#P_F= p_f_set / psi2Pa
 
 pox_arr = [P_OX, (P_OX * 1.15), P_OX, (P_OX * 0.85), P_OX, (P_OX * 1.10), (P_OX * 0.90)]
 pf_arr = [P_F, P_F, (P_F * 0.85), P_F, (P_F * 1.15), (P_F * 0.90), (P_F * 1.10)]
@@ -97,6 +101,7 @@ mdot_fs = pf_arr / (np.sqrt(FEED_TEMP * R_FJ / K_F) / (CD * A_f * ((K_F + 1) / 2
 ofs = mdot_oxs / mdot_fs
 
 mdot_totals = mdot_oxs + mdot_fs
+mdot_totals = np.array(mdot_totals)
 
 c_ratio_ox = (2 / (K_OX+1)) ** (K_OX / (K_OX - 1)) 
 c_ratio_f = (2 / (K_F+1)) ** (K_F / (K_F - 1)) 
@@ -107,18 +112,14 @@ c_ratio_f = (2 / (K_F+1)) ** (K_F / (K_F - 1))
 
 # Reactants and solver setup
 reac_names = ["CH4", "O2"]
-T_reactant = np.array([FEED_TEMP, FEED_TEMP])  # Reactant temperatures (K)
-fuel_weights = np.array([1.0, 0.0])
-ox_weights = np.array([0.0, 1.0])
+#T_reactant = np.array([FEED_TEMP, FEED_TEMP])  # Reactant temperatures (K)
+#fuel_weights = np.array([1.0, 0.0])
+#ox_weights = np.array([0.0, 1.0])
 
-reac = cea.Mixture(reac_names)
-prod = cea.Mixture(reac_names, products_from_reactants=True)
-solver = cea.RocketSolver(prod, reactants=reac)
-solution = cea.RocketSolution(solver)
-
-# Estimate chamber pressure for CEA solver (in bar)
-# Typically ~50% to 70% of feed pressure for a choked torch
-p_c_guess_bar = (200.0 * psi2Pa) / bar2pa
+#reac = cea.Mixture(reac_names)
+#prod = cea.Mixture(reac_names, products_from_reactants=True)
+#solver = cea.RocketSolver(prod, reactants=reac)
+#solution = cea.RocketSolution(solver)
 
 A_throat = A_torch
 Pc_set_Pa = 200 * psi2Pa
@@ -127,19 +128,26 @@ T_combs = []
 T_exits = []
 P_c_arr = []
 for m_dot, of in zip(mdot_totals, ofs):
-    weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=of)
-    hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R
+    #weights = reac.of_ratio_to_weights(ox_weights, fuel_weights, of_ratio=of)
+    #hc = reac.calc_property(cea.ENTHALPY, weights, T_reactant) / cea.R
 
     # Evaluate c* at the nominal 200 psia pressure baseline
-    solver.solve(solution, weights, Pc_set_Pa / bar2pa, hc=hc, iac=True)
-    cstar_val = solution.c_star[-1] * CSTAR_EFF
+    #solver.solve(solution, weights, Pc_set_Pa / bar2pa, hc=hc, iac=True)
+    #cstar_val = solution.c_star[-1] * CSTAR_EFF
+
+    cstar = cea.get_Cstar(Pc=Pc_set_Pa/psi2Pa, MR=of) * CSTAR_EFF * ft2m # [m/s] (returns ft/s)
 
     # Back-calculate Pc from total mass flow, c*, and fixed sized throat
-    pc_val_Pa = (m_dot * cstar_val) / A_throat
+    pc_val_Pa = (m_dot * cstar) / A_throat
+    cstar = cea.get_Cstar(Pc=pc_val_Pa/psi2Pa, MR=of) * CSTAR_EFF * ft2m # [m/s] (returns ft/s)
+    #Tc = cea.get_Tcomb(Pc=Pc_set_Pa/psi2Pa, MR=OF_set) + r2f
+    Ts = cea.get_Temperatures(Pc=pc_val_Pa/psi2Pa, MR=of, eps = 1)
+    Tc = Ts[0]  + r2f
+    Te = Ts[-1]  + r2f
 
-    cstars.append(cstar_val)
-    T_combs.append(solution.T[0])
-    T_exits.append(solution.T[-1])
+    cstars.append(cstar)
+    T_combs.append(Tc)
+    T_exits.append(Te)
     P_c_arr.append(pc_val_Pa)
 
 P_c_arr = np.array(P_c_arr)
@@ -163,7 +171,8 @@ df_results = pd.DataFrame({
     'Cstar': cstars,               # m/s
     'O/F': ofs,
     'Tc': T_combs,                 # K
-    'Te': T_exit                   # K
+    'Te': T_exit,                   # K
+    'mdot': mdot_totals
 })
 
 #output_csv_filename = r"Outputs/torch_test_matrix_results.csv"

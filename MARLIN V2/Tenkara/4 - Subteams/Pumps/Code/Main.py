@@ -74,15 +74,15 @@ meridional_geometry = {
 
 blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.1,
-		lead_sweep=Q_(10, 'deg'),
-		target_wrap = Q_(115, 'deg'), # cubic only
+		sj=0.2,
+		lead_sweep=Q_(-20, 'deg'),
+		target_wrap = Q_(130, 'deg'), # cubic only
 		use_cubic = False
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.1,
-		lead_sweep=Q_(0, 'deg'),
+		sj=0.15,
+		lead_sweep=Q_(-20, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False
 	)
@@ -136,7 +136,7 @@ def MakeDesign(propellant: Propellant):
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 	print(Pump1D.GetTorque(pump))
-	#print(Pump1D.GetInducerlessNPSH_r(pump))
+	print(Pump1D.GetInducerlessNPSH_r(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
@@ -150,7 +150,7 @@ def MakeDesign(propellant: Propellant):
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
 	inducer_eq.PlotBladeAngle("LOX inducer blade angle")
 	inducer_assm = inducer_eq.CreateCAD()
-	inducer_eq.ShowCAD()
+	#inducer_eq.ShowCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
@@ -166,12 +166,11 @@ def MakeDesign(propellant: Propellant):
 		blade_params=blade_params[propellant]
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines()#.show()
+	imp_blade_design.PlotInletTriangles(free_vortex=False).show()
+	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
-	#imp_cad.SaveSTEP()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
@@ -185,6 +184,11 @@ def MakeDesign(propellant: Propellant):
 		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
 	)
 	show(pump_assembly)
+
+	# Save STEP file
+	do_save = True if input('Save STEP? (y):\n') == 'y' else False
+	if do_save:
+		imp_cad.SaveSTEP()
 
 	return pump
 

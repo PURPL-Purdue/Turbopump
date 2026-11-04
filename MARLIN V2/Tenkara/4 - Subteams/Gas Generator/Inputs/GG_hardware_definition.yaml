@@ -61,7 +61,7 @@ GG_ox_type: "LO2"
 LOx_rho: 1141                    # kg/m^3
 
 # Torch Hardware Definitions
-CH4_Cda: 0.000000438           # (m^2) Assumed Cd of 0.9
+CH4_Cda: 0.000000438            # (m^2) Assumed Cd of 0.9 
                                # Last updated: Nov 2nd, 2026 by Arvin Peng
 
 GOx_Cda: 0.000000438           # (m^2) Assumed Cd of 0.9
@@ -77,6 +77,7 @@ torch_throat_area: 0.000007917 # (m^2) This is the area of the torch throat.
                                # Last updated: Sept 28th, 2026 by Miles Cohen
 
 torch_eff_throat_area: 0.000007917       # (m^2) This is the effective area of the torch throat, accounting for any losses.
+                                        
                                # Efficiency is assumed to be 1.0
                                # Last updated: Sept 28th, 2026 by Miles Cohen
 
