@@ -91,7 +91,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	return fig
 
-def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0, blade_blockage_factor: float=0.7) -> Q_:
+def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=0.4, blade_blockage_factor: float=0.7) -> Q_:
 
 	"""
 		This method of calculating NPSH_i accounts for inlet velocity and losses.
