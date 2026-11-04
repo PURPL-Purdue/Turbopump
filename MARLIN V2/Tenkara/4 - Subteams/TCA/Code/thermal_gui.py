@@ -660,7 +660,7 @@ class App(tk.Tk):
                     ax2 = self.ax.twinx()
                     bartz = heat.loc[heat.correlation == 'Bartz']
                     chamber = heat.loc[heat.correlation == 'Gnielinski']
-                    line_hg, = self.ax.plot(bartz.x_m, bartz.hg_W_m2K, label='Bartz h_g', color='tab:blue')
+                    line_hg, = self.ax.plot(bartz.x_m, bartz.hg_W_m2K, label='H&H Bartz h_g', color='tab:blue')
                     line_tr, = ax2.plot(heat.x_m, heat.Tr_K, label='Recovery temperature T_r [K]', color='tab:orange')
                     lines = [line_hg, line_tr]
                     if len(chamber):
@@ -669,7 +669,7 @@ class App(tk.Tk):
                     if 'hg_custom_W_m2K' in heat:
                         line_custom, = self.ax.plot(
                             heat.x_m, heat.hg_custom_W_m2K,
-                            label='RPE comparison h_g', color='tab:green', linestyle='--')
+                            label='RPE Bartz h_g', color='tab:green', linestyle='--')
                         lines.insert(1, line_custom)
                     self.ax.legend(handles=lines, loc='best')
                     self.ax.set(xlabel='Axial position x [m]', ylabel='h_g [W/m²/K]', title='Thermal results')
