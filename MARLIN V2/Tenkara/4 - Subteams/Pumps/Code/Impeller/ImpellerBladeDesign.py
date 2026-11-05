@@ -58,9 +58,9 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 		if self._params.use_cubic:
-			self._CreateBladeLines2(resolution=self._params.resolution)
+			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
 		else:
-			self._CreateBladeLines(resolution=self._params.resolution)
+			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -248,8 +248,7 @@ class ImpellerBladeDesign:
 			betas.append(beta_dis)
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		self._bladelines = (points_3d, betas)
-		return self._bladelines
+		return (points_3d, betas)
 
 	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
@@ -311,8 +310,7 @@ class ImpellerBladeDesign:
 			betas.append(beta_dis)
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		self._bladelines = (points_3d, betas)
-		return self._bladelines
+		return (points_3d, betas)
 
 	def GetBladeLines(self):
 		return self._bladelines
@@ -323,7 +321,7 @@ class ImpellerBladeDesign:
 				subplot_titles=(f'{self.Pump.Propellant.name} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
 
-		points, betas = self.GetBladeLines()
+		points, betas = self._bladelines
 		num_streams = len(points)
 		colors = express.colors.qualitative.Plotly
 

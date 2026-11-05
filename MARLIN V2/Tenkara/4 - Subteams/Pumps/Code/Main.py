@@ -32,13 +32,14 @@ basic_impeller_geometry = {
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
-		Z_blade_2 = 6,					# integer number of blades
+		Z_blade_2 = 8,					# integer number of blades
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness at exit
 		d_hub=Q_(0.65, 'in'),			# hub diameter
+		splitter=True,
 	)
 }
 
