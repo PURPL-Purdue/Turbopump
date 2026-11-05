@@ -264,6 +264,7 @@ class ImpellerBladeDesign:
 				betas:  the BetaDistribution, whose Get(x) is beta (rad) at x (m) on its Domain
 		"""
 		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		splitter: bool = length_ratio != 1.0
 		
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1 # shroud streamline
