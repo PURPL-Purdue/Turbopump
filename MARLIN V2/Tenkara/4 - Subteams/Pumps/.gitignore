@@ -9,4 +9,9 @@ __pycache__/
 # png files
 *.png
 
+# CAD files
 .step
+.stp
+
+# Json
+.json

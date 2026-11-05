@@ -15,6 +15,7 @@ if not __package__:
 from Inducer.Inducer import Inducer
 from VelocityTriangle import PlotTriangles, VelocityTriangle
 
+INCIDENCE_RATIO = 0.425     # alpha / beta, SP-8052 sec. 2.1.9
 
 class MeanlineTriangle:
     """Inlet triangle on the rms-radius meanline with no blade blockage and zero prewhirl.
@@ -61,11 +62,11 @@ class MeanlineTriangle:
 
 if __name__ == "__main__":
     import Main
-    print("--- Meanline values at incidence ratio of 0.425 ---")
+    print("--- Meanline values at incidence ratio of 0 ---")
     for propellant, H in ((Main.Propellant.LOX, 65), (Main.Propellant.IPA, 80)):
         pump = Main.CreatePump(propellant)
         pump.AddInducer(Q_(H, 'm'))
-        ml = MeanlineTriangle(pump.Inducer, incidence_ratio=0.425)
+        ml = MeanlineTriangle(pump.Inducer, incidence_ratio=INCIDENCE_RATIO)
         print(f"{propellant}: c_m = {ml.c_m:.2f} m/s, gamma1 = {np.degrees(ml.gamma1):.2f} deg, "
               f"beta1 = {np.degrees(ml.beta1):.2f} deg")
         ml.Plot(f"{propellant} inducer inlet meanline triangle, zero blade blockage").show()

@@ -11,9 +11,9 @@ from scipy import integrate
 from warnings import warn
 
 # temporary, will move later
-import cadquery.func
-from cadquery.vis import show
-from Helpers import CAD
+# import cadquery.func
+# from cadquery.vis import show
+# from Helpers import CAD
 
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
@@ -257,6 +257,40 @@ class InducerRadialEquilibrium:
 			notation=notation,
 		)
 
+	def RelativeVelocity(self, r: Q_, z: Q_) -> tuple[Q_, Q_, Q_]:
+		"""Relative velocity W = V - U at (r, z) from the converged radial equilibrium: (W_u, W_m, |W|)."""
+		U = Q_(self.omega, 'rad/s') * r.to('m')
+		W_u = U - self.c_theta(r, z)
+		W_m = self.c_axial(r, z)
+		return W_u, W_m, np.sqrt(W_u**2 + W_m**2)
+
+	def FlowAngle(self, r: Q_, z: Q_) -> Q_:
+		"""Relative flow angle beta from the tangential direction: tan(beta) = c_m / (U - c_u)."""
+		W_u, W_m, _ = self.RelativeVelocity(r, z)
+		return Q_(np.degrees(np.arctan2(W_m.magnitude, W_u.to(W_m.units).magnitude)), 'deg')
+
+	def BladeAngle(self, r: Q_, z: Q_) -> Q_:
+		"""Blade angle from the parabolic camber (eq. 74, rms radius) with constant lead, r tan(beta) = lambda_blade (eq. 33)."""
+		z_m = z.to('m').magnitude
+		lam_blade = self._r_ms(z_m) * np.tan(self._beta(z_m, self.beta2))
+		return Q_(np.degrees(np.arctan(lam_blade / r.to('m').magnitude)), 'deg')
+
+	def PlotBetaDistribution(self, z_fracs=(0.0, 0.25, 0.5, 0.75, 1.0), n: int = 50, l: str = 'mm',
+							 title: str = 'Inducer relative flow and blade angle, hub to tip') -> go.Figure:
+		"""beta against radius at several axial stations; solid = relative flow angle, dashed = blade angle."""
+		fig = go.Figure()
+		colors = [f'hsl({int(240 * (1 - f))},70%,45%)' for f in z_fracs]
+		for frac, color in zip(z_fracs, colors):
+			z = Q_(self.L * frac, 'm')
+			r = Q_(np.linspace(self._r_hub(z.magnitude), self.R_t, n), 'm')
+			x = r.to(l).magnitude
+			fig.add_trace(go.Scatter(x=x, y=self.FlowAngle(r, z).magnitude, mode='lines', line=dict(color=color),
+									 name=f'z/L = {frac:.2f} flow', legendgroup=f'{frac}'))
+			fig.add_trace(go.Scatter(x=x, y=self.BladeAngle(r, z).magnitude, mode='lines', line=dict(color=color, dash='dash'),
+									 name=f'z/L = {frac:.2f} blade', legendgroup=f'{frac}'))
+		fig.update_layout(title=title, xaxis_title=f'r [{l}]', yaxis_title='β from tangential [deg]', template='plotly_white')
+		return fig
+
 	def PlotMeanlineTriangles(self, title: str = 'Inducer meanline velocity triangles') -> go.Figure:
 		"""Inlet (z = 0) and outlet (z = L_ax) meanline triangles overlaid."""
 		triangles = [
@@ -265,93 +299,93 @@ class InducerRadialEquilibrium:
 		]
 		return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
 
-	def GetBladeLines(self, num_lines: int=7, resolution: int = 200) -> list[np.ndarray]:
-		"""
-		@Charlie zhu
-		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
-		"""
-		z_ref = np.linspace(0, self.L, resolution)
+	# def GetBladeLines(self, num_lines: int=7, resolution: int = 200) -> list[np.ndarray]:
+	# 	"""
+	# 	@Charlie zhu
+	# 	Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
+	# 	"""
+	# 	z_ref = np.linspace(0, self.L, resolution)
 
-		r_hub: np.ndarray[float] = self._r_hub(z_ref)
-		r_tip: np.ndarray[float] = np.full(resolution, self.R_t)
-		r_diff: np.ndarray[float] = r_tip - r_hub
+	# 	r_hub: np.ndarray[float] = self._r_hub(z_ref)
+	# 	r_tip: np.ndarray[float] = np.full(resolution, self.R_t)
+	# 	r_diff: np.ndarray[float] = r_tip - r_hub
 
-		points_zrt = []
+	# 	points_zrt = []
 		
-		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
-		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
+	# 	radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2))
+	# 	theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
 
-		# radii clustered toward the tip
-		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
+	# 	# radii clustered toward the tip
+	# 	radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
-		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
-		theta_LE = get_LE_theta(radii_LE)
-		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
-		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
+	# 	get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+	# 	theta_LE = get_LE_theta(radii_LE)
+	# 	assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
+	# 	z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
 		
-		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
-		z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
+	# 	hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
+	# 	z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
 
-		arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta_LE))**2))))
-		s = np.linspace(0, arclength_LE[-1], num_lines)
-		# keep z and r values at the arclengths specified s (linearly interpolated)
-		z_LE_ref, radii_LE = np.interp(s, arclength_LE, z_LE_ref), np.interp(s, arclength_LE, radii_LE)
+	# 	arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta_LE))**2))))
+	# 	s = np.linspace(0, arclength_LE[-1], num_lines)
+	# 	# keep z and r values at the arclengths specified s (linearly interpolated)
+	# 	z_LE_ref, radii_LE = np.interp(s, arclength_LE, z_LE_ref), np.interp(s, arclength_LE, radii_LE)
 
-		LE_span_fractions: np.ndarray[float] = (radii_LE - self._r_hub(z_LE_ref)) / (self.R_t - self._r_hub(z_LE_ref))
+	# 	LE_span_fractions: np.ndarray[float] = (radii_LE - self._r_hub(z_LE_ref)) / (self.R_t - self._r_hub(z_LE_ref))
 
-		for alpha in LE_span_fractions:
+	# 	for alpha in LE_span_fractions:
 			
-			r_offset = alpha * r_diff
-			r = r_hub + r_offset
+	# 		r_offset = alpha * r_diff
+	# 		r = r_hub + r_offset
 
-			tan_beta = radial_lead/r # more necessary than you think lol
+	# 		tan_beta = radial_lead/r # more necessary than you think lol
 			
-			theta = integrate.cumulative_trapezoid(
-				y=1 / (r * tan_beta), x=z_ref, initial=0
-				)
-			# adjust z such that meridional sweep is perpendicular to hub
-			z = z_ref - r_offset * hub_taper_slope
+	# 		theta = integrate.cumulative_trapezoid(
+	# 			y=1 / (r * tan_beta), x=z_ref, initial=0
+	# 			)
+	# 		# adjust z such that meridional sweep is perpendicular to hub
+	# 		z = z_ref - r_offset * hub_taper_slope
 
-			points = np.column_stack((z, r, theta)) # (resolution, 3)
+	# 		points = np.column_stack((z, r, theta)) # (resolution, 3)
 
-			# Angle past the leading edge curve, at each point's own radius: the blade line and the leading edge,
-			# projected on the polar (r, theta) plane, cross where it is zero
-			past_LE = theta - get_LE_theta(r)
-			i = np.argmax(past_LE > 0)		# first point behind the leading edge
-			# linear interpolation to the crossing
-			t = past_LE[i-1] / (past_LE[i-1] - past_LE[i])
-			leading_edge = points[i-1] + t * (points[i] - points[i-1])
+	# 		# Angle past the leading edge curve, at each point's own radius: the blade line and the leading edge,
+	# 		# projected on the polar (r, theta) plane, cross where it is zero
+	# 		past_LE = theta - get_LE_theta(r)
+	# 		i = np.argmax(past_LE > 0)		# first point behind the leading edge
+	# 		# linear interpolation to the crossing
+	# 		t = past_LE[i-1] / (past_LE[i-1] - past_LE[i])
+	# 		leading_edge = points[i-1] + t * (points[i] - points[i-1])
 
-			points_zrt.append(np.vstack((leading_edge, points[i:])))
+	# 		points_zrt.append(np.vstack((leading_edge, points[i:])))
 
-		return points_zrt
+	# 	return points_zrt
 
-	def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
-		"""
-		@Charlie Zhu
-		Temporarily borrowing from impeller CAD API
-		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
+	# def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
+	# 	"""
+	# 	@Charlie Zhu
+	# 	Temporarily borrowing from impeller CAD API
+	# 	Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
 
-		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, True)) for p in blade_lines]
-		camber = cadquery.func.loft(blade_edges)
-		blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
-		blades = camber.moved(*blade_locations)
+	# 	blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
+	# 	blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, True)) for p in blade_lines]
+	# 	camber = cadquery.func.loft(blade_edges)
+	# 	blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
+	# 	blades = camber.moved(*blade_locations)
 
-		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
-		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
-		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
-		assm = (cadquery.Assembly()
-			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
-			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
-			#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
-		)
-		self._cad = [assm, blade_edges]
-		return assm
+	# 	# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
+	# 	hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
+	# 	hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
+	# 	assm = (cadquery.Assembly()
+	# 		.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
+	# 		.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
+	# 		#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
+	# 	)
+	# 	self._cad = [assm, blade_edges]
+	# 	return assm
 
-	def ShowCAD(self):
-		if self._cad is None: self.CreateCAD()
-		show(*self._cad)
+	# def ShowCAD(self):
+	# 	if self._cad is None: self.CreateCAD()
+	# 	show(*self._cad)
 
 
 if __name__ == "__main__":
@@ -364,9 +398,10 @@ if __name__ == "__main__":
 	ipa_pump.AddInducer(Q_(80, 'm'))
 	
 	fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
+	print("--- Meanline Angles after Radial equilibrium ---")
 	for col, propellant, inducer in zip(axes.T, ('LOX', 'IPA'), (lox_pump.Inducer, ipa_pump.Inducer)):
 
-		eq = InducerRadialEquilibrium(inducer, incidence_ratio=0, blade_thickness=Q_(0.5, 'mm'))
+		eq = InducerRadialEquilibrium(inducer, blade_thickness=Q_(0.5, 'mm'))
 		print(f"{propellant}: beta1 =  {np.degrees(eq.beta1):.2f} deg, beta2 = {np.degrees(eq.beta2):.2f} deg")
 		for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
 			z = inducer.L_ax * frac
@@ -379,10 +414,14 @@ if __name__ == "__main__":
 			ax.grid(True, linestyle='--', alpha=0.5)
 			ax.legend()
 
+		z_in = Q_(0, 'm')
+		r_in = Q_(np.array([eq.R_h1, eq._r_ms(0.0), eq.R_t]), 'm')
+		print(f"{propellant} inlet beta (hub, rms, tip) = {np.round(eq.FlowAngle(r_in, z_in).magnitude, 2)} deg")
+		eq.PlotBetaDistribution(title=f"{propellant} inducer relative flow and blade angle").show()
 		PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
 				f"{propellant} inducer meanline velocity triangles"
 			).show()
-		eq.ShowBladeLines()  # blocks until the viewer is closed
+		# eq.GetBladeLines()  # blocks until the viewer is closed
 
 	axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
 	axes[1, 0].set_ylabel("$c_a$ [m/s]")

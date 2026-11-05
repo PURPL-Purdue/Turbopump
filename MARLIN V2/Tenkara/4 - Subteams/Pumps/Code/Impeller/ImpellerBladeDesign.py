@@ -159,7 +159,7 @@ class ImpellerBladeDesign:
 				]
 			PlotTriangles(triangles, fig, row=i % n_rows + 1, col=i // n_rows + 1, names=['upstream', 'inside blades'])
 
-		inlet_model = f'Inlet velocity model: {'free vortex' if free_vortex else 'superimposed inducer outlet'}'
+		inlet_model = f"Inlet velocity model: {'free vortex' if free_vortex else 'superimposed inducer outlet'}"
 		fig.update_layout(template='simple_white',
 			title=f'{self.Pump.Propellant.name} Impeller Inlet Velocity Triangles<br><sup>{inlet_model}<br>{CONVENTION_NOTES["centrifugal"]}</sup>')
 
