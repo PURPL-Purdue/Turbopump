@@ -250,7 +250,7 @@ class ImpellerBladeDesign:
 
 		return (points_3d, betas)
 
-	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
 			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
 			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
@@ -263,7 +263,8 @@ class ImpellerBladeDesign:
 				points: (resolution, 3) arrays of (z, r, theta), in m, m and rad
 				betas:  the BetaDistribution, whose Get(x) is beta (rad) at x (m) on its Domain
 		"""
-
+		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1 # shroud streamline
 		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
