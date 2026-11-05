@@ -40,7 +40,7 @@ class ImpellerCAD:
 		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
 		camber = cadquery.func.loft(blade_edges)
 
-		Z_blade: int = self.Impeller.Z_blade
+		Z_blade: int = self.Impeller.Z_blade_2
 		# rotate the blades about the z-axis
 		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade) for n in range(Z_blade)])
 

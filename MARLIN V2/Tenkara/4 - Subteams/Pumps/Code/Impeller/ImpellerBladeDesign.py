@@ -88,7 +88,7 @@ class ImpellerBladeDesign:
 		impeller = self.MeridionalDesign.Pump.Impeller
 
 		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
-		pitch = 2 * np.pi * r_1 / impeller.Z_blade
+		pitch = 2 * np.pi * r_1 / impeller.Z_blade_1
 		a: Q_[float] = impeller.blade_thick / (pitch * np.sin(lambda_1.to('rad').m))
 		assert a < 1, 'The blades fill the inlet circumference, reduce the blade number or thickness'
 
@@ -338,8 +338,8 @@ class ImpellerBladeDesign:
 
 			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
-			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade
-			Z = self.Pump.Impeller.Z_blade
+			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+			Z = self.Pump.Impeller.Z_blade_2
 
 			# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
 			theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(Z)])

@@ -9,13 +9,14 @@ g = Q_(9.81, 'm/s^2')
 
 @dataclass
 class InputGeometry:
-	Z_blade: int			# number of impeller blades
+	Z_blade_2: int			# number of impeller blades
 	Beta2B: Q_[float]		# blade backsweep angle at outlet (from tangent)
 	d_1: Q_[float]			# impeller inlet diameter
 	d_2: Q_[float]			# impeller outlet diameter
 	b_2: Q_[float]			# impeller outlet height
 	blade_thick: Q_[float]	# blade thickness at exit
 	d_hub: Q_[float]		# diameter of hub, strictly speaking inlet only
+	splitter: bool = False	# whether or not there will be splitter vanes
 
 @dataclass
 class DesignPoint:
@@ -41,20 +42,26 @@ class Impeller:
 
 		exit_blockage_area = GetExitBladeBlockage(
 			beta2b=geometry.Beta2B,
-			Z=geometry.Z_blade,
+			Z=geometry.Z_blade_2,
 			thick=geometry.blade_thick,
 			b2=geometry.b_2
 		)
 		self.Area2: Q_[float] = (np.pi * geometry.d_2 * geometry.b_2) - exit_blockage_area
 
-		self.Z_blade = geometry.Z_blade
+		self.Z_blade_2 = geometry.Z_blade_2
+		if geometry.splitter:
+			self.Z_blade_1 = geometry.Z_blade_2 // 2
+			assert self.Z_blade_1 * 2 == self.Z_blade_2, 'Invalid blade number for splitters'
+		else:
+			self.Z_blade_1 = geometry.Z_blade_2
+		
 		self.Beta2B = geometry.Beta2B
 		self.d_1 = geometry.d_1
 		self.d_2 = geometry.d_2
 		self.b_2 = geometry.b_2
 		self.blade_thick = geometry.blade_thick
 		self.d_hub = geometry.d_hub
-		self.WiesnerSlip: float = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade)
+		self.WiesnerSlip: float = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade_2)
 
 		u_2, c_m2, c_u2, w_2 = self.GetOutletVelocities()
 
