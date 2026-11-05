@@ -61,6 +61,9 @@ class ImpellerBladeDesign:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
 		else:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
+			if self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1:
+				self._splitter_bladelines = self._CreateBladeLines(
+					resolution=self._params.resolution, length_ratio=0.8)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -290,7 +293,7 @@ class ImpellerBladeDesign:
 				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 				blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
-				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))
+				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
 				r = stream_zr[:, 1]
 				
 				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
@@ -302,11 +305,32 @@ class ImpellerBladeDesign:
 				)
 			else:
 				beta_dis, stream_zr, r = ref_beta_dis, ref_stream_zr, r_ref
-			
-			arc_m=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_m)
+				blade_stream = ref_bladestream
 
-			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
+			if splitter:
+				m_start = (1 - length_ratio) * beta_dis.Domain[1]
+
+				m_fade = np.linspace(0, m_start, resolution)
+				beta_fade = beta_dis.Get(np.linspace(0, m_start, resolution))
+				r_fade = blade_stream.Points(m_fade)[:, 1]
+				theta_start: float = np.trapezoid(1/ (r_fade * np.tan(beta_fade)), m_fade)
+
+				m_split = np.linspace(m_start, blade_stream.length_m, resolution)
+				
+				stream_zr = blade_stream.Points(m_split)
+				r = stream_zr[:, 1]
+				beta = beta_dis.Get(m_split)
+				
+				theta = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), m_split, initial=0)
+				theta += theta_start
+
+				beta_dis.Domain = (m_start, beta_dis.Domain[1])
+
+			else:
+				arc_m=np.linspace(*beta_dis.Domain, resolution)
+				beta = beta_dis.Get(arc_m)
+	
+				theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
 			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)
@@ -323,7 +347,7 @@ class ImpellerBladeDesign:
 				subplot_titles=(f'{self.Pump.Propellant.name} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
 
-		points, betas = self._bladelines
+		points, betas = self._splitter_bladelines
 		num_streams = len(points)
 		colors = express.colors.qualitative.Plotly
 
