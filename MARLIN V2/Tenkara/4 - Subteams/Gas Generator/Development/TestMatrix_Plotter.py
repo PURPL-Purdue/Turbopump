@@ -53,7 +53,7 @@ def main():
 	for column in (ox_column, fuel_column):
 		if column not in data.columns:
 			raise ValueError(f"Column {column!r} is not in the CSV.")
-	data['min stiff'] = data[[ox_column, fuel_column]].min(axis=1)
+	data['min stiff'] = round(data[[ox_column, fuel_column]].min(axis=1), 3)
 
 	print("Columns:", ", ".join(str(column) for column in data.columns))
 	# x_column = input("X-axis column: ").strip()
@@ -61,7 +61,7 @@ def main():
 	x_column = 'P_fuel_psia'
 	y_column = 'P_ox_psia'
 	#color_column = input("Color-by column: ").strip()
-	color_column = 'mdot_total_kg_s'
+	color_column = 'min stiff'
 	label_column = input("Label-by column: ").strip()
 
 
