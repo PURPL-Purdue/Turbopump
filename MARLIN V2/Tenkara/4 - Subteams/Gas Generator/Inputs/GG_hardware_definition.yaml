@@ -26,11 +26,11 @@ film_insert_Cda:            # (m^2) Assumed Cd = 0.65
 
 # Stator Hardware Definition
 stator_throat_area: 0.000098 # (m^2) Assumed to be the same as the injector area #ORIGINALY WAS 0.000077 m^2
-                              # Last updated: Sept 27th, 2026 by Miles Cohen
+                              # Last updated: Nov 6th, 2026 by Miles Cohen
                               #TENTATIVE/RANDOM
 
-stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
-                              # Last updated: May 25th, 2026 by Miles Cohen
+stator_throat_num: 4          # (dimensionless) Number of nozzles in the stator
+                              # Last updated: Nov 6th, 2026 by Miles Cohen
 
 stator_eff_combustion_volume: 0   # (m^3) This is the volume of the HGM that is effectivly used for combustion.
                                   # Last updated: May 25th, 2026 by Miles Cohen
