@@ -324,6 +324,7 @@ class ImpellerBladeDesign:
 				
 				theta = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), m_split, initial=0)
 				theta += theta_start
+				theta += 2*np.pi / self.Pump.Impeller.Z_blade_2 # to offset from regular blades
 
 				beta_dis.Domain = (m_start, beta_dis.Domain[1])
 
@@ -355,26 +356,22 @@ class ImpellerBladeDesign:
 			points, betas = bladelines
 			num_streams = len(points)
 
-			theta_offset = j * 2*np.pi / self.Pump.Impeller.Z_blade_2
-
 			for i in range(num_streams):
 
 				phi: float = i / (num_streams - 1)
 				
 				r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
-				theta += theta_offset
-
 				arc_m=np.linspace(*beta_dis.Domain, len(r))
 				beta = beta_dis.Get(arc_m)
 
 				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
-				theta_blade: float = 2*np.pi / (self.Pump.Impeller.Z_blade_2 - self.Pump.Impeller.Z_blade_1)
+				theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
 
 				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
-				theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_2)])
-				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_2)
+				theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_1)])
+				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
 
 				color = colors[i % len(colors)]
 				fig.add_trace(go.Scatter(

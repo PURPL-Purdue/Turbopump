@@ -132,11 +132,11 @@ def CreatePump(propellant: Propellant):
 def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
 
-	pump.Impeller.PlotOutletVelocities().show()
+	pump.Impeller.PlotOutletVelocities()#.show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump).show()
+	Pump1D.PlotHQ(pump)#.show()
 	print(Pump1D.GetTorque(pump))
 	print(Pump1D.GetInducerlessNPSH_r(pump))
 
@@ -157,8 +157,8 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	pump_meridional.PotentialFlow.Plot().show()
-	pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot()#.show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -167,7 +167,7 @@ def MakeDesign(propellant: Propellant):
 		blade_params=blade_params[propellant]
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	imp_blade_design.PlotInletTriangles(free_vortex=False).show()
+	imp_blade_design.PlotInletTriangles(free_vortex=False)#.show()
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------

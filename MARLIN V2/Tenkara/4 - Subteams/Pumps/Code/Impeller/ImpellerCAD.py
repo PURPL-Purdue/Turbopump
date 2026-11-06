@@ -32,17 +32,20 @@ class ImpellerCAD:
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
 		RESOLUTION: int = 200
+		Z_blade_1: int = self.Impeller.Z_blade_1
 
-		# blade_points is a list of points (ndarrays)
-		blade_points, _ = self._blade_design.GetBladeLines()
+		blade_sets = [] # main blades, then splitters if there are any
+		for j in range(2 if self._blade_design._splitter else 1):
+			bladelines = self._blade_design._bladelines if j == 0 else self._blade_design._splitter_bladelines
+			# blade_points is a list of points (ndarrays)
+			blade_points, _ = bladelines
 
-		t = np.linspace(0, 1, RESOLUTION)
-		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
-		camber = cadquery.func.loft(blade_edges)
-
-		Z_blade: int = self.Impeller.Z_blade_2
-		# rotate the blades about the z-axis
-		blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade) for n in range(Z_blade)])
+			t = np.linspace(0, 1, RESOLUTION)
+			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
+			camber = cadquery.func.loft(blade_edges)
+			# rotate the blades about the z-axis
+			blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
+			blade_sets.append(blades)
 
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
 		shroud_edge = cadquery.Edge.makeSpline(
@@ -63,8 +66,9 @@ class ImpellerCAD:
 			cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
 			.add(shroud_surface, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
-			.add(blades, name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 		)
+		for name, blades in zip(('blades', 'splitters'), blade_sets):
+			self.Assembly.add(blades, name=name, color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 
 	def Show(self):
 		show(self.Assembly)
