@@ -58,13 +58,15 @@ class ImpellerBladeDesign:
 		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
+		
 		if self._params.use_cubic:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
+			if self._splitter:
+				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=0.6)
 		else:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines(
-					resolution=self._params.resolution, length_ratio=0.7)
+				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=0.6)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -219,7 +221,11 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+
+		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		splitter: bool = length_ratio != 1.0
+		
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
 		lead_sweep = self._params.lead_sweep.to('rad').m
@@ -235,22 +241,33 @@ class ImpellerBladeDesign:
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 			arc_x = np.linspace(0, blade_stream.length_m, resolution)
 			stream_zr = blade_stream.Points(arc_x)
-			r = stream_zr[:, 1]
+			radii = stream_zr[:, 1]
 
-			if i == 0: r_0 = r[0]
-			arc_lead = np.sin(lead_sweep) * (r[0] - r_0)
-			theta_offset = arc_lead / r[0]
+			if i == 0: r_0 = radii[0]
+			arc_lead = np.sin(lead_sweep) * (radii[0] - r_0)
+			theta_offset = arc_lead / radii[0]
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=radii
 				)
-			
-			theta = cm.GetThetaFromRadiiAndArclength(radii=r, arc_x=arc_x)
-			total_wrap = theta[-1]
-			theta += target_wrap - total_wrap
 
-			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=(0, blade_stream.length_m), TotalWrap=total_wrap))
+			if splitter:
+				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
+				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
+				stream_zr: np.ndarray = blade_stream.Points(arc_x)
+				radii: np.ndarray = stream_zr[:, 1]
+				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
+				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+			else:
+				domain: tuple[float, float] = (0, blade_stream.length_m)
+				theta_offset: float = 0
+			
+			theta = cm.GetThetaFromRadiiAndArclength(radii=radii, arc_x=arc_x)
+			total_wrap = theta[-1]
+			theta += (target_wrap - total_wrap) + theta_offset
+
+			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
 		return (points_3d, betas)
