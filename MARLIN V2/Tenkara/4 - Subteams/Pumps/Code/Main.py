@@ -50,14 +50,14 @@ basic_inducer_geometry = {
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
 		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
-		Z_blade = 1
+		Z_blade = 2
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
 		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
 		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.76)
-		Z_blade = 1
+		Z_blade = 2
 	)
 }
 
