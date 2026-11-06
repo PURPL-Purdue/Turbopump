@@ -356,7 +356,7 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def CreateCAD(self, num_lines: int=7, resolution: int=300, flip_z: bool=True, flip_theta: bool=True) -> cadquery.assembly:
+	def CreateCAD(self, num_lines: int=7, resolution: int=300, flip_z: bool=True, flip_theta: bool=True) -> cadquery.Assembly:
 		"""
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API

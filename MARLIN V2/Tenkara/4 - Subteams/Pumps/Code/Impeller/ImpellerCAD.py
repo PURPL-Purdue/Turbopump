@@ -15,7 +15,7 @@ Impeller CAD generation
 
 def GetSTEPPath(propellant: Propellant) -> Path:
 	"""Default STEP file of the impeller: <propellant>_impeller.step in the Impeller folder."""
-	return Path(__file__).parent / f'{propellant.name}_impeller.step'
+	return Path(__file__).resolve().parents[2] / 'Outputs' / f'{propellant.name}_impeller.step'
 
 def _MeridionalContourToCartesian(contour: MeridionalContour, resolution: int=200, flip_z: bool=False) -> list[cadquery.Vector]:
 	
@@ -72,12 +72,3 @@ class ImpellerCAD:
 
 	def Show(self):
 		show(self.Assembly)
-
-	def SaveSTEP(self, path: str | Path | None = None):
-		"""Saves the assembly as a STEP file in mm, keeping the part names and colors.
-		By default it goes in the Impeller folder as <propellant>_impeller.step."""
-		if path is None:
-			path = GetSTEPPath(self._blade_design.Pump.Propellant)
-
-		print(f'Saved STEP to: {path.name}')
-		self.Assembly.export(str(path), exportType='STEP', unit='MM')

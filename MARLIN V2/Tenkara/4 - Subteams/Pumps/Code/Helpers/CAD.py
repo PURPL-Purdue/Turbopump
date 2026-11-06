@@ -11,3 +11,9 @@ def CylindricalToCartesian(points_zrt: np.ndarray, flip_z: bool=False, flip_thet
 	y = r * np.sin(theta)
 	points_xyz = np.column_stack((x, y, z)) * 1e3 # meter to mm
 	return [cadquery.Vector(*p) for p in points_xyz]
+
+def GetStepExportPath(file_name: str) -> Path:
+	return Path(__file__).resolve().parents[2] / 'Outputs' / f'{file_name}.step'
+
+def ExportAssembly(assembly: cadquery.Assembly, name: str):
+	assembly.export(str(GetStepExportPath(name)), exportType='STEP', unit='MM')

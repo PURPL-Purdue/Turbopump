@@ -191,9 +191,11 @@ def MakeDesign(propellant: Propellant):
 	show(pump_assembly)
 
 	# Save STEP file
+	from Helpers import CAD
 	do_save = True if input('Save STEP? (y):\n') == 'y' else False
 	if do_save:
-		imp_cad.SaveSTEP()
+		CAD.ExportAssembly(imp_cad.Assembly, f'{propellant.name}_impeller')
+		CAD.ExportAssembly(inducer_assm, f'{propellant.name}_inducer')
 
 	return pump
 
