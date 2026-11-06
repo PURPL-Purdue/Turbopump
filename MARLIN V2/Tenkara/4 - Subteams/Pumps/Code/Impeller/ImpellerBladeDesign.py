@@ -44,6 +44,7 @@ class BladeParams:
 	resolution: int = 200
 	target_wrap: Q_[float] = Q_(120, 'deg')
 	use_cubic: bool = True
+	splitter_length_ratio: float = 0.6
 
 class ImpellerBladeDesign:
 
@@ -62,11 +63,11 @@ class ImpellerBladeDesign:
 		if self._params.use_cubic:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
 			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=0.6)
+				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 		else:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=0.6)
+				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -369,8 +370,8 @@ class ImpellerBladeDesign:
 		
 		colors = express.colors.qualitative.Plotly
 
-		for j in range(2 if self._splitter else 1):
-			bladelines = self._bladelines if j == 0 else self._splitter_bladelines
+		for is_splitter in (False, True) if self._splitter else (False,) :
+			bladelines = self._splitter_bladelines if is_splitter else self._bladelines
 			points, betas = bladelines
 			num_streams = len(points)
 
@@ -383,8 +384,6 @@ class ImpellerBladeDesign:
 				arc_m=np.linspace(*beta_dis.Domain, len(r))
 				beta = beta_dis.Get(arc_m)
 
-				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
-
 				theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
 
 				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
@@ -392,15 +391,21 @@ class ImpellerBladeDesign:
 				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
 
 				color = colors[i % len(colors)]
+				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+
+				# plot plan view
 				fig.add_trace(go.Scatter(
 					x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
 					y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
-					name=trace_name, legendgroup=f'{i}', line=dict(color=color)
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
 				), row=1, col=1)
 
+				if is_splitter: continue
+
+				# plot Beta distribution, if blade lines are regular blades (not splitter)
 				fig.add_trace(go.Scatter(
 					x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
-					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=True
 				), row=1, col=2)
 
 		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)

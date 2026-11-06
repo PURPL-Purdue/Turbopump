@@ -79,16 +79,18 @@ meridional_geometry = {
 blade_params = {
 	Propellant.LOX: BladeParams(
 		sj=0.15,
-		lead_sweep=Q_(10, 'deg'),
+		lead_sweep=Q_(-10, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
-		use_cubic = False
+		use_cubic = False,
+		resolution=500,
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.12,
-		lead_sweep=Q_(10, 'deg'),
+		sj=0.2,
+		lead_sweep=Q_(0, 'deg'),
 		target_wrap = Q_(140, 'deg'),
-		use_cubic = False
+		use_cubic = False,
+		resolution=500,
 	)
 }
 
@@ -159,8 +161,8 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	pump_meridional.PotentialFlow.Plot()#.show()
-	pump_meridional.PlotMeridional(color=color[propellant])#.show()
+	#pump_meridional.PotentialFlow.Plot().show()
+	#pump_meridional.PlotMeridional(color=color[propellant]).show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(

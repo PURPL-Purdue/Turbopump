@@ -31,22 +31,22 @@ class ImpellerCAD:
 	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True):
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
-		RESOLUTION: int = 200
 		Z_blade_1: int = self.Impeller.Z_blade_1
 
 		blade_sets = [] # main blades, then splitters if there are any
-		for j in range(2 if self._blade_design._splitter else 1):
-			bladelines = self._blade_design._bladelines if j == 0 else self._blade_design._splitter_bladelines
-			# blade_points is a list of points (ndarrays)
+		for is_splitter in (False, True) if self._blade_design._splitter else (False,):
+			bladelines = self._blade_design._splitter_bladelines if is_splitter else self._blade_design._bladelines
+			# blade_points is a list of point arrays (ndarrays)
 			blade_points, _ = bladelines
 
-			t = np.linspace(0, 1, RESOLUTION)
+			t = np.linspace(0, 1, len(blade_points[0]))
 			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
 			camber = cadquery.func.loft(blade_edges)
 			# rotate the blades about the z-axis
 			blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
 			blade_sets.append(blades)
 
+		RESOLUTION = 200
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
 		shroud_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION, flip_z=flip_z)
