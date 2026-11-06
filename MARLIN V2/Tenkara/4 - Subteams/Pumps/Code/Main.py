@@ -25,7 +25,7 @@ basic_impeller_geometry = {
 		Z_blade_2 = 10,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1.0, 'in'),				# impeller inlet diameter
+		d_1 = Q_(1.0, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.0, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.115, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
@@ -50,13 +50,14 @@ basic_inducer_geometry = {
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
 		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
-		Z_blade = 2
+		Z_blade = 1
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
 		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
 		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.76)
+		Z_blade = 1
 	)
 }
 
@@ -77,14 +78,14 @@ meridional_geometry = {
 
 blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.2,
+		sj=0.15,
 		lead_sweep=Q_(10, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
 		use_cubic = False
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.15,
+		sj=0.12,
 		lead_sweep=Q_(10, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False
@@ -172,7 +173,7 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,

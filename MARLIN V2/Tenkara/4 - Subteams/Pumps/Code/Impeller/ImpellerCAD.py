@@ -28,7 +28,7 @@ def _MeridionalContourToCartesian(contour: MeridionalContour, resolution: int=20
 
 class ImpellerCAD:
 
-	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool):
+	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True):
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
 		RESOLUTION: int = 200
@@ -41,7 +41,7 @@ class ImpellerCAD:
 			blade_points, _ = bladelines
 
 			t = np.linspace(0, 1, RESOLUTION)
-			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z), parameters=list(t)) for p in blade_points]
+			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
 			camber = cadquery.func.loft(blade_edges)
 			# rotate the blades about the z-axis
 			blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
