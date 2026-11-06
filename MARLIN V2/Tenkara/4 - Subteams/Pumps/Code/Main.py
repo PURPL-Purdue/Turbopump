@@ -26,7 +26,6 @@ basic_impeller_geometry = {
 		splitter=True,
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.1, 'in'),				# impeller inlet diameter
-		d_1 = Q_(1.0, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.0, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.115, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
