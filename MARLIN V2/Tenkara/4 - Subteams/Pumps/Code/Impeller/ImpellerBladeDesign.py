@@ -54,16 +54,17 @@ class ImpellerBladeDesign:
 		self.MeridionalDesign = meridional_design
 		self._rad_eq = inducer_radial_equilibrium
 		self.K_inlet = inducer_radial_equilibrium.GetOutletAngularMomentum() if inducer_radial_equilibrium is not None else Q_(0, 'm^2/s')
-		
+
+		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
 		if self._params.use_cubic:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
 		else:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
-			if self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1:
+			if self._splitter:
 				self._splitter_bladelines = self._CreateBladeLines(
-					resolution=self._params.resolution, length_ratio=0.8)
+					resolution=self._params.resolution, length_ratio=0.5)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -346,40 +347,46 @@ class ImpellerBladeDesign:
 		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
 				subplot_titles=(f'{self.Pump.Propellant.name} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
-
-		points, betas = self._splitter_bladelines
-		num_streams = len(points)
+		
 		colors = express.colors.qualitative.Plotly
 
-		for i in range(num_streams):
+		for j in range(2 if self._splitter else 1):
+			bladelines = self._bladelines if j == 0 else self._splitter_bladelines
+			points, betas = bladelines
+			num_streams = len(points)
 
-			phi: float = i / (num_streams - 1)
-			
-			r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
+			theta_offset = j * 2*np.pi / self.Pump.Impeller.Z_blade_2
 
-			arc_m=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_m)
+			for i in range(num_streams):
 
-			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+				phi: float = i / (num_streams - 1)
+				
+				r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
-			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
-			Z = self.Pump.Impeller.Z_blade_2
+				theta += theta_offset
 
-			# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
-			theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(Z)])
-			r_n = np.tile(np.append(r, np.nan), Z)
+				arc_m=np.linspace(*beta_dis.Domain, len(r))
+				beta = beta_dis.Get(arc_m)
 
-			color = colors[i % len(colors)]
-			fig.add_trace(go.Scatter(
-				x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
-				y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
-				name=trace_name, legendgroup=f'{i}', line=dict(color=color)
-			), row=1, col=1)
+				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
-			fig.add_trace(go.Scatter(
-				x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
-				name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
-			), row=1, col=2)
+				theta_blade: float = 2*np.pi / (self.Pump.Impeller.Z_blade_2 - self.Pump.Impeller.Z_blade_1)
+
+				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
+				theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_2)])
+				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_2)
+
+				color = colors[i % len(colors)]
+				fig.add_trace(go.Scatter(
+					x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
+					y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color)
+				), row=1, col=1)
+
+				fig.add_trace(go.Scatter(
+					x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+				), row=1, col=2)
 
 		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)
 		fig.update_yaxes(title_text=r'Blade angle <i>β</i> (°)', row=1, col=2)
