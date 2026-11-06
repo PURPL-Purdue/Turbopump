@@ -1,0 +1,14 @@
+{
+    "inducer_axial_length": {
+        "value": 0.015239999999999998,
+        "unit": "m"
+    },
+    "inducer_tip_diameter": {
+        "value": 0.0254,
+        "unit": "m"
+    },
+    "inducer_inlet_hub_diameter": {
+        "value": 0.015012118688902074,
+        "unit": "m"
+    }
+}

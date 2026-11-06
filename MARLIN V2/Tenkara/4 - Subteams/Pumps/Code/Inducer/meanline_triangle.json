@@ -1,0 +1,26 @@
+{
+    "absolute_velocity": {
+        "value": 5.372580608460531,
+        "unit": "m/s"
+    },
+    "relative_velocity": {
+        "value": 38.608951061181706,
+        "unit": "m/s"
+    },
+    "rotational_velocity": {
+        "value": 38.23331635694604,
+        "unit": "m/s"
+    },
+    "beta1": {
+        "value": 7.998880803780225,
+        "unit": "deg"
+    },
+    "incidence": {
+        "value": 2.0,
+        "unit": "deg"
+    },
+    "beta1_blade": {
+        "value": 9.998880803780224,
+        "unit": "deg"
+    }
+}

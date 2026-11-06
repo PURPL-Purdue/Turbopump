@@ -110,7 +110,7 @@ Top level:
   - The suction metrics are `FlowCoefficient`, `N_ss` and `NPSH_3`, from the sheet relations with `lambda_c` = 1.1 and `lambda_w` = 0.03 (constructor arguments; they are K and σ). `NPSH_3` is backed out of `N_ss`.
   - `FlowCoefficient` and `N_ss` depend only on `lambda_w`, `lambda_c` and `hub_tip_ratio`, not on the actual tip diameter. `1DPerformance.py` has the same relations for a `Sizing.InletSizing`.
 - `RadialEquilibrium.py`: `InducerRadialEquilibrium`, which gives c_θ(r, z) and c_axial(r, z) behind the tapered-hub inducer. `GetOutletAngularMomentum()` gives the impeller inlet preswirl.
-- `MeanlineTriangle.py`: `MeanlineTriangle`, the zero-blockage inlet triangle on the rms radius. It passes the incidence ratio to `InducerRadialEquilibrium`.
+- `MeanlineTriangle.py`: `MeanlineTriangle`, the zero-blockage inlet triangle on the rms radius. It passes the incidence angle to `InducerRadialEquilibrium`.
 - `Sizing.py`: sizes the inducer inlet to match the impeller inlet.
   - `SizeInletForImpeller` takes the tip and exit hub diameters from the impeller's `d_1` and `d_hub`. It solves the inlet hub diameter from the hub taper, and the cavitation parameter from the Gülich tip diameter;
   - `OptimizeImpellerInlet` grid-searches for the largest impeller inlet, within a tolerance, that satisfies `InletSizingLimits`;

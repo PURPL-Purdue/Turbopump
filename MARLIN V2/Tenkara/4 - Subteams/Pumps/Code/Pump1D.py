@@ -127,3 +127,4 @@ if __name__ == '__main__':
 	#VelocityTriangle.PlotTriangles([lox_pump.Impeller.OutletVelocityTriangleAtDesign, lox_pump.Impeller.OutletBladeTriangleAtDesign], names=['with slip', 'no slip']).show()
 	#PlotHQ(lox_pump).show()
 	GetInducerlessNPSH_r(lox_pump)
+	print(f"Inducer head rise requirement: {GetInducerHeadRequirement(lox_pump)}")

@@ -79,13 +79,13 @@ class InducerRadialEquilibrium:
 	mass-averaged outlet Euler head equals H_rise / eta_bl. Blade blockage uses N blades of constant
 	normal thickness at the tip, tapering linearly to hub_thickness_ratio times that at the hub (sec. 3.1.11,
 	eq. 42; SP-8052 recommends thicker at the hub); blade_thickness=None disables it.
-	incidence_ratio (alpha/beta, ~0.425) offsets the flow angle from the blade angle at the inlet,
+	incidence (an angle, blade angle minus flow angle) offsets the flow angle from the blade angle at the inlet,
 	fading linearly to zero at the outlet; None disables it.
 
 	eta_bl = 0.85  # Blade efficiency, sec. 2.2.6
 	"""
 
-	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
+	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence: Q_ | None = None, blade_thickness: Q_ | None = None,
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
@@ -94,8 +94,7 @@ class InducerRadialEquilibrium:
 		self.hub_thickness_ratio = hub_thickness_ratio
 		self.eta_bl = eta_bl
 		# The blade inlet angle comes from the zero-blockage inlet meanline triangle
-		self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
-		self.incidence_ratio = self.meanline.incidence_ratio
+		self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence=incidence)
 		self.Z_blade = self.inducer.Z_blade
 		self.t: float = None if blade_thickness is None else blade_thickness.to('m').magnitude
 
@@ -109,13 +108,10 @@ class InducerRadialEquilibrium:
 		self.target_euler_head = g_dh / eta_bl  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u), eta_bl = 0.85 (sec. 2.2.6)
 
 		# Blade inlet angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0);
-		# the meanline triangle is the zero-blockage version and only supplies the incidence ratio
+		# the meanline triangle is the zero-blockage version and only supplies the incidence angle
 		gamma1 = np.arctan(self._lam_flow(0.0) / self._r_ms(0.0))
-		if self.incidence_ratio is None:
-			self.beta1, self.alpha1 = gamma1, 0.0
-		else:
-			self.beta1 = gamma1 / (1.0 - self.incidence_ratio)
-			self.alpha1 = self.incidence_ratio * self.beta1
+		self.alpha1 = self.meanline.alpha1
+		self.beta1 = gamma1 + self.alpha1
 		self.beta2 = self._solve_beta2()
 
 	# ---- SI-float internals -------------------------------------------------

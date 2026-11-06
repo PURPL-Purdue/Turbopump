@@ -1,0 +1,90 @@
+{
+  "propellants": {
+    "LOX": {
+      "operating_point": {
+        "mass_flow": {
+          "value": 2.03,
+          "unit": "kg/s"
+        },
+        "volumetric_flow_rate": {
+          "value": 0.0017713787085514832,
+          "unit": "m^3/s"
+        },
+        "shaft_speed": {
+          "value": 35000.0,
+          "unit": "rpm"
+        }
+      },
+      "impeller_inlet_geometry": {
+        "tip_diameter": {
+          "value": 0.0254,
+          "unit": "m"
+        },
+        "hub_diameter": {
+          "value": 0.015239999999999998,
+          "unit": "m"
+        }
+      },
+      "inducer_design": {
+        "required_head_rise": {
+          "value": 65.0,
+          "unit": "m"
+        },
+        "sizing_constants": {
+          "lambda_w": 0.03,
+          "lambda_c": 1.1,
+          "psi_max": 0.08,
+          "axial_length_ratio": 0.6
+        },
+        "blade_parameters": {
+          "blade_count": 2,
+          "incidence_ratio": 0.425,
+          "blade_efficiency": 0.85
+        }
+      }
+    },
+    "IPA": {
+      "operating_point": {
+        "mass_flow": {
+          "value": 2.15,
+          "unit": "kg/s"
+        },
+        "volumetric_flow_rate": {
+          "value": 0.0027353689567430023,
+          "unit": "m^3/s"
+        },
+        "shaft_speed": {
+          "value": 35000.0,
+          "unit": "rpm"
+        }
+      },
+      "impeller_inlet_geometry": {
+        "tip_diameter": {
+          "value": 0.030479999999999997,
+          "unit": "m"
+        },
+        "hub_diameter": {
+          "value": 0.017779999999999997,
+          "unit": "m"
+        }
+      },
+      "inducer_design": {
+        "required_head_rise": {
+          "value": 80.0,
+          "unit": "m"
+        },
+        "sizing_constants": {
+          "lambda_w": 0.03,
+          "lambda_c": 1.1,
+          "psi_max": 0.08,
+          "axial_length_ratio": 0.6
+        },
+        "blade_parameters": {
+          "blade_count": 2,
+          "incidence_ratio": 0.425,
+          "blade_efficiency": 0.85
+        }
+      }
+    }
+  }
+}

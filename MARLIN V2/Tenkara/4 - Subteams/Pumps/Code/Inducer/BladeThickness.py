@@ -2,6 +2,7 @@
 #   t_max = s (sin(beta) - (w1/w2) sin(beta - alpha)),  s = 2 pi r_hub_1 / Z
 #   Method 1: hub inlet and outlet triangles from the radial equilibrium, iterated because the blade blockage depends on t_max
 #   Method 2: SP-8052 cavity relations (eqs. 5, 25-27) with K from the optimum flow coefficient of lambda_w, lambda_c
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +21,7 @@ from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 from Inducer.Sizing import InletSizing
 
 Z_BLADE = 2                 # same as Pump.AddInducer
-INCIDENCE_RATIO = 0.425     # alpha / beta, SP-8052 sec. 2.1.9 (~0.425)
+INCIDENCE = Q_(2, 'deg')    # blade angle minus flow angle at the inlet, same as MeanlineTriangle.INCIDENCE
 
 
 @dataclass
@@ -35,6 +36,12 @@ class ThicknessResult:
     K: float | None = None  # cavitation number from phi_opt (method 2)
     K_used: float | None = None     # K, raised to K_min where the hub is supercavitating
     K_min: float | None = None      # eq. 29 at the hub
+    wedge: float | None = None      # blade wedge angle at the hub inlet (rad), eq. 69
+
+
+def WedgeAngle(inducer: Inducer, beta: float) -> float:
+    """SP-8052 eqs. 69-70: blade wedge angle alpha_w = beta - arctan(1.10 phi_d), with phi_d the design flow coefficient. beta and the result in rad"""
+    return beta - np.arctan(1.10 * inducer.FlowCoefficient)
 
 
 def InducerFromSizing(sizing: InletSizing, Z_blade: int = Z_BLADE) -> Inducer:
@@ -51,7 +58,7 @@ def _MaxThickness(pitch: float, beta: float, alpha: float, w_ratio: float) -> fl
     return pitch * (np.sin(beta) - w_ratio * np.sin(beta - alpha))
 
 
-def Method1RadialEquilibrium(inducer: Inducer, incidence_ratio: float = INCIDENCE_RATIO, tol: float = 1e-6,
+def Method1RadialEquilibrium(inducer: Inducer, incidence: Q_ = INCIDENCE, tol: float = 1e-6,
                              max_iter: int = 100, relax: float = 0.7) -> ThicknessResult:
     """Iterate t -> radial equilibrium with blockage t -> hub w1/w2, beta, alpha -> t until t and w1/w2 stop changing"""
     r_h1, r_h2, L = inducer.R_hub_1, inducer.R_hub_2, inducer.L_ax
@@ -59,7 +66,7 @@ def Method1RadialEquilibrium(inducer: Inducer, incidence_ratio: float = INCIDENC
     pitch = 2 * np.pi * r_h1.to('m').m / inducer.Z_blade
     t, w_ratio = 0.0, np.nan
     for i in range(1, max_iter + 1):
-        eq = InducerRadialEquilibrium(inducer, incidence_ratio=incidence_ratio, blade_thickness=Q_(t, 'm'))
+        eq = InducerRadialEquilibrium(inducer, incidence=incidence, blade_thickness=Q_(t, 'm'))
         w_1 = eq.RelativeVelocity(r_h1, z_in)[2].to('m/s').m
         w_2 = eq.RelativeVelocity(r_h2, L)[2].to('m/s').m
         beta = eq.BladeAngle(r_h1, z_in).to('rad').m
@@ -69,7 +76,8 @@ def Method1RadialEquilibrium(inducer: Inducer, incidence_ratio: float = INCIDENC
         converged = abs(t_new - t) < tol * pitch and abs(w_new - w_ratio) < tol
         t, w_ratio = t + relax * (t_new - t), w_new
         if converged:
-            return ThicknessResult('1: radial equilibrium', w_ratio, beta, alpha, Q_(pitch, 'm'), Q_(t_new, 'm'), iterations=i)
+            return ThicknessResult('1: radial equilibrium', w_ratio, beta, alpha, Q_(pitch, 'm'), Q_(t_new, 'm'), iterations=i,
+                                 wedge=WedgeAngle(inducer, beta))
     raise RuntimeError(f"Method 1 did not converge in {max_iter} iterations (t = {t:.3e} m, w1/w2 = {w_ratio:.4f})")
 
 
@@ -78,15 +86,15 @@ def OptimumCavitationNumber(phi: float) -> float:
     return phi**2 / (1 - 2 * phi**2)
 
 
-def Method2CavitationRelations(inducer: Inducer, incidence_ratio: float = INCIDENCE_RATIO) -> ThicknessResult:
+def Method2CavitationRelations(inducer: Inducer, incidence: Q_ = INCIDENCE) -> ThicknessResult:
     """w1/w2 from the cavity (wake) model, SP-8052 eqs. 25-27, with K from phi(lambda_w, lambda_c) as in 1DPerformance.py"""
     K = OptimumCavitationNumber(inducer.FlowCoefficient)
     r_h1 = inducer.R_hub_1.to('m').m
     omega = inducer.DP.N_shaft.to('rad/s').m
     c_m = inducer.DP.Q.to('m^3/s').m / (np.pi * (inducer.R_tip.to('m').m**2 - r_h1**2))   # eq. 23, zero blockage
     gamma = np.arctan(c_m / (omega * r_h1))                       # flow angle at the hub, zero prewhirl
-    beta = gamma / (1 - incidence_ratio)                          # sec. 2.1.9
-    alpha = incidence_ratio * beta
+    alpha = incidence.to('rad').m
+    beta = gamma + alpha                                          # blade angle = flow angle + incidence
 
     # eq. 27 (the sign between the two terms was checked against eq. 29: F = 1 exactly at K = K_min)
     F_of = lambda K: ((1 + K)**0.5 * np.sin(beta) + (1 + K)**-0.5 * np.sin(beta - 2 * alpha)) / (2 * np.sin(beta - alpha))
@@ -98,32 +106,38 @@ def Method2CavitationRelations(inducer: Inducer, incidence_ratio: float = INCIDE
     w_ratio = w_c_over_w2 / np.sqrt(1 + K_used)     # eq. 25, w_c = w_1 sqrt(1 + K)
     pitch = 2 * np.pi * r_h1 / inducer.Z_blade
     t = max(_MaxThickness(pitch, beta, alpha, w_ratio), 0.0)
-    return ThicknessResult('2: SP-8052 cavitation', w_ratio, beta, alpha, Q_(pitch, 'm'), Q_(t, 'm'), K=K, K_used=K_used, K_min=K_min)
+    return ThicknessResult('2: SP-8052 cavitation', w_ratio, beta, alpha, Q_(pitch, 'm'), Q_(t, 'm'), K=K, K_used=K_used, K_min=K_min,
+                           wedge=WedgeAngle(inducer, beta))
 
 
-def CompareBladeThickness(sizing: InletSizing, name: str = 'Inducer', Z_blade: int = Z_BLADE) -> tuple[ThicknessResult, ThicknessResult]:
-    inducer = InducerFromSizing(sizing, Z_blade)
-    m1 = Method1RadialEquilibrium(inducer)
-    m2 = Method2CavitationRelations(inducer)
+def CompareInducerBladeThickness(inducer: Inducer, name: str = 'Inducer', incidence: Q_ = INCIDENCE) -> tuple[ThicknessResult, ThicknessResult]:
+    m1 = Method1RadialEquilibrium(inducer, incidence)
+    m2 = Method2CavitationRelations(inducer, incidence)
 
     print(f"\n===== {name} inducer hub blade thickness =====")
     print(f"Hub radius inlet / outlet : {inducer.R_hub_1.to('mm'):.3f} / {inducer.R_hub_2.to('mm'):.3f}, tip {inducer.R_tip.to('mm'):.3f}, Z = {inducer.Z_blade}")
-    print(f"lambda_w, lambda_c        : {sizing.lambda_w:.4f}, {sizing.constants.lambda_c}  ->  phi = {inducer.FlowCoefficient:.4f}, K = {m2.K:.4f}")
-    print(f"{'Method':<26}{'w1/w2':>9}{'beta':>10}{'alpha':>10}{'pitch':>12}{'t_max':>12}")
+    print(f"Incidence                 : {incidence.to('deg'):.2f}")
+    print(f"phi, K                    : {inducer.FlowCoefficient:.4f}, {m2.K:.4f}")
+    print(f"{'Method':<26}{'w1/w2':>9}{'beta':>10}{'alpha':>10}{'wedge':>10}{'pitch':>12}{'t_max':>12}")
     for m in (m1, m2):
         print(f"{m.method:<26}{m.w_ratio:>9.4f}{np.degrees(m.beta):>8.2f}deg{np.degrees(m.alpha):>7.2f}deg"
-              f"{m.pitch.to('mm').m:>10.3f}mm{m.t_max.to('mm').m:>10.4f}mm")
+                  f"{np.degrees(m.wedge):>7.2f}deg{m.pitch.to('mm').m:>10.3f}mm{m.t_max.to('mm').m:>10.4f}mm")
     print(f"Method 1 converged in {m1.iterations} iterations; t_max difference (1 - 2) = {(m1.t_max - m2.t_max).to('mm'):.4f}")
     if m2.K_used > m2.K:
         print(f"Note: K = {m2.K:.4f} is below the hub supercavitation limit K_min = {m2.K_min:.4f} (eq. 29), method 2 uses K = K_min at the hub")
     return m1, m2
 
 
-if __name__ == "__main__":
-    import Main
-    from Inducer.Sizing import InletTolerance, SizeInducerFromPump
+def CompareBladeThickness(sizing: InletSizing, name: str = 'Inducer', Z_blade: int = Z_BLADE) -> tuple[ThicknessResult, ThicknessResult]:
+    return CompareInducerBladeThickness(InducerFromSizing(sizing, Z_blade), name)
 
-    # Same sizing as Sizing.py with USE_PUMP = True: the impeller inlet may move by up to 20 %
-    tolerance = InletTolerance(d_1=0.2, d_hub=0.2)
-    for propellant in (Main.Propellant.LOX, Main.Propellant.IPA):
-        CompareBladeThickness(SizeInducerFromPump(Main.CreatePump(propellant), tolerance=tolerance), propellant.name)
+
+if __name__ == "__main__":
+    # Inducer from design_parameters.json and hub_geometry.json, incidence from meanline_triangle.json (LOX only)
+    from Inducer.MeanlineTriangle import InducerFromJson, MEANLINE_TRIANGLE_PATH, _quantity
+
+    inducer = InducerFromJson()
+    with MEANLINE_TRIANGLE_PATH.open(encoding='utf-8') as file:
+        alpha = _quantity(json.load(file)['incidence'])     # incidence angle, alpha_1
+    print(f"Incidence from {MEANLINE_TRIANGLE_PATH.name}: {alpha.to('deg'):.2f}")
+    CompareInducerBladeThickness(inducer, 'LOX', alpha)

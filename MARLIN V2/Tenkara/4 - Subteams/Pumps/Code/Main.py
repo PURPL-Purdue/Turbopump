@@ -9,9 +9,6 @@ from CoolProp import CoolProp as CP
 import Impeller.MeridionalDesign as MeridionalDesign
 import sys
 from pathlib import Path
-import Impeller.ImpellerCAD as ImpellerCAD
-import cadquery
-from cadquery.vis import show
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))	# Pumps folder, so the Inputs package imports when run directly
 from Inputs import Inputs
@@ -128,6 +125,10 @@ def CreatePump(propellant: Propellant):
 	)
 
 def MakeDesign(propellant: Propellant):
+	import Impeller.ImpellerCAD as ImpellerCAD
+	import cadquery
+	from cadquery.vis import show
+
 	pump = CreatePump(propellant)
 
 	pump.Impeller.PlotOutletVelocities()#.show()
