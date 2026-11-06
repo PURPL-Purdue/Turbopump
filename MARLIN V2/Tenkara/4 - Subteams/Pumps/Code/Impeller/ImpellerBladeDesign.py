@@ -44,6 +44,7 @@ class BladeParams:
 	resolution: int = 200
 	target_wrap: Q_[float] = Q_(120, 'deg')
 	use_cubic: bool = True
+	splitter_length_ratio: float = 0.6
 
 class ImpellerBladeDesign:
 
@@ -58,13 +59,15 @@ class ImpellerBladeDesign:
 		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
+		
 		if self._params.use_cubic:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
+			if self._splitter:
+				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 		else:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines(
-					resolution=self._params.resolution, length_ratio=0.7)
+				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -219,7 +222,11 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+
+		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		splitter: bool = length_ratio != 1.0
+		
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
 		lead_sweep = self._params.lead_sweep.to('rad').m
@@ -233,23 +240,35 @@ class ImpellerBladeDesign:
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+			arc_x = np.linspace(0, blade_stream.length_m, resolution)
+			stream_zr = blade_stream.Points(arc_x)
+			radii = stream_zr[:, 1]
 
-			stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
-			r = stream_zr[:, 1]
-
-			if i == 0: r_0 = r[0]
-			arc_lead = np.sin(lead_sweep) * (r[0] - r_0)
-			theta_offset = arc_lead / r[0]
+			if i == 0: r_0 = radii[0]
+			arc_lead = np.sin(lead_sweep) * (radii[0] - r_0)
+			theta_offset = arc_lead / radii[0]
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=radii
 				)
-			
-			beta_dis: BetaCMM = cm.SolveDistribution()
-			theta = beta_dis.Theta + target_wrap - beta_dis.TotalWrap
 
-			betas.append(beta_dis)
+			if splitter:
+				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
+				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
+				stream_zr: np.ndarray = blade_stream.Points(arc_x)
+				radii: np.ndarray = stream_zr[:, 1]
+				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
+				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+			else:
+				domain: tuple[float, float] = (0, blade_stream.length_m)
+				theta_offset: float = 0
+			
+			theta = cm.GetThetaFromRadiiAndArclength(radii=radii, arc_x=arc_x)
+			total_wrap = theta[-1]
+			theta += (target_wrap - total_wrap) + theta_offset
+
+			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
 		return (points_3d, betas)
@@ -351,8 +370,8 @@ class ImpellerBladeDesign:
 		
 		colors = express.colors.qualitative.Plotly
 
-		for j in range(2 if self._splitter else 1):
-			bladelines = self._bladelines if j == 0 else self._splitter_bladelines
+		for is_splitter in (False, True) if self._splitter else (False,) :
+			bladelines = self._splitter_bladelines if is_splitter else self._bladelines
 			points, betas = bladelines
 			num_streams = len(points)
 
@@ -365,8 +384,6 @@ class ImpellerBladeDesign:
 				arc_m=np.linspace(*beta_dis.Domain, len(r))
 				beta = beta_dis.Get(arc_m)
 
-				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
-
 				theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
 
 				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
@@ -374,15 +391,21 @@ class ImpellerBladeDesign:
 				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
 
 				color = colors[i % len(colors)]
+				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+
+				# plot plan view
 				fig.add_trace(go.Scatter(
 					x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
 					y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
-					name=trace_name, legendgroup=f'{i}', line=dict(color=color)
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
 				), row=1, col=1)
 
+				if is_splitter: continue
+
+				# plot Beta distribution, if blade lines are regular blades (not splitter)
 				fig.add_trace(go.Scatter(
 					x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
-					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=True
 				), row=1, col=2)
 
 		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)

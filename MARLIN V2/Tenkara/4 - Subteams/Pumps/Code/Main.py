@@ -22,9 +22,11 @@ atm_pressure = Q_(1, 'atm').to('Pa')
 
 basic_impeller_geometry = {
 	Propellant.LOX: Impeller.InputGeometry(
-		Z_blade_2 = 6,					# integer number of blades
+		Z_blade_2 = 10,					# integer number of blades
+		splitter=True,
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.1, 'in'),				# impeller inlet diameter
+		d_1 = Q_(1.0, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.0, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.115, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
@@ -32,14 +34,14 @@ basic_impeller_geometry = {
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
-		Z_blade_2 = 8,					# integer number of blades
+		Z_blade_2 = 10,					# integer number of blades
+		splitter=True,
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness at exit
 		d_hub=Q_(0.65, 'in'),			# hub diameter
-		splitter=True,
 	)
 }
 
@@ -77,17 +79,19 @@ meridional_geometry = {
 
 blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.2,
-		lead_sweep=Q_(-20, 'deg'),
-		target_wrap = Q_(130, 'deg'), # cubic only
-		use_cubic = False
+		sj=0.15,
+		lead_sweep=Q_(-10, 'deg'),
+		target_wrap = Q_(111, 'deg'), # cubic only
+		use_cubic = False,
+		resolution=500,
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.15,
-		lead_sweep=Q_(-20, 'deg'),
+		sj=0.2,
+		lead_sweep=Q_(0, 'deg'),
 		target_wrap = Q_(140, 'deg'),
-		use_cubic = False
+		use_cubic = False,
+		resolution=500,
 	)
 }
 
@@ -167,8 +171,8 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	pump_meridional.PotentialFlow.Plot()#.show()
-	pump_meridional.PlotMeridional(color=color[propellant])#.show()
+	#pump_meridional.PotentialFlow.Plot().show()
+	#pump_meridional.PlotMeridional(color=color[propellant]).show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -181,7 +185,7 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True)
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
@@ -197,12 +201,14 @@ def MakeDesign(propellant: Propellant):
 	show(pump_assembly)
 
 	# Save STEP file
+	from Helpers import CAD
 	do_save = True if input('Save STEP? (y):\n') == 'y' else False
 	if do_save:
-		imp_cad.SaveSTEP()
+		CAD.ExportAssembly(imp_cad.Assembly, f'{propellant.name}_impeller')
+		CAD.ExportAssembly(inducer_assm, f'{propellant.name}_inducer')
 
 	return pump
 
 if __name__ == "__main__":
-	#MakeDesign(Propellant.LOX)
+	MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)

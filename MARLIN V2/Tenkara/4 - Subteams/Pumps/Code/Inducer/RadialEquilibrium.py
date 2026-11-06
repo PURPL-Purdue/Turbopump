@@ -24,13 +24,12 @@ from Inducer.Inducer import Inducer
 from Inducer.MeanlineTriangle import MeanlineTriangle
 from VelocityTriangle import PlotTriangles, VelocityTriangle
 
-_trapz = np.trapezoid
-
 """
 @Andrew Fontanetta:
 - core functionality/radial equilibrium implementation
 Modified by @Charlie Zhu:
 - to expose more API and for CAD generation
+- outlet slip and hydraulic efficiency (Gulich) implementation
 """
 
 def _archimedian_spiral(r_0: float, r_max: float, wrap_angle: float) -> float:
@@ -77,6 +76,8 @@ def _leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
 		t = np.clip((r - r_0) / (r_max - r_0), 0, 1)
 		return wrap_angle * t**p
 	return func
+
+_leading_edge_theta = _archimedian_spiral
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
@@ -155,7 +156,7 @@ class InducerRadialEquilibrium:
 	def _eta_hyd(self, beta2b):
 		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t. Initial estimate: L = r * wrap and t = 2 pi r / Z, so r cancels; no leading edge sweep
 		z = np.linspace(0, self.L, 200)
-		wrap = _trapz(1 / (self._r_ms(z) * np.tan(self._beta(z, beta2b))), z)		# as in GetBladeLines
+		wrap = np.trapezoid(1 / (self._r_ms(z) * np.tan(self._beta(z, beta2b))), z)		# as in GetBladeLines
 		return 1 - 0.11 * self.Z_blade * wrap / (2 * np.pi)
 
 	def _dA(self, r, lam, strict=True):
@@ -172,7 +173,7 @@ class InducerRadialEquilibrium:
 		r = np.linspace(self._r_hub(z), self.R_t, 400)
 		lam = self.Q / (np.pi * self.omega * (self.R_t**2 - self._r_hub(z) ** 2))
 		for _ in range(30):
-			area = _trapz(self._dA(r, lam, strict=False), r)
+			area = np.trapezoid(self._dA(r, lam, strict=False), r)
 			if area <= 0.0:
 				raise ValueError("Blade blockage closes the passage; reduce thickness or blade number.")
 			lam = self.Q / (self.omega * area)
@@ -190,8 +191,8 @@ class InducerRadialEquilibrium:
 		r = np.linspace(self._r_hub(z), self.R_t, 400)
 		dA = self._dA(r, lam)
 		# Own derivation: Q = omega*lam*(A0 - C*A1) from eqs. 38-39; SP-8052 eq. 43 is the closed form for a linearly tapered blade
-		A0 = _trapz(dA, r)
-		A1 = _trapz(dA / (r**2 + lam**2), r)
+		A0 = np.trapezoid(dA, r)
+		A1 = np.trapezoid(dA / (r**2 + lam**2), r)
 		return max((A0 - self.Q / (self.omega * lam)) / A1, 0.0)
 
 	def _psi(self, r, z, beta2b):
@@ -206,7 +207,7 @@ class InducerRadialEquilibrium:
 		dA = self._dA(r, lam)
 		c_u = psi * r * self.omega  # eq. 40
 		c_a = (1.0 - psi) * lam * self.omega  # eq. 39
-		return _trapz(r * c_u * c_a * dA, r) / _trapz(c_a * dA, r)
+		return np.trapezoid(r * c_u * c_a * dA, r) / np.trapezoid(c_a * dA, r)
 	
 	def _outlet_head(self, beta2b):
 		# Mass-averaged Euler head g*H = omega * <r c_u> (eq. 36 with c_u = 0 at inlet, eq. 47)
@@ -355,20 +356,20 @@ class InducerRadialEquilibrium:
 
 		return points_zrt
 
-	def CreateCAD(self, num_lines: int=7, resolution: int=300) -> cadquery.assembly:
+	def CreateCAD(self, num_lines: int=7, resolution: int=300, flip_z: bool=True, flip_theta: bool=True) -> cadquery.Assembly:
 		"""
 		@Charlie Zhu
 		Temporarily borrowing from impeller CAD API
 		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
 		from Helpers import CAD
 		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, True)) for p in blade_lines]
+		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta)) for p in blade_lines]
 		camber = cadquery.func.loft(blade_edges)
 		blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
 		blades = camber.moved(*blade_locations)
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
-		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), True))
+		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), flip_z, flip_theta))
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		assm = (cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))

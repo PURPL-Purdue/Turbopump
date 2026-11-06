@@ -3,34 +3,34 @@
 # By: Miles Cohen
 
 # Injector Hardware Definition
-LOx_Cda:  0.00000175        # (m^2) Assumed Cd of 0.6
+LOx_Cda:  0.00000190        # (m^2) Assumed Cd of 0.65 w/ #68 drill bit
                               # Last updated: Sept 24th, 2026 by Miles Cohen
 
-fuel_Cda: 0.00000307        # (m^2) Assumed Cd of 0.6  #ORIGINALY WAS 0.00000342   
-                              # Last updated: Sept 24th, 2026 by Miles Cohen
+fuel_Cda: 0.00000435        # (m^2) Assumed Cd of 0.65 w/ 3/64 drill   
+                              # Last updated: Nov 5th, 2026 by Miles Cohen
 
-film_Cda: 0.00000791        # (m^2) Assumed Cd of 0.5
+film_Cda: 0.00001028        # (m^2) Assumed Cd of 0.65
                               # Last updated: Oct 28th, 2026 by Arvin Peng
 
-film_insert_Cda:            # (m^2) Assumed Cd = 0.55
+film_insert_Cda:            # (m^2) Assumed Cd = 0.65
   "0%":  0
-  "5%":  0.0000002678
-  "10%": 0.0000006026
-  "15%": 0.0000009719
-  "20%": 0.000001366
-  "25%": 0.000001728
-  "30%": 0.000002285
-  "35%": 0.000002920
-  "40%": 0.000003888
+  "5%":  0.000000319
+  "10%": 0.000000711
+  "15%": 0.00000115
+  "20%": 0.00000162
+  "25%": 0.00000204
+  "30%": 0.00000270
+  "35%": 0.00000345
+  "40%": 0.00000459
                         # Last updated: Oct 28th, 2026 by Arvin Peng
 
 # Stator Hardware Definition
-stator_throat_area: 0.000086 # (m^2) Assumed to be the same as the injector area #ORIGINALY WAS 0.000077 m^2
-                              # Last updated: Sept 27th, 2026 by Miles Cohen
+stator_throat_area: 0.000098 # (m^2) Assumed to be the same as the injector area #ORIGINALY WAS 0.000077 m^2
+                              # Last updated: Nov 6th, 2026 by Miles Cohen
                               #TENTATIVE/RANDOM
 
-stator_throat_num: 8          # (dimensionless) Number of nozzles in the stator
-                              # Last updated: May 25th, 2026 by Miles Cohen
+stator_throat_num: 4          # (dimensionless) Number of nozzles in the stator
+                              # Last updated: Nov 6th, 2026 by Miles Cohen
 
 stator_eff_combustion_volume: 0   # (m^3) This is the volume of the HGM that is effectivly used for combustion.
                                   # Last updated: May 25th, 2026 by Miles Cohen

@@ -1,7 +1,7 @@
 import numpy as np
 from collections.abc import Callable
 import warnings
-import scipy.integrate
+from scipy.integrate import cumulative_trapezoid as cum_trap
 from dataclasses import dataclass
 from plotly import graph_objects as go
 
@@ -32,8 +32,10 @@ class ConformalMapping:
 		self._target_wrap = target_wrap
 		self._radii = radii
 		self._resolution = len(radii)
+		self._solveDistribution()
+		
 
-	def _SolveCoefficients(self, A_f: float) -> np.ndarray[float]:
+	def _solveCoefficients(self, A_f: float) -> np.ndarray[float]:
 		"""
 		A(x) = a x^3 + b x^2 + c x + d, coefficients highest power first (np.polyval order)
 		"""
@@ -49,42 +51,55 @@ class ConformalMapping:
 		return np.linalg.solve(lhs, rhs)
 
 
-	def _GetDistribution(self, A_f: float) -> tuple[BetaCMM, np.ndarray]:
+	# def _GetDistribution(self, A_f: float) -> tuple[BetaCMM, np.ndarray]:
 
-		coeffs = self._SolveCoefficients(A_f)
-		A_array = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
-		theta = scipy.integrate.cumulative_trapezoid(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
+	# 	coeffs = self._solveCoefficients(A_f)
+	# 	A_array = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
+	# 	theta = cum_trap(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
 
-		def GetBeta(x: float) -> float:
-			return np.atan(1 / np.polyval(np.polyder(coeffs), x))
+	# 	def GetBeta(x: float) -> float:
+	# 		return np.atan(1 / np.polyval(np.polyder(coeffs), x))
 
-		return BetaCMM(GetBeta, theta, (0, self._arclen)), coeffs
+	# 	return BetaCMM(GetBeta, theta, (0, self._arclen)), coeffs
 
-	def SolveDistribution(self, target_wrap: float=None) -> BetaCMM:
+	def GetBeta(self, arc_x: float|np.ndarray[float]) -> float|np.ndarray[float]:
+		return np.atan(1 / np.polyval(np.polyder(self._coeffs), arc_x))
 
-		if target_wrap is None:
-			target_wrap = self._target_wrap
+	def _getTheta(self, coeffs: np.ndarray) -> np.ndarray[float]:
+		A: np.ndarray = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
+		return cum_trap(1/self._radii, A, dx=self._arclen/self._resolution, initial=0)
+
+	def GetThetaFromRadiiAndArclength(self, radii: np.ndarray|None=None, arc_x: np.ndarray|None=None) -> np.ndarray:
+		if radii is None:
+			radii = self._radii
+		if arc_x is None: arc_x = np.linspace(0, self._arclen, self._resolution)
+
+		A: np.ndarray = np.polyval(self._coeffs, arc_x)
+		return cum_trap(1/radii, A, dx=arc_x[-1] / len(arc_x), initial=0)
+	
+	def _solveDistribution(self):
+
+		self._target_wrap
 		c_1, c_2 = 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)
 		# beta rises monotonically (A'' <= 0 on the whole blade) only for A_f in the middle third
 		A_f_max = self._arclen * (2*c_2 + c_1) / 3	# A''(x_f) = 0: beta flat at the outlet, least wrap
 		A_f_min = self._arclen * (c_2 + 2*c_1) / 3	# A''(0) = 0: beta flat at the inlet, most wrap
 
-		beta_high, _ = self._GetDistribution(A_f_max)
-		beta_low, _ = self._GetDistribution(A_f_min)
+		wrap_high: float = self._getTheta(self._solveCoefficients(A_f_max))[-1]
+		wrap_low: float = self._getTheta(self._solveCoefficients(A_f_min))[-1]
 
-		A_f = A_f_max + (target_wrap - beta_high.TotalWrap) * (A_f_min - A_f_max) / (beta_low.TotalWrap - beta_high.TotalWrap)
+		A_f = A_f_max + (self._target_wrap - wrap_high) * (A_f_min - A_f_max) / (wrap_low - wrap_high)
 		A_f_clamped = np.clip(A_f, min(A_f_max, A_f_min), max(A_f_max, A_f_min))
 
-		beta_dis, coeffs = self._GetDistribution(A_f_clamped)
+		self._coeffs = self._solveCoefficients(A_f_clamped)
+		wrap = self._getTheta(self._coeffs)[-1]
 		if A_f_clamped != A_f:
-			warnings.warn(f'Cannot achieve target wrap angle {np.rad2deg(target_wrap):.1f} deg with a monotonic beta; resorting to {np.rad2deg(beta_dis.TotalWrap):.1f} deg')
+			warnings.warn(f'Cannot achieve target wrap angle {np.rad2deg(self._target_wrap):.1f} deg with a monotonic beta; resorting to {np.rad2deg(wrap):.1f} deg')
 		
 		fig = go.Figure()
 		y=np.linspace(0, self._arclen, 100)
 		fig.add_trace(go.Scatter(
-			x = np.polyval(coeffs, y),
+			x = np.polyval(self._coeffs, y),
 			y = y
 		))
 		#fig.show()
-
-		return beta_dis
