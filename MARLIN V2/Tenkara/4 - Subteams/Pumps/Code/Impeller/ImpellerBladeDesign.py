@@ -64,7 +64,7 @@ class ImpellerBladeDesign:
 			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 			if self._splitter:
 				self._splitter_bladelines = self._CreateBladeLines(
-					resolution=self._params.resolution, length_ratio=0.5)
+					resolution=self._params.resolution, length_ratio=0.7)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
