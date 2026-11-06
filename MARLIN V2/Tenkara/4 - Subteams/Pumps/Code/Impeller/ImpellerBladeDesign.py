@@ -54,13 +54,19 @@ class ImpellerBladeDesign:
 		self.MeridionalDesign = meridional_design
 		self._rad_eq = inducer_radial_equilibrium
 		self.K_inlet = inducer_radial_equilibrium.GetOutletAngularMomentum() if inducer_radial_equilibrium is not None else Q_(0, 'm^2/s')
-		
+
+		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
+		
 		if self._params.use_cubic:
-			self._CreateBladeLines2(resolution=self._params.resolution)
+			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
+			if self._splitter:
+				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=0.6)
 		else:
-			self._CreateBladeLines(resolution=self._params.resolution)
+			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
+			if self._splitter:
+				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=0.6)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -88,7 +94,7 @@ class ImpellerBladeDesign:
 		impeller = self.MeridionalDesign.Pump.Impeller
 
 		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
-		pitch = 2 * np.pi * r_1 / impeller.Z_blade
+		pitch = 2 * np.pi * r_1 / impeller.Z_blade_1
 		a: Q_[float] = impeller.blade_thick / (pitch * np.sin(lambda_1.to('rad').m))
 		assert a < 1, 'The blades fill the inlet circumference, reduce the blade number or thickness'
 
@@ -215,7 +221,11 @@ class ImpellerBladeDesign:
 
 		return beta_dis
 
-	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+
+		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		splitter: bool = length_ratio != 1.0
+		
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
 		lead_sweep = self._params.lead_sweep.to('rad').m
@@ -229,29 +239,40 @@ class ImpellerBladeDesign:
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+			arc_x = np.linspace(0, blade_stream.length_m, resolution)
+			stream_zr = blade_stream.Points(arc_x)
+			radii = stream_zr[:, 1]
 
-			stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
-			r = stream_zr[:, 1]
-
-			if i == 0: r_0 = r[0]
-			arc_lead = np.sin(lead_sweep) * (r[0] - r_0)
-			theta_offset = arc_lead / r[0]
+			if i == 0: r_0 = radii[0]
+			arc_lead = np.sin(lead_sweep) * (radii[0] - r_0)
+			theta_offset = arc_lead / radii[0]
 
 			cm = ConformalMapping(
 				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=r
+				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=radii
 				)
-			
-			beta_dis: BetaCMM = cm.SolveDistribution()
-			theta = beta_dis.Theta + target_wrap - beta_dis.TotalWrap
 
-			betas.append(beta_dis)
+			if splitter:
+				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
+				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
+				stream_zr: np.ndarray = blade_stream.Points(arc_x)
+				radii: np.ndarray = stream_zr[:, 1]
+				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
+				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+			else:
+				domain: tuple[float, float] = (0, blade_stream.length_m)
+				theta_offset: float = 0
+			
+			theta = cm.GetThetaFromRadiiAndArclength(radii=radii, arc_x=arc_x)
+			total_wrap = theta[-1]
+			theta += (target_wrap - total_wrap) + theta_offset
+
+			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		self._bladelines = (points_3d, betas)
-		return self._bladelines
+		return (points_3d, betas)
 
-	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
+	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
 			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
 			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
@@ -264,7 +285,9 @@ class ImpellerBladeDesign:
 				points: (resolution, 3) arrays of (z, r, theta), in m, m and rad
 				betas:  the BetaDistribution, whose Get(x) is beta (rad) at x (m) on its Domain
 		"""
-
+		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
+		splitter: bool = length_ratio != 1.0
+		
 		lead_sweep: float = self._params.lead_sweep.to('rad').m
 		ref_phi = 1 # shroud streamline
 		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
@@ -289,7 +312,7 @@ class ImpellerBladeDesign:
 				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 				blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
-				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, len(r_ref)))
+				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
 				r = stream_zr[:, 1]
 				
 				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
@@ -301,18 +324,39 @@ class ImpellerBladeDesign:
 				)
 			else:
 				beta_dis, stream_zr, r = ref_beta_dis, ref_stream_zr, r_ref
-			
-			arc_m=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_m)
+				blade_stream = ref_bladestream
 
-			theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
+			if splitter:
+				m_start = (1 - length_ratio) * beta_dis.Domain[1]
+
+				m_fade = np.linspace(0, m_start, resolution)
+				beta_fade = beta_dis.Get(np.linspace(0, m_start, resolution))
+				r_fade = blade_stream.Points(m_fade)[:, 1]
+				theta_start: float = np.trapezoid(1/ (r_fade * np.tan(beta_fade)), m_fade)
+
+				m_split = np.linspace(m_start, blade_stream.length_m, resolution)
+				
+				stream_zr = blade_stream.Points(m_split)
+				r = stream_zr[:, 1]
+				beta = beta_dis.Get(m_split)
+				
+				theta = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), m_split, initial=0)
+				theta += theta_start
+				theta += 2*np.pi / self.Pump.Impeller.Z_blade_2 # to offset from regular blades
+
+				beta_dis.Domain = (m_start, beta_dis.Domain[1])
+
+			else:
+				arc_m=np.linspace(*beta_dis.Domain, resolution)
+				beta = beta_dis.Get(arc_m)
+	
+				theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
 			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
-		self._bladelines = (points_3d, betas)
-		return self._bladelines
+		return (points_3d, betas)
 
 	def GetBladeLines(self):
 		return self._bladelines
@@ -322,40 +366,42 @@ class ImpellerBladeDesign:
 		fig = subplots.make_subplots(rows=1, cols=2, column_widths=[0.6, 0.4],
 				subplot_titles=(f'{self.Pump.Propellant.name} Impeller Plan View (Bottom Up)', r'Variation of <i>β</i>')
 			)
-
-		points, betas = self.GetBladeLines()
-		num_streams = len(points)
+		
 		colors = express.colors.qualitative.Plotly
 
-		for i in range(num_streams):
+		for j in range(2 if self._splitter else 1):
+			bladelines = self._bladelines if j == 0 else self._splitter_bladelines
+			points, betas = bladelines
+			num_streams = len(points)
 
-			phi: float = i / (num_streams - 1)
-			
-			r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
+			for i in range(num_streams):
 
-			arc_m=np.linspace(*beta_dis.Domain, len(r))
-			beta = beta_dis.Get(arc_m)
+				phi: float = i / (num_streams - 1)
+				
+				r, theta, beta_dis = points[i][:, 1], points[i][:, 2], betas[i]
 
-			trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+				arc_m=np.linspace(*beta_dis.Domain, len(r))
+				beta = beta_dis.Get(arc_m)
 
-			theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade
-			Z = self.Pump.Impeller.Z_blade
+				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
-			# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
-			theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(Z)])
-			r_n = np.tile(np.append(r, np.nan), Z)
+				theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
 
-			color = colors[i % len(colors)]
-			fig.add_trace(go.Scatter(
-				x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
-				y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
-				name=trace_name, legendgroup=f'{i}', line=dict(color=color)
-			), row=1, col=1)
+				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
+				theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_1)])
+				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
 
-			fig.add_trace(go.Scatter(
-				x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
-				name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
-			), row=1, col=2)
+				color = colors[i % len(colors)]
+				fig.add_trace(go.Scatter(
+					x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
+					y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color)
+				), row=1, col=1)
+
+				fig.add_trace(go.Scatter(
+					x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+				), row=1, col=2)
 
 		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)
 		fig.update_yaxes(title_text=r'Blade angle <i>β</i> (°)', row=1, col=2)
