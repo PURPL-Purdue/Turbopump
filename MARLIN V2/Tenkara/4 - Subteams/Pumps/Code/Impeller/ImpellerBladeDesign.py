@@ -233,8 +233,8 @@ class ImpellerBladeDesign:
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
-
-			stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
+			arc_x = np.linspace(0, blade_stream.length_m, resolution)
+			stream_zr = blade_stream.Points(arc_x)
 			r = stream_zr[:, 1]
 
 			if i == 0: r_0 = r[0]
@@ -246,10 +246,11 @@ class ImpellerBladeDesign:
 				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=r
 				)
 			
-			beta_dis: BetaCMM = cm.SolveDistribution()
-			theta = beta_dis.Theta + target_wrap - beta_dis.TotalWrap
+			theta = cm.GetThetaFromRadiiAndArclength(radii=r, arc_x=arc_x)
+			total_wrap = theta[-1]
+			theta += target_wrap - total_wrap
 
-			betas.append(beta_dis)
+			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=(0, blade_stream.length_m), TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
 		return (points_3d, betas)
