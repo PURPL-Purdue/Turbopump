@@ -55,9 +55,9 @@ basic_inducer_geometry = {
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
-		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
-		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.76)
-		Z_blade = 2
+		d_hub_1 = Q_(0.48, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
+		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,
+		Z_blade = 2		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
 }
 
@@ -157,6 +157,15 @@ def MakeDesign(propellant: Propellant):
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
 	inducer_assm = inducer_eq.CreateCAD()
+	z = Q_(np.linspace(0, pump.Inducer.L_ax.to('m').magnitude, 200), 'm')
+	beta_ms = inducer_eq.blade_angle(z)				# rms radius angle at each z
+	r_ms = inducer_eq.mean_radius(z)
+	lead = r_ms.magnitude * np.tan(beta_ms.to('rad').magnitude)
+	beta_tip = np.degrees(np.arctan(lead / inducer_eq.R_t))	# R_t is the tip radius in m
+	beta_min = beta_tip.min()
+	print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
+	min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
+	print(f"Min blade spacing {min_spacing:.2f} in")
 	#inducer_eq.ShowCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
