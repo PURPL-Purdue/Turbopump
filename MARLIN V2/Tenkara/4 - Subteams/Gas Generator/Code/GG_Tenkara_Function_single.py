@@ -26,9 +26,12 @@ def GasGen_mdot_single(P_ox: Q_, P_Fuel: Q_, insert_id: str) -> Q_:
     
     def series_cda(*cdas):                # cdas: 1-D float array
         total = 0.0
-        for c in cdas:
-            total += 1.0 / c**2
-        return total ** -0.5
+        if any(c == 0 for c in cdas):
+            return 0.0
+        else:
+            for c in cdas:
+                total += 1.0 / c**2
+            return total ** -0.5
 
     def get_cstar(of: float, pc_pa: Q_) -> Q_:
         """Return c*(OF, P_c[Pa]) -> ft/s (ideal, from NASA CEA via RocketCEA)."""
@@ -80,5 +83,5 @@ def GasGen_mdot_single(P_ox: Q_, P_Fuel: Q_, insert_id: str) -> Q_:
         cstar_init = get_cstar(total_OF, Pc_init)
         Pc = Q_(cstar_init * total_mdot / GG.Stator_Area, 'psi')
 
-    print(f"Final Pc: {round(Pc.to('psi').m, 1)}")
+    # print(f"Final Pc: {round(Pc.to('psi').m, 1)}")
     return total_mdot.to('lb/s')
