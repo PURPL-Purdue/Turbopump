@@ -1,0 +1,6 @@
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/CMakeFiles/PWM-output-adc-input.dir
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/CMakeFiles/edit_cache.dir
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
