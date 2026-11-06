@@ -22,23 +22,24 @@ atm_pressure = Q_(1, 'atm').to('Pa')
 
 basic_impeller_geometry = {
 	Propellant.LOX: Impeller.InputGeometry(
-		Z_blade = 6,					# integer number of blades
-		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),				# impeller inlet diameter
-		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
-		b_2 = Q_(0.08, 'in'),			# impeller outlet height
+		Z_blade_2 = 6,					# integer number of blades
+		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
+		d_1 = Q_(1.0, 'in'),				# impeller inlet diameter
+		d_2 = Q_(2.0, 'in'),			# impeller outlet diameter
+		b_2 = Q_(0.115, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness
-		d_hub=Q_(0.6, 'in'),			# hub diameter
+		d_hub=Q_(0.5, 'in'),			# hub diameter
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
-		Z_blade = 6,					# integer number of blades
+		Z_blade_2 = 8,					# integer number of blades
 		Beta2B = Q_(55,'deg').to('rad'),# blade angle at exit, relative to tangent
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.8, 'in'),			# impeller outlet diameter
-		b_2 = Q_(0.08, 'in'),			# impeller outlet height
+		b_2 = Q_(0.12, 'in'),			# impeller outlet height
 		blade_thick = Q_(0.8, 'mm'),	# blade thickness at exit
-		d_hub=Q_(0.7, 'in'),			# hub diameter
+		d_hub=Q_(0.65, 'in'),			# hub diameter
+		splitter=True,
 	)
 }
 
@@ -46,13 +47,14 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.372, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
+		Z_blade = 2
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
-		d_hub_1 = Q_(0.63, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
+		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
 		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
 }
@@ -148,7 +150,6 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
 	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
-	inducer_eq.PlotBladeAngle("LOX inducer blade angle")
 	inducer_assm = inducer_eq.CreateCAD()
 	#inducer_eq.ShowCAD()
 	#exit()
@@ -166,7 +167,7 @@ def MakeDesign(propellant: Propellant):
 		blade_params=blade_params[propellant]
 	)
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	imp_blade_design.PlotInletTriangles(free_vortex=False).show()
+	imp_blade_design.PlotInletTriangles(free_vortex=False)#.show()
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
@@ -193,5 +194,5 @@ def MakeDesign(propellant: Propellant):
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign(Propellant.LOX)
+	#MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)

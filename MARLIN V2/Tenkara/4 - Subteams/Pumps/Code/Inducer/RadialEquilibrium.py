@@ -70,6 +70,13 @@ def _tangent_transition_spiral(r_0: float, r_max: float, wrap_angle: float, n: f
 
 	return func
 
+def _leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
+	"""theta = wrap_angle * t^p, t = (r - r_0) / (r_max - r_0). Radial at r_0 for p > 1.
+	Sweep from radial at r_max: tan(sweep) = p * wrap_angle * r_max / (r_max - r_0)."""
+	def func(r):
+		t = np.clip((r - r_0) / (r_max - r_0), 0, 1)
+		return wrap_angle * t**p
+	return func
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
@@ -82,17 +89,16 @@ class InducerRadialEquilibrium:
 	incidence_ratio (alpha/beta, ~0.425) offsets the flow angle from the blade angle at the inlet,
 	blending linearly into the deviation at the outlet; None disables it.
 
-	eta_bl = 0.85  # Blade efficiency, sec. 2.2.6
+	eta_bl = 1 - 0.11 L/t  # Hydraulic efficiency, Gülich eq. 7.6.13, see _eta_bl
 	"""
 
-	def __init__(self, inducer: Inducer, eta_bl: float = 0.85, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
+	def __init__(self, inducer: Inducer, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
-		self._sweepback = np.deg2rad(90)
+		self._sweepback = np.deg2rad(60)
 
 		self.hub_thickness_ratio = hub_thickness_ratio
-		self.eta_bl = eta_bl
 		# The blade inlet angle comes from the zero-blockage inlet meanline triangle
 		self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
 		self.incidence_ratio = self.meanline.incidence_ratio
@@ -105,8 +111,7 @@ class InducerRadialEquilibrium:
 		self.L = inducer.L_ax.to('m').magnitude
 		self.Q = inducer.DP.Q.to('m^3/s').magnitude
 		self.omega = inducer.DP.N_shaft.to('rad/s').magnitude
-		g_dh = 9.81 * inducer.DP.H_rise.to('m').magnitude
-		self.target_euler_head = g_dh / eta_bl  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u), eta_bl = 0.85 (sec. 2.2.6)
+		self._g_dh = 9.81 * inducer.DP.H_rise.to('m').magnitude  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u)
 
 		# Blade inlet angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0);
 		# the meanline triangle is the zero-blockage version and only supplies the incidence ratio
@@ -118,6 +123,7 @@ class InducerRadialEquilibrium:
 			self.alpha1 = self.incidence_ratio * self.beta1
 		self.beta2b = self._solve_beta2b()
 		self.delta2 = self._deviation(self.beta2b)		# outlet deviation at the rms radius, the flow leaves at beta2b - delta2
+		self.eta_hyd = self._eta_hyd(self.beta2b)
 
 	# ---- SI-float internals -------------------------------------------------
 	def _r_hub(self, z):
@@ -138,13 +144,19 @@ class InducerRadialEquilibrium:
 		r = self._r_ms(z)
 		tan_beta = np.tan(self._beta(z, beta2b))
 		theta = integrate.cumulative_trapezoid(1 / (r * tan_beta), z, initial=0)		# wrap, as in GetBladeLines
-		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		get_LE_theta = _leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self._sweepback)
 		z_LE = np.interp(0, theta - get_LE_theta(r), z)
 		# blade arclength: dl^2 = dz^2 + dr^2 + (r dtheta)^2, with r dtheta = dz / tan(beta)
 		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + np.gradient(r, z)**2 + 1 / tan_beta**2), z, initial=0)
 		length = arclength[-1] - np.interp(z_LE, z, arclength)
 		pitch = 2 * np.pi * r[-1] / self.Z_blade
 		return np.radians((2 + np.degrees(beta2b - self.beta1) / 3) * (pitch / length)**(1 / 3))
+
+	def _eta_hyd(self, beta2b):
+		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t. Initial estimate: L = r * wrap and t = 2 pi r / Z, so r cancels; no leading edge sweep
+		z = np.linspace(0, self.L, 200)
+		wrap = _trapz(1 / (self._r_ms(z) * np.tan(self._beta(z, beta2b))), z)		# as in GetBladeLines
+		return 1 - 0.11 * self.Z_blade * wrap / (2 * np.pi)
 
 	def _dA(self, r, lam, strict=True):
 		# Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
@@ -202,12 +214,12 @@ class InducerRadialEquilibrium:
 
 	def _solve_beta2b(self):
 		grid = np.linspace(self.beta1, 1.5, 600)
-		f = np.array([self._outlet_head(b) - self.target_euler_head for b in grid])
+		f = np.array([self._outlet_head(b) - self._g_dh / self._eta_hyd(b) for b in grid])
 		idx = np.flatnonzero((f[1:] >= 0) & (f[:-1] < 0))
 		if idx.size == 0:
 			raise ValueError("Target outlet head is not reachable with this geometry.")
 		i = idx[0]
-		return brentq(lambda b: self._outlet_head(b) - self.target_euler_head, grid[i], grid[i + 1])
+		return brentq(lambda b: self._outlet_head(b) - self._g_dh / self._eta_hyd(b), grid[i], grid[i + 1])
 
 	def _check(self, r, z):
 		if not 0.0 <= z <= self.L:
@@ -301,7 +313,7 @@ class InducerRadialEquilibrium:
 		# radii clustered toward the tip
 		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
-		get_LE_theta = _archimedian_spiral(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		get_LE_theta = _leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self._sweepback)
 		theta_LE = get_LE_theta(radii_LE)
 		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
 		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
