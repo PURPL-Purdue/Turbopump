@@ -69,7 +69,7 @@ meridional_geometry = {
 		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
-		Z_e_factor = 1.2,
+		Z_e_factor = 1.2, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(5, 'deg')
@@ -139,11 +139,11 @@ def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
 	print(f'{propellant.name} head coeff: {pump.Impeller.HeadCoefficient:.3f}')
 	print(f'{propellant.name} flow coeff: {pump.Impeller.FlowCoefficient:.3f}')
-	pump.Impeller.PlotOutletVelocities().show()
+	pump.Impeller.PlotOutletVelocities()#.show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	#Pump1D.PlotHQ(pump).show()
+	Pump1D.PlotHQ(pump)#.show()
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	#print(Pump1D.GetInducerlessNPSH_r(pump))
 	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))

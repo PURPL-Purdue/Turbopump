@@ -86,7 +86,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 	))
 
 	fig.update_layout(
-		title='Head Rise vs Flowrate (H-Q) Curve',
+		title=f'{pump.Propellant.name} Pump Head Rise vs Flowrate (H-Q) Curve',
 		xaxis_title='Volumetric flow rate [L/s]',
 		yaxis_title='Head [m]',
 		yaxis=dict(rangemode='tozero'),
