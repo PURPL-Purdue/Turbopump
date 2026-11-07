@@ -91,6 +91,9 @@ class ImpellerBladeDesign:
 				tan(beta_1') = tan(beta_1) / rho_1		(Milos eq. 33)
 			Solved explicitly (own derivation): sin(beta_1' - beta_1) = a cos(beta_1)
 		"""
+		
+		if self.Pump.Inducer is None: free_vortex = True
+		
 		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline, free_vortex=free_vortex)
 		impeller = self.MeridionalDesign.Pump.Impeller
 
