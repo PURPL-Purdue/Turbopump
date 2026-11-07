@@ -432,7 +432,7 @@ if __name__ == "__main__":
 	print("--- Meanline Angles after Radial equilibrium ---")
 	for col, propellant, inducer in zip(axes.T, ('LOX', 'IPA'), (lox_pump.Inducer, ipa_pump.Inducer)):
 
-		eq = InducerRadialEquilibrium(inducer, blade_thickness=Q_(0.5, 'mm'))
+		eq = InducerRadialEquilibrium(inducer, blade_thickness=Q_(1, 'mm'))
 		print(f"{propellant}: beta1b = {np.degrees(eq.beta1b):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg, delta2 = {np.degrees(eq.delta2):.2f} deg")
 		for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
 			z = inducer.L_ax * frac
