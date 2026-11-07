@@ -48,7 +48,7 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.55, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
 		Z_blade = 2
 	),
@@ -144,7 +144,7 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	#Pump1D.PlotHQ(pump).show()
-	#print(Pump1D.GetTorque(pump))
+	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	#print(Pump1D.GetInducerlessNPSH_r(pump))
 	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
 
@@ -168,14 +168,14 @@ def MakeDesign(propellant: Propellant):
 	print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
 	min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
 	print(f"Min blade spacing {min_spacing:.2f} in")
-	#inducer_eq.ShowCAD()
+	inducer_eq.ShowCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	#pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot().show()
+	pump_meridional.PlotMeridional(color=color[propellant]).show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -189,6 +189,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
+	#imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
