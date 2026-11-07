@@ -1,7 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from MeanlineTriangle import c_m as FLuid_Vel_Blade_Tip_I 
+try:
+    from Inducer import D_tip, D_hub as H_diameter, T_diameter
+except ImportError:
+    D_tip = None
+    D_hub = None
 
- 
 def get_float(prompt: str) -> float:
     """Keep asking until the user enters a valid number."""
     while True:
@@ -96,7 +101,5 @@ def main():
     fig.tight_layout()
     plt.show()
  
- 
-if __name__ == "__main__":
-    main()
+
  
