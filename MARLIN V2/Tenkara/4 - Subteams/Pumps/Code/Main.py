@@ -117,7 +117,7 @@ fluid_props = {
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-inducer_head_rise = dict(LOX=Q_(35, 'm'), IPA=Q_(30, 'm'))  # lambda_w of 0.7 for impeller
+inducer_head_rise = {Propellant.LOX:Q_(49, 'm'), Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(
@@ -145,13 +145,13 @@ def MakeDesign(propellant: Propellant):
 	import Pump1D
 	Pump1D.PlotHQ(pump)#.show()
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
-	#print(Pump1D.GetInducerlessNPSH_r(pump))
+	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
 	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
 
 	# ----------------- CREATE INDUCER ------------------
-	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
-	print('Inducer required head:', inducer_head)	
-	print(f'{propellant} inducer desired head:', inducer_head)
+	print(f'{propellant.name} inducer minimum headrise: ', Pump1D.GetInducerHeadRequirement(pump))
+	inducer_head = inducer_head_rise[propellant]
+	print(f'{propellant.name} inducer target head:', inducer_head)
 	pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
 	#pump.Impeller.PrintDimensionlessParameters()
 
