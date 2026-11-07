@@ -1,4 +1,4 @@
-from Pump import Pump
+from Pump import Pump, Propellant
 from plotly import graph_objects as go
 import numpy as np
 from pint import Quantity as Q_
@@ -19,6 +19,11 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	if Q_flow is None: Q_flow = pump.DesignFlowRate
 	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+
+def GetTempRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+	heat_dissipated = GetSpecificWork(pump, Q_flow, N_speed) * (1 - pump.DP.eta_overall)
+	C_p = Q_(1.71, 'J/g/K') if pump.Propellant == Propellant.LOX else Q_(2.68, 'J/g/K')
+	return (heat_dissipated / C_p).to('K')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	if N_speed is None: N_speed = pump.DP.N_shaft

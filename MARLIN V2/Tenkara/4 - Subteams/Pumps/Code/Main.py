@@ -143,8 +143,9 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump).show()
-	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GetInducerlessNPSH_r(pump))
+	#print(Pump1D.GetTorque(pump))
+	#print(Pump1D.GetInducerlessNPSH_r(pump))
+	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
