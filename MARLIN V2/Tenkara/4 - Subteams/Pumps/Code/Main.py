@@ -25,10 +25,10 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(35,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),			# impeller inlet diameter
+		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness
+		blade_thick = Q_(1, 'mm'),		# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
@@ -39,7 +39,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness at exit
+		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
 		d_hub=Q_(0.65, 'in'),			# hub diameter
 	)
 }
