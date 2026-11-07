@@ -25,10 +25,10 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(35,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),			# impeller inlet diameter
+		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness
+		blade_thick = Q_(1, 'mm'),		# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
@@ -39,7 +39,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness at exit
+		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
 		d_hub=Q_(0.65, 'in'),			# hub diameter
 	)
 }
@@ -55,7 +55,7 @@ basic_inducer_geometry = {
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
-		d_hub_1 = Q_(0.48, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
+		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
 		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,
 		Z_blade = 2		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
@@ -137,14 +137,16 @@ def CreatePump(propellant: Propellant):
 
 def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
-
-	pump.Impeller.PlotOutletVelocities()#.show()
+	print(f'{propellant.name} head coeff: {pump.Impeller.HeadCoefficient:.3f}')
+	print(f'{propellant.name} flow coeff: {pump.Impeller.FlowCoefficient:.3f}')
+	pump.Impeller.PlotOutletVelocities().show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump).show()
-	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GetInducerlessNPSH_r(pump))
+	#Pump1D.PlotHQ(pump).show()
+	#print(Pump1D.GetTorque(pump))
+	#print(Pump1D.GetInducerlessNPSH_r(pump))
+	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
 
 	# ----------------- CREATE INDUCER ------------------
 	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
@@ -181,8 +183,8 @@ def MakeDesign(propellant: Propellant):
 		inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	imp_blade_design.PlotInletTriangles(free_vortex=False)#.show()
+	imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
