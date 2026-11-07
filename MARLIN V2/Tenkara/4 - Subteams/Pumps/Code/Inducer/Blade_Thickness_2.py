@@ -17,8 +17,14 @@ sys.path.insert(0, str(_here.parent))
 # ---------------- Project Imports ----------------
 
 import Main
+from Inducer.Inducer import Inducer
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 
+# ---------------- Blade Wedge Angle ----------------
+
+def WedgeAngle(inducer: Inducer, beta: float) -> float:
+    """Return SP-8052's blade wedge angle in radians (eqs. 69-70)."""
+    return beta - np.arctan(1.10 * inducer.FlowCoefficient)
 
 def main():
 
@@ -72,6 +78,7 @@ def main():
 
     Blade_Angle_rad = float(equilibrium.beta1)
     Incidence_Angle_rad = float(equilibrium.alpha1)
+    Blade_Wedge_Angle_rad = WedgeAngle(inducer, Blade_Angle_rad)
 
     # ---------------- Maximum Blade Thickness ----------------
 
@@ -80,8 +87,6 @@ def main():
     #
     Blade_Max_Thickness = Blade_Spacing * (np.sin(Blade_Angle_rad) - (W1_tip / W2_tip) * np.sin(Blade_Angle_rad - Incidence_Angle_rad))
 
-    
-
     # ---------------- Display ----------------
 
     print("\n========== BLADE PARAMETERS ==========")
@@ -89,6 +94,7 @@ def main():
     print(f"Number of Blades   = {Blade_Num}")
     print(f"Blade Spacing      = {Blade_Spacing * 1000:.3f} mm")
     print(f"Inlet Blade Angle  = {np.degrees(Blade_Angle_rad):.3f} deg")
+    print(f"Blade Wedge Angle  = {np.degrees(Blade_Wedge_Angle_rad):.3f} deg")
     print(f"Inlet Incidence    = {np.degrees(Incidence_Angle_rad):.3f} deg")
     print(f"Inlet Relative W   = {W1_tip:.3f} m/s")
     print(f"Outlet Relative W  = {W2_tip:.3f} m/s")
@@ -112,6 +118,7 @@ def main():
         "W1_tip": W1_tip,
         "W2_tip": W2_tip,
         "Blade_Angle_rad": Blade_Angle_rad,
+        "Blade_Wedge_Angle_rad": Blade_Wedge_Angle_rad,
         "Incidence_Angle_rad": Incidence_Angle_rad,
         "Blade_Max_Thickness": Blade_Max_Thickness,
     }
