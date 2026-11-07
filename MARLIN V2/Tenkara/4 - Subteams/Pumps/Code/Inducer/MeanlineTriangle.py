@@ -16,7 +16,7 @@ if not __package__:
 from Inducer.Inducer import Inducer
 from VelocityTriangle import PlotTriangles, VelocityTriangle
 
-INCIDENCE = 2 # deg
+INCIDENCE = 3 # deg
 
 MEANLINE_TRIANGLE_PATH = Path(__file__).with_name("meanline_triangle.json")
 
