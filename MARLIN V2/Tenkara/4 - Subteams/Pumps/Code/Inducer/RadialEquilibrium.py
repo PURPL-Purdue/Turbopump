@@ -21,7 +21,7 @@ if not __package__:
 	sys.path.insert(0, str(_here.parent))
 
 from Inducer.Inducer import Inducer
-from Inducer.MeanlineTriangle import MeanlineTriangle
+from Inducer.MeanlineTriangle import INCIDENCE, MeanlineTriangle
 from VelocityTriangle import PlotTriangles, VelocityTriangle
 
 """
@@ -82,27 +82,33 @@ _leading_edge_theta = _archimedian_spiral
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
 
-	Lead follows beta(z) = beta1 + (beta2b - beta1) (z/L)^2 at the rms radius; beta2b is solved so the
+	Lead follows beta(z) = beta1b + (beta2b - beta1b) (z/L)^2 at the rms radius; beta2b is solved so the
 	mass-averaged outlet Euler head equals H_rise / eta_bl, with the flow leaving at beta2b - delta2 (Gülich deviation,
 	see _deviation); no deviation would assume SP-8052's perfect guidance. Blade blockage uses N blades of constant
 	normal thickness at the tip, tapering linearly to hub_thickness_ratio times that at the hub (sec. 3.1.11,
 	eq. 42; SP-8052 recommends thicker at the hub); blade_thickness=None disables it.
-	incidence_ratio (alpha/beta, ~0.425) offsets the flow angle from the blade angle at the inlet,
-	blending linearly into the deviation at the outlet; None disables it.
+	Incidence is an angle quantity, following MeanlineTriangle: gamma1 = beta1b - incidence.
+	It defaults to MeanlineTriangle.py's INCIDENCE value and blends linearly into the deviation at the outlet.
 
 	eta_bl = 1 - 0.11 L/t  # Hydraulic efficiency, Gülich eq. 7.6.13, see _eta_bl
 	"""
 
-	def __init__(self, inducer: Inducer, incidence_ratio: float | None = None, blade_thickness: Q_ | None = None,
+	def __init__(self, inducer: Inducer, incidence: Q_ | None = None, blade_thickness: Q_ | None = None,
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
 		self._sweepback = np.deg2rad(60)
 
 		self.hub_thickness_ratio = hub_thickness_ratio
-		# The blade inlet angle comes from the zero-blockage inlet meanline triangle
-		self.meanline = meanline if meanline is not None else MeanlineTriangle(inducer, incidence_ratio)
-		self.incidence_ratio = self.meanline.incidence_ratio
+		if meanline is not None and incidence is not None:
+			raise ValueError("Give either incidence or meanline, not both.")
+		if meanline is not None:
+			self.meanline = meanline
+		else:
+			if incidence is None:
+				incidence = Q_(INCIDENCE, 'deg')
+			self.meanline = MeanlineTriangle(inducer, incidence=incidence)
+		self.incidence = self.meanline.incidence
 		self.Z_blade = self.inducer.Z_blade
 		self.t: float = None if blade_thickness is None else blade_thickness.to('m').magnitude
 
@@ -114,14 +120,9 @@ class InducerRadialEquilibrium:
 		self.omega = inducer.DP.N_shaft.to('rad/s').magnitude
 		self._g_dh = 9.81 * inducer.DP.H_rise.to('m').magnitude  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u)
 
-		# Blade inlet angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0);
-		# the meanline triangle is the zero-blockage version and only supplies the incidence ratio
+		# Flow angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0).
 		gamma1 = np.arctan(self._lam_flow(0.0) / self._r_ms(0.0))
-		if self.incidence_ratio is None:
-			self.beta1, self.alpha1 = gamma1, 0.0
-		else:
-			self.beta1 = gamma1 / (1.0 - self.incidence_ratio)
-			self.alpha1 = self.incidence_ratio * self.beta1
+		self.beta1b = gamma1 + self.incidence
 		self.beta2b = self._solve_beta2b()
 		self.delta2 = self._deviation(self.beta2b)		# outlet deviation at the rms radius, the flow leaves at beta2b - delta2
 		self.eta_hyd = self._eta_hyd(self.beta2b)
@@ -136,7 +137,7 @@ class InducerRadialEquilibrium:
 
 	def _beta(self, z, beta2b):
 		# Parabolic camber distribution, SP-8052 eq. 74 (specified at the rms radius, sec. 3.1.12)
-		return self.beta1 + (beta2b - self.beta1) * (z / self.L) ** 2
+		return self.beta1b + (beta2b - self.beta1b) * (z / self.L) ** 2
 
 	def _deviation(self, beta2b):
 		# Outlet deviation on the rms line (Gülich, inducer design table), angles in degrees:
@@ -151,7 +152,7 @@ class InducerRadialEquilibrium:
 		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + np.gradient(r, z)**2 + 1 / tan_beta**2), z, initial=0)
 		length = arclength[-1] - np.interp(z_LE, z, arclength)
 		pitch = 2 * np.pi * r[-1] / self.Z_blade
-		return np.radians((2 + np.degrees(beta2b - self.beta1) / 3) * (pitch / length)**(1 / 3))
+		return np.radians((2 + np.degrees(beta2b - self.beta1b) / 3) * (pitch / length)**(1 / 3))
 
 	def _eta_hyd(self, beta2b):
 		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t. Initial estimate: L = r * wrap and t = 2 pi r / Z, so r cancels; no leading edge sweep
@@ -182,7 +183,7 @@ class InducerRadialEquilibrium:
 
 	def _lead(self, z, beta2b):
 		# Flow angle: the blade angle less the incidence at the inlet and the deviation at the outlet, linearly in between (own choice)
-		gamma = self._beta(z, beta2b) - self.alpha1 * (1.0 - z / self.L) - self._deviation(beta2b) * z / self.L
+		gamma = self._beta(z, beta2b) - self.incidence * (1.0 - z / self.L) - self._deviation(beta2b) * z / self.L
 		lam_sched = self._r_ms(z) * np.tan(gamma)  # eq. 33: lambda = r tan(beta)
 		return max(lam_sched, self._lam_flow(z))  # lam below the zero-swirl lead would give negative swirl
 
@@ -214,7 +215,7 @@ class InducerRadialEquilibrium:
 		return self.omega * self._avg_angular_momentum(beta2b)
 
 	def _solve_beta2b(self):
-		grid = np.linspace(self.beta1, 1.5, 600)
+		grid = np.linspace(self.beta1b, 1.5, 600)
 		f = np.array([self._outlet_head(b) - self._g_dh / self._eta_hyd(b) for b in grid])
 		idx = np.flatnonzero((f[1:] >= 0) & (f[:-1] < 0))
 		if idx.size == 0:
@@ -286,6 +287,40 @@ class InducerRadialEquilibrium:
 			c_u=self.c_theta(R_t, z),
 			notation=notation,
 		)
+
+	def RelativeVelocity(self, r: Q_, z: Q_) -> tuple[Q_, Q_, Q_]:
+		"""Relative velocity W = V - U at (r, z) from the converged radial equilibrium: (W_u, W_m, |W|)."""
+		U = Q_(self.omega, 'rad/s') * r.to('m')
+		W_u = U - self.c_theta(r, z)
+		W_m = self.c_axial(r, z)
+		return W_u, W_m, np.sqrt(W_u**2 + W_m**2)
+
+	def FlowAngle(self, r: Q_, z: Q_) -> Q_:
+		"""Relative flow angle beta from the tangential direction: tan(beta) = c_m / (U - c_u)."""
+		W_u, W_m, _ = self.RelativeVelocity(r, z)
+		return Q_(np.degrees(np.arctan2(W_m.magnitude, W_u.to(W_m.units).magnitude)), 'deg')
+
+	def BladeAngle(self, r: Q_, z: Q_) -> Q_:
+		"""Blade angle from the parabolic camber (eq. 74, rms radius) with constant lead, r tan(beta) = lambda_blade (eq. 33)."""
+		z_m = z.to('m').magnitude
+		lam_blade = self._r_ms(z_m) * np.tan(self._beta(z_m, self.beta2b))
+		return Q_(np.degrees(np.arctan(lam_blade / r.to('m').magnitude)), 'deg')
+
+	def PlotBetaDistribution(self, z_fracs=(0.0, 0.25, 0.5, 0.75, 1.0), n: int = 50, l: str = 'mm',
+							 title: str = 'Inducer relative flow and blade angle, hub to tip') -> go.Figure:
+		"""beta against radius at several axial stations; solid = relative flow angle, dashed = blade angle."""
+		fig = go.Figure()
+		colors = [f'hsl({int(240 * (1 - f))},70%,45%)' for f in z_fracs]
+		for frac, color in zip(z_fracs, colors):
+			z = Q_(self.L * frac, 'm')
+			r = Q_(np.linspace(self._r_hub(z.magnitude), self.R_t, n), 'm')
+			x = r.to(l).magnitude
+			fig.add_trace(go.Scatter(x=x, y=self.FlowAngle(r, z).magnitude, mode='lines', line=dict(color=color),
+									 name=f'z/L = {frac:.2f} flow', legendgroup=f'{frac}'))
+			fig.add_trace(go.Scatter(x=x, y=self.BladeAngle(r, z).magnitude, mode='lines', line=dict(color=color, dash='dash'),
+									 name=f'z/L = {frac:.2f} blade', legendgroup=f'{frac}'))
+		fig.update_layout(title=title, xaxis_title=f'r [{l}]', yaxis_title='β from tangential [deg]', template='plotly_white')
+		return fig
 
 	def PlotMeanlineTriangles(self, title: str = 'Inducer meanline velocity triangles') -> go.Figure:
 		"""Inlet (z = 0) and outlet (z = L_ax) meanline triangles overlaid."""
@@ -394,10 +429,11 @@ if __name__ == "__main__":
 	ipa_pump.AddInducer(Q_(80, 'm'))
 	
 	fig, axes = plt.subplots(2, 2, figsize=(12, 9), sharex='col', sharey='row')
+	print("--- Meanline Angles after Radial equilibrium ---")
 	for col, propellant, inducer in zip(axes.T, ('LOX', 'IPA'), (lox_pump.Inducer, ipa_pump.Inducer)):
 
-		eq = InducerRadialEquilibrium(inducer, incidence_ratio=0, blade_thickness=Q_(0.5, 'mm'))
-		print(f"{propellant}: beta1 =  {np.degrees(eq.beta1):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg, delta2 = {np.degrees(eq.delta2):.2f} deg")
+		eq = InducerRadialEquilibrium(inducer, blade_thickness=Q_(0.5, 'mm'))
+		print(f"{propellant}: beta1b = {np.degrees(eq.beta1b):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg, delta2 = {np.degrees(eq.delta2):.2f} deg")
 		for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
 			z = inducer.L_ax * frac
 			r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)
@@ -409,9 +445,14 @@ if __name__ == "__main__":
 			ax.grid(True, linestyle='--', alpha=0.5)
 			ax.legend()
 
+		z_in = Q_(0, 'm')
+		r_in = Q_(np.array([eq.R_h1, eq._r_ms(0.0), eq.R_t]), 'm')
+		print(f"{propellant} inlet beta (hub, rms, tip) = {np.round(eq.FlowAngle(r_in, z_in).magnitude, 2)} deg")
+		eq.PlotBetaDistribution(title=f"{propellant} inducer relative flow and blade angle").show()
 		PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
 				f"{propellant} inducer meanline velocity triangles"
 			).show()
+		# eq.GetBladeLines()  # blocks until the viewer is closed
 
 	axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
 	axes[1, 0].set_ylabel("$c_a$ [m/s]")

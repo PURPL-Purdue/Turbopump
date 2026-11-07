@@ -11,3 +11,6 @@ __pycache__/
 
 *.step
 *.prt
+
+# VS Code
+.vscode/
