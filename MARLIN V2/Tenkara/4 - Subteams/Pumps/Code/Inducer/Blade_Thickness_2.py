@@ -39,7 +39,6 @@ def main():
 
     equilibrium = InducerRadialEquilibrium(
         inducer,
-        incidence_ratio=0,
         blade_thickness=Q_(0.5, "mm")
     )
 
@@ -76,8 +75,8 @@ def main():
 
     # ---------------- Inlet Angles ----------------
 
-    Blade_Angle_rad = float(equilibrium.beta1)
-    Incidence_Angle_rad = float(equilibrium.alpha1)
+    Blade_Angle_rad = float(equilibrium.beta1b)
+    Incidence_Angle_rad = float(equilibrium.incidence)
     Blade_Wedge_Angle_rad = WedgeAngle(inducer, Blade_Angle_rad)
 
     # ---------------- Maximum Blade Thickness ----------------
