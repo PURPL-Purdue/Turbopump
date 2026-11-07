@@ -57,6 +57,11 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 		flow_sweep = Q_(np.linspace(0, Q_sweep_max.m), 'L/s')
 		head_sweep = GetActualHeadRise(pump, flow_sweep, rpm)
 
+		index_max_head = np.argmax(head_sweep)
+
+		flow_sweep = flow_sweep[index_max_head:]
+		head_sweep = head_sweep[index_max_head:]
+
 		fig.add_trace(go.Scatter(
 			x=flow_sweep.m, y=head_sweep.m,
 			mode='lines', name='Headrise prediction (empirical correlation)', showlegend=False

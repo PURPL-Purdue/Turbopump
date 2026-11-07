@@ -4,6 +4,7 @@ from pint import Quantity as Q_
 from VelocityTriangle import VelocityTriangle, PlotTriangles
 from plotly import graph_objects as go
 import numpy as np
+import EmpiricalRelations as emp
 
 g = Q_(9.81, 'm/s^2')
 
@@ -120,7 +121,10 @@ class Impeller:
 		c_u2_ideal: Q_[float] = u_2 - c_m2 / np.tan(self.Beta2B.to('rad').m)
 		# Wiesner slip = 1 - (c_u2_ideal - c_u2)/u_2
 		# https://manual.cfturbo.com/en/bl_te_aungier.html
-		c_u2 = c_u2_ideal - u_2*(1 - self.WiesnerSlip)
+		# f = emp.FlowSpeedRatio(Q_flow, N_speed, self.DP.Q, self.DP.N_shaft)
+		# slip = emp.SlipFactor(f, self.WiesnerSlip)
+		slip = self.WiesnerSlip
+		c_u2 = c_u2_ideal - u_2*(1 - slip)
 		w_2: Q_[float] = np.sqrt(c_m2**2 + (u_2 - c_u2)**2)
 
 		return u_2, c_m2, c_u2, w_2
