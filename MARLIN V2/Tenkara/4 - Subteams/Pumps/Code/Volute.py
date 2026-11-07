@@ -20,6 +20,8 @@ from pathlib import Path
 #sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
 import Main #TODO uhhhh talk to @Charlie Zhu
 import EmpiricalRelations as emp
+from Inputs import Inputs
+from Pump import Pump, Propellant
 # Constants
 g = Q_(9.81, 'm/s**2')
 
@@ -95,7 +97,16 @@ def calcDiffuserPressures(stagnationP1: Q_[float], At: Q_[float],  targetA: Q_[f
     V2 = At / targetA * avg_V    
     staticP2 = stagnationP1 - (1/2 * rho * V2**2)
     return staticP2
-    
+
+def calcPressureGradient(pump: Pump, avg_V: Q_) -> Q_:
+    Q = pump.DesignFlowRate
+    N = pump.DP.N_shaft
+    _, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q, N)
+    impellerStaticPressure = pump.DP.discharge_pressure - 0.5 * pump.DP.rho * c_u2 ** 2
+    voluteStaticPressure = pump.DP.discharge_pressure - 0.5 * lox_rho * avg_V ** 2
+    pressureGradient = impellerStaticPressure - voluteStaticPressure
+    return pressureGradient
+
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         self.K_v = getKv(self.N_s)
@@ -140,6 +151,7 @@ if __name__ == "__main__":
     lox_throatA = Q_(lox_A_array[-1], "cm^2")
     lox_staticP2 = calcDiffuserPressures(lox_stagnationP1, lox_throatA, lox_targetA, lox_avg_V, lox_rho)
     lox_diffuserL = sizeDiffuserLength(lox_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
+    lox_pressureGradient = calcPressureGradient(lox_pump, lox_avg_V)
 
     #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
@@ -168,6 +180,7 @@ if __name__ == "__main__":
     print(f"Static pressure inside LOX volute: {lox_staticP1.to('bar'):.4f}")
     print(f"Static pressure at LOX diffuser exit: {lox_staticP2.to('bar'):.4f}")
     print(f"Diffuser length: {lox_diffuserL.to('millimeters'):.4f}")
+    print(f"LOX Pressure Gradient (imp. - vol.): {lox_pressureGradient.to('bar'):.4f}")
 
     ipa_pump = Main.MakeDesign(Main.Propellant.IPA)
     ipa_feed_P = ipa_pump.DP.feed_pressure
@@ -199,7 +212,8 @@ if __name__ == "__main__":
     ipa_throatA = Q_(ipa_A_array[-1], "cm^2")
     ipa_staticP2 = calcDiffuserPressures(ipa_stagnationP1, ipa_throatA, ipa_targetA, ipa_avg_V, ipa_rho)
     ipa_diffuserL = sizeDiffuserLength(ipa_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
-    
+    ipa_pressureGradient = calcPressureGradient(ipa_pump, ipa_avg_V)
+
     #stagnationP1 = ipa_H.to("m") * ipa_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * ipa_rho.to("kg/m^3") * avg_V.to("m/s")**2
     #ipa_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
@@ -227,6 +241,7 @@ if __name__ == "__main__":
     print(f"Static pressure inside IPA volute: {ipa_staticP1.to('bar'):.4f}")
     print(f"Static pressure at IPA diffuser exit: {ipa_staticP2.to('bar'):.4f}")
     print(f"Diffuser length: {ipa_diffuserL.to('millimeters'):.4f}")
+    print(f"IPA Pressure Gradient (imp. - vol.): {ipa_pressureGradient.to('bar'):.4f}")
 
     #radial_thrust = calcRadialThrust(
     #    lox_pump.DesignHeadRise,
