@@ -150,6 +150,7 @@ if __name__ == "__main__":
     lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
     lox_throatA = Q_(lox_A_array[-1], "cm^2")
     lox_staticP2 = calcDiffuserPressures(lox_stagnationP1, lox_throatA, lox_targetA, lox_avg_V, lox_rho)
+    lox_Vout = Q_(np.sqrt((lox_stagnationP1 - lox_staticP2) * 2 / lox_rho), "m/s")
     lox_diffuserL = sizeDiffuserLength(lox_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
     lox_pressureGradient = calcPressureGradient(lox_pump, lox_avg_V)
 
@@ -179,6 +180,7 @@ if __name__ == "__main__":
     print(f"Throat area: {Q_(lox_A_array[-1], "cm^2").to("in^2"):.4f}")
     print(f"Static pressure inside LOX volute: {lox_staticP1.to('bar'):.4f}")
     print(f"Static pressure at LOX diffuser exit: {lox_staticP2.to('bar'):.4f}")
+    print(f"Velocity at LOX diffuser exit: {lox_Vout.to('m/s'):.4f}")
     print(f"Diffuser length: {lox_diffuserL.to('millimeters'):.4f}")
     print(f"LOX Pressure Gradient (imp. - vol.): {lox_pressureGradient.to('bar'):.4f}")
 
@@ -211,6 +213,7 @@ if __name__ == "__main__":
     ipa_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
     ipa_throatA = Q_(ipa_A_array[-1], "cm^2")
     ipa_staticP2 = calcDiffuserPressures(ipa_stagnationP1, ipa_throatA, ipa_targetA, ipa_avg_V, ipa_rho)
+    ipa_Vout = Q_(np.sqrt((ipa_stagnationP1 - ipa_staticP2) * 2 / ipa_rho), "m/s")
     ipa_diffuserL = sizeDiffuserLength(ipa_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
     ipa_pressureGradient = calcPressureGradient(ipa_pump, ipa_avg_V)
 
@@ -240,6 +243,7 @@ if __name__ == "__main__":
     print(f"Throat area: {Q_(ipa_A_array[-1], "cm^2").to("in^2"):.4f}")
     print(f"Static pressure inside IPA volute: {ipa_staticP1.to('bar'):.4f}")
     print(f"Static pressure at IPA diffuser exit: {ipa_staticP2.to('bar'):.4f}")
+    print(f"Velocity at IPA diffuser exit: {ipa_Vout.to('m/s'):.4f}")
     print(f"Diffuser length: {ipa_diffuserL.to('millimeters'):.4f}")
     print(f"IPA Pressure Gradient (imp. - vol.): {ipa_pressureGradient.to('bar'):.4f}")
 
