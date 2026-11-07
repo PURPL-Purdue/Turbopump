@@ -58,7 +58,7 @@ class ImpellerBladeDesign:
 
 		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
-		self._INCIDENCE_PADDING = np.pi/180 * 2	# degrees of extra angle
+		self._INCIDENCE_PADDING = np.pi/180 * 0	# degrees of extra angle
 		
 		if self._params.use_cubic:
 			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
@@ -80,23 +80,21 @@ class ImpellerBladeDesign:
 		return (self._rad_eq.c_theta(radius, self._rad_eq.inducer.L_ax),
 		        self._rad_eq.c_axial(radius, self._rad_eq.inducer.L_ax, blockage=False))
 
-	def _SolveInletFlow(self, streamline: MeridionalCurve, free_vortex: bool=True) -> tuple[_TriInfo, _TriInfo, Q_, float]:
+	def _SolveInletFlow(self, streamline: MeridionalCurve, free_vortex: bool=False) -> tuple[_TriInfo, _TriInfo, Q_, float]:
 		"""
 			Radius r_1 (m), flow angle beta_1' just inside the blades (rad, = blade angle at zero incidence) and degree of
-			blockage rho_1 where the leading edge crosses streamline phi. Tangential blockage (CFturbo; Hassan et al.,
-			Sci. Rep. 2024, eq. 17) with the meridional leading edge angle lambda_1, which slightly overestimates it:
-				rho_1 = 1 - a / sin(beta_1'),		a = z s / (pi d_1 sin(lambda_1)),	s = blade_thick
+			blockage rho_1 = 1 / tau_1 where the leading edge crosses streamline phi. Tangential blockage (CFturbo; Hassan
+			et al., Sci. Rep. 2024, eq. 17):
+				rho_1 = 1 - a / sin(beta_1'),		a = z s / (pi d_1),		s = blade_thick
 				tan(beta_1') = tan(beta_1) / rho_1		(Milos eq. 33)
 			Solved explicitly (own derivation): sin(beta_1' - beta_1) = a cos(beta_1)
 		"""
-		lambda_1 = self._GetLeadingEdgeAngle(streamline)
-
 		r_1, c_m1, w_u1 = self._GetLeadingEdgeFlow(streamline, free_vortex=free_vortex)
 		impeller = self.MeridionalDesign.Pump.Impeller
 
-		# blockage coefficient: blade thickness over blade pitch, widened by the leading edge sweep
+		# blockage coefficient: blade thickness over blade pitch
 		pitch = 2 * np.pi * r_1 / impeller.Z_blade_1
-		a: Q_[float] = impeller.blade_thick / (pitch * np.sin(lambda_1.to('rad').m))
+		a: Q_[float] = impeller.blade_thick / pitch
 		assert a < 1, 'The blades fill the inlet circumference, reduce the blade number or thickness'
 
 		beta_1: Q_ = np.arctan2(c_m1, w_u1)							# without blockage
@@ -129,17 +127,6 @@ class ImpellerBladeDesign:
 		assert w_u1 > 0, 'The preswirl exceeds the blade speed at the leading edge'
 
 		return radius, c_m1, w_u1
-
-	def _GetLeadingEdgeAngle(self, curve: MeridionalCurve) -> Q_[float]:
-		"""
-			Acute angle in the meridional plane between the leading edge and curve (the hub or shroud contour, or a
-			streamline) where they meet, from the unit tangents of both: arccos|t_LE . t_curve|
-		"""
-		hits = curve.FindIntersect(self.MeridionalDesign.LeadingEdge)
-		assert len(hits) == 1, 'The leading edge must meet the curve exactly once'
-		_, _, s_curve, s_LE = hits[0]
-		cos_angle = abs(curve.Tangent(s_curve) @ self.MeridionalDesign.LeadingEdge.Tangent(s_LE))
-		return Q_(np.arccos(min(cos_angle, 1.0)), 'rad').to('deg')
 
 	def PlotInletTriangles(self, phis: list[float]=[0, 0.5, 1], free_vortex: bool=True) -> go.Figure:
 		"""
