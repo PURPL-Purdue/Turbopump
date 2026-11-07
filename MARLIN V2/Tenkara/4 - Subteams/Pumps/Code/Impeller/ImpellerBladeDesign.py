@@ -20,6 +20,8 @@ from .JoinParabola import JoinParabola
 Minimal AI
 """
 
+cum_trapz = integrate.cumulative_trapezoid
+
 @dataclass
 class _TriInfo:
 	c_m: Q_
@@ -328,17 +330,17 @@ class ImpellerBladeDesign:
 				r = stream_zr[:, 1]
 				beta = beta_dis.Get(m_split)
 				
-				theta = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), m_split, initial=0)
+				theta = cum_trapz(1/(r * np.tan(beta)), m_split, initial=0)
 				theta += theta_start
 				theta += 2*np.pi / self.Pump.Impeller.Z_blade_2 # to offset from regular blades
 
 				beta_dis.Domain = (m_start, beta_dis.Domain[1])
 
 			else:
-				arc_m=np.linspace(*beta_dis.Domain, resolution)
-				beta = beta_dis.Get(arc_m)
-	
-				theta: np.ndarray = integrate.cumulative_trapezoid(1/(r * np.tan(beta)), arc_m, initial=0)
+				arc_m=np.linspace(*beta_dis.Domain, resolution) # meridional arclength array
+				beta = beta_dis.Get(arc_m) # beta array at specified arclengths
+				# cumulative trapezoidal Riemann sum 🤨🤨 
+				theta: np.ndarray = cum_trapz(1/(r * np.tan(beta)), arc_m, initial=0)
 			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
 
 			betas.append(beta_dis)

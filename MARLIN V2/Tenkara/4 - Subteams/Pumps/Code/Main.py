@@ -48,7 +48,7 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.55, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
 		Z_blade = 2
 	),
@@ -69,7 +69,7 @@ meridional_geometry = {
 		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
-		Z_e_factor = 1.2,
+		Z_e_factor = 1.2, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(5, 'deg')
@@ -117,7 +117,7 @@ fluid_props = {
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-inducer_head_rise = dict(LOX=Q_(35, 'm'), IPA=Q_(30, 'm'))  # lambda_w of 0.7 for impeller
+inducer_head_rise = {Propellant.LOX:Q_(49, 'm'), Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(
@@ -139,19 +139,19 @@ def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
 	print(f'{propellant.name} head coeff: {pump.Impeller.HeadCoefficient:.3f}')
 	print(f'{propellant.name} flow coeff: {pump.Impeller.FlowCoefficient:.3f}')
-	pump.Impeller.PlotOutletVelocities().show()
+	pump.Impeller.PlotOutletVelocities()#.show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	#Pump1D.PlotHQ(pump).show()
-	#print(Pump1D.GetTorque(pump))
-	#print(Pump1D.GetInducerlessNPSH_r(pump))
+	Pump1D.PlotHQ(pump)#.show()
+	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
+	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
 	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
 
 	# ----------------- CREATE INDUCER ------------------
-	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
-	print('Inducer required head:', inducer_head)	
-	print(f'{propellant} inducer desired head:', inducer_head)
+	print(f'{propellant.name} inducer minimum headrise: ', Pump1D.GetInducerHeadRequirement(pump))
+	inducer_head = inducer_head_rise[propellant]
+	print(f'{propellant.name} inducer target head:', inducer_head)
 	pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
 	#pump.Impeller.PrintDimensionlessParameters()
 
@@ -168,14 +168,14 @@ def MakeDesign(propellant: Propellant):
 	print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
 	min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
 	print(f"Min blade spacing {min_spacing:.2f} in")
-	#inducer_eq.ShowCAD()
+	inducer_eq.ShowCAD()
 	#exit()
 	#print(inducer_eq.GetOutletAngularMomentum())
 
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	#pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot().show()
+	pump_meridional.PlotMeridional(color=color[propellant]).show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -189,6 +189,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
+	#imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
