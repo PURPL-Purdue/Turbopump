@@ -147,7 +147,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump).show()
+	Pump1D.PlotHQ(pump)#.show()
 	
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))

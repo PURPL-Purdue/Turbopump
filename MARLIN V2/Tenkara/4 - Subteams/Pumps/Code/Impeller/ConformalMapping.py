@@ -1,9 +1,10 @@
 import numpy as np
 from collections.abc import Callable
-import warnings
+from warnings import warn
 from scipy.integrate import cumulative_trapezoid as cum_trap
 from dataclasses import dataclass
 from plotly import graph_objects as go
+from .PotentialFlow import Streamline
 
 """
 @Charlie Zhu
@@ -12,94 +13,123 @@ Based on Milo's paper
 Conformal mapping for impeller blade design
 """
 
-class BetaCMM:
-	Get: Callable[[float], float]
-	Theta: np.ndarray[float]
-	Domain: tuple[float, float]
+class ParabolicBeta:
+	def __init__(self, coeffs_1: tuple, coeffs_2: tuple, x_j: float):
+		self.x_j = x_j
+		self.coeffs_1 = coeffs_1
+		self.coeffs_2 = coeffs_2
 
-	def __init__(self, get, wrap, domain):
-		self.Get = get
-		self.Domain = domain
-		self.Theta = wrap
-		self.TotalWrap = wrap[-1]
+	def Get(self, x: float | np.ndarray[float]) -> float | np.ndarray[float]:
+		return np.where(
+			x < self.x_j,
+			np.polyval(self.coeffs_1, x),
+			np.polyval(self.coeffs_2, x)
+			)
+
+	def GetTheta(self, radii: np.ndarray, arc_x: np.ndarray) -> np.ndarray:
+		return cum_trap(1/ (radii * np.tan(self.Get(arc_x))), x=arc_x, dx=arc_x[-1] / len(arc_x), initial=0)
+
+def _solveParabolas(y0: float, yf: float, xj: float, xf: float) -> tuple[tuple[float], tuple[float]]:
+	"""
+		Creates two parabolas that when pieced together are continuous and tangent. Returns the piecewise curve as a function of ``x``.
+		1. ``y0`` is the start value of the first parabola
+		2. ``yf`` is the end value of the second parabola
+		3. ``xj`` specifies the ``x`` value at which the parabolas meet.
+		4. ``xf`` specifies the ``x`` value at which the second parabola ends.
+	"""
+
+	# f1(x) = a1 * x^2 + b1 * x + c1
+	# f2(x) = a2 * x^2 + b2 * x + c2
+
+	# f1'(x) = 2 * a1 * x + b1
+	# f2'(x) = 2 * a2 * x + b2
+
+	A = np.array([
+		[2*xj,	-2*xj,	1,	-1,  0,  0], # f1'(xj) = f2'(xj) => 	(2 * xj) * a1 - (2 * xj) * a2 + b1 - b2 = 0
+		[xj**2,	-xj**2, xj, -xj, 1,	-1], # f1(xj) = f2(xj) =>		xj^2 * a1 - xj^2 * a2 + xj * b1 - xj * b2 + c1 - c2 = 0
+		[0,		0,		1,	0, 	 0,	 0], # f1'(0) = 0 =>			b1 = 0
+		[0,		0,		0,	0,   1,	 0], # f1(0) = y0 =>			c1 = y0
+		[0,		2*xf,	0,	1,   0,  0], # f2'(xf) = 0 =>			(2 * xf) * a2 + b2 = 0
+		[0,		xf**2,	0,	xf,  0,  1]	 # f2(xf) = yf =>			xf^2 * a2 + xf * b2 + c2 = yf
+	], dtype=float)
+
+	b = np.array([0, 0, 0, y0, 0, yf])	# see right hand side of equations above
+
+	# Solve Ax = b directly using NumPy's built-in solver
+	sol = np.linalg.solve(A, b)
+	a_1, a_2, b_1, b_2, c_1, c_2 = sol
+
+	return ((a_1, b_1, c_1), (a_2, b_2, c_2))
+
+def GetBetaDistribution(radii: np.ndarray, x_f: float, beta_1: float, beta_2: float, s_j: float, resolution: int|None=None) -> tuple[ParabolicBeta, float]:
+	x_j = s_j * x_f
+	coeffs_1, coeffs_2 = _solveParabolas(y0=beta_1, yf=beta_2, xj=x_j, xf=x_f)
+	distr = ParabolicBeta(coeffs_1, coeffs_2, x_j)
+	total_wrap = ParabolicBeta.GetTheta(radii=radii, arc_x=np.linspace(0, x_f, len(radii)))[-1]
+	return distr, total_wrap
+
 
 class ConformalMapping:
 
-	def __init__(self, beta_1: float, beta_2: float, arclen: float, target_wrap: float, radii: np.ndarray) -> Callable[[float | np.ndarray], float | np.ndarray]:
+	def __init__(self, radii: np.ndarray, x_f: float, beta_1: float, beta_2: float):
 		self.beta_1 = beta_1
 		self.beta_2 = beta_2
-		self._arclen = arclen
-		self._target_wrap = target_wrap
-		self._radii = radii
-		self._resolution = len(radii)
-		self._solveDistribution()
-		
+		self.x_f = x_f
+		self.radii = radii
 
-	def _solveCoefficients(self, A_f: float) -> np.ndarray[float]:
+	def GetBetaDistributionFromSj(self, s_j: float) -> tuple[ParabolicBeta, float]:
+		x_j = s_j * self.x_f
+		coeffs_1, coeffs_2 = _solveParabolas(y0=self.beta_1, yf=self.beta_2, xj=x_j, xf=self.x_f)
+		distr = ParabolicBeta(coeffs_1, coeffs_2, x_j)
+		total_wrap = distr.GetTheta(radii=self.radii, arc_x=np.linspace(0, self.x_f, len(self.radii)))[-1]
+		return distr, total_wrap
+
+	def SolveBetaDistributionFromWrap(self, target_wrap) -> ParabolicBeta:
+		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
+		guess_high = 0.99
+		guess_low = 0.01
+
+		beta_high, wrap_high = self.GetBetaDistributionFromSj(s_j=guess_high)
+		beta_low, wrap_low = self.GetBetaDistributionFromSj(s_j=guess_low)
+
+		residual_new = float('inf')
+		residual_high, residual_low = wrap_high - target_wrap, wrap_low - target_wrap
+		# same sign at both ends: the target is not between them, take the closer end
+		if residual_high * residual_low > 0:
+			if np.abs(residual_high) > np.abs(residual_low):
+				beta, wrap = beta_low, wrap_low
+			else:
+				beta, wrap = beta_high, wrap_high
+			warn(f'The target wrap {np.rad2deg(target_wrap):.1f} deg is out of reach by moving sj alone, resorting to {np.rad2deg(wrap)} deg')
+			return beta
+		# bisection: keep the half of the bracket where the residual changes sign
+		while abs(residual_new) > 1e-4:
+			new_guess: float = (guess_high + guess_low) / 2
+			beta_dis, total_wrap = self.GetBetaDistributionFromSj(s_j=new_guess)
+			residual_new = total_wrap - target_wrap
+
+			if residual_new * residual_low > 0:
+				guess_low, residual_low = new_guess, residual_new
+			else:
+				guess_high, residual_high = new_guess, residual_new
+		return beta_dis
+
+	def _getA(self, parabolic_beta: ParabolicBeta) -> tuple[float, float, float, float]:
 		"""
 		A(x) = a x^3 + b x^2 + c x + d, coefficients highest power first (np.polyval order)
 		"""
-		x_f = self._arclen
+		x_f = self.x_f
 		lhs = np.array([
-			[0       ,      0,      0, 1],	# A(0)
+			[0       ,      0,      0, 1],	# A(0) => d = 0
 			[x_f**3  , x_f**2, x_f**1, 1],	# A(x_f)
 			[0       ,      0,      1, 0],	# A'(0)
 			[3*x_f**2,  2*x_f,		1, 0]	# A'(x_f)
 		])
 		# A(0) = 0, A(x_f) = A_f, A' = 1/tan(beta) at both ends
-		rhs = np.array([0, A_f, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)])
+
+		x_arr = np.linspace(0, x_f, len(self.radii))
+		A_m = np.trapezoid(np.tan(parabolic_beta.Get(x_arr)), x_arr)
+
+		rhs = np.array([0, A_m, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)])
+
 		return np.linalg.solve(lhs, rhs)
-
-
-	# def _GetDistribution(self, A_f: float) -> tuple[BetaCMM, np.ndarray]:
-
-	# 	coeffs = self._solveCoefficients(A_f)
-	# 	A_array = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
-	# 	theta = cum_trap(1/self._radii, A_array, dx=self._arclen / self._resolution, initial=0)
-
-	# 	def GetBeta(x: float) -> float:
-	# 		return np.atan(1 / np.polyval(np.polyder(coeffs), x))
-
-	# 	return BetaCMM(GetBeta, theta, (0, self._arclen)), coeffs
-
-	def GetBeta(self, arc_x: float|np.ndarray[float]) -> float|np.ndarray[float]:
-		return np.atan(1 / np.polyval(np.polyder(self._coeffs), arc_x))
-
-	def _getTheta(self, coeffs: np.ndarray) -> np.ndarray[float]:
-		A: np.ndarray = np.polyval(coeffs, np.linspace(0, self._arclen, len(self._radii)))
-		return cum_trap(1/self._radii, A, dx=self._arclen/self._resolution, initial=0)
-
-	def GetThetaFromRadiiAndArclength(self, radii: np.ndarray|None=None, arc_x: np.ndarray|None=None) -> np.ndarray:
-		if radii is None:
-			radii = self._radii
-		if arc_x is None: arc_x = np.linspace(0, self._arclen, self._resolution)
-
-		A: np.ndarray = np.polyval(self._coeffs, arc_x)
-		return cum_trap(1/radii, A, dx=arc_x[-1] / len(arc_x), initial=0)
-	
-	def _solveDistribution(self):
-
-		self._target_wrap
-		c_1, c_2 = 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)
-		# beta rises monotonically (A'' <= 0 on the whole blade) only for A_f in the middle third
-		A_f_max = self._arclen * (2*c_2 + c_1) / 3	# A''(x_f) = 0: beta flat at the outlet, least wrap
-		A_f_min = self._arclen * (c_2 + 2*c_1) / 3	# A''(0) = 0: beta flat at the inlet, most wrap
-
-		wrap_high: float = self._getTheta(self._solveCoefficients(A_f_max))[-1]
-		wrap_low: float = self._getTheta(self._solveCoefficients(A_f_min))[-1]
-
-		A_f = A_f_max + (self._target_wrap - wrap_high) * (A_f_min - A_f_max) / (wrap_low - wrap_high)
-		A_f_clamped = np.clip(A_f, min(A_f_max, A_f_min), max(A_f_max, A_f_min))
-
-		self._coeffs = self._solveCoefficients(A_f_clamped)
-		wrap = self._getTheta(self._coeffs)[-1]
-		if A_f_clamped != A_f:
-			warnings.warn(f'Cannot achieve target wrap angle {np.rad2deg(self._target_wrap):.1f} deg with a monotonic beta; resorting to {np.rad2deg(wrap):.1f} deg')
-		
-		fig = go.Figure()
-		y=np.linspace(0, self._arclen, 100)
-		fig.add_trace(go.Scatter(
-			x = np.polyval(self._coeffs, y),
-			y = y
-		))
-		#fig.show()

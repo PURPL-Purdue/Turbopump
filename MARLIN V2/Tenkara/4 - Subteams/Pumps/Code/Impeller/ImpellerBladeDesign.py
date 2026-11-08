@@ -9,7 +9,7 @@ from collections.abc import Callable
 from plotly import graph_objects as go
 from scipy import integrate
 from warnings import warn
-from .ConformalMapping import ConformalMapping, BetaCMM
+from .ConformalMapping import ConformalMapping#, BetaCMM
 from .MeridionalDesign import MeridionalDesign
 from .MeridionalContour import MeridionalCurve
 from .PotentialFlow import Streamline
@@ -164,56 +164,6 @@ class ImpellerBladeDesign:
 
 		return fig
 
-	def _GetBetaDistribution(self, r: np.ndarray[float], beta_1: float, x_f: float, sj: float=None) -> BetaDistribution:
-		"""
-			Returns the wrap angle (in radians) of a blade streamline at the specified flow_fraction, from the leading
-			to the trailing edge. xj (m from the leading edge) is where the two beta parabolas join, Milos's x_3;
-			defaults to mid-blade
-		"""
-		beta_2: float = self.Pump.Impeller.Beta2B.to('rad').m
-
-		x_j = x_f * sj if sj is not None else x_f * 0.5
-		GetBeta = JoinParabola(y0=beta_1, yf=beta_2, xj=x_j, xf=x_f)
-
-		# approximate wrap angle using trapezoidal Riemann sum
-		# Milo's pg. 51, eq 51 and 52
-		x = np.linspace(0, x_f, len(r))
-		Beta = GetBeta(x)
-
-		total_wrap = np.trapezoid(y=1/(r * np.tan(Beta)), x=x)
-
-		return BetaDistribution(
-			Get=GetBeta, Domain=(0, x_f), TotalWrap=total_wrap
-		)
-
-	def _SolveBetaDistribution(self, beta_1: float, r: np.ndarray[float], x_f: float, target_wrap: float) -> BetaDistribution:
-		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
-		guess_high = 0.99
-		guess_low = 0.01
-
-		beta_high = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=guess_high)
-		beta_low = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=guess_low)
-
-		residual_new = float('inf')
-		residual_high, residual_low = beta_high.TotalWrap - target_wrap, beta_low.TotalWrap - target_wrap
-		# same sign at both ends: the target is not between them, take the closer end
-		if residual_high * residual_low > 0:
-			beta=beta_low if np.abs(residual_high) > np.abs(residual_low) else beta_high
-			warn(f'The target wrap {np.rad2deg(target_wrap):.1f} deg is out of reach by moving sj alone, resorting to {np.rad2deg(beta.TotalWrap)} deg')
-			return beta
-		# bisection: keep the half of the bracket where the residual changes sign
-		while abs(residual_new) > 1e-4:
-			new_guess: float = (guess_high + guess_low) / 2
-			beta_dis = self._GetBetaDistribution(r=r, beta_1=beta_1, x_f=x_f, sj=new_guess)
-			residual_new = beta_dis.TotalWrap - target_wrap
-
-			if residual_new * residual_low > 0:
-				guess_low, residual_low = new_guess, residual_new
-			else:
-				guess_high, residual_high = new_guess, residual_new
-
-		return beta_dis
-
 	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 
 		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
@@ -288,65 +238,50 @@ class ImpellerBladeDesign:
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
 		ref_bladestream = ref_stream.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 		ref_stream_zr = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))
-		r_ref = ref_stream_zr[:, 1]
+		radii_ref = ref_stream_zr[:, 1]
+		beta_2 = self.Pump.Impeller.Beta2B.to('rad').m
 
-		ref_beta_dis = self._GetBetaDistribution(
-			r=r_ref, beta_1=ref_beta_1, x_f=ref_bladestream.length_m, sj=self._params.sj
-			)
-
+		_, ref_total_wrap = (
+			ConformalMapping(radii_ref, ref_bladestream.length_m, ref_beta_1, beta_2)
+			.GetBetaDistributionFromSj(self._params.sj)
+		)
+		
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
 
 		for phi in np.linspace(0, 1, num_streams):
 
-			if phi != ref_phi:
+			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
+			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
+			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
-				streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
-				beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-				blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+			arc_x = np.linspace(0, blade_stream.length_m, resolution)
+			stream_zr = blade_stream.Points(arc_x)
+			radii = stream_zr[:, 1]
+			
+			arc_lead = np.sin(lead_sweep) * (radii[0] - radii_ref[0])
+			theta_offset = arc_lead / radii[0]
 
-				stream_zr = blade_stream.Points(np.linspace(0, blade_stream.length_m, resolution))
-				r = stream_zr[:, 1]
-				
-				arc_lead = np.sin(lead_sweep) * (r[0] - r_ref[0])
-				theta_offset = arc_lead / r[0]
-
-				beta_dis = self._SolveBetaDistribution(
-					beta_1=beta_1, r=r, x_f=blade_stream.length_m,
-					target_wrap=ref_beta_dis.TotalWrap + theta_offset
-				)
-			else:
-				beta_dis, stream_zr, r = ref_beta_dis, ref_stream_zr, r_ref
-				blade_stream = ref_bladestream
+			beta_dis = (ConformalMapping(radii, blade_stream.length_m, beta_1, beta_2)
+				.SolveBetaDistributionFromWrap(ref_total_wrap + theta_offset)
+			)
 
 			if splitter:
-				m_start = (1 - length_ratio) * beta_dis.Domain[1]
-
-				m_fade = np.linspace(0, m_start, resolution)
-				beta_fade = beta_dis.Get(np.linspace(0, m_start, resolution))
-				r_fade = blade_stream.Points(m_fade)[:, 1]
-				theta_start: float = np.trapezoid(1/ (r_fade * np.tan(beta_fade)), m_fade)
-
-				m_split = np.linspace(m_start, blade_stream.length_m, resolution)
-				
-				stream_zr = blade_stream.Points(m_split)
-				r = stream_zr[:, 1]
-				beta = beta_dis.Get(m_split)
-				
-				theta = cum_trapz(1/(r * np.tan(beta)), m_split, initial=0)
-				theta += theta_start
-				theta += 2*np.pi / self.Pump.Impeller.Z_blade_2 # to offset from regular blades
-
-				beta_dis.Domain = (m_start, beta_dis.Domain[1])
-
+				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
+				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
+				stream_zr: np.ndarray = blade_stream.Points(arc_x)
+				radii: np.ndarray = stream_zr[:, 1]
+				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
+				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
 			else:
-				arc_m=np.linspace(*beta_dis.Domain, resolution) # meridional arclength array
-				beta = beta_dis.Get(arc_m) # beta array at specified arclengths
-				# cumulative trapezoidal Riemann sum 🤨🤨 
-				theta: np.ndarray = cum_trapz(1/(r * np.tan(beta)), arc_m, initial=0)
-			theta += ref_beta_dis.TotalWrap - beta_dis.TotalWrap
+				domain: tuple[float, float] = (0, blade_stream.length_m)
+				theta_offset: float = 0
 
-			betas.append(beta_dis)
+			theta = beta_dis.GetTheta(radii=radii, arc_x=arc_x)
+			total_wrap = theta[-1]
+			theta += ref_total_wrap - total_wrap + theta_offset
+
+			betas.append(BetaDistribution(Get=beta_dis.Get, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 
 		return (points_3d, betas)
