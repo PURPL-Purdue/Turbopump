@@ -20,6 +20,8 @@ from pathlib import Path
 #sys.path.insert(0, str(Path(__file__).resolve().parents[2]))	# Pumps folder, so the Code package imports when run directly
 import Main #TODO uhhhh talk to @Charlie Zhu
 import EmpiricalRelations as emp
+from Inputs import Inputs
+from Pump import Pump, Propellant
 # Constants
 g = Q_(9.81, 'm/s**2')
 
@@ -37,7 +39,8 @@ class VoluteGeometry:
     b3: Q_[float] # Volute width at impeller outlet
     h_gap: Q_[float] # Volute gap height at impeller outlet
 
-b3 = Q_(2.4, "millimeters")
+lox_b3 = Q_(2.4, "millimeters")
+ipa_b3 = Q_(2.4, "millimeters")
 h_gap = Q_(1, "millimeters")
 clearance = Q_(0.008, "inches")
 
@@ -94,7 +97,16 @@ def calcDiffuserPressures(stagnationP1: Q_[float], At: Q_[float],  targetA: Q_[f
     V2 = At / targetA * avg_V    
     staticP2 = stagnationP1 - (1/2 * rho * V2**2)
     return staticP2
-    
+
+def calcPressureGradient(pump: Pump, avg_V: Q_) -> Q_:
+    Q = pump.DesignFlowRate
+    N = pump.DP.N_shaft
+    _, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q, N)
+    impellerStaticPressure = pump.DP.discharge_pressure - 0.5 * pump.DP.rho * c_u2 ** 2
+    voluteStaticPressure = pump.DP.discharge_pressure - 0.5 * lox_rho * avg_V ** 2
+    pressureGradient = impellerStaticPressure - voluteStaticPressure
+    return pressureGradient
+
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         self.K_v = getKv(self.N_s)
@@ -120,27 +132,28 @@ if __name__ == "__main__":
     lox_N_q = lox_pump.n_q
     _, lox_cm2, lox_cu2, _ = lox_pump.Impeller.GetOutletVelocities()
     lox_c2 = np.sqrt(lox_cm2**2 + lox_cu2**2)
-    K_v = getKv(lox_N_s)
-    avg_V = getVoluteVelocity(K_v, lox_H)
-    plt.figure()
-    At = getThroatArea(lox_Q, avg_V)
-    theta_min = getMinAngle(b3, h_gap, At)
-    A_array = []
-    thetas = []
+    lox_K_v = getKv(lox_N_s)
+    lox_avg_V = getVoluteVelocity(lox_K_v, lox_H)
+    lox_At = getThroatArea(lox_Q, lox_avg_V)
+    lox_theta_min = getMinAngle(lox_b3, h_gap, lox_At)
+    lox_A_array = []
+    lox_thetas = []
     for theta in np.linspace(0, 360, 361):
-        A_theta = getAreaAtAngle(lox_Q, avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), theta_min, b3, h_gap, 1)
-        A_array.append(A_theta.to('cm^2').m)
+        A_theta = getAreaAtAngle(lox_Q, lox_avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), lox_theta_min, lox_b3, h_gap, 1)
+        lox_A_array.append(A_theta.to('cm^2').m)
         if A_theta == Q_(1, 'mm^2'):
-            thetas.append(theta)
+            lox_thetas.append(theta)
 
-    stagnationP1 = lox_H * lox_rho * g
-    impellerStaticP = Q_(stagnationP1 - (1/2 * lox_rho * lox_c2**2), "bar")
-    staticP1 = Q_(stagnationP1 - (1/2 * lox_rho * avg_V**2), "bar")
+    lox_stagnationP1 = lox_H * lox_rho * g
+    lox_impellerStaticP = Q_(lox_stagnationP1 - (1/2 * lox_rho * lox_c2**2), "bar")
+    lox_staticP1 = Q_(lox_stagnationP1 - (1/2 * lox_rho * lox_avg_V**2), "bar")
     lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
-    throatA = Q_(A_array[-1], "cm^2")
-    staticP2 = calcDiffuserPressures(stagnationP1, throatA, lox_targetA, avg_V, lox_rho)
-    diffuserL = sizeDiffuserLength(throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
-    
+    lox_throatA = Q_(lox_A_array[-1], "cm^2")
+    lox_staticP2 = calcDiffuserPressures(lox_stagnationP1, lox_throatA, lox_targetA, lox_avg_V, lox_rho)
+    lox_Vout = Q_(np.sqrt((lox_stagnationP1 - lox_staticP2) * 2 / lox_rho), "m/s")
+    lox_diffuserL = sizeDiffuserLength(lox_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
+    lox_pressureGradient = calcPressureGradient(lox_pump, lox_avg_V)
+
     #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
     #lox_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
@@ -159,15 +172,80 @@ if __name__ == "__main__":
     print(f"LOX pump head rise: {lox_H.to('m'):.4f}")
     print(f"LOX pump diameter: {lox_D2.to('m'):.4f}")
     print(f"Lox pump width: {lox_B2_total.to('m'):.4f}")
-    print(f"K_v: {K_v:.4f}")
-    print(f"Impeller static pressure: {impellerStaticP.to('bar'):.4f}")
-    print(f"Average velocity: {avg_V.to('m/s'):.4f}")
-    print(f"Tongue placement angle: {theta_min.to("degrees"):.4f}")
-    print(f"Start area: {Q_(A_array[0], "cm^2").to('mm^2'):.4f}")
-    print(f"Throat area: {Q_(A_array[-1], "cm^2").to("in^2"):.4f}")
-    print(f"Static pressure inside LOX volute: {staticP1.to('bar'):.4f}")
-    print(f"Static pressure at LOX diffuser exit: {staticP2.to('bar'):.4f}")
-    print(f"Diffuser length: {diffuserL.to('millimeters'):.4f}")
+    print(f"K_v: {lox_K_v:.4f}")
+    print(f"Impeller static pressure: {lox_impellerStaticP.to('bar'):.4f}")
+    print(f"Average velocity: {lox_avg_V.to('m/s'):.4f}")
+    print(f"Tongue placement angle: {lox_theta_min.to("degrees"):.4f}")
+    print(f"Start area: {Q_(lox_A_array[0], "cm^2").to('mm^2'):.4f}")
+    print(f"Throat area: {Q_(lox_A_array[-1], "cm^2").to("in^2"):.4f}")
+    print(f"Static pressure inside LOX volute: {lox_staticP1.to('bar'):.4f}")
+    print(f"Static pressure at LOX diffuser exit: {lox_staticP2.to('bar'):.4f}")
+    print(f"Velocity at LOX diffuser exit: {lox_Vout.to('m/s'):.4f}")
+    print(f"Diffuser length: {lox_diffuserL.to('millimeters'):.4f}")
+    print(f"LOX Pressure Gradient (imp. - vol.): {lox_pressureGradient.to('bar'):.4f}")
+
+    ipa_pump = Main.MakeDesign(Main.Propellant.IPA)
+    ipa_feed_P = ipa_pump.DP.feed_pressure
+    ipa_H = ipa_pump.DesignHeadRise
+    ipa_D2 = ipa_pump.Impeller.d_2
+    ipa_B2_total = ipa_pump.Impeller.b_2
+    ipa_rho = ipa_pump.DP.rho
+    ipa_Q = ipa_pump.DesignFlowRate
+    ipa_N_s = ipa_pump.n_s
+    ipa_N_q = ipa_pump.n_q
+    _, ipa_cm2, ipa_cu2, _ = ipa_pump.Impeller.GetOutletVelocities()
+    ipa_c2 = np.sqrt(ipa_cm2**2 + ipa_cu2**2)
+    ipa_K_v = getKv(ipa_N_s)
+    ipa_avg_V = getVoluteVelocity(ipa_K_v, ipa_H)
+    ipa_At = getThroatArea(ipa_Q, ipa_avg_V)
+    ipa_theta_min = getMinAngle(ipa_b3, h_gap, ipa_At)
+    ipa_A_array = []
+    ipa_thetas = []
+    for theta in np.linspace(0, 360, 361):
+        A_theta = getAreaAtAngle(ipa_Q, ipa_avg_V, Q_(theta, 'degrees'), Q_(360, 'degrees'), ipa_theta_min, ipa_b3, h_gap, 1)
+        ipa_A_array.append(A_theta.to('cm^2').m)
+        if A_theta == Q_(1, 'mm^2'):
+            ipa_thetas.append(theta)
+
+    ipa_stagnationP1 = ipa_H * ipa_rho * g
+    ipa_impellerStaticP = Q_(ipa_stagnationP1 - (1/2 * ipa_rho * ipa_c2**2), "bar")
+    ipa_staticP1 = Q_(ipa_stagnationP1 - (1/2 * ipa_rho * ipa_avg_V**2), "bar")
+    ipa_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
+    ipa_throatA = Q_(ipa_A_array[-1], "cm^2")
+    ipa_staticP2 = calcDiffuserPressures(ipa_stagnationP1, ipa_throatA, ipa_targetA, ipa_avg_V, ipa_rho)
+    ipa_Vout = Q_(np.sqrt((ipa_stagnationP1 - ipa_staticP2) * 2 / ipa_rho), "m/s")
+    ipa_diffuserL = sizeDiffuserLength(ipa_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
+    ipa_pressureGradient = calcPressureGradient(ipa_pump, ipa_avg_V)
+
+    #stagnationP1 = ipa_H.to("m") * ipa_rho.to("kg/m^3") * g.to("m/s^2")
+    #staticP1 = stagnationP1 - 1/2 * ipa_rho.to("kg/m^3") * avg_V.to("m/s")**2
+    #ipa_targetA = Q_(math.pi * ((12/16)/2)**2, "in^2")
+    #throatA = Q_(A_array[-1], "m^2")
+    #staticP2 = calcDiffuserPressures(stagnationP1, throatA, ipa_targetA.to("m^2"), avg_V.to("m/s"), ipa_rho.to("kg/m^3"))
+
+    #plt.plot(np.linspace(0, 360, 361), A_array)
+    #plt.xlabel = 'Volute wrap angle (degrees)'
+    #plt.ylabel = 'Volute cross-sectional area (cm^2)'
+    #plt.title = 'Volute cross-sectional area vs. wrap angle'
+    #plt.grid(True)
+    #plt.show()
+
+    print(f"Specific speed: {ipa_N_s:.4f}")
+    print(f"Nq metric specific speed: {ipa_N_q:.4f}")
+    print(f"IPA pump head rise: {ipa_H.to('m'):.4f}")
+    print(f"IPA pump diameter: {ipa_D2.to('m'):.4f}")
+    print(f"IPA pump width: {ipa_B2_total.to('m'):.4f}")
+    print(f"K_v: {ipa_K_v:.4f}")
+    print(f"Impeller static pressure: {ipa_impellerStaticP.to('bar'):.4f}")
+    print(f"Average velocity: {ipa_avg_V.to('m/s'):.4f}")
+    print(f"Tongue placement angle: {ipa_theta_min.to("degrees"):.4f}")
+    print(f"Start area: {Q_(ipa_A_array[0], "cm^2").to('mm^2'):.4f}")
+    print(f"Throat area: {Q_(ipa_A_array[-1], "cm^2").to("in^2"):.4f}")
+    print(f"Static pressure inside IPA volute: {ipa_staticP1.to('bar'):.4f}")
+    print(f"Static pressure at IPA diffuser exit: {ipa_staticP2.to('bar'):.4f}")
+    print(f"Velocity at IPA diffuser exit: {ipa_Vout.to('m/s'):.4f}")
+    print(f"Diffuser length: {ipa_diffuserL.to('millimeters'):.4f}")
+    print(f"IPA Pressure Gradient (imp. - vol.): {ipa_pressureGradient.to('bar'):.4f}")
 
     #radial_thrust = calcRadialThrust(
     #    lox_pump.DesignHeadRise,

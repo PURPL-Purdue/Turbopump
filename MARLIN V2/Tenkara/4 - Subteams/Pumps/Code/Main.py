@@ -25,10 +25,10 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(35,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),			# impeller inlet diameter
+		d_1 = Q_(1, 'in'),				# impeller inlet diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness
+		blade_thick = Q_(1, 'mm'),		# blade thickness
 		d_hub=Q_(0.6, 'in'),			# hub diameter
 	),
 
@@ -36,11 +36,11 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(45,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1.2, 'in'),			# impeller inlet diameter
+		d_1 = Q_(1.3, 'in'),			# impeller inlet diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),	# blade thickness at exit
-		d_hub=Q_(0.65, 'in'),			# hub diameter
+		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
+		d_hub=Q_(0.6, 'in'),			# hub diameter
 	)
 }
 
@@ -48,14 +48,14 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.55, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
 		Z_blade = 2
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.IPA].d_1,			# inducer tip diameter (Constrained Option: 1.162)
-		d_hub_1 = Q_(0.48, 'in'),		# hub diameter at the inducer inlet(Constrained Option: 0.696)
+		d_hub_1 = basic_impeller_geometry[Propellant.IPA].d_hub,		# hub diameter at the inducer inlet(Constrained Option: 0.696)
 		d_hub_2 = basic_impeller_geometry[Propellant.IPA].d_hub,
 		Z_blade = 2		# hub diameter at the inducer exit (Constrained Option: 0.76)
 	)
@@ -69,7 +69,7 @@ meridional_geometry = {
 		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
-		Z_e_factor = 1.2,
+		Z_e_factor = 1.1, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(5, 'deg')
@@ -87,8 +87,8 @@ blade_params = {
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.2,
-		lead_sweep=Q_(0, 'deg'),
+		sj=0.1,
+		lead_sweep=Q_(-15, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
 		resolution=500,
@@ -117,7 +117,7 @@ fluid_props = {
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-inducer_head_rise = dict(LOX=Q_(35, 'm'), IPA=Q_(30, 'm'))  # lambda_w of 0.7 for impeller
+inducer_head_rise = {Propellant.LOX:Q_(49, 'm'), Propellant.IPA: Q_(0, 'm')}#Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(
@@ -137,39 +137,49 @@ def CreatePump(propellant: Propellant):
 
 def MakeDesign(propellant: Propellant):
 	pump = CreatePump(propellant)
-
+	print(pump.DesignHeadRise.to('m'))
+	
+	print(f'{propellant.name} pump specific speed (imperial): {pump.n_s:.0f}')
+	print(f'{propellant.name} pump specific speed (metric): {pump.n_q:.1f}')
+	print(f'{propellant.name} head coeff: {pump.Impeller.HeadCoefficient:.3f}')
+	print(f'{propellant.name} flow coeff: {pump.Impeller.FlowCoefficient:.3f}')
 	pump.Impeller.PlotOutletVelocities()#.show()
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
 	Pump1D.PlotHQ(pump).show()
-	print(Pump1D.GetTorque(pump))
-	print(Pump1D.GetInducerlessNPSH_r(pump))
+	return
+	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
+	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
+	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
+	print(f'{propellant.name} pump power consumption: ', Pump1D.GetPowerConsumption(pump))
 
 	# ----------------- CREATE INDUCER ------------------
-	inducer_head = Pump1D.GetInducerlessNPSH_r(pump)#inducer_head_rise[propellant.name]
-	print('Inducer required head:', inducer_head)	
-	print(f'{propellant} inducer desired head:', inducer_head)
-	pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
-	#pump.Impeller.PrintDimensionlessParameters()
-
-	# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
-	from Inducer.RadialEquilibrium import InducerRadialEquilibrium
-	inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
-	inducer_assm = inducer_eq.CreateCAD()
-	z = Q_(np.linspace(0, pump.Inducer.L_ax.to('m').magnitude, 200), 'm')
-	beta_ms = inducer_eq.blade_angle(z)				# rms radius angle at each z
-	r_ms = inducer_eq.mean_radius(z)
-	lead = r_ms.magnitude * np.tan(beta_ms.to('rad').magnitude)
-	beta_tip = np.degrees(np.arctan(lead / inducer_eq.R_t))	# R_t is the tip radius in m
-	beta_min = beta_tip.min()
-	print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
-	min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
-	print(f"Min blade spacing {min_spacing:.2f} in")
-	#inducer_eq.ShowCAD()
-	#exit()
-	#print(inducer_eq.GetOutletAngularMomentum())
-
+	print(f'{propellant.name} inducer minimum headrise: ', Pump1D.GetInducerHeadRequirement(pump))
+	inducer_head = inducer_head_rise[propellant]
+	
+	print(f'{propellant.name} inducer target head:', inducer_head)
+	if inducer_head.to('m').m > 5:
+		pump.AddInducer(inducer_head, geometry=basic_inducer_geometry[propellant])
+		# ----------------- INDUCER RADIAL EQUILIBRIUM -----------
+		from Inducer.RadialEquilibrium import InducerRadialEquilibrium
+		inducer_eq = InducerRadialEquilibrium(pump.Inducer, blade_thickness=Q_(1, 'mm'))
+		inducer_assm = inducer_eq.CreateCAD()
+		z = Q_(np.linspace(0, pump.Inducer.L_ax.to('m').magnitude, 200), 'm')
+		beta_ms = inducer_eq.blade_angle(z)				# rms radius angle at each z
+		r_ms = inducer_eq.mean_radius(z)
+		lead = r_ms.magnitude * np.tan(beta_ms.to('rad').magnitude)
+		beta_tip = np.degrees(np.arctan(lead / inducer_eq.R_t))	# R_t is the tip radius in m
+		beta_min = beta_tip.min()
+		print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
+		min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
+		print(f"Min blade spacing {min_spacing:.2f} in")
+		inducer_eq.ShowCAD()
+		#exit()
+		#print(inducer_eq.GetOutletAngularMomentum())
+	else:
+		inducer_eq = None
+	
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
 	#pump_meridional.PotentialFlow.Plot().show()
@@ -178,27 +188,32 @@ def MakeDesign(propellant: Propellant):
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
 		pump_meridional,
-		inducer_eq,
+		inducer_radial_equilibrium=inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
-	imp_blade_design.PlotInletTriangles(free_vortex=False)#.show()
+	imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
+	#imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
-	# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
-	# and moved so its outlet is axial_gap upstream of the impeller inlet
-	axial_gap = Q_(0, 'mm')
-	z_impeller_inlet = -pump_meridional.HubContour(0)[0]		# flipped
-	z_inducer_inlet = (z_impeller_inlet + axial_gap + inducer_eq.inducer.L_ax).to('mm').m
+	
 	pump_assembly = (
 		cadquery.Assembly()
 		.add(imp_cad.Assembly, name='impeller')
-		.add(inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0))
 	)
+	if pump.Inducer is not None:
+		# The inducer is turned 180 deg about x so it flows in -z like the flipped impeller,
+		# and moved so its outlet is axial_gap upstream of the impeller inlet
+		axial_gap = Q_(0, 'mm')
+		z_impeller_inlet = -pump_meridional.HubContour(0)[0]		# flipped
+		z_inducer_inlet = (z_impeller_inlet + axial_gap + inducer_eq.inducer.L_ax).to('mm').m
+		pump_assembly.add(
+			inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0)
+			)
 	show(pump_assembly)
 
 	# Save STEP file
@@ -206,7 +221,8 @@ def MakeDesign(propellant: Propellant):
 	do_save = True if input('Save STEP? (y):\n') == 'y' else False
 	if do_save:
 		CAD.ExportAssembly(imp_cad.Assembly, f'{propellant.name}_impeller')
-		CAD.ExportAssembly(inducer_assm, f'{propellant.name}_inducer')
+		if pump.Inducer is not None:
+			CAD.ExportAssembly(inducer_assm, f'{propellant.name}_inducer')
 
 	return pump
 

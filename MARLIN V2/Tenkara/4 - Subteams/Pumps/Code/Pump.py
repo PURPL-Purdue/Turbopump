@@ -39,6 +39,8 @@ class Pump:
 			)
 		)
 
+		self.Inducer: Inducer.Inducer | None = None
+
 		self.NPSH_a = ((design_point.feed_pressure - design_point.inlet_vapor_pressure) / design_point.rho / g).to('m')
 
 	def AddInducer(self, inducer_head: Q_[float], geometry: Inducer.InducerInputGeometry|None=None) -> Inducer.Inducer:

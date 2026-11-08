@@ -4,6 +4,7 @@ from pint import Quantity as Q_
 from VelocityTriangle import VelocityTriangle, PlotTriangles
 from plotly import graph_objects as go
 import numpy as np
+import EmpiricalRelations as emp
 
 g = Q_(9.81, 'm/s^2')
 
@@ -26,10 +27,10 @@ class DesignPoint:
 	#rho: Q_[float]			# average density of the fluid
 
 # Wiesner slip factor: https://manual.cfturbo.com/en/bl_te_wiesner.html
-def GetWiesnerSlipRatio(beta2b: Q_[float], Z: int) -> float:
+def _WiesnerSlipRatio(beta2b: Q_[float], Z: int) -> float:
 	return 1 - np.sqrt(np.sin(beta2b.to('rad').m)) / Z**0.7
 
-def GetExitBladeBlockage(beta2b: Q_[float], Z: int, thick: Q_[float], b2: Q_[float]) -> Q_[float]:
+def _ExitBladeBlockage(beta2b: Q_[float], Z: int, thick: Q_[float], b2: Q_[float]) -> Q_[float]:
 	return thick * b2 * Z / np.sin(beta2b)
 
 class Impeller:
@@ -40,7 +41,7 @@ class Impeller:
 		
 		self.DP: DesignPoint = design_point
 
-		exit_blockage_area = GetExitBladeBlockage(
+		exit_blockage_area = _ExitBladeBlockage(
 			beta2b=geometry.Beta2B,
 			Z=geometry.Z_blade_2,
 			thick=geometry.blade_thick,
@@ -61,7 +62,7 @@ class Impeller:
 		self.b_2 = geometry.b_2
 		self.blade_thick = geometry.blade_thick
 		self.d_hub = geometry.d_hub
-		self.WiesnerSlip: float = GetWiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade_2)
+		self.WiesnerSlip: float = _WiesnerSlipRatio(geometry.Beta2B, geometry.Z_blade_2)
 
 		u_2, c_m2, c_u2, w_2 = self.GetOutletVelocities()
 
@@ -120,7 +121,10 @@ class Impeller:
 		c_u2_ideal: Q_[float] = u_2 - c_m2 / np.tan(self.Beta2B.to('rad').m)
 		# Wiesner slip = 1 - (c_u2_ideal - c_u2)/u_2
 		# https://manual.cfturbo.com/en/bl_te_aungier.html
-		c_u2 = c_u2_ideal - u_2*(1 - self.WiesnerSlip)
+		# f = emp.FlowSpeedRatio(Q_flow, N_speed, self.DP.Q, self.DP.N_shaft)
+		# slip = emp.SlipFactor(f, self.WiesnerSlip)
+		slip = self.WiesnerSlip
+		c_u2 = c_u2_ideal - u_2*(1 - slip)
 		w_2: Q_[float] = np.sqrt(c_m2**2 + (u_2 - c_u2)**2)
 
 		return u_2, c_m2, c_u2, w_2
