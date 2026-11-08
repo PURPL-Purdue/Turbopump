@@ -249,6 +249,8 @@ class ImpellerBladeDesign:
 		betas: list[BetaDistribution] = []
 		points_3d: list[np.ndarray[float]] = []
 
+		fig = go.Figure()
+
 		for phi in np.linspace(0, 1, num_streams):
 
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
@@ -261,10 +263,15 @@ class ImpellerBladeDesign:
 			
 			arc_lead = np.sin(lead_sweep) * (radii[0] - radii_ref[0])
 			theta_offset = arc_lead / radii[0]
-
-			beta_dis = (ConformalMapping(radii, blade_stream.length_m, beta_1, beta_2)
+			uh = ConformalMapping(radii, blade_stream.length_m, beta_1, beta_2)
+			beta_dis = (uh
 				.SolveBetaDistributionFromWrap(ref_total_wrap + theta_offset)
 			)
+
+			fig.add_trace(go.Scatter(
+				x = uh._getA(beta_dis, len(arc_x)),
+				y = arc_x, name=f'phi = {phi}'
+			))
 
 			if splitter:
 				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
@@ -283,7 +290,7 @@ class ImpellerBladeDesign:
 
 			betas.append(BetaDistribution(Get=beta_dis.Get, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
-
+		fig.show()
 		return (points_3d, betas)
 
 	def GetBladeLines(self):

@@ -114,22 +114,7 @@ class ConformalMapping:
 				guess_high, residual_high = new_guess, residual_new
 		return beta_dis
 
-	def _getA(self, parabolic_beta: ParabolicBeta) -> tuple[float, float, float, float]:
-		"""
-		A(x) = a x^3 + b x^2 + c x + d, coefficients highest power first (np.polyval order)
-		"""
-		x_f = self.x_f
-		lhs = np.array([
-			[0       ,      0,      0, 1],	# A(0) => d = 0
-			[x_f**3  , x_f**2, x_f**1, 1],	# A(x_f)
-			[0       ,      0,      1, 0],	# A'(0)
-			[3*x_f**2,  2*x_f,		1, 0]	# A'(x_f)
-		])
-		# A(0) = 0, A(x_f) = A_f, A' = 1/tan(beta) at both ends
-
-		x_arr = np.linspace(0, x_f, len(self.radii))
-		A_m = np.trapezoid(np.tan(parabolic_beta.Get(x_arr)), x_arr)
-
-		rhs = np.array([0, A_m, 1/np.tan(self.beta_1), 1/np.tan(self.beta_2)])
-
-		return np.linalg.solve(lhs, rhs)
+	def _getA(self, parabolic_beta: ParabolicBeta, resolution: int=None) -> np.ndarray:
+		if resolution is None: resolution = len(self.radii)
+		x_arr = np.linspace(0, self.x_f, resolution)
+		return cum_trap(1/np.tan(parabolic_beta.Get(x_arr)), x_arr, initial=0)
