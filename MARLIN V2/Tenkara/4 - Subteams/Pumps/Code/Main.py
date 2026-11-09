@@ -113,8 +113,6 @@ fluid_props = {
 	)
 }
 
-
-
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
 inducer_head_rise = {Propellant.LOX:Q_(49, 'm'), Propellant.IPA: Q_(0, 'm')}#Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
@@ -191,6 +189,7 @@ def MakeDesign(propellant: Propellant):
 		inducer_radial_equilibrium=inducer_eq,
 		blade_params=blade_params[propellant]
 	)
+	imp_blade_design.ShowPlotConformalMappingFunction()
 	imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines().show()

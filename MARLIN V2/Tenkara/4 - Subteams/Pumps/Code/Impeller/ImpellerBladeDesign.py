@@ -7,7 +7,6 @@ from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
 from collections.abc import Callable
 from plotly import graph_objects as go
-from plotly.subplots import make_subplots
 from scipy import integrate
 from warnings import warn
 from .MeridionalDesign import MeridionalDesign
@@ -61,7 +60,9 @@ class ImpellerBladeDesign:
 		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 0	# degrees of extra angle
-		
+
+		self.__conformal_fig = None
+
 		self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
 		if self._splitter:
 			self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
@@ -158,8 +159,19 @@ class ImpellerBladeDesign:
 			title=f'{self.Pump.Propellant.name} Impeller Inlet Velocity Triangles<br><sup>{inlet_model}<br>{CONVENTION_NOTES["centrifugal"]}</sup>')
 
 		return fig
+	
+	def __make_conformal_mapping_fig(self) -> go.Figure:
 
-	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[np.ndarray[float]], list[BetaDistribution]]:
+		if self._splitter:
+			fig = subplots.make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=('Full blades', 'Splitter blades'))
+		else:
+			fig = go.Figure()
+		fig.update_layout(template='plotly_white', title_text='Blade Conformal Mapping')
+		fig.update_xaxes(title_text='A(x) (meters)')
+		fig.update_yaxes(title_text='Meridional arclength (meters)')
+		return fig
+
+	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[tuple[list[np.ndarray], list[np.ndarray], list[np.ndarray]], list[BetaDistribution]]:
 		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
 		splitter: bool = length_ratio != 1.0
 		
@@ -188,11 +200,11 @@ class ImpellerBladeDesign:
 		
 		betas: list[BetaDistribution] = []
 		points_suction: list[np.ndarray[float]] = []
+		points_camber: list[np.ndarray[float]] = []
 		points_pressure: list[np.ndarray[float]] = []
 
-		if not splitter:
-			self._fig = make_subplots(rows=1, cols=2, shared_yaxes=True)
-		fig = self._fig
+		if not self.__conformal_fig:
+			self.__conformal_fig = self.__make_conformal_mapping_fig()
 
 		for phi in np.linspace(0, 1, num_streams):
 
@@ -213,42 +225,6 @@ class ImpellerBladeDesign:
 			transposed_bl = ConformalMapping.TransposedBladeLine(
 				camber.x_f, self.Pump.Impeller.blade_thick.to('m').m
 			)
-			A_s, L_s, A_p, L_p = transposed_bl._GetA_Sides(
-				parab_beta, length_ratio=self._params.splitter_length_ratio if splitter else None, resolution=resolution
-			)
-
-			fig.add_trace(go.Scatter(
-				x = A_s,
-				y = L_s, name=f'phi = {phi}', showlegend=False
-			), row=1, col=2 if splitter else 1)
-
-			fig.add_trace(go.Scatter(
-				x = A_p,
-				y = L_p, name=f'phi = {phi}', showlegend=False
-			), row=1, col=2 if splitter else 1)
-
-			# if splitter:
-			# 	split_arc_pad: float = (1 - length_ratio) * (arc_x[-1] - arc_x[0])
-
-			# 	domain: tuple[float, float] = (split_arc_pad, arc_x[-1] - arc_x[0])
-
-			# 	arc_x_split = np.linspace(arc_x[0] + split_arc_pad, arc_x[-1], resolution)
-			# 	stream_zr: np.ndarray = streamline.Points(arc_x_split)
-			# 	radii: np.ndarray = stream_zr[:, 1]
-			# 	theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
-
-			# 	theta = parab_beta.GetTheta(radii=radii, x=arc_x_split - arc_x[0])
-			# else:
-			# 	domain: tuple[float, float] = (0, arc_x[-1] - arc_x[0])
-			# 	theta_offset: float = 0
-
-			# 	theta = parab_beta.GetTheta(radii=radii, x=arc_x - arc_x[0])
-
-			# total_wrap = theta[-1]
-			# theta += REF_TOTAL_WRAP - total_wrap + theta_offset
-
-			# betas.append(BetaDistribution(Get=parab_beta.GetBeta, Domain=domain, TotalWrap=total_wrap))
-			# points_3d.append(np.column_stack((stream_zr, theta)))
 
 			if splitter:
 				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
@@ -257,27 +233,35 @@ class ImpellerBladeDesign:
 				theta_offset = 0
 				length_ratio = 0
 
-			zr_s, theta_s, zr_p, theta_p = transposed_bl.GetSides(
+			zr_s, theta_s, zr_p, theta_p, zr_c, theta_c, conformals = transposed_bl.GetSides(
 				parabolic_beta=parab_beta, stream=streamline,
 				x_0_mean=arc_x[0], resolution=resolution, length_ratio=self._params.splitter_length_ratio if splitter else None
 				)
 
 			theta_s += REF_TOTAL_WRAP - theta_s[-1] + theta_offset
 			theta_p += REF_TOTAL_WRAP - theta_p[-1] + theta_offset
+			theta_c += REF_TOTAL_WRAP - theta_c[-1] + theta_offset
 			
 			points_suction.append(np.column_stack((zr_s, theta_s)))
 			points_pressure.append(np.column_stack((zr_p, theta_p)))
+			points_camber.append(np.column_stack((zr_c, theta_c)))
 
 			betas.append(
 				BetaDistribution(Get=parab_beta.GetBeta, Domain=(0, arc_x[-1] - arc_x[0]), TotalWrap=mean_wrap)
 			)
 
-		if splitter:
-			fig.show()
-		return (points_suction, points_pressure, betas)
+			A_s, L_s, A_p, L_p, _, _ = conformals
+			self.__conformal_fig.add_trace(go.Scatter(
+				x = A_s,
+				y = L_s, name=f'phi = {phi}', showlegend=False
+			), row=1, col=2 if splitter else 1)
 
-	def GetBladeLines(self):
-		return self._bladelines
+			self.__conformal_fig.add_trace(go.Scatter(
+				x = A_p,
+				y = L_p, name=f'phi = {phi}', showlegend=False
+			), row=1, col=2 if splitter else 1)
+
+		return ((points_suction, points_pressure, points_camber), betas)
 
 	def PlotBladeLines(self, unit:str='in') -> go.Figure:
 
@@ -288,45 +272,47 @@ class ImpellerBladeDesign:
 		colors = express.colors.qualitative.Plotly
 
 		for is_splitter in (False, True) if self._splitter else (False,) :
-			bladelines = self._splitter_bladelines if is_splitter else self._bladelines
-			points_suction, points_pressure, betas = bladelines
-			num_streams = len(betas)
 
+			bladelines = self._splitter_bladelines if is_splitter else self._bladelines
+
+			blade_surface_points, betas = bladelines
+			num_streams = len(betas)
 
 			for i in range(num_streams):
 
 				phi: float = i / (num_streams - 1)
 				beta_dis = betas[i]
 
-				for points in (points_suction, points_pressure):
-					r, theta = points[i][:, 1], points[i][:, 2]
+				points = blade_surface_points[2] # camber points
 
-					arc_m=np.linspace(*beta_dis.Domain, len(r))
-					beta = beta_dis.Get(arc_m)
+				r, theta = points[i][:, 1], points[i][:, 2]
 
-					theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
+				arc_m=np.linspace(*beta_dis.Domain, len(r))
+				beta = beta_dis.Get(arc_m)
 
-					# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
-					theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_1)])
-					r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
+				theta_blade: float = 2*np.pi / self.Pump.Impeller.Z_blade_1
 
-					color = colors[i % len(colors)]
-					trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
+				# all Z blades in one trace, so each streamline keeps one color and legend entry; NaN breaks the line between blades
+				theta_n = np.concatenate([np.append(theta + n*theta_blade, np.nan) for n in range(self.Pump.Impeller.Z_blade_1)])
+				r_n = np.tile(np.append(r, np.nan), self.Pump.Impeller.Z_blade_1)
 
-					# plot plan view
-					fig.add_trace(go.Scatter(
-						x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
-						y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
-						name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
-					), row=1, col=1)
+				color = colors[i % len(colors)]
+				trace_name = f'Phi = {phi:.2f}, Wrap = {(beta_dis.TotalWrap * 180/np.pi):.1f} °'
 
-					if is_splitter: continue
+				# plot plan view
+				fig.add_trace(go.Scatter(
+					x=Q_(r_n * np.cos(theta_n), 'm').to(unit).m,
+					y=Q_(r_n * np.sin(theta_n), 'm').to(unit).m,
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=False
+				), row=1, col=1)
 
-					# plot Beta distribution, if blade lines are regular blades (not splitter)
-					fig.add_trace(go.Scatter(
-						x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
-						name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=True
-					), row=1, col=2)
+				if is_splitter: continue
+
+				# plot Beta distribution, if blade lines are regular blades (not splitter)
+				fig.add_trace(go.Scatter(
+					x=Q_(arc_m, 'm').to(unit).m, y=np.rad2deg(beta),
+					name=trace_name, legendgroup=f'{i}', line=dict(color=color), showlegend=True
+				), row=1, col=2)
 
 		fig.update_xaxes(title_text=rf'Meridional arclength <i>m</i> ({unit})', row=1, col=2)
 		fig.update_yaxes(title_text=r'Blade angle <i>β</i> (°)', row=1, col=2)
@@ -364,3 +350,6 @@ class ImpellerBladeDesign:
 			template='plotly_white', title_text=f'{self.Pump.Propellant.name} Impeller Blade Layout'
 		))
 		return fig
+
+	def ShowPlotConformalMappingFunction(self):
+		self.__conformal_fig.show()

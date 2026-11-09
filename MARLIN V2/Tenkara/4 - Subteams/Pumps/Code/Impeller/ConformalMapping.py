@@ -142,16 +142,20 @@ class TransposedBladeLine():
 		A_p = A_i - self.s/2 * sin_B
 		L_p = L_i + self.s/2 * cos_B
 
-		return A_s, L_s, A_p, L_p
+		return A_s, L_s, A_p, L_p, A_i, L_i
 
-	def GetSides(self, parabolic_beta: ParabolicBeta, stream: Streamline, x_0_mean: float, resolution: int, length_ratio: float|None=None) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-		A_s, L_s, A_p, L_p = self._GetA_Sides(parabolic_beta, resolution, length_ratio)
-		zr_s = stream.Points(L_s + x_0_mean)
-		zr_p = stream.Points(L_p + x_0_mean)
+	def GetSides(self, parabolic_beta: ParabolicBeta, stream: Streamline, x_0_mean: float, resolution: int, length_ratio: float|None=None):
+		conformals = self._GetA_Sides(parabolic_beta, resolution, length_ratio)
+		A_s, L_s, A_p, L_p, A_i, L_i = conformals
 
-		radii_s, radii_p = zr_s[:, 1], zr_p[:, 1]
+		zr_suction = stream.Points(L_s + x_0_mean)
+		zr_pressure = stream.Points(L_p + x_0_mean)
+		zr_camber = stream.Points(L_i + x_0_mean)
+
+		radii_suction, radii_pressure, radii_camber = zr_suction[:, 1], zr_pressure[:, 1], zr_camber[:, 1]
 		
-		theta_s = cumulative_trapezoid(1/radii_s, A_s, initial=0)
-		theta_p = cumulative_trapezoid(1/radii_p, A_p, initial=0)
+		theta_suction = cumulative_trapezoid(1/radii_suction, A_s, initial=0)
+		theta_pressure = cumulative_trapezoid(1/radii_pressure, A_p, initial=0)
+		theta_camber = cumulative_trapezoid(1/radii_camber, A_i, initial=0)
 
-		return (zr_s, theta_s, zr_p, theta_p)
+		return (zr_suction, theta_suction, zr_pressure, theta_pressure, zr_camber, theta_camber, conformals)
