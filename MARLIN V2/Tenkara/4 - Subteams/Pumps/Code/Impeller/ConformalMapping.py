@@ -1,11 +1,9 @@
 import numpy as np
-from collections.abc import Callable
 from warnings import warn
 from scipy.integrate import cumulative_trapezoid
 from dataclasses import dataclass
 from plotly import graph_objects as go
-from typing import Literal
-
+from .PotentialFlow import Streamline
 """
 @Charlie Zhu
 Minimal AI
@@ -27,7 +25,7 @@ class ParabolicBeta:
 			)
 
 	def GetTheta(self, radii: np.ndarray, x: np.ndarray) -> np.ndarray:
-		return cumulative_trapezoid(1/ (radii * np.tan(self.GetBeta(x))), x=x, dx=x[-1] / len(x), initial=0)
+		return cumulative_trapezoid(1/ (radii * np.tan(self.GetBeta(x))), x=x, initial=0)
 
 def _solveParabolas(y0: float, yf: float, xj: float, xf: float) -> tuple[tuple[float], tuple[float]]:
 	"""
@@ -110,25 +108,50 @@ class CamberLine:
 
 class TransposedBladeLine():
 
-	def __init__(self, camber: CamberLine, thick_m: float):
-		self.camber = camber
+	def __init__(self, camber_length: float, thick_m: float):
+		self.L_max = camber_length
 		self.s = thick_m
 
-	def GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int=None):
+	def _GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int, length_ratio: float|None=None):
 
-		if resolution is None: resolution = len(self.camber.radii)
-		L_arr = np.linspace(0, self.camber.x_f, resolution)
+		L_start = 0 if length_ratio is None else self.L_max * (1 - length_ratio)
 
-		Beta_i = parabolic_beta.GetBeta(L_arr)
+		L_i = np.linspace(
+			L_start, self.L_max, resolution
+		)
 
+		Beta_i = parabolic_beta.GetBeta(L_i)
+		
 		sin_B = np.sin(Beta_i)
-		cos_B = np.cos(Beta_i)
+		cos_B = np.cos(Beta_i) # np.sqrt(1 - sin_B*2) blud is not the trig master
 
-		A_i: np.ndarray = cumulative_trapezoid(1/np.tan(Beta_i), L_arr, initial=0)
+		A_i: np.ndarray = cumulative_trapezoid(1/np.tan(Beta_i), L_i, initial=0)
+
+		if length_ratio:
+
+			pre_res = int(resolution * (1 - length_ratio) + 0.5)
+			L_pre = np.linspace(0, L_start, pre_res)
+			Beta_pre = parabolic_beta.GetBeta(L_pre)
+
+			A_pre = np.trapezoid(1/np.tan(Beta_pre), L_pre)
+
+			A_i += A_pre
 		
 		A_s = A_i + self.s/2 * sin_B
-		L_s = L_arr - self.s/2 * cos_B
-		A_p = A_i - self.s/2 * cos_B
-		L_p = L_arr + self.s/2 * sin_B
+		L_s = L_i - self.s/2 * cos_B
+		A_p = A_i - self.s/2 * sin_B
+		L_p = L_i + self.s/2 * cos_B
 
 		return A_s, L_s, A_p, L_p
+
+	def GetSides(self, parabolic_beta: ParabolicBeta, stream: Streamline, x_0_mean: float, resolution: int, length_ratio: float|None=None) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+		A_s, L_s, A_p, L_p = self._GetA_Sides(parabolic_beta, resolution, length_ratio)
+		zr_s = stream.Points(L_s + x_0_mean)
+		zr_p = stream.Points(L_p + x_0_mean)
+
+		radii_s, radii_p = zr_s[:, 1], zr_p[:, 1]
+		
+		theta_s = cumulative_trapezoid(1/radii_s, A_s, initial=0)
+		theta_p = cumulative_trapezoid(1/radii_p, A_p, initial=0)
+
+		return (zr_s, theta_s, zr_p, theta_p)

@@ -35,16 +35,18 @@ class ImpellerCAD:
 
 		blade_sets = [] # main blades, then splitters if there are any
 		for is_splitter in (False, True) if self._blade_design._splitter else (False,):
-			bladelines = self._blade_design._splitter_bladelines if is_splitter else self._blade_design._bladelines
+			print('IS SPLITTER: ', is_splitter)
+			suction_blade_points, pressure_blade_points, _ = self._blade_design._splitter_bladelines if is_splitter else self._blade_design._bladelines
+			
 			# blade_points is a list of point arrays (ndarrays)
-			blade_points, _ = bladelines
+			for blade_points in (suction_blade_points, pressure_blade_points):
 
-			t = np.linspace(0, 1, len(blade_points[0]))
-			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
-			camber = cadquery.func.loft(blade_edges)
-			# rotate the blades about the z-axis
-			blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
-			blade_sets.append(blades)
+				t = np.linspace(0, 1, len(blade_points[0]))
+				blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
+				camber = cadquery.func.loft(blade_edges)
+				# rotate the blades about the z-axis
+				blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
+				blade_sets.append(blades)
 
 		RESOLUTION = 200
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
