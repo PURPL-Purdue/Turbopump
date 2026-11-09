@@ -33,7 +33,7 @@ class ImpellerCAD:
 		self.Impeller = self._blade_design.Pump.Impeller
 		Z_blade_1: int = self.Impeller.Z_blade_1
 
-		blade_sets = [] # main blades, then splitters if there are any
+		blade_set = []
 		for is_splitter in (False, True) if self._blade_design._splitter else (False,):
 			print('IS SPLITTER: ', is_splitter)
 			suction_blade_points, pressure_blade_points, _ = self._blade_design._splitter_bladelines if is_splitter else self._blade_design._bladelines
@@ -43,10 +43,12 @@ class ImpellerCAD:
 
 				t = np.linspace(0, 1, len(blade_points[0]))
 				blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
-				camber = cadquery.func.loft(blade_edges)
+				blade_surface = cadquery.func.loft(blade_edges)
 				# rotate the blades about the z-axis
-				blades = camber.moved(*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)])
-				blade_sets.append(blades)
+				blade_set.append(blade_surface.moved(
+					*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
+				))
+				
 
 		RESOLUTION = 200
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
@@ -69,8 +71,8 @@ class ImpellerCAD:
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
 			.add(shroud_surface, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
 		)
-		for name, blades in zip(('blades', 'splitters'), blade_sets):
-			self.Assembly.add(blades, name=name, color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
+		
+		self.Assembly.add(cadquery.func.compound(*blade_set), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 
 	def Show(self):
 		show(self.Assembly)
