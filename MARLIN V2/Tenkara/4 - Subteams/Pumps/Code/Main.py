@@ -29,7 +29,7 @@ basic_impeller_geometry = {
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
 		blade_thick = Q_(1, 'mm'),		# blade thickness
-		d_hub=Q_(0.6, 'in'),			# hub diameter
+		d_hub=Q_(0.6, 'in'),			# hub diameter at inlet
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
@@ -40,7 +40,7 @@ basic_impeller_geometry = {
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
 		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
-		d_hub=Q_(0.6, 'in'),			# hub diameter
+		d_hub=Q_(0.6, 'in'),			# hub diameter at inlet
 	)
 }
 
@@ -172,7 +172,7 @@ def MakeDesign(propellant: Propellant):
 		print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
 		min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
 		print(f"Min blade spacing {min_spacing:.2f} in")
-		inducer_eq.ShowCAD()
+		#inducer_eq.ShowCAD()
 		#exit()
 		#print(inducer_eq.GetOutletAngularMomentum())
 	else:
@@ -226,5 +226,5 @@ def MakeDesign(propellant: Propellant):
 	return pump
 
 if __name__ == "__main__":
-	#MakeDesign(Propellant.LOX)
+	MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)

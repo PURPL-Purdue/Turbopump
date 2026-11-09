@@ -46,7 +46,7 @@ class BladeParams:
 	target_wrap: Q_[float] = Q_(120, 'deg')
 	use_cubic: bool = True
 	splitter_length_ratio: float = 0.6
-	le_ratio: float = 2.0			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
+	le_ratio: float = 3			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
 	le_resolution: int = 25			# points on the leading-edge ellipse, nose to full thickness
 	side_theta: Literal['offset', 'milos'] = 'offset'	# wrap angle of the sides, see ConformalMapping.TransposedBladeLine.GetSides
 
