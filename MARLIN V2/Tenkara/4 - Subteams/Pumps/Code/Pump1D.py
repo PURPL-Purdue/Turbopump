@@ -16,9 +16,10 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	u_2, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q_flow, N_speed)
 	return (u_2 * c_u2).to('kJ/kg')
 
-def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None, rho: Optional[Q_]=None) -> Q_:
 	if Q_flow is None: Q_flow = pump.DesignFlowRate
-	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+	if rho is None: rho = pump.DP.rho
+	return (rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
 
 def GetTempRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	heat_dissipated = GetSpecificWork(pump, Q_flow, N_speed) * (1 - pump.DP.eta_overall)
@@ -101,7 +102,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	return fig
 
-def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=0.4, blade_blockage_factor: float=0.7) -> Q_:
+def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=0.4, blade_blockage_factor: float=0.7, Q_flow: Q_=None, N_speed: Q_=None) -> Q_:
 
 	"""
 		This method of calculating NPSH_i accounts for inlet velocity and losses.
@@ -118,8 +119,8 @@ def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=0.4, b
 	impeller = pump.Impeller
 	area_1 = (impeller.d_1**2 - impeller.d_hub**2)/4 * np.pi * blade_blockage_factor
 	# assume no preswirl, c_m1 = c_1
-	c_m1 = impeller.DP.Q / area_1
-	u_1 = impeller.DP.N_shaft * impeller.d_1/2
+	c_m1 = (impeller.DP.Q if Q_flow is None else Q_flow) / area_1
+	u_1 = (impeller.DP.N_shaft if N_speed is None else N_speed) * impeller.d_1/2
 	w_1: Q_[float] = np.sqrt(c_m1**2 + u_1**2)
 
 	return (1/(2 * g) * (lambda_c * c_m1**2 + lambda_w * w_1**2)).to('m')

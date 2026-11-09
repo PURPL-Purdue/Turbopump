@@ -9,11 +9,11 @@ from collections.abc import Callable
 from plotly import graph_objects as go
 from scipy import integrate
 from warnings import warn
-from .ConformalMapping import ConformalMapping#, BetaCMM
 from .MeridionalDesign import MeridionalDesign
 from .MeridionalContour import MeridionalCurve
 from .PotentialFlow import Streamline
 from .JoinParabola import JoinParabola
+from . import ConformalMapping
 
 """
 @Charlie Zhu
@@ -62,14 +62,9 @@ class ImpellerBladeDesign:
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 0	# degrees of extra angle
 		
-		if self._params.use_cubic:
-			self._bladelines = self._CreateBladeLines2(resolution=self._params.resolution)
-			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines2(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
-		else:
-			self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
-			if self._splitter:
-				self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
+		self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
+		if self._splitter:
+			self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
@@ -164,57 +159,6 @@ class ImpellerBladeDesign:
 
 		return fig
 
-	def _CreateBladeLines2(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
-
-		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
-		splitter: bool = length_ratio != 1.0
-		
-		betas: list[BetaDistribution] = []
-		points_3d: list[np.ndarray[float]] = []
-		lead_sweep = self._params.lead_sweep.to('rad').m
-
-		target_wrap: float = self._params.target_wrap.to('rad').m
-
-		for i in range(num_streams):
-
-			phi = i/(num_streams - 1)
-			
-			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
-			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
-			arc_x = np.linspace(0, blade_stream.length_m, resolution)
-			stream_zr = blade_stream.Points(arc_x)
-			radii = stream_zr[:, 1]
-
-			if i == 0: r_0 = radii[0]
-			arc_lead = np.sin(lead_sweep) * (radii[0] - r_0)
-			theta_offset = arc_lead / radii[0]
-
-			cm = ConformalMapping(
-				beta_1=beta_1, beta_2=self.Pump.Impeller.Beta2B.to('rad').m,
-				arclen=blade_stream.length_m, target_wrap=target_wrap + theta_offset, radii=radii
-				)
-
-			if splitter:
-				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
-				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
-				stream_zr: np.ndarray = blade_stream.Points(arc_x)
-				radii: np.ndarray = stream_zr[:, 1]
-				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
-				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
-			else:
-				domain: tuple[float, float] = (0, blade_stream.length_m)
-				theta_offset: float = 0
-			
-			theta = cm.GetThetaFromRadiiAndArclength(radii=radii, arc_x=arc_x)
-			total_wrap = theta[-1]
-			theta += (target_wrap - total_wrap) + theta_offset
-
-			betas.append(BetaDistribution(Get=cm.GetBeta, Domain=domain, TotalWrap=total_wrap))
-			points_3d.append(np.column_stack((stream_zr, theta)))
-
-		return (points_3d, betas)
-
 	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
 		"""
 			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
@@ -242,7 +186,7 @@ class ImpellerBladeDesign:
 		beta_2 = self.Pump.Impeller.Beta2B.to('rad').m
 
 		_, ref_total_wrap = (
-			ConformalMapping(radii_ref, ref_bladestream.length_m, ref_beta_1, beta_2)
+			ConformalMapping.CamberLine(radii_ref, ref_bladestream.length_m, ref_beta_1, beta_2)
 			.GetBetaDistributionFromSj(self._params.sj)
 		)
 		
@@ -263,14 +207,23 @@ class ImpellerBladeDesign:
 			
 			arc_lead = np.sin(lead_sweep) * (radii[0] - radii_ref[0])
 			theta_offset = arc_lead / radii[0]
-			uh = ConformalMapping(radii, blade_stream.length_m, beta_1, beta_2)
-			beta_dis = (uh
+			camber = ConformalMapping.CamberLine(radii, blade_stream.length_m, beta_1, beta_2)
+			beta_dis, _ = (camber
 				.SolveBetaDistributionFromWrap(ref_total_wrap + theta_offset)
 			)
 
+			A_s, L_s, A_p, L_p = ConformalMapping.TransposedBladeLine(
+				camber, self.Pump.Impeller.blade_thick.to('m').m
+			).GetA_Sides(beta_dis)
+
 			fig.add_trace(go.Scatter(
-				x = uh._getA(beta_dis, len(arc_x)),
-				y = arc_x, name=f'phi = {phi}'
+				x = A_s,
+				y = L_s, name=f'phi = {phi}'
+			))
+
+			fig.add_trace(go.Scatter(
+				x = A_p,
+				y = L_p, name=f'phi = {phi}'
 			))
 
 			if splitter:
@@ -288,7 +241,7 @@ class ImpellerBladeDesign:
 			total_wrap = theta[-1]
 			theta += ref_total_wrap - total_wrap + theta_offset
 
-			betas.append(BetaDistribution(Get=beta_dis.Get, Domain=domain, TotalWrap=total_wrap))
+			betas.append(BetaDistribution(Get=beta_dis.GetBeta, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))
 		fig.show()
 		return (points_3d, betas)

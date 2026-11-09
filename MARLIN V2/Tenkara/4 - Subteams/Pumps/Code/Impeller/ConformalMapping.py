@@ -1,10 +1,10 @@
 import numpy as np
 from collections.abc import Callable
 from warnings import warn
-from scipy.integrate import cumulative_trapezoid as cum_trap
+from scipy.integrate import cumulative_trapezoid
 from dataclasses import dataclass
 from plotly import graph_objects as go
-from .PotentialFlow import Streamline
+from typing import Literal
 
 """
 @Charlie Zhu
@@ -19,7 +19,7 @@ class ParabolicBeta:
 		self.coeffs_1 = coeffs_1
 		self.coeffs_2 = coeffs_2
 
-	def Get(self, x: float | np.ndarray[float]) -> float | np.ndarray[float]:
+	def GetBeta(self, x: np.ndarray[float]) -> np.ndarray[float]:
 		return np.where(
 			x < self.x_j,
 			np.polyval(self.coeffs_1, x),
@@ -27,7 +27,7 @@ class ParabolicBeta:
 			)
 
 	def GetTheta(self, radii: np.ndarray, arc_x: np.ndarray) -> np.ndarray:
-		return cum_trap(1/ (radii * np.tan(self.Get(arc_x))), x=arc_x, dx=arc_x[-1] / len(arc_x), initial=0)
+		return cumulative_trapezoid(1/ (radii * np.tan(self.GetBeta(arc_x))), x=arc_x, dx=arc_x[-1] / len(arc_x), initial=0)
 
 def _solveParabolas(y0: float, yf: float, xj: float, xf: float) -> tuple[tuple[float], tuple[float]]:
 	"""
@@ -69,7 +69,7 @@ def GetBetaDistribution(radii: np.ndarray, x_f: float, beta_1: float, beta_2: fl
 	return distr, total_wrap
 
 
-class ConformalMapping:
+class CamberLine:
 
 	def __init__(self, radii: np.ndarray, x_f: float, beta_1: float, beta_2: float):
 		self.beta_1 = beta_1
@@ -84,7 +84,7 @@ class ConformalMapping:
 		total_wrap = distr.GetTheta(radii=self.radii, arc_x=np.linspace(0, self.x_f, len(self.radii)))[-1]
 		return distr, total_wrap
 
-	def SolveBetaDistributionFromWrap(self, target_wrap) -> ParabolicBeta:
+	def SolveBetaDistributionFromWrap(self, target_wrap) -> tuple[ParabolicBeta, float]:
 		# sj = 0 or 1 makes JoinParabola's system singular, so stay just inside
 		guess_high = 0.99
 		guess_low = 0.01
@@ -103,7 +103,7 @@ class ConformalMapping:
 			warn(f'The target wrap {np.rad2deg(target_wrap):.1f} deg is out of reach by moving sj alone, resorting to {np.rad2deg(wrap)} deg')
 			return beta
 		# bisection: keep the half of the bracket where the residual changes sign
-		while abs(residual_new) > 1e-4:
+		while abs(residual_new) > 1e-4: # approximately 0.006 degrees
 			new_guess: float = (guess_high + guess_low) / 2
 			beta_dis, total_wrap = self.GetBetaDistributionFromSj(s_j=new_guess)
 			residual_new = total_wrap - target_wrap
@@ -112,9 +112,29 @@ class ConformalMapping:
 				guess_low, residual_low = new_guess, residual_new
 			else:
 				guess_high, residual_high = new_guess, residual_new
-		return beta_dis
+		return beta_dis, total_wrap
 
-	def _getA(self, parabolic_beta: ParabolicBeta, resolution: int=None) -> np.ndarray:
-		if resolution is None: resolution = len(self.radii)
-		x_arr = np.linspace(0, self.x_f, resolution)
-		return cum_trap(1/np.tan(parabolic_beta.Get(x_arr)), x_arr, initial=0)
+class TransposedBladeLine():
+
+	def __init__(self, camber: CamberLine, thick_m: float):
+		self.camber = camber
+		self.s = thick_m
+
+	def GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int=None):
+
+		if resolution is None: resolution = len(self.camber.radii)
+		L_arr = np.linspace(0, self.camber.x_f, resolution)
+
+		Beta_i = parabolic_beta.GetBeta(L_arr)
+
+		sin_B = np.sin(Beta_i)
+		cos_B = np.cos(Beta_i)
+
+		A_i: np.ndarray = cumulative_trapezoid(1/np.tan(Beta_i), L_arr, initial=0)
+		
+		A_s = A_i + self.s/2 * sin_B
+		L_s = L_arr - self.s/2 * cos_B
+		A_p = A_i - self.s/2 * cos_B
+		L_p = L_arr + self.s/2 * sin_B
+
+		return A_s, L_s, A_p, L_p
