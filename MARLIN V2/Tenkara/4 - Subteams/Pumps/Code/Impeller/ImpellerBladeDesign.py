@@ -160,18 +160,6 @@ class ImpellerBladeDesign:
 		return fig
 
 	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[list[np.ndarray[float]], list[BetaDistribution]]:
-		"""
-			Blade lines (z, r, theta) along num_streams streamlines, hub (phi = 0) to shroud (phi = 1), each sampled at
-			resolution points from the leading edge (x = 0) to the trailing edge (Milos p. 51, eqs. 51-52):
-				beta(x)  = JoinParabola from beta_1' to Beta2B, joined at x_j = sj x_f
-				theta(x) = theta_1 + integral_0^x dx / (r tan(beta))
-			The shroud is the reference (sj = BladeParams.sj, theta_1 = 0). On the other streamlines sj is bisected so
-			every trailing edge ends at the shroud's wrap (radial in plan view) and the leading edge sweeps:
-				theta_1  = sin(lead_sweep) (r_1,shroud - r_1) / r_1
-			Returns two lists, one entry per streamline, hub first:
-				points: (resolution, 3) arrays of (z, r, theta), in m, m and rad
-				betas:  the BetaDistribution, whose Get(x) is beta (rad) at x (m) on its Domain
-		"""
 		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
 		splitter: bool = length_ratio != 1.0
 		
@@ -179,14 +167,22 @@ class ImpellerBladeDesign:
 		ref_phi = 1 # shroud streamline
 		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
 
+		def DoThing(stream: Streamline, le: MeridionalCurve, te: MeridionalCurve):
+			le_intersect = stream.FindIntersect(le, n=resolution)
+			te_intersect = stream.FindIntersect(te, n=resolution)
+			x_0 = le_intersect[0][2] * stream.length_m
+			x_f = te_intersect[0][2] * stream.length_m
+
+			return np.linspace(x_0, x_f, resolution)
+
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-		ref_bladestream = ref_stream.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
-		ref_stream_zr = ref_bladestream.Points(np.linspace(0, ref_bladestream.length_m, resolution))
-		radii_ref = ref_stream_zr[:, 1]
+		ref_arcx = DoThing(ref_stream, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+
+		radii_ref = ref_stream.Points(ref_arcx)[:, 1]
 		beta_2 = self.Pump.Impeller.Beta2B.to('rad').m
 
-		_, ref_total_wrap = (
-			ConformalMapping.CamberLine(radii_ref, ref_bladestream.length_m, ref_beta_1, beta_2)
+		_, REF_TOTAL_WRAP = (
+			ConformalMapping.CamberLine(radii=radii_ref, x_f=ref_arcx[-1] - ref_arcx[0], beta_1=ref_beta_1, beta_2=beta_2)
 			.GetBetaDistributionFromSj(self._params.sj)
 		)
 		
@@ -199,17 +195,16 @@ class ImpellerBladeDesign:
 
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-			blade_stream = streamline.Between(self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
-
-			arc_x = np.linspace(0, blade_stream.length_m, resolution)
-			stream_zr = blade_stream.Points(arc_x)
+			arc_x = DoThing(streamline, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+			
+			stream_zr = streamline.Points(arc_x)
 			radii = stream_zr[:, 1]
 			
 			arc_lead = np.sin(lead_sweep) * (radii[0] - radii_ref[0])
-			theta_offset = arc_lead / radii[0]
-			camber = ConformalMapping.CamberLine(radii, blade_stream.length_m, beta_1, beta_2)
+			sweep_offset = arc_lead / radii[0]
+			camber = ConformalMapping.CamberLine(radii=radii, x_f=arc_x[-1] - arc_x[0], beta_1=beta_1, beta_2=beta_2)
 			beta_dis, _ = (camber
-				.SolveBetaDistributionFromWrap(ref_total_wrap + theta_offset)
+				.SolveBetaDistributionFromWrap(REF_TOTAL_WRAP + sweep_offset)
 			)
 
 			A_s, L_s, A_p, L_p = ConformalMapping.TransposedBladeLine(
@@ -227,19 +222,24 @@ class ImpellerBladeDesign:
 			))
 
 			if splitter:
-				split_start_arc_x: float = (1 - length_ratio) * blade_stream.length_m
-				arc_x: np.ndarray = np.linspace(split_start_arc_x, blade_stream.length_m, resolution)
-				stream_zr: np.ndarray = blade_stream.Points(arc_x)
+				split_arc_pad: float = (1 - length_ratio) * (arc_x[-1] - arc_x[0])
+
+				domain: tuple[float, float] = (split_arc_pad, arc_x[-1] - arc_x[0])
+
+				arc_x_split = np.linspace(arc_x[0] + split_arc_pad, arc_x[-1], resolution)
+				stream_zr: np.ndarray = streamline.Points(arc_x_split)
 				radii: np.ndarray = stream_zr[:, 1]
-				domain: tuple[float, float] = (split_start_arc_x, blade_stream.length_m)
 				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+
+				theta = beta_dis.GetTheta(radii=radii, x=arc_x_split - arc_x[0])
 			else:
-				domain: tuple[float, float] = (0, blade_stream.length_m)
+				domain: tuple[float, float] = (0, arc_x[-1] - arc_x[0])
 				theta_offset: float = 0
 
-			theta = beta_dis.GetTheta(radii=radii, arc_x=arc_x)
+				theta = beta_dis.GetTheta(radii=radii, x=arc_x - arc_x[0])
+
 			total_wrap = theta[-1]
-			theta += ref_total_wrap - total_wrap + theta_offset
+			theta += REF_TOTAL_WRAP - total_wrap + theta_offset
 
 			betas.append(BetaDistribution(Get=beta_dis.GetBeta, Domain=domain, TotalWrap=total_wrap))
 			points_3d.append(np.column_stack((stream_zr, theta)))

@@ -26,8 +26,8 @@ class ParabolicBeta:
 			np.polyval(self.coeffs_2, x)
 			)
 
-	def GetTheta(self, radii: np.ndarray, arc_x: np.ndarray) -> np.ndarray:
-		return cumulative_trapezoid(1/ (radii * np.tan(self.GetBeta(arc_x))), x=arc_x, dx=arc_x[-1] / len(arc_x), initial=0)
+	def GetTheta(self, radii: np.ndarray, x: np.ndarray) -> np.ndarray:
+		return cumulative_trapezoid(1/ (radii * np.tan(self.GetBeta(x))), x=x, dx=x[-1] / len(x), initial=0)
 
 def _solveParabolas(y0: float, yf: float, xj: float, xf: float) -> tuple[tuple[float], tuple[float]]:
 	"""
@@ -61,17 +61,9 @@ def _solveParabolas(y0: float, yf: float, xj: float, xf: float) -> tuple[tuple[f
 
 	return ((a_1, b_1, c_1), (a_2, b_2, c_2))
 
-def GetBetaDistribution(radii: np.ndarray, x_f: float, beta_1: float, beta_2: float, s_j: float, resolution: int|None=None) -> tuple[ParabolicBeta, float]:
-	x_j = s_j * x_f
-	coeffs_1, coeffs_2 = _solveParabolas(y0=beta_1, yf=beta_2, xj=x_j, xf=x_f)
-	distr = ParabolicBeta(coeffs_1, coeffs_2, x_j)
-	total_wrap = ParabolicBeta.GetTheta(radii=radii, arc_x=np.linspace(0, x_f, len(radii)))[-1]
-	return distr, total_wrap
-
-
 class CamberLine:
 
-	def __init__(self, radii: np.ndarray, x_f: float, beta_1: float, beta_2: float):
+	def __init__(self, radii: np.ndarray, beta_1: float, beta_2: float, x_f: float):
 		self.beta_1 = beta_1
 		self.beta_2 = beta_2
 		self.x_f = x_f
@@ -81,7 +73,9 @@ class CamberLine:
 		x_j = s_j * self.x_f
 		coeffs_1, coeffs_2 = _solveParabolas(y0=self.beta_1, yf=self.beta_2, xj=x_j, xf=self.x_f)
 		distr = ParabolicBeta(coeffs_1, coeffs_2, x_j)
-		total_wrap = distr.GetTheta(radii=self.radii, arc_x=np.linspace(0, self.x_f, len(self.radii)))[-1]
+		
+		uh = np.linspace(0, self.x_f, len(self.radii))
+		total_wrap = distr.GetTheta(radii=self.radii, x=uh)[-1]
 		return distr, total_wrap
 
 	def SolveBetaDistributionFromWrap(self, target_wrap) -> tuple[ParabolicBeta, float]:

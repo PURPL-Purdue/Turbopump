@@ -227,5 +227,5 @@ def MakeDesign(propellant: Propellant):
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign(Propellant.LOX)
+	#MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)
