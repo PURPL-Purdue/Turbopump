@@ -46,6 +46,9 @@ class BladeParams:
 	target_wrap: Q_[float] = Q_(120, 'deg')
 	use_cubic: bool = True
 	splitter_length_ratio: float = 0.6
+	le_ratio: float = 2.0			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
+	le_resolution: int = 25			# points on the leading-edge ellipse, nose to full thickness
+	side_theta: Literal['offset', 'milos'] = 'offset'	# wrap angle of the sides, see ConformalMapping.TransposedBladeLine.GetSides
 
 class ImpellerBladeDesign:
 
@@ -235,7 +238,7 @@ class ImpellerBladeDesign:
 			)
 
 			transposed_bl = ConformalMapping.TransposedBladeLine(
-				camber.x_f, self.Pump.Impeller.blade_thick.to('m').m
+				camber.x_f, self.Pump.Impeller.blade_thick.to('m').m, le_ratio=self._params.le_ratio
 			)
 
 			if splitter:
@@ -247,13 +250,15 @@ class ImpellerBladeDesign:
 
 			*sides, conformals = transposed_bl.GetSides(
 				parabolic_beta=parab_beta, stream=streamline,
-				x_0_mean=arc_x[0], resolution=resolution, length_ratio=length_ratio
+				x_0_mean=arc_x[0], resolution=resolution, le_resolution=self._params.le_resolution,
+				length_ratio=length_ratio, side_theta=self._params.side_theta
 				)
 
-			# GetSides returns (zr, theta) for suction, pressure, camber in turn
+			# GetSides returns (zr, theta) for suction, pressure, camber in turn. All three turn with the camber, whose
+			# trailing edge goes to the reference wrap, so the sides keep their offsets from it
+			theta_shift = REF_TOTAL_WRAP - sides[-1][-1] + splitter_offset
 			for points, zr, theta in zip(surface_points, sides[0::2], sides[1::2]):
-				theta = theta + (REF_TOTAL_WRAP - theta[-1] + splitter_offset)
-				points.append(np.column_stack((zr, theta)))
+				points.append(np.column_stack((zr, theta + theta_shift)))
 
 			betas.append(
 				BetaDistribution(Get=parab_beta.GetBeta, Domain=(0, arc_x[-1] - arc_x[0]), TotalWrap=mean_wrap)

@@ -2,6 +2,7 @@ import numpy as np
 from warnings import warn
 from scipy.integrate import cumulative_trapezoid
 from dataclasses import dataclass
+from typing import Literal
 from plotly import graph_objects as go
 from .PotentialFlow import Streamline
 """
@@ -106,19 +107,56 @@ class CamberLine:
 				guess_high, residual_high = new_guess, residual_new
 		return beta_dis, total_wrap
 
+def _CamberThetaAt(A: np.ndarray, A_c: np.ndarray, theta_c: np.ndarray, r_c: np.ndarray) -> np.ndarray:
+	"""
+		Wrap angle of the camber line at abscissa A of the conformal plane (Milos Fig. 30). A_c increases strictly
+		(beta in (0, pi/2)). Past either end of the camber, dtheta = dA / r with the radius of that end.
+	"""
+	theta = np.interp(A, A_c, theta_c)
+	theta = np.where(A < A_c[0], theta_c[0] + (A - A_c[0]) / r_c[0], theta)
+	return np.where(A > A_c[-1], theta_c[-1] + (A - A_c[-1]) / r_c[-1], theta)
+
 class TransposedBladeLine():
 
-	def __init__(self, camber_length: float, thick_m: float):
+	def __init__(self, camber_length: float, thick_m: float, le_ratio: float=2.0):
+		"""
+			le_ratio is k_e = a / b of the leading-edge ellipse (Milos eq. 61, Fig. 26): semi-axis a = k_e s/2 along
+			the camber line, b = s/2 across it
+		"""
+		assert le_ratio > 0, 'The leading-edge ellipse needs a positive a/b'
 		self.L_max = camber_length
 		self.s = thick_m
+		self.k_e = le_ratio
 
-	def _GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int, length_ratio: float|None=None):
+	def _GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int, le_resolution: int, length_ratio: float|None=None):
+		"""
+			Suction side, pressure side and camber line in the conformal plane, (A, L) each, in m. The sides are offset
+			by the semi-thickness normal to the camber line (Milos eqs. 59-60). The leading edge is a quarter ellipse
+			(eq. 61, Fig. 26) on le_resolution points, then resolution points of constant thickness s up to the
+			trailing edge, which is cut off normal to the camber line.
+		"""
 
-		L_start = 0 if length_ratio is None or length_ratio == 0 else self.L_max * (1 - length_ratio)
-
-		L_i = np.linspace(
-			L_start, self.L_max, resolution
+		L_start = (
+			0 if (length_ratio is None or length_ratio == 0)
+		    else self.L_max * (1 - length_ratio)
 		)
+
+		# x_cl of eq. 61 is the arclength along the camber line in the conformal plane, dsigma = dL / sin(beta).
+		# sigma >= L - L_start, so the first a of L always reaches sigma = a
+		a = self.k_e * self.s / 2
+		L_fine = np.linspace(L_start, L_start + a, 100)
+		sigma_fine = cumulative_trapezoid(1 / np.sin(parabolic_beta.GetBeta(L_fine)), L_fine, initial=0)
+
+		# even steps of the ellipse angle t (x_M = a cos t) cluster the points at the nose
+		x_cl = a * (1 - np.cos(np.linspace(0, np.pi / 2, le_resolution)))
+		x_M = self.k_e * self.s / 2 - x_cl
+		y_M = np.sqrt((self.k_e * self.s / 2)**2 - x_M**2) / self.k_e	# semi-thickness, eq. 61
+
+		L_le = np.interp(x_cl, sigma_fine, L_fine)
+		assert L_le[-1] < self.L_max, 'The leading-edge ellipse is longer than the blade'
+
+		L_i = np.concatenate((L_le, np.linspace(L_le[-1], self.L_max, resolution)[1:]))
+		half_thick = np.concatenate((y_M, np.full(resolution - 1, self.s / 2)))
 
 		Beta_i = parabolic_beta.GetBeta(L_i)
 		
@@ -137,25 +175,41 @@ class TransposedBladeLine():
 
 			A_i += A_pre
 		
-		A_s = A_i + self.s/2 * sin_B
-		L_s = L_i - self.s/2 * cos_B
-		A_p = A_i - self.s/2 * sin_B
-		L_p = L_i + self.s/2 * cos_B
+		A_s = A_i + half_thick * sin_B
+		L_s = L_i - half_thick * cos_B
+		A_p = A_i - half_thick * sin_B
+		L_p = L_i + half_thick * cos_B
 
 		return A_s, L_s, A_p, L_p, A_i, L_i
 
-	def GetSides(self, parabolic_beta: ParabolicBeta, stream: Streamline, x_0_mean: float, resolution: int, length_ratio: float|None=None):
-		conformals = self._GetA_Sides(parabolic_beta, resolution, length_ratio)
+	def GetSides(self, parabolic_beta: ParabolicBeta, stream: Streamline, x_0_mean: float, resolution: int, le_resolution: int,
+			length_ratio: float|None=None, side_theta: Literal['offset', 'milos']='offset'):
+		"""
+			(z, r) and wrap angle theta of the suction side, pressure side and camber line, then the conformal-plane
+			lines of _GetA_Sides. Each line has le_resolution + resolution - 1 points and starts at theta = 0 on the
+			camber leading edge, where the sides meet it. The camber theta is integral of dA / r (Milos eqs. 57-58).
+			side_theta sets the theta of the sides:
+				'offset':	theta of its own camber point + (A_side - A_camber) / r_camber. The side point lies the
+							semi-thickness off the camber point, normal to it, and dA = r dtheta locally
+				'milos':	theta of the camber line at the same A (Milos Fig. 30)
+		"""
+		conformals = self._GetA_Sides(parabolic_beta, resolution, le_resolution, length_ratio)
 		A_s, L_s, A_p, L_p, A_i, L_i = conformals
 
 		zr_suction = stream.Points(L_s + x_0_mean)
 		zr_pressure = stream.Points(L_p + x_0_mean)
 		zr_camber = stream.Points(L_i + x_0_mean)
 
-		radii_suction, radii_pressure, radii_camber = zr_suction[:, 1], zr_pressure[:, 1], zr_camber[:, 1]
-		
-		theta_suction = cumulative_trapezoid(1/radii_suction, A_s, initial=0)
-		theta_pressure = cumulative_trapezoid(1/radii_pressure, A_p, initial=0)
+		radii_camber = zr_camber[:, 1]
 		theta_camber = cumulative_trapezoid(1/radii_camber, A_i, initial=0)
+
+		if side_theta == 'offset':
+			theta_suction = theta_camber + (A_s - A_i) / radii_camber
+			theta_pressure = theta_camber + (A_p - A_i) / radii_camber
+		elif side_theta == 'milos':
+			theta_suction = _CamberThetaAt(A_s, A_i, theta_camber, radii_camber)
+			theta_pressure = _CamberThetaAt(A_p, A_i, theta_camber, radii_camber)
+		else:
+			raise ValueError(f"side_theta must be 'offset' or 'milos', not {side_theta!r}")
 
 		return (zr_suction, theta_suction, zr_pressure, theta_pressure, zr_camber, theta_camber, conformals)
