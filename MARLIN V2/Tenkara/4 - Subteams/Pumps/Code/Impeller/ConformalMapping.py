@@ -114,7 +114,7 @@ class TransposedBladeLine():
 
 	def _GetA_Sides(self, parabolic_beta: ParabolicBeta, resolution: int, length_ratio: float|None=None):
 
-		L_start = 0 if length_ratio is None else self.L_max * (1 - length_ratio)
+		L_start = 0 if length_ratio is None or length_ratio == 0 else self.L_max * (1 - length_ratio)
 
 		L_i = np.linspace(
 			L_start, self.L_max, resolution

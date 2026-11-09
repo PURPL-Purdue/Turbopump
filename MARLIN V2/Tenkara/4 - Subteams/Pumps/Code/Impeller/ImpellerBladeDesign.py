@@ -193,7 +193,7 @@ class ImpellerBladeDesign:
 		ref_phi = 1 # shroud streamline
 		ref_stream = self.MeridionalDesign.PotentialFlow.GetStreamline(ref_phi)
 
-		def DoThing(stream: Streamline, le: MeridionalCurve, te: MeridionalCurve):
+		def GetFullBladeArclengthArray(stream: Streamline, le: MeridionalCurve, te: MeridionalCurve):
 			le_intersect = stream.FindIntersect(le, n=resolution)
 			te_intersect = stream.FindIntersect(te, n=resolution)
 			x_0 = le_intersect[0][2] * stream.length_m
@@ -202,7 +202,7 @@ class ImpellerBladeDesign:
 			return np.linspace(x_0, x_f, resolution)
 
 		ref_beta_1 = self._SolveInletFlow(ref_stream)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-		ref_arcx = DoThing(ref_stream, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+		ref_arcx = GetFullBladeArclengthArray(ref_stream, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 
 		radii_ref = ref_stream.Points(ref_arcx)[:, 1]
 		beta_2 = self.Pump.Impeller.Beta2B.to('rad').m
@@ -213,9 +213,7 @@ class ImpellerBladeDesign:
 		)
 		
 		betas: list[BetaDistribution] = []
-		points_suction: list[np.ndarray[float]] = []
-		points_camber: list[np.ndarray[float]] = []
-		points_pressure: list[np.ndarray[float]] = []
+		surface_points: tuple[list[np.ndarray], ...] = ([], [], [])	# suction, pressure, camber
 
 		if not self.__conformal_fig:
 			self.__conformal_fig = self.__make_conformal_mapping_fig()
@@ -224,7 +222,7 @@ class ImpellerBladeDesign:
 
 			streamline = self.MeridionalDesign.PotentialFlow.GetStreamline(phi)
 			beta_1 = self._SolveInletFlow(streamline)[0].Beta.to('rad').m + self._INCIDENCE_PADDING
-			arc_x = DoThing(streamline, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
+			arc_x = GetFullBladeArclengthArray(streamline, self.MeridionalDesign.LeadingEdge, self.MeridionalDesign.TrailingEdge)
 			
 			stream_zr = streamline.Points(arc_x)
 			radii = stream_zr[:, 1]
@@ -241,24 +239,21 @@ class ImpellerBladeDesign:
 			)
 
 			if splitter:
-				theta_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
+				splitter_offset: float = 2*np.pi / self.Pump.Impeller.Z_blade_2
 				length_ratio = self._params.splitter_length_ratio
 			else:
-				theta_offset = 0
-				length_ratio = 0
+				splitter_offset = 0
+				length_ratio = None
 
-			zr_s, theta_s, zr_p, theta_p, zr_c, theta_c, conformals = transposed_bl.GetSides(
+			*sides, conformals = transposed_bl.GetSides(
 				parabolic_beta=parab_beta, stream=streamline,
-				x_0_mean=arc_x[0], resolution=resolution, length_ratio=self._params.splitter_length_ratio if splitter else None
+				x_0_mean=arc_x[0], resolution=resolution, length_ratio=length_ratio
 				)
 
-			theta_s += REF_TOTAL_WRAP - theta_s[-1] + theta_offset
-			theta_p += REF_TOTAL_WRAP - theta_p[-1] + theta_offset
-			theta_c += REF_TOTAL_WRAP - theta_c[-1] + theta_offset
-			
-			points_suction.append(np.column_stack((zr_s, theta_s)))
-			points_pressure.append(np.column_stack((zr_p, theta_p)))
-			points_camber.append(np.column_stack((zr_c, theta_c)))
+			# GetSides returns (zr, theta) for suction, pressure, camber in turn
+			for points, zr, theta in zip(surface_points, sides[0::2], sides[1::2]):
+				theta = theta + (REF_TOTAL_WRAP - theta[-1] + splitter_offset)
+				points.append(np.column_stack((zr, theta)))
 
 			betas.append(
 				BetaDistribution(Get=parab_beta.GetBeta, Domain=(0, arc_x[-1] - arc_x[0]), TotalWrap=mean_wrap)
@@ -275,7 +270,7 @@ class ImpellerBladeDesign:
 				y = L_p, name=f'phi = {phi}', showlegend=False
 			), row=1, col=2 if splitter else 1)
 
-		return ((points_suction, points_pressure, points_camber), betas)
+		return (surface_points, betas)
 
 	def PlotBladeLines(self, unit:str='in') -> go.Figure:
 
