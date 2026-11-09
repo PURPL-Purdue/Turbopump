@@ -31,6 +31,20 @@ class ImpellerCAD:
 	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True):
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
+
+		RESOLUTION = 200
+		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
+		shroud_edge = cadquery.Edge.makeSpline(
+			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION, flip_z=flip_z)
+			)
+		shroud_surface = cadquery.func.revolve(shroud_edge, (0, 0, 0), (0, 0, 1))
+
+		hub_contour = self._blade_design.MeridionalDesign.HubContour
+		hub_edge = cadquery.Edge.makeSpline(
+			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION, flip_z=flip_z)
+			)
+		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
+		
 		Z_blade_1: int = self.Impeller.Z_blade_1
 
 		blades = []
@@ -49,19 +63,6 @@ class ImpellerCAD:
 			blades.append(blade_surface.moved(
 				*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
 			))
-
-		RESOLUTION = 200
-		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
-		shroud_edge = cadquery.Edge.makeSpline(
-			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION, flip_z=flip_z)
-			)
-		shroud_surface = cadquery.func.revolve(shroud_edge, (0, 0, 0), (0, 0, 1))
-
-		hub_contour = self._blade_design.MeridionalDesign.HubContour
-		hub_edge = cadquery.Edge.makeSpline(
-			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION, flip_z=flip_z)
-			)
-		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 
 		# L = 1000  # mm, just bigger than the impeller
 		# quadrant = cadquery.Solid.makeBox(L, L, 2 * L, pnt=cadquery.Vector(0, 0, -L))
