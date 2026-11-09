@@ -2,7 +2,7 @@ import numpy as np
 from pint import Quantity as Q_
 from plotly import graph_objects as go, subplots, express
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
-from typing import Optional
+from typing import Optional, Literal
 from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
 from collections.abc import Callable
@@ -57,14 +57,14 @@ class ImpellerBladeDesign:
 		self._rad_eq = inducer_radial_equilibrium
 		self.K_inlet = inducer_radial_equilibrium.GetOutletAngularMomentum() if inducer_radial_equilibrium is not None else Q_(0, 'm^2/s')
 
-		self._splitter: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
+		self.HasSplitters: bool = self.Pump.Impeller.Z_blade_2 != self.Pump.Impeller.Z_blade_1
 		# it's better to have slight positive incidence than slight negative incidence
 		self._INCIDENCE_PADDING = np.pi/180 * 0	# degrees of extra angle
 
 		self.__conformal_fig = None
 
 		self._bladelines = self._CreateBladeLines(resolution=self._params.resolution)
-		if self._splitter:
+		if self.HasSplitters:
 			self._splitter_bladelines = self._CreateBladeLines(resolution=self._params.resolution, length_ratio=blade_params.splitter_length_ratio)
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
@@ -162,7 +162,7 @@ class ImpellerBladeDesign:
 	
 	def __make_conformal_mapping_fig(self) -> go.Figure:
 
-		if self._splitter:
+		if self.HasSplitters:
 			fig = subplots.make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=('Full blades', 'Splitter blades'))
 		else:
 			fig = go.Figure()
@@ -170,6 +170,20 @@ class ImpellerBladeDesign:
 		fig.update_xaxes(title_text='A(x) (meters)')
 		fig.update_yaxes(title_text='Meridional arclength (meters)')
 		return fig
+
+	_SurfaceSide = Literal['suction', 'pressure', 'camber']
+
+	def GetBladeSurfaceLines(self, side: _SurfaceSide | tuple[_SurfaceSide, ...]='camber', splitter: bool=False) -> list[np.ndarray] | tuple[list[np.ndarray], ...]:
+		"""
+			Blade lines of one surface (side a string), or a tuple of them in the same order (side a tuple of strings)
+		"""
+		assert not splitter or self.HasSplitters, 'No splitter blades'
+
+		bladeline_surfaces, _ = self._splitter_bladelines if splitter else self._bladelines
+		index = {'suction': 0, 'pressure': 1, 'camber': 2}
+		if isinstance(side, str):
+			return bladeline_surfaces[index[side]]
+		return tuple(bladeline_surfaces[index[s]] for s in side)
 
 	def _CreateBladeLines(self, num_streams: int=11, resolution: int=200, length_ratio: float=1.0) -> tuple[tuple[list[np.ndarray], list[np.ndarray], list[np.ndarray]], list[BetaDistribution]]:
 		assert length_ratio > 0 and length_ratio <= 1.0, 'Bro'
@@ -271,7 +285,7 @@ class ImpellerBladeDesign:
 		
 		colors = express.colors.qualitative.Plotly
 
-		for is_splitter in (False, True) if self._splitter else (False,) :
+		for is_splitter in (False, True) if self.HasSplitters else (False,) :
 
 			bladelines = self._splitter_bladelines if is_splitter else self._bladelines
 

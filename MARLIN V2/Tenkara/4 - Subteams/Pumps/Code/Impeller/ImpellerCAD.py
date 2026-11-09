@@ -34,23 +34,21 @@ class ImpellerCAD:
 		Z_blade_1: int = self.Impeller.Z_blade_1
 
 		blades = []
-		for is_splitter in (False, True) if self._blade_design._splitter else (False,):
-			
-			blade_surfaces, _ = self._blade_design._splitter_bladelines if is_splitter else self._blade_design._bladelines
 
-			suction_blade_points, pressure_blade_points, _ = blade_surfaces
+		blade_surfaces = [*self._blade_design.GetBladeSurfaceLines(('suction', 'pressure'))]
+		if self._blade_design.HasSplitters:
+			blade_surfaces.extend(self._blade_design.GetBladeSurfaceLines(('suction', 'pressure'), splitter=True))
 
-			# blade_points is a list of point arrays (ndarrays)
-			for blade_points in (suction_blade_points, pressure_blade_points):
+		# blade_points is a list of point arrays (ndarrays)
+		for blade_points in blade_surfaces:
 
-				t = np.linspace(0, 1, len(blade_points[0]))
-				blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
-				blade_surface = cadquery.func.loft(blade_edges)
-				# rotate the blades about the z-axis
-				blades.append(blade_surface.moved(
-					*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
-				))
-				
+			t = np.linspace(0, 1, len(blade_points[0]))
+			blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta), parameters=list(t)) for p in blade_points]
+			blade_surface = cadquery.func.loft(blade_edges)
+			# rotate the blades about the z-axis
+			blades.append(blade_surface.moved(
+				*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
+			))
 
 		RESOLUTION = 200
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
