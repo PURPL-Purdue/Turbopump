@@ -35,8 +35,8 @@ basic_impeller_geometry = {
 	Propellant.IPA: Impeller.InputGeometry(
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
-		Beta2B = Q_(45,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1.3, 'in'),			# impeller inlet tip diameter
+		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
+		d_1 = Q_(1.2, 'in'),			# impeller inlet tip diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
 		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
@@ -69,7 +69,7 @@ meridional_geometry = {
 		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
-		Z_e_factor = 1.1, # TODO uhHHHH
+		Z_e_factor = 1.0, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
 		shroud_outlet_angle=Q_(5, 'deg')
@@ -87,7 +87,7 @@ blade_params = {
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.1,
+		sj=0.15,
 		lead_sweep=Q_(-15, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
@@ -190,7 +190,7 @@ def MakeDesign(propellant: Propellant):
 		blade_params=blade_params[propellant]
 	)
 	imp_blade_design.ShowPlotConformalMappingFunction()
-	imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines().show()
 
@@ -226,5 +226,5 @@ def MakeDesign(propellant: Propellant):
 	return pump
 
 if __name__ == "__main__":
-	MakeDesign(Propellant.LOX)
+	#MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)

@@ -94,7 +94,7 @@ class CamberLine:
 			else:
 				beta, wrap = beta_high, wrap_high
 			warn(f'The target wrap {np.rad2deg(target_wrap):.1f} deg is out of reach by moving sj alone, resorting to {np.rad2deg(wrap)} deg')
-			return beta
+			return beta, wrap
 		# bisection: keep the half of the bracket where the residual changes sign
 		while abs(residual_new) > 1e-4: # approximately 0.006 degrees
 			new_guess: float = (guess_high + guess_low) / 2
