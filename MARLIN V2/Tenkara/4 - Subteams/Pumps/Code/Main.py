@@ -189,14 +189,14 @@ def MakeDesign(propellant: Propellant):
 		inducer_radial_equilibrium=inducer_eq,
 		blade_params=blade_params[propellant]
 	)
-	imp_blade_design.ShowPlotConformalMappingFunction()
+	#imp_blade_design.ShowPlotConformalMappingFunction()
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines().show()
+	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
-	#imp_cad.Show()
+	imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	
