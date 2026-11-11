@@ -2,64 +2,77 @@ import numpy as np
 from pint import Quantity as Q_
 from pathlib import Path
 from GG_Tenkara_Function_single import GasGen_mdot_single
-from functools import lru_cache
 
+# ---- Global field parameters ----
+FIELD_MIN_PRESSURE = Q_(0.0, 'psi')
+FIELD_MAX_PRESSURE = Q_(800.0, 'psi')
+NUM_POINTS = 100
 
-field_min_pressure = Q_(170.0, 'psi')
-field_max_pressure = Q_(600.0, 'psi')
+VALID_INSERTS = ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%"]
 
+_P_MIN = FIELD_MIN_PRESSURE.to('psi').m
+_P_MAX = FIELD_MAX_PRESSURE.to('psi').m
+_SPACING = (_P_MAX - _P_MIN) / (NUM_POINTS - 1)
 
+_field_cache = {}  # insert_id -> field, so each CSV is read at most once per run
 
-def calculate_field(func, x_values, y_values, insert_id):
-    """Return func(x, y) on a grid, with y indexing rows and x indexing columns."""
-    field = np.full((y_values.size, x_values.size), np.nan)
-    for row, y in enumerate(y_values):
-        for col, x in enumerate(x_values):
-            result = func(Q_(float(x), 'psi'), Q_(float(y), 'psi'), insert_id)
-            val = result.to('lb/s').m if isinstance(result, Q_) else float(result)
-            field[row, col] = val
+def _check_insert(insert_id: str):
+    if insert_id not in VALID_INSERTS:
+        raise ValueError(f"Invalid insert_id. Must be one of: {VALID_INSERTS}")
+
+def _csv_path(insert_id: str) -> Path:
+    name = f"Gas_Generator_Field_{insert_id.replace('%', 'pct')}.csv"
+    return Path(__file__).with_name(name)
+
+def _get_field(insert_id: str) -> np.ndarray:
+    """Return the field for an insert: memory cache -> CSV -> generate and save."""
+    if insert_id in _field_cache:
+        return _field_cache[insert_id]
+
+    path = _csv_path(insert_id)
+    field = None
+    if path.exists():
+        field = np.loadtxt(path, delimiter=",", ndmin=2)
+        if field.shape != (NUM_POINTS, NUM_POINTS):  # stale file, rebuild
+            field = None
+    if field is None:
+        field = generate_GasGen_field(insert_id)
+        np.savetxt(path, field, delimiter=",")
+
+    _field_cache[insert_id] = field
     return field
 
+def _snap_index(p: Q_) -> int:
+    idx = round((p.to('psi').m - _P_MIN) / _SPACING)
+    return max(0, min(NUM_POINTS - 1, idx))
 
-@lru_cache(maxsize=2)
-def _calculate_cached(min_psi: Q_, max_psi: Q_, insert_id: str):
-    points = (max_psi.to("psi").m - min_psi.to("psi").m) / 43  # Adjust the step size as needed
-    xs = np.linspace(min_psi.to("psi").m, max_psi.to("psi").m, int(points))
-    ys = np.linspace(min_psi.to("psi").m, max_psi.to("psi").m, int(points))
-    return calculate_field(GasGen_mdot_single, xs, ys, insert_id)
+def generate_GasGen_field(insert_id: str) -> np.ndarray:
+    """Build the NUM_POINTS x NUM_POINTS mdot field (lb/s) for one insert.
+    field[row, col]: row = fuel pressure index, col = ox pressure index."""
+    _check_insert(insert_id)
+    p_axis = np.linspace(_P_MIN, _P_MAX, NUM_POINTS)  # same axis for ox and fuel
+    field = np.full((NUM_POINTS, NUM_POINTS), np.nan)
+    for row, p_fu in enumerate(p_axis):
+        print(f"{row}")
+        for col, p_ox in enumerate(p_axis):
+            result = GasGen_mdot_single(Q_(float(p_ox), 'psi'), Q_(float(p_fu), 'psi'), insert_id)
+            field[row, col] = result.to('lb/s').m if isinstance(result, Q_) else float(result)
+    return field
 
+def get_GasGen_mdot(P_ox: Q_, P_fu: Q_, insert_id: str) -> Q_:
+    """Look up mdot for the given pressures and insert by snapping to the nearest grid point.
+    Returns a pint Quantity in lb/s."""
+    _check_insert(insert_id)
+    if not (FIELD_MIN_PRESSURE <= P_ox <= FIELD_MAX_PRESSURE
+            and FIELD_MIN_PRESSURE <= P_fu <= FIELD_MAX_PRESSURE):
+        raise ValueError("Gas Generator feed pressure values are out of bounds")
 
-def get_gas_generator_field(min_psi: Q_ = field_min_pressure, max_psi: Q_ = field_max_pressure, insert_id: str = "0%"):
-    return _calculate_cached(min_psi, max_psi, insert_id).copy()
+    field = _get_field(insert_id)
+    return Q_(field[_snap_index(P_fu), _snap_index(P_ox)], 'lb/s')
 
-def get_GasGen_mdot(P_ox: Q_, P_fuel: Q_, insert_id: str = "0%"):
-    """This is the Gas Generator mass flow rate Tenkara function. Input 2 pint objects for oxygen and fuel pressures plus the desired film cooling insert id"""
-    if P_ox < field_min_pressure or P_ox > field_max_pressure or P_fuel < field_min_pressure or P_fuel > field_max_pressure:
-        raise ValueError("Gas Generator Feed pressure values are out of bounds")
-    if insert_id not in ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%"]:
-        raise ValueError("Invalid Gas Generator insert_id. Must be one of: '0%', '5%', '10%', '15%', '20%', '25%', '30%', '35%', '40%'")
-    
-    field = get_gas_generator_field(insert_id=insert_id)
-    csv_path = Path(__file__).with_name(
-        f"Gas_Generator_Field_{insert_id.replace('%', 'pct')}.csv"
-    )
-    np.savetxt(csv_path, field, delimiter=",")
-
-    col = int(round(P_ox.to("psi").m - field_min_pressure.to("psi").m)/43)
-    row = int(round(P_fuel.to("psi").m - field_min_pressure.to("psi").m)/43)
-
-    return field[row, col]
-
-
-def __main__():
-    pin = Q_(510, "psi")
-    ins = '10%'
-    #Test Case
-    print(_calculate_cached.cache_info())
-    out = get_GasGen_mdot(pin, pin, ins)
-    out = get_GasGen_mdot(pin, pin, ins)
-    print(_calculate_cached.cache_info())
-    print(f"Result: {round(Q_(out, 'lb/s'), 2)}")
+def main():
+    out = get_GasGen_mdot(Q_(557, 'psi'), Q_(575, 'psi'), '10%')
+    print(f"Result: {out.to('kg/s'):.4f~P}")
 
 if __name__ == "__main__":
-	__main__()
+    main()
