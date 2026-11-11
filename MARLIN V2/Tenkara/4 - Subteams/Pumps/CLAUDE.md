@@ -163,7 +163,8 @@ To read the PDF: WebFetch can't parse it, no PDF library is installed, and the R
 - **Static moment**, p. 45, eqs. 34-35: S = ∫r dx feeds Pfleiderer's slip coefficient p = ψ′ r₂²/(z S).
 - **Leading edge (our choice, not Milos's):**
   - the hub, the geometric meanline and the shroud have equal S from the leading edge to the outlet, which gives equal slip from hub to shroud;
-  - the shroud leading edge sits at the impeller inlet (`s_LE_shroud = 0`), and the other two are found by bisection;
+  - the shroud leading edge sits half a blade thickness (`blade_thick / 2`, in arclength) downstream of the impeller inlet (`s_LE_shroud`), and the other two are found by bisection;
+  - the hub and shroud points are then moved onto the φ = 0 and φ = 1 streamlines, by a few µm at most. These streamlines are polylines through the wall nodes, and in the bend their chords cut up to a few µm inside the walls. A leading edge ending on the contour itself can miss them by more than `FindIntersect`'s 1 µm end tolerance, and `_GetLeadingEdgeFlow` then fails its one-crossing assertion;
   - the curve is a quadratic Bezier through the three points, stored as a cubic (`BezierCurve.ThroughPoints`);
   - the geometric meanline lies about 0.4-0.6 mm closer to the hub than the true φ = 0.5 streamline at the impeller inlet, and 0.8-1.1 mm from it where both cross the leading edge, for the current LOX and IPA geometry. Using `self.PotentialFlow.GetStreamline(0.5).Impeller` instead of `self.MeanContour` is a small swap in `MeridionalDesign.__init__`.
 - **Leading-edge blockage** (`ImpellerBladeDesign._SolveInletFlow`): CFturbo; Hassan et al., Sci. Rep. 2024, eq. 17; Milos eq. 33.

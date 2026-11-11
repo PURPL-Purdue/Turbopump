@@ -73,7 +73,7 @@ class MeridionalDesign:
 		# leading edge in the meridional view, on the hub, the meanline and the shroud: all three have the same static
 		# moment about the axis, S = integral(r dx) from the leading edge to the impeller outlet. S sets Pfleiderer's
 		# slip coefficient p = psi' r_2^2 / (z S) (Milos eqs. 34-35), so the slip is the same from hub to shroud.
-		s_LE_shroud = 0									# reference, normalized arclength along the shroud: the impeller inlet
+		s_LE_shroud = self.Pump.Impeller.blade_thick.to('m').m/2 / self.ShroudContour.length_m	# reference, normalized arclength along the shroud: the impeller inlet
 		static_moment_ref = self.ShroudContour.StaticMoment(s_LE_shroud)
 
 		def GetLeadingEdge(contour: MeridionalCurve) -> float:
@@ -98,6 +98,13 @@ class MeridionalDesign:
 		contours = (self.HubContour, self.MeanContour, self.ShroudContour)
 		s_LE = (GetLeadingEdge(self.HubContour), GetLeadingEdge(self.MeanContour), s_LE_shroud)
 		zr_LE = np.array([[q.m for q in contour(s)] for contour, s in zip(contours, s_LE)])	# (3, 2) (z, r) in m
+		# move the hub and shroud ends onto the phi = 0 and 1 streamlines. These are polylines through the wall nodes,
+		# whose chords cut a few um inside the curved walls, so an end on the contour itself can miss them in
+		# FindIntersect (1 um end tolerance)
+		for i, phi in ((0, 0), (-1, 1)):
+			wall_line = self.PotentialFlow.GetStreamline(phi)
+			_, s = wall_line.Closest(zr_LE[i])
+			zr_LE[i] = wall_line.Points(np.array([s * wall_line.length_m]))[0]
 		
 		# quadratic Bezier through the three points, hub to shroud (BezierCurve.ThroughPoints)
 		self.LeadingEdge: BezierCurve = BezierCurve.ThroughPoints(*zr_LE)

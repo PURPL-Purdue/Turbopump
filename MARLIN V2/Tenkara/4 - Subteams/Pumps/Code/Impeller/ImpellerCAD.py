@@ -42,7 +42,8 @@ def _TrimToRadius(points: np.ndarray, max_radius: float) -> np.ndarray:
 
 class ImpellerCAD:
 
-	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True):
+	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True, z_offset: float=1e-5):
+		"""z_offset: shift in m of the hub and shroud blade lines in z, away from the passage."""
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
 
@@ -70,7 +71,7 @@ class ImpellerCAD:
 		self._debug_cad = []
 
 		for suction_lines, pressure_lines in blade_sets:
-			blade_surface = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta)
+			blade_surface = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta, z_offset=z_offset)
 			# rotate the blades about the z-axis
 			blades.append(blade_surface.moved(
 				*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
@@ -84,7 +85,7 @@ class ImpellerCAD:
 		
 		self.Assembly.add(cadquery.func.compound(*blades), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 
-	def _BladeSolid(self, suction_lines: list[np.ndarray], pressure_lines: list[np.ndarray], flip_z: bool=False, flip_theta: bool=False) -> cadquery.Shape:
+	def _BladeSolid(self, suction_lines: list[np.ndarray], pressure_lines: list[np.ndarray], flip_z: bool=False, flip_theta: bool=False, z_offset: float=0.0) -> cadquery.Shape:
 		"""
 			One blade as a solid, closed at the hub and shroud by the first and last blade line sections.
 			Each streamline gives a closed wire: suction line from the leading edge to the trailing edge, a straight line across the trailing edge to the pressure line, and the pressure line back to the leading edge.
@@ -99,6 +100,15 @@ class ImpellerCAD:
 		Beta_2 = self.Impeller.Beta2B.to('rad').m
 		theta_offset = s/np.sin(Beta_2)/max_radius
 
+		# shift the hub and shroud lines by z_offset in z, away from the passage, so the blade overlaps the walls
+		suction_lines, pressure_lines = list(suction_lines), list(pressure_lines)
+		hub_side = np.sign(suction_lines[0][-1, 0] - suction_lines[-1][-1, 0])	# +1 if the hub trailing edge has the larger z
+		dz = np.array([hub_side * z_offset, 0, 0])
+		for lines in (suction_lines, pressure_lines):
+			lines[0] = lines[0] + dz
+			lines[-1] = lines[-1] - dz
+
+
 		wires = []
 
 		for points_s, points_p in zip(suction_lines, pressure_lines):
@@ -110,8 +120,8 @@ class ImpellerCAD:
 			suction_last_point = np.array([pressure_last_point[0], max_radius, pressure_last_point[2] + theta_offset])
 			points_s = np.vstack((points_s, suction_last_point))
 
-			cq_points_s: cadquery = CAD.CylindricalToCartesian(points_s, flip_z, flip_theta)
-			cq_points_p = CAD.CylindricalToCartesian(points_p, flip_z, flip_theta)
+			cq_points_s: list[cadquery.Vector] = CAD.CylindricalToCartesian(points_s, flip_z, flip_theta)
+			cq_points_p: list[cadquery.Vector] = CAD.CylindricalToCartesian(points_p, flip_z, flip_theta)
 
 			self._debug_cad.append(cq_points_s[-1])
 			self._debug_cad.append(cq_points_p[-1])

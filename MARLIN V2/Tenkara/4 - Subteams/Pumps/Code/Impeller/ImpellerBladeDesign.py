@@ -46,7 +46,7 @@ class BladeParams:
 	target_wrap: Q_[float] = Q_(120, 'deg')
 	use_cubic: bool = True
 	splitter_length_ratio: float = 0.6
-	le_ratio: float = 3			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
+	le_ratio: float = 2			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
 	le_resolution: int = 25			# points on the leading-edge ellipse, nose to full thickness
 	side_theta: Literal['offset', 'milos'] = 'offset'	# wrap angle of the sides, see ConformalMapping.TransposedBladeLine.GetSides
 
@@ -72,11 +72,11 @@ class ImpellerBladeDesign:
 
 	def _GetInducerOutletC_uC_m(self, radius: Q_) -> tuple[Q_, Q_]:
 		if radius < self._rad_eq.inducer.R_hub_2:
+			warn(f'Querying radius value {radius:.5f} less than inducer tip radius {self._rad_eq.inducer.R_tip:.5f}')
 			radius = self._rad_eq.inducer.R_hub_2
-			warn(f'Querying radius value less than inducer hub radius')
 		elif radius > self._rad_eq.inducer.R_tip:
+			warn(f'Querying radius value {radius:.5f} greater than inducer tip radius {self._rad_eq.inducer.R_tip:.5f}')
 			radius = self._rad_eq.inducer.R_tip
-			warn(f'Querying radius value greater than inducer tip radius')
 
 		return (self._rad_eq.c_theta(radius, self._rad_eq.inducer.L_ax),
 		        self._rad_eq.c_axial(radius, self._rad_eq.inducer.L_ax, blockage=False))

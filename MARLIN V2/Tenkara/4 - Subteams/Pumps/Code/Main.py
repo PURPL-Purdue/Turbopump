@@ -25,11 +25,11 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(35,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),				# impeller inlet tip diameter
+		d_1 = Q_(0.95, 'in'),				# impeller inlet tip diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),		# blade thickness
-		d_hub=Q_(0.6, 'in'),			# hub diameter at inlet
+		blade_thick = Q_(1.5, 'mm'),		# blade thickness
+		d_hub=Q_(0.5, 'in'),			# hub diameter at inlet
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
@@ -39,7 +39,7 @@ basic_impeller_geometry = {
 		d_1 = Q_(1.2, 'in'),			# impeller inlet tip diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
+		blade_thick = Q_(1.5, 'mm'),		# blade thickness at exit
 		d_hub=Q_(0.6, 'in'),			# hub diameter at inlet
 	)
 }
@@ -48,9 +48,10 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.40, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
-		Z_blade = 2
+		Z_blade = 2,
+		axial_length_ratio=0.8,
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
@@ -66,13 +67,15 @@ meridional_geometry = {
 		Z_e_factor = 1.0,				# axial length extension factor, modifying Gulich formula
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
-		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
+		shroud_outlet_angle=Q_(5, 'deg'),	# shroud contour angle from radial at outlet,
+		shroud_flat=0.2,
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
 		Z_e_factor = 1.0, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
-		shroud_outlet_angle=Q_(5, 'deg')
+		shroud_outlet_angle=Q_(5, 'deg'),
+		shroud_flat=0.2,
 	)
 }
 
@@ -82,6 +85,7 @@ blade_params = {
 		lead_sweep=Q_(-10, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
 		use_cubic = False,
+		le_ratio=2,
 		resolution=500,
 		splitter_length_ratio=0.5
 	),
@@ -91,6 +95,7 @@ blade_params = {
 		lead_sweep=Q_(-15, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
+		le_ratio=2,
 		resolution=500,
 		splitter_length_ratio=0.6
 	)
@@ -226,5 +231,5 @@ def MakeDesign(propellant: Propellant):
 	return pump
 
 if __name__ == "__main__":
-	#MakeDesign(Propellant.LOX)
+	MakeDesign(Propellant.LOX)
 	MakeDesign(Propellant.IPA)
