@@ -40,10 +40,33 @@ def _TrimToRadius(points: np.ndarray, max_radius: float) -> np.ndarray:
 	interpolated = points[i-1] + alpha * (points[i] - points[i-1])
 	return np.vstack((points[:i], np.array([interpolated[0], max_radius, interpolated[2]])))
 
+_SPLINE_TOL = 1e-3		# mm, approximation tolerance of the blade-line splines
+
+def _ExtendBladeLine(outer: np.ndarray, inner: np.ndarray) -> np.ndarray:
+	"""
+		(z, r, θ) blade line one streamline step beyond outer, away from inner, by linear extrapolation point by point:
+		2 outer - inner. A whole step keeps the spanwise spacing of the loft sections even, so the loft does not overshoot
+		between the wall section and its neighbour. Both lines must have the same number of points.
+	"""
+	return 2 * outer - inner
+
+def _WallTool(edge: cadquery.Edge, length: float) -> cadquery.Shape:
+	"""
+		Cutting surface for a meridional wall: edge (in the xz plane) with straight lines of length (mm) tangent to it
+		at both ends, revolved about the z axis. The middle face revolves edge itself, so it is the same surface as
+		cadquery.func.revolve(edge, ...); the end extensions keep the cuts away from the surface boundaries.
+	"""
+	start, end = edge.startPoint(), edge.endPoint()
+	wire = cadquery.Wire.assembleEdges([
+		cadquery.Edge.makeLine(start - edge.tangentAt(0) * length, start),
+		edge,
+		cadquery.Edge.makeLine(end, end + edge.tangentAt(1) * length),
+	])
+	return cadquery.func.revolve(wire, (0, 0, 0), (0, 0, 1))
+
 class ImpellerCAD:
 
-	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True, z_offset: float=1e-5):
-		"""z_offset: shift in m of the hub and shroud blade lines in z, away from the passage."""
+	def __init__(self, blade_design: ImpellerBladeDesign.ImpellerBladeDesign, flip_z: bool=True, flip_theta=True):
 		self._blade_design = blade_design
 		self.Impeller = self._blade_design.Pump.Impeller
 
@@ -60,6 +83,9 @@ class ImpellerCAD:
 			)
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 
+		# the blades are cut by these, so their ends lie on the same surfaces as hub_surface and shroud_surface
+		self._wall_tools = cadquery.func.compound(_WallTool(hub_edge, 2), _WallTool(shroud_edge, 2))
+
 		Z_blade_1: int = self.Impeller.Z_blade_1
 
 		blades = []
@@ -71,7 +97,7 @@ class ImpellerCAD:
 		self._debug_cad = []
 
 		for suction_lines, pressure_lines in blade_sets:
-			blade_surface = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta, z_offset=z_offset)
+			blade_surface = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta)
 			# rotate the blades about the z-axis
 			blades.append(blade_surface.moved(
 				*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
@@ -85,12 +111,16 @@ class ImpellerCAD:
 		
 		self.Assembly.add(cadquery.func.compound(*blades), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 
-	def _BladeSolid(self, suction_lines: list[np.ndarray], pressure_lines: list[np.ndarray], flip_z: bool=False, flip_theta: bool=False, z_offset: float=0.0) -> cadquery.Shape:
+	def _BladeSolid(self, suction_lines: list[np.ndarray], pressure_lines: list[np.ndarray], flip_z: bool=False, flip_theta: bool=False) -> cadquery.Shape:
 		"""
-			One blade as a solid, closed at the hub and shroud by the first and last blade line sections.
-			Each streamline gives a closed wire: suction line from the leading edge to the trailing edge, a straight line across the trailing edge to the pressure line, and the pressure line back to the leading edge.
+			One blade as a solid, ending exactly on the hub and shroud revolve surfaces.
+			Each streamline gives a closed wire: suction line from the leading edge to the trailing edge, an arc on r_2 across the trailing edge to the pressure line, and the pressure line back to the leading edge.
 			The suction face, the trailing-edge face and the pressure face come from one loft, so they share their edges exactly (no sewing tolerance).
-			The hub and shroud ends are closed with filled surfaces on the first and last wire. They follow the blade line sections, so they do not necessarily lie on the hub and shroud revolve surfaces.
+			The blade lines are approximated to _SPLINE_TOL (they pass exactly through their end points). Interpolating every point gives each section its own knots, and the loft merges
+			them into surfaces of ~10^4 poles, which make the split below take minutes.
+			The blade is extended one streamline step past the hub and shroud (_ExtendBladeLine), the oversized blade is closed with filled surfaces on its first and last wire, and the
+			hub and shroud revolve surfaces (self._wall_tools) then cut off both ends. The blade between them is kept, so its end faces are pieces of the hub and shroud surfaces.
+			clean() merges the end faces that the seam of the revolve surfaces (θ = 0) splits in two.
 			The leading-edge points must be identical on both sides.
 		"""
 		assert len(suction_lines) == len(pressure_lines), 'Suction and pressure blade lines should have equal number of streamlines'
@@ -100,14 +130,11 @@ class ImpellerCAD:
 		Beta_2 = self.Impeller.Beta2B.to('rad').m
 		theta_offset = s/np.sin(Beta_2)/max_radius
 
-		# shift the hub and shroud lines by z_offset in z, away from the passage, so the blade overlaps the walls
-		suction_lines, pressure_lines = list(suction_lines), list(pressure_lines)
-		hub_side = np.sign(suction_lines[0][-1, 0] - suction_lines[-1][-1, 0])	# +1 if the hub trailing edge has the larger z
-		dz = np.array([hub_side * z_offset, 0, 0])
-		for lines in (suction_lines, pressure_lines):
-			lines[0] = lines[0] + dz
-			lines[-1] = lines[-1] - dz
-
+		# extend the blade past the hub and shroud, the walls cut it back below
+		suction_lines, pressure_lines = [
+			[_ExtendBladeLine(lines[0], lines[1]), *lines, _ExtendBladeLine(lines[-1], lines[-2])]
+			for lines in (suction_lines, pressure_lines)
+		]
 
 		wires = []
 
@@ -133,14 +160,19 @@ class ImpellerCAD:
 			cq_te_mid_point = CAD.CylindricalToCartesian(te_mid_point, flip_z, flip_theta)[0]
 
 			wires.append(cadquery.Wire.assembleEdges([
-				cadquery.Edge.makeSpline(cq_points_s),
+				cadquery.Edge.makeSplineApprox(cq_points_s, tol=_SPLINE_TOL, minDeg=3, maxDeg=5),
 				cadquery.Edge.makeThreePointArc(cq_points_s[-1], cq_te_mid_point, cq_points_p[-1]),
-				cadquery.Edge.makeSpline(cq_points_p[::-1]),
+				cadquery.Edge.makeSplineApprox(cq_points_p[::-1], tol=_SPLINE_TOL, minDeg=3, maxDeg=5),
 			]))
 
 		self._debug_cad.extend(wires)
 		sides = cadquery.func.loft(wires)
-		return cadquery.func.solid(cadquery.func.shell(*sides.Faces(), cadquery.func.fill(wires[0]), cadquery.func.fill(wires[-1])))
+		oversized = cadquery.func.solid(cadquery.func.shell(*sides.Faces(), cadquery.func.fill(wires[0]), cadquery.func.fill(wires[-1])))
+
+		# hub stub, blade, shroud stub: fewer pieces means a wall did not cut all the way across the blade
+		pieces = cadquery.func.split(oversized, self._wall_tools).Solids()
+		assert len(pieces) == 3, f'The hub and shroud should cut the blade into 3 pieces, got {len(pieces)}'
+		return max(pieces, key=lambda piece: piece.Volume()).clean()
 
 	def Show(self, debug: bool=True):
 		if debug:
