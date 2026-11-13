@@ -75,13 +75,30 @@ class ImpellerCAD:
 		shroud_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION, flip_z=flip_z)
 			)
-		shroud_surface = cadquery.func.revolve(shroud_edge, (0, 0, 0), (0, 0, 1))
+		shroud_wire = cadquery.Wire.assembleEdges([
+			cadquery.Edge.makeLine(shroud_edge.startPoint(), shroud_edge.endPoint()),
+			shroud_edge
+		])
+		
+		shroud_solid = cadquery.func.revolve(cadquery.func.face(shroud_wire), (0, 0, 0), (0, 0, 1))
+		if not (shroud_solid.Volume() > 0): print("INVALID SHROUD SOLID!!!")
 
 		hub_contour = self._blade_design.MeridionalDesign.HubContour
 		hub_edge = cadquery.Edge.makeSpline(
 			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION, flip_z=flip_z)
 			)
-		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
+
+		start_hub_edge = cadquery.Edge.makeLine((0, 0, hub_edge.startPoint().z), hub_edge.startPoint())
+		back_shroud_extend = cadquery.Vector(0, 0, 2.54 * (-1 if flip_z else 1))
+		back_hub_extend_edge = cadquery.Edge.makeLine(hub_edge.endPoint(), hub_edge.endPoint() + back_shroud_extend)
+		back_hub_comeback = cadquery.Edge.makeLine(back_hub_extend_edge.endPoint(), (0, 0, back_hub_extend_edge.endPoint().z))
+		hub_close = cadquery.Edge.makeLine(back_hub_comeback.endPoint(), start_hub_edge.startPoint())
+		hub_wire = cadquery.Wire.assembleEdges([
+			start_hub_edge, hub_edge, back_hub_extend_edge, back_hub_comeback, hub_close
+		])
+		
+		hub_solid = cadquery.func.revolve(cadquery.func.face(hub_wire), (0, 0, 0), (0, 0, 1))
+		if not (hub_solid.Volume() > 0): print("INVALID HUB SOLID!!!")
 
 		# the blades are cut by these, so their ends lie on the same surfaces as hub_surface and shroud_surface
 		self._wall_tools = cadquery.func.compound(_WallTool(hub_edge, 2), _WallTool(shroud_edge, 2))
@@ -105,8 +122,8 @@ class ImpellerCAD:
 
 		self.Assembly = (
 			cadquery.Assembly()
-			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
-			.add(shroud_surface, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
+			.add(hub_solid, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
+			.add(shroud_solid, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
 		)
 		
 		self.Assembly.add(cadquery.func.compound(*blades), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
