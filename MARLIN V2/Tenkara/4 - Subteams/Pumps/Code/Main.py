@@ -79,13 +79,14 @@ meridional_geometry = {
 	)
 }
 
-blade_params = {
+impeller_blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.15,
-		lead_sweep=Q_(-10, 'deg'),
+		sj=0.2,
+		lead_sweep=Q_(0, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
 		use_cubic = False,
 		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.5
 	),
@@ -96,6 +97,7 @@ blade_params = {
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
 		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.6
 	)
@@ -192,12 +194,12 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design = ImpellerBladeDesign(
 		pump_meridional,
 		inducer_radial_equilibrium=inducer_eq,
-		blade_params=blade_params[propellant]
+		blade_params=impeller_blade_params[propellant]
 	)
 	#imp_blade_design.ShowPlotConformalMappingFunction()
 	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines()#.show()
+	imp_blade_design.PlotBladeLines().show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
@@ -218,7 +220,7 @@ def MakeDesign(propellant: Propellant):
 		pump_assembly.add(
 			inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0)
 			)
-	show(pump_assembly)
+	#show(pump_assembly)
 
 	# Save STEP file
 	from Helpers import CAD
