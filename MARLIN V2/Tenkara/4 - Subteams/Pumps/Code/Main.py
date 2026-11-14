@@ -79,13 +79,14 @@ meridional_geometry = {
 	)
 }
 
-blade_params = {
+impeller_blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.15,
-		lead_sweep=Q_(-10, 'deg'),
+		sj=0.2,
+		lead_sweep=Q_(0, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
 		use_cubic = False,
 		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.5
 	),
@@ -96,6 +97,7 @@ blade_params = {
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
 		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.6
 	)
@@ -150,7 +152,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump)#.show()
+	#Pump1D.PlotHQ(pump).show()
 	
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
@@ -185,17 +187,16 @@ def MakeDesign(propellant: Propellant):
 	
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	#pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot()#.show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
 		pump_meridional,
 		inducer_radial_equilibrium=inducer_eq,
-		blade_params=blade_params[propellant]
+		blade_params=impeller_blade_params[propellant]
 	)
 	#imp_blade_design.ShowPlotConformalMappingFunction()
-	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
 	imp_blade_design.PlotBladeLines()#.show()
 
@@ -222,9 +223,9 @@ def MakeDesign(propellant: Propellant):
 
 	# Save STEP file
 	from Helpers import CAD
-	do_save = True if input('Save STEP? (y):\n') == 'y' else False
+	do_save = True if input(f'Save {propellant.name} pump assembly STEP? (y):\n') == 'y' else False
 	if do_save:
-		CAD.ExportPart(imp_cad.Assembly, f'{propellant.name}_impeller')
+		CAD.ExportStep(*imp_cad.NX_compound, name=f'{propellant.name}_impeller')
 		if pump.Inducer is not None:
 			CAD.ExportPart(inducer_assm, f'{propellant.name}_inducer')
 

@@ -47,6 +47,7 @@ class BladeParams:
 	use_cubic: bool = True
 	splitter_length_ratio: float = 0.6
 	le_ratio: float = 2			# a / b of the leading-edge ellipse (Milos eq. 61, a/b = 2 in Fig. 27)
+	le_ratio_splitter: float = 2,
 	le_resolution: int = 25			# points on the leading-edge ellipse, nose to full thickness
 	side_theta: Literal['offset', 'milos'] = 'offset'	# wrap angle of the sides, see ConformalMapping.TransposedBladeLine.GetSides
 
@@ -238,7 +239,7 @@ class ImpellerBladeDesign:
 			)
 
 			transposed_bl = ConformalMapping.TransposedBladeLine(
-				camber.x_f, self.Pump.Impeller.blade_thick.to('m').m, le_ratio=self._params.le_ratio
+				camber.x_f, self.Pump.Impeller.blade_thick.to('m').m, le_ratio=self._params.le_ratio if not splitter else self._params.le_ratio_splitter
 			)
 
 			if splitter:
