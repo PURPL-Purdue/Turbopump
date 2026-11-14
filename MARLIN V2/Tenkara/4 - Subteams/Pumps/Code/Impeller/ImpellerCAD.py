@@ -72,7 +72,7 @@ class ImpellerCAD:
 
 		RESOLUTION = 200
 		shroud_contour = self._blade_design.MeridionalDesign.ShroudContour
-		shroud_edge = cadquery.Edge.makeSpline(
+		shroud_edge = cadquery.Edge.makeSplineApprox(
 			_MeridionalContourToCartesian(shroud_contour, resolution=RESOLUTION, flip_z=flip_z)
 			)
 		shroud_wire = cadquery.Wire.assembleEdges([
@@ -84,12 +84,12 @@ class ImpellerCAD:
 		if not (shroud_solid.Volume() > 0): print("INVALID SHROUD SOLID!!!")
 
 		hub_contour = self._blade_design.MeridionalDesign.HubContour
-		hub_edge = cadquery.Edge.makeSpline(
+		hub_edge = cadquery.Edge.makeSplineApprox(
 			_MeridionalContourToCartesian(hub_contour, resolution=RESOLUTION, flip_z=flip_z)
 			)
 
 		start_hub_edge = cadquery.Edge.makeLine((0, 0, hub_edge.startPoint().z), hub_edge.startPoint())
-		back_shroud_extend = cadquery.Vector(0, 0, 2.54 * (-1 if flip_z else 1))
+		back_shroud_extend = cadquery.Vector(0, 0, 1.5 * (-1 if flip_z else 1))
 		back_hub_extend_edge = cadquery.Edge.makeLine(hub_edge.endPoint(), hub_edge.endPoint() + back_shroud_extend)
 		back_hub_comeback = cadquery.Edge.makeLine(back_hub_extend_edge.endPoint(), (0, 0, back_hub_extend_edge.endPoint().z))
 		hub_close = cadquery.Edge.makeLine(back_hub_comeback.endPoint(), start_hub_edge.startPoint())
@@ -113,10 +113,14 @@ class ImpellerCAD:
 		
 		self._debug_cad = []
 
+		self._original_blades = []
+
 		for suction_lines, pressure_lines in blade_sets:
-			blade_surface = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta)
+			blade_solid = self._BladeSolid(suction_lines, pressure_lines, flip_z=flip_z, flip_theta=flip_theta)
 			# rotate the blades about the z-axis
-			blades.append(blade_surface.moved(
+			self._original_blades.append(blade_solid)
+			
+			blades.append(blade_solid.moved(
 				*[cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / Z_blade_1) for n in range(Z_blade_1)]
 			))
 
@@ -124,9 +128,10 @@ class ImpellerCAD:
 			cadquery.Assembly()
 			.add(hub_solid, name='hub', color=cadquery.Color(0.6, 0.6, 0.6, 0.5))
 			.add(shroud_solid, name='shroud', color=cadquery.Color(0.3, 0.5, 0.8, 0.3))
+			.add(cadquery.func.compound(*blades), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
 		)
-		
-		self.Assembly.add(cadquery.func.compound(*blades), name='blades', color=cadquery.Color(0.85, 0.35, 0.2, 1.0))
+
+		self.NX_compound = cadquery.func.compound(*self._original_blades, hub_edge, shroud_edge)
 
 	def _BladeSolid(self, suction_lines: list[np.ndarray], pressure_lines: list[np.ndarray], flip_z: bool=False, flip_theta: bool=False) -> cadquery.Shape:
 		"""

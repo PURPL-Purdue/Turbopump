@@ -152,7 +152,7 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump)#.show()
+	#Pump1D.PlotHQ(pump).show()
 	
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
@@ -187,8 +187,8 @@ def MakeDesign(propellant: Propellant):
 	
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	#pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot()#.show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
@@ -197,9 +197,8 @@ def MakeDesign(propellant: Propellant):
 		blade_params=impeller_blade_params[propellant]
 	)
 	#imp_blade_design.ShowPlotConformalMappingFunction()
-	#imp_blade_design.PlotInletTriangles(free_vortex=True).show()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines().show()
+	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
@@ -220,13 +219,13 @@ def MakeDesign(propellant: Propellant):
 		pump_assembly.add(
 			inducer_assm, name='inducer', loc=cadquery.Location((0, 0, z_inducer_inlet), (1, 0, 0), 0)
 			)
-	#show(pump_assembly)
+	show(pump_assembly)
 
 	# Save STEP file
 	from Helpers import CAD
-	do_save = True if input('Save STEP? (y):\n') == 'y' else False
+	do_save = True if input(f'Save {propellant.name} pump assembly STEP? (y):\n') == 'y' else False
 	if do_save:
-		CAD.ExportPart(imp_cad.Assembly, f'{propellant.name}_impeller')
+		CAD.ExportStep(*imp_cad.NX_compound, name=f'{propellant.name}_impeller')
 		if pump.Inducer is not None:
 			CAD.ExportPart(inducer_assm, f'{propellant.name}_inducer')
 

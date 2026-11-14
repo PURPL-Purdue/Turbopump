@@ -17,22 +17,22 @@ def CylindricalToCartesian(points_zrt: np.ndarray, flip_z: bool=False, flip_thet
 def GetStepExportPath(file_name: str) -> Path:
 	return Path(__file__).resolve().parents[2] / 'Outputs' / f'{file_name}.step'
 
-def ExportPart(assembly: cadquery.Assembly, name: str):
+def ExportStep(*shapes: cadquery.Shape, name: str):
 	"""
-		Export every body of the assembly as a single part: a flat compound of the solids and the loose faces, with no product structure.
+		Write the shapes to Outputs/<name>.step as the bodies of one part (a single STEP product), with no product structure.
 		Siemens NX imports this as one .prt with multiple bodies, where an assembly STEP file becomes one part file per component.
-		Names and colors are dropped.
+		Nested compounds and moved copies (which share geometry) are fine. Solids, shells, faces, wires and edges are all written.
 	"""
-	shape = assembly.toCompound()	# nested assemblies and locations are resolved
-	solids = shape.Solids()
-	solid_faces = {f.hashCode() for solid in solids for f in solid.Faces()}
-	loose_faces = [f for f in shape.Faces() if f.hashCode() not in solid_faces]
-	writer = STEPControl_Writer()	# the writer has to exist before its parameters can be set
-	# Shapes that share geometry (the copies of one blade) are otherwise written as product instances, which NX opens as separate parts
+	writer = STEPControl_Writer()	# creating the first writer loads the STEP defaults, so the parameters are set after it
+	# The default, 2 (auto), writes every compound as an assembly, which NX opens as one part file per body
 	Interface_Static.SetIVal_s('write.step.assembly', 0)
 	Interface_Static.SetCVal_s('xstep.cascade.unit', 'MM')
 	Interface_Static.SetCVal_s('write.step.unit', 'MM')
-	writer.Transfer(cadquery.Compound.makeCompound([*solids, *loose_faces]).wrapped, STEPControl_AsIs)
+	writer.Transfer(cadquery.func.compound(*shapes).wrapped, STEPControl_AsIs)
 	path = str(GetStepExportPath(name))
 	writer.Write(path)
 	print(f'Saved to {path}')
+
+def ExportPart(assembly: cadquery.Assembly, name: str):
+	"""Every shape of the assembly, nested assemblies and locations resolved, as one part with ExportStep. Names and colors are dropped."""
+	ExportStep(assembly.toCompound(), name=name)
