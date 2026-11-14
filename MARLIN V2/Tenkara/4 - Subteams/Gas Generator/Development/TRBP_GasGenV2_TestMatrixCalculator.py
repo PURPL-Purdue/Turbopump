@@ -150,9 +150,9 @@ def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
         pc = pc_new
     raise RuntimeError(f"P_c iteration did not converge (last P_c = {pc:.0f} Pa)")
 
-def stiffness(dp: float, p_in: float) -> float:
-    """Stiffness: dp / p_in."""
-    return dp / p_in
+def stiffness(dp: float, p_c: float) -> float:
+    """Stiffness: dp / p_c."""
+    return dp / p_c
 
 def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
     cstar = get_torch_cstar(of_torch, P_c_torch * PA_PER_PSI, hw)
@@ -186,8 +186,8 @@ def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
     p_fuel = pc + dp_fuel    # inlet pressure feeding both the core and film paths
 
     stiff_ox = stiffness(dp_ox, p_ox)
-    stiff_fuel = stiffness(dp_fuel, p_fuel)
-    stiff_film = stiffness(dp_film, p_fuel)
+    stiff_fuel = stiffness(dp_fuel, pc)
+    stiff_film = stiffness(dp_film, pc)
 
     temp = film_core_mixed_temp(p_ox, p_fuel, hw.insert_id)
 
