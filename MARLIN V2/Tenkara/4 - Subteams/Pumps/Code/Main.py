@@ -25,22 +25,22 @@ basic_impeller_geometry = {
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
 		Beta2B = Q_(35,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1, 'in'),				# impeller inlet diameter
+		d_1 = Q_(0.95, 'in'),				# impeller inlet tip diameter
 		d_2 = Q_(2.1, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.12, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),		# blade thickness
-		d_hub=Q_(0.6, 'in'),			# hub diameter
+		blade_thick = Q_(1.5, 'mm'),		# blade thickness
+		d_hub=Q_(0.5, 'in'),			# hub diameter at inlet
 	),
 
 	Propellant.IPA: Impeller.InputGeometry(
 		Z_blade_2 = 8,					# integer number of blades
 		splitter=True,
-		Beta2B = Q_(45,'deg').to('rad'),# blade angle at exit, relative to tangent
-		d_1 = Q_(1.3, 'in'),			# impeller inlet diameter
+		Beta2B = Q_(50,'deg').to('rad'),# blade angle at exit, relative to tangent
+		d_1 = Q_(1.2, 'in'),			# impeller inlet tip diameter
 		d_2 = Q_(2.85, 'in'),			# impeller outlet diameter
 		b_2 = Q_(0.13, 'in'),			# impeller outlet height
-		blade_thick = Q_(1, 'mm'),		# blade thickness at exit
-		d_hub=Q_(0.6, 'in'),			# hub diameter
+		blade_thick = Q_(1.5, 'mm'),		# blade thickness at exit
+		d_hub=Q_(0.6, 'in'),			# hub diameter at inlet
 	)
 }
 
@@ -48,9 +48,10 @@ basic_impeller_geometry = {
 basic_inducer_geometry = {
 	Propellant.LOX: Inducer.InducerInputGeometry(
 		d_tip = basic_impeller_geometry[Propellant.LOX].d_1,			# inducer tip diameter (Constrained Option: 1)
-		d_hub_1 = Q_(0.45, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
+		d_hub_1 = Q_(0.40, 'in'),		# hub diameter at the inducer inlet (Constrained Option: 0.591)
 		d_hub_2 = basic_impeller_geometry[Propellant.LOX].d_hub,		# hub diameter at the inducer exit (Constrained Option: 0.733)
-		Z_blade = 2
+		Z_blade = 2,
+		axial_length_ratio=0.8,
 	),
 
 	Propellant.IPA: Inducer.InducerInputGeometry(
@@ -66,31 +67,37 @@ meridional_geometry = {
 		Z_e_factor = 1.0,				# axial length extension factor, modifying Gulich formula
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
-		shroud_outlet_angle=Q_(4, 'deg')	# shroud contour angle from radial at outlet
+		shroud_outlet_angle=Q_(5, 'deg'),	# shroud contour angle from radial at outlet,
+		shroud_flat=0.2,
 	),
 	Propellant.IPA: MeridionalDesign.MeridionalGeometry(
-		Z_e_factor = 1.1, # TODO uhHHHH
+		Z_e_factor = 1.0, # TODO uhHHHH
 		shroud_fullness=(1, 0.5),
 		hub_fullness=(0.7, 0.7),
-		shroud_outlet_angle=Q_(5, 'deg')
+		shroud_outlet_angle=Q_(5, 'deg'),
+		shroud_flat=0.2,
 	)
 }
 
-blade_params = {
+impeller_blade_params = {
 	Propellant.LOX: BladeParams(
-		sj=0.15,
-		lead_sweep=Q_(-10, 'deg'),
+		sj=0.2,
+		lead_sweep=Q_(0, 'deg'),
 		target_wrap = Q_(111, 'deg'), # cubic only
 		use_cubic = False,
+		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.5
 	),
 
 	Propellant.IPA: BladeParams(
-		sj=0.1,
+		sj=0.15,
 		lead_sweep=Q_(-15, 'deg'),
 		target_wrap = Q_(140, 'deg'),
 		use_cubic = False,
+		le_ratio=2,
+		le_ratio_splitter = 4,
 		resolution=500,
 		splitter_length_ratio=0.6
 	)
@@ -112,8 +119,6 @@ fluid_props = {
 		vapor_pressure = Q_(0.64, 'psi') # TODO make this procedural based on temperature
 	)
 }
-
-
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
@@ -147,8 +152,8 @@ def MakeDesign(propellant: Propellant):
 
 	# ----------------- PUMP 1D ANALYSIS -----------------
 	import Pump1D
-	Pump1D.PlotHQ(pump).show()
-	return
+	#Pump1D.PlotHQ(pump).show()
+	
 	print(f'{propellant.name} pump torque: ', Pump1D.GetTorque(pump))
 	print(f'{propellant.name} inducerless NPSH_r: ', Pump1D.GetInducerlessNPSH_r(pump))
 	print('Temperature rise of fluid: ', Pump1D.GetTempRise(pump))
@@ -174,7 +179,7 @@ def MakeDesign(propellant: Propellant):
 		print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
 		min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
 		print(f"Min blade spacing {min_spacing:.2f} in")
-		inducer_eq.ShowCAD()
+		#inducer_eq.ShowCAD()
 		#exit()
 		#print(inducer_eq.GetOutletAngularMomentum())
 	else:
@@ -182,22 +187,22 @@ def MakeDesign(propellant: Propellant):
 	
 	# ----------------- MERIDIONAL DESIGN ---------------------
 	pump_meridional = MeridionalDesign.MeridionalDesign(pump, meridional_geometry[propellant])
-	#pump_meridional.PotentialFlow.Plot().show()
-	#pump_meridional.PlotMeridional(color=color[propellant]).show()
+	pump_meridional.PotentialFlow.Plot()#.show()
+	pump_meridional.PlotMeridional(color=color[propellant])#.show()
 
 	# ----------------- IMPELLER BLADE DESIGN -----------------
 	imp_blade_design = ImpellerBladeDesign(
 		pump_meridional,
 		inducer_radial_equilibrium=inducer_eq,
-		blade_params=blade_params[propellant]
+		blade_params=impeller_blade_params[propellant]
 	)
-	imp_blade_design.PlotInletTriangles(free_vortex=True).show()
+	#imp_blade_design.ShowPlotConformalMappingFunction()
 	#imp_blade_design.PlotInletTriangles(free_vortex=False).show()
-	imp_blade_design.PlotBladeLines().show()
+	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
 	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
-	#imp_cad.Show()
+	imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
 	
@@ -218,11 +223,11 @@ def MakeDesign(propellant: Propellant):
 
 	# Save STEP file
 	from Helpers import CAD
-	do_save = True if input('Save STEP? (y):\n') == 'y' else False
+	do_save = True if input(f'Save {propellant.name} pump assembly STEP? (y):\n') == 'y' else False
 	if do_save:
-		CAD.ExportAssembly(imp_cad.Assembly, f'{propellant.name}_impeller')
+		CAD.ExportStep(*imp_cad.NX_compound, name=f'{propellant.name}_impeller')
 		if pump.Inducer is not None:
-			CAD.ExportAssembly(inducer_assm, f'{propellant.name}_inducer')
+			CAD.ExportPart(inducer_assm, f'{propellant.name}_inducer')
 
 	return pump
 

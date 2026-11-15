@@ -22,14 +22,15 @@ The git repository root is `Turbopump/`, and this folder is `MARLIN V2/Tenkara/4
   3. `InducerRadialEquilibrium(pump.Inducer)` with its defaults;
   4. `MeridionalDesign`, which includes the FEM potential-flow solve, then `PotentialFlow.Plot` and `PlotMeridional`;
   5. `ImpellerBladeDesign` with Main.py's `blade_params`, then `PlotInletTriangles` and `PlotBladeLines`;
-  6. `ImpellerCAD`, which builds the CadQuery model and opens it in the cadquery viewer.
+  6. `ImpellerCAD`, which builds the CadQuery model and opens it in the cadquery viewer, then the impeller with the inducer's CAD (when there is an inducer) in a second viewer, then asks `Save STEP? (y)` with `input()`; 'y' writes `<propellant>_impeller` (and `_inducer`) with `Helpers.CAD.ExportPart`.
 
   `AddInducer` takes the inducer's tip and outlet hub diameters from the impeller's `d_1` and `d_hub`. Its inlet hub and axial length are fixed fractions of the tip diameter (`hub_tip_ratio`, `axial_length_ratio`), not solved from the head. Only its outlet angular momentum reaches the impeller, as free-vortex preswirl. `Inducer/Sizing.py` solves the inlet hub from the hub taper instead, but the pipeline doesn't use it.
 
   Figures are shown by the `.show()` calls there, most of them commented out (currently all but `PlotBladeLines`). The cadquery viewer blocks until its window is closed, so the IPA design starts only after the LOX viewer is closed. A run takes a few seconds per propellant, about half of it in `ImpellerBladeDesign`; `MeridionalDesign`, FEM solve included, takes about 0.01 s.
 - There is no test suite; `test.py` in the Pumps folder is a pint scratch file. To check changes without windows popping up:
   - set `plotly.graph_objects.Figure.show` to a no-op in a scratch script and use `fig.write_html(...)` instead. `MeridionalMesh.Plot()` calls `.show()` itself;
-  - set `cadquery.vis.show` to a no-op before `MakeDesign` reaches the CAD step. Main.py imports `Impeller.ImpellerCAD` inside `MakeDesign`, and that module binds `show` at import (`from cadquery.vis import show`);
+  - set `cadquery.vis.show` to a no-op before importing Main. Main.py and `Impeller/ImpellerCAD.py` both bind `show` at import (`from cadquery.vis import show`);
+  - set `builtins.input` to return 'n', or the run waits at the `Save STEP?` prompt;
   - there is no kaleido, so plotly figures can't be exported as images;
   - set `MPLBACKEND=Agg` for the matplotlib scripts.
 - Standalone scripts, not part of the `MakeDesign` pipeline:
@@ -96,11 +97,21 @@ Top level:
   - Builds blade lines along 11 streamlines from φ = 0 to 1, each over its blade part (`Between(LeadingEdge, TrailingEdge)`) at `BladeParams.resolution` points. `BladeParams.use_cubic` picks the method:
     - `False`, Main.py's choice: `_CreateBladeLines`. β(x) is a `JoinParabola` from β₁′ to `Beta2B`, joined at x_j = sj·x_f, and θ = ∫ dx/(r tan β). The shroud is the reference, with `BladeParams.sj`. On the other streamlines sj is bisected so every trailing edge ends at the shroud's wrap (with a warning if no sj reaches it), and the leading edge is swept by `lead_sweep`;
     - `True`, the `BladeParams` default: `_CreateBladeLines2`. `ConformalMapping` puts every trailing edge at `target_wrap`, and the sweep is measured from the hub.
-  - `GetBladeLines()` returns `(points, betas)`, one entry per streamline, hub first. `points` are (resolution, 3) arrays of (z, r, θ) in m, m and rad. Each entry of `betas` has `Get(x)` (β in rad at x in m from the leading edge), `Domain` and `TotalWrap`.
+  - `GetBladeSurfaceLines(side, splitter=False)` returns the `'suction'`, `'pressure'` or `'camber'` lines (or a tuple of them for a tuple of sides), one per streamline, hub first; `splitter=True` gives the splitter blades, when `Z_blade_2 != Z_blade_1`. Each line is an (le_resolution + resolution − 1, 3) array of (z, r, θ) in m, m and rad. `_bladelines` and `_splitter_bladelines` hold `(surface_points, betas)`; each entry of `betas` has `Get(x)` (β in rad at x in m from the leading edge), `Domain` and `TotalWrap`.
+  - The sides come from `ConformalMapping.TransposedBladeLine`, in the conformal (A, L) plane:
+    - they are offset from the camber line by the semi-thickness, normal to it (Milos eqs. 59-60), and the trailing edge is cut off normal to the camber;
+    - the leading edge is a quarter ellipse (eq. 61, Fig. 26), with a = `le_ratio`·s/2 along the camber and b = s/2. It is laid out on `le_resolution` points at even steps of the ellipse angle, and x_cl is the camber arclength in the (A, L) plane, dσ = dL/sin β;
+    - `BladeParams.side_theta` sets the sides' θ. `'offset'` (default) is the camber point's θ + (A_side − A_camber)/r_camber; `'milos'` is the camber's θ at the same A (Fig. 30), extended past the camber ends with dθ = dA/r. Both put the nose exactly on the camber leading edge. Integrating ∫dA/r along each side instead drifts by several degrees, because dA/r(L) is path-dependent;
+    - all three lines get the camber's shift that puts its trailing edge at the reference wrap.
   - Plotting: `PlotInletTriangles`, and `PlotBladeLines`, which plots the plan view of all `Z_blade` blades and β against meridional arclength.
 - `ConformalMapping.py`: `ConformalMapping(beta_1, beta_2, arclen, target_wrap, radii).SolveDistribution()` returns a `BetaCMM`. A cubic A(x) has A′ = 1/tan β at both ends, and θ = ∫ dA/r. Its end value A(x_f) is interpolated linearly for the target wrap within the range where β stays monotonic; outside that range it is clamped, with a warning.
 - `JoinParabola.py`: `JoinParabola(y0, yf, xj, xf)` returns two parabolas as one function of x: flat at 0 and at xf, and tangent-continuous at xj. It is singular for xj = 0 or xj = xf, so the sj bisection stays between 0.01 and 0.99.
-- `ImpellerCAD.py`: `ImpellerCAD(blade_design)` lofts the blade lines into one zero-thickness camber surface and copies it `Z_blade` times about the z axis. It revolves the hub and shroud contours into surfaces and shows the compound with `cadquery.vis.show`. It exports nothing; the STEP files in `Outputs/` came from an earlier version that has been deleted.
+- `ImpellerCAD.py`: `ImpellerCAD(blade_design)` revolves the hub and shroud contours into surfaces and builds each blade as a solid (`_BladeSolid`), for the main blades and for the splitters if there are any, copied `Z_blade_1` times about the z axis. `.Assembly` holds them, and `Show` displays it with `cadquery.vis.show`. Per blade:
+  - one closed wire per streamline: suction line, an arc on r₂ across the trailing edge (the pressure line is trimmed at r₂ by `_TrimToRadius`), pressure line back to the leading edge. The lines are `makeSplineApprox` splines at `_SPLINE_TOL` (1 µm): interpolating every point gave each section its own knots, and the loft merged them into surfaces of ~13 600 × 13 poles (minute-long booleans, ~200 MB STEP files);
+  - the hub and shroud lines are extended one streamline step past the walls (`_ExtendBladeLine`), the wires are lofted, and the oversized blade is closed with `fill` caps;
+  - the hub and shroud revolve surfaces, extended past both ends of the contour (`_WallTool`), split off the two stubs, and the middle piece is kept. Its end faces are pieces of the same surfaces as the exported hub and shroud, so they coincide with them exactly (the earlier `fill` caps stood up to 3.6 µm off the hub, which NX rejects as a touch condition when uniting). `clean()` merges end faces that the revolve seam at θ = 0 splits in two; the main blade's leading edge crosses it.
+  
+  A blade takes 2-5 s.
 - `Bezier.py`: `bez(P, t)` and `dbez(P, t)` for cubic Beziers, by Bezier parameter t. Use `BezierCurve` when you need a curve evaluated by arclength.
 
 `Inducer/` (NASA SP-8052, whose PDF is in this folder):
@@ -122,7 +133,7 @@ Top level:
 
 `Old/`: archived inducer code, see Running.
 
-Outside `Code/`: `Inputs/` holds `Inputs.yaml`, and `Serialize.py`, which turns every `[value, 'unit']` pair into a `Q_`. `Inputs/__init__.py` exports the result as `Inputs`. `Outputs/` holds `LOX_impeller.step` and `IPA_impeller.step` (see `ImpellerCAD.py`).
+Outside `Code/`: `Inputs/` holds `Inputs.yaml`, and `Serialize.py`, which turns every `[value, 'unit']` pair into a `Q_`. `Inputs/__init__.py` exports the result as `Inputs`. `Outputs/` holds the impeller and inducer STEP files written by `MakeDesign` (`LOX_impeller.step`, `LOX_inducer.step` and the IPA ones).
 
 ## Conventions
 
@@ -158,7 +169,8 @@ To read the PDF: WebFetch can't parse it, no PDF library is installed, and the R
 - **Static moment**, p. 45, eqs. 34-35: S = ∫r dx feeds Pfleiderer's slip coefficient p = ψ′ r₂²/(z S).
 - **Leading edge (our choice, not Milos's):**
   - the hub, the geometric meanline and the shroud have equal S from the leading edge to the outlet, which gives equal slip from hub to shroud;
-  - the shroud leading edge sits at the impeller inlet (`s_LE_shroud = 0`), and the other two are found by bisection;
+  - the shroud leading edge sits half a blade thickness (`blade_thick / 2`, in arclength) downstream of the impeller inlet (`s_LE_shroud`), and the other two are found by bisection;
+  - the hub and shroud points are then moved onto the φ = 0 and φ = 1 streamlines, by a few µm at most. These streamlines are polylines through the wall nodes, and in the bend their chords cut up to a few µm inside the walls. A leading edge ending on the contour itself can miss them by more than `FindIntersect`'s 1 µm end tolerance, and `_GetLeadingEdgeFlow` then fails its one-crossing assertion;
   - the curve is a quadratic Bezier through the three points, stored as a cubic (`BezierCurve.ThroughPoints`);
   - the geometric meanline lies about 0.4-0.6 mm closer to the hub than the true φ = 0.5 streamline at the impeller inlet, and 0.8-1.1 mm from it where both cross the leading edge, for the current LOX and IPA geometry. Using `self.PotentialFlow.GetStreamline(0.5).Impeller` instead of `self.MeanContour` is a small swap in `MeridionalDesign.__init__`.
 - **Leading-edge blockage** (`ImpellerBladeDesign._SolveInletFlow`): CFturbo; Hassan et al., Sci. Rep. 2024, eq. 17; Milos eq. 33.
