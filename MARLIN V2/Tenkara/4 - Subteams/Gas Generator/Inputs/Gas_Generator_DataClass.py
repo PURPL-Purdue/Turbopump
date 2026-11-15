@@ -9,7 +9,7 @@ class hardware:
     LOx_Cda = Q_(0.00000190, 'm^2')     # Assumed Cd of 0.65 w/ #68 drill bit
                                         # Last updated: Nov 5th, 2026 by Miles Cohen
 
-    Fuel_Cda = Q_(0.00000435, 'm^2')    # Assumed Cd of 0.65 w/ 3/64 drill bit
+    IPA_Cda = Q_(0.00000435, 'm^2')    # Assumed Cd of 0.65 w/ 3/64 drill bit
                                         # Last updated: Nov 5th, 2026 by Miles Cohen
 
     Film_Cda = Q_(0.00001028, 'm^2')    # Assumed Cd of 0.65

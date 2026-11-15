@@ -1,12 +1,12 @@
 import numpy as np
 from pint import Quantity as Q_
 from pathlib import Path
-from GG_Tenkara_Function_single import GasGen_mdot_single
+from GG_Tenkara_Function_single import GasGen_state_single
 
 # ---- Global field parameters ----
-FIELD_MIN_PRESSURE = Q_(0.0, 'psi')
-FIELD_MAX_PRESSURE = Q_(800.0, 'psi')
-NUM_POINTS = 100
+FIELD_MIN_PRESSURE = Q_(100.0, 'psi')
+FIELD_MAX_PRESSURE = Q_(1000.0, 'psi')
+NUM_POINTS = 200
 
 VALID_INSERTS = ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%"]
 
@@ -14,7 +14,7 @@ _P_MIN = FIELD_MIN_PRESSURE.to('psi').m
 _P_MAX = FIELD_MAX_PRESSURE.to('psi').m
 _SPACING = (_P_MAX - _P_MIN) / (NUM_POINTS - 1)
 
-_field_cache = {}  # insert_id -> field, so each CSV is read at most once per run
+_field_cache = {}
 
 def _check_insert(insert_id: str):
     if insert_id not in VALID_INSERTS:
@@ -42,8 +42,8 @@ def _get_field(insert_id: str) -> np.ndarray:
     _field_cache[insert_id] = field
     return field
 
-def _snap_index(p: Q_) -> int:
-    idx = round((p.to('psi').m - _P_MIN) / _SPACING)
+def _snap_index(p_in: Q_) -> int:
+    idx = round((p_in.to('psi').m - _P_MIN) / _SPACING)
     return max(0, min(NUM_POINTS - 1, idx))
 
 def generate_GasGen_field(insert_id: str) -> np.ndarray:
@@ -55,8 +55,8 @@ def generate_GasGen_field(insert_id: str) -> np.ndarray:
     for row, p_fu in enumerate(p_axis):
         print(f"{row}")
         for col, p_ox in enumerate(p_axis):
-            result = GasGen_mdot_single(Q_(float(p_ox), 'psi'), Q_(float(p_fu), 'psi'), insert_id)
-            field[row, col] = result.to('lb/s').m if isinstance(result, Q_) else float(result)
+            Mdot, P_c, OF = GasGen_state_single(Q_(float(p_ox), 'psi'), Q_(float(p_fu), 'psi'), insert_id)
+            field[row, col] = Mdot.to('lb/s').m
     return field
 
 def get_GasGen_mdot(P_ox: Q_, P_fu: Q_, insert_id: str) -> Q_:
