@@ -32,10 +32,10 @@ def get_cstar(P_c: Q_, OF: Q_) -> Q_:
     cstar = _cea.get_Cstar(Pc=P_c.to('psi').m, MR=float(OF))  # MR must be a plain float
     return GG.Cstar_eff * Q_(cstar, 'ft/s')
 
-def orifice_mdot(cda: Q_, pup: Q_, Pc: Q_, rho: Q_) -> Q_:
+def orifice_mdot(cda: Q_, P_up: Q_, P_c: Q_, rho: Q_) -> Q_:
     """Incompressible orifice flow: mdot = Cda * sqrt(2 * rho * dP), with dP floored at 0."""
     Pc = Q_(0.0, 'psi') if Pc is None else Pc
-    dp = max(pup - Pc, Q_(0.0, 'psi'))
+    dp = max(P_up - P_c, Q_(0.0, 'psi'))
     return (cda * np.sqrt(2 * rho * dp)).to('lb/s')
 
 def GasGen_state_single(P_ox: Q_, P_fu: Q_, insert_id: str) -> tuple[Q_, Q_, Q_]:

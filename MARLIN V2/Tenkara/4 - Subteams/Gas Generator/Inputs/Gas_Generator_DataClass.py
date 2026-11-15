@@ -1,5 +1,5 @@
 # Gas Generator Hardware Definition
-# Last Updated: Nov 10, 2026
+# Last Updated: Nov 15, 2026
 
 from pint import Quantity as Q_
 
@@ -16,7 +16,7 @@ class hardware:
                                         # Last updated: Oct 28th, 2026 by Arvin Peng
 
     # Film Cooling Inserts
-    Insert_Cda = {                      # (m^2) Assumed Cd = 0.65
+    Insert_Cda = {                      # Assumed Cd = 0.65
         '0%':  Q_(0.0, 'm^2'),
         '5%':  Q_(0.000000319, 'm^2'),
         '10%': Q_(0.000000711, 'm^2'),
@@ -28,12 +28,26 @@ class hardware:
         '40%': Q_(0.00000459, 'm^2')
     }                                   # Last updated: Nov 5th, 2026 by Arvin Peng
 
+    # Venturi Parameters
+    LOx_venturi_throat_diam = Q_(0.001, 'm')    # Venturi throat diameter
+                                                # Last updated: Nov 15th, 2026 by Arvin Peng
+
+    LOx_venturi_throat_area = Q_(0.0001, 'm^2')     # Venturi throat area
+                                                    # Last updated: Nov 15th, 2026 by Arvin Peng
+
+    IPA_venturi_throat_diam = Q_(0.001, 'm')    # Venturi throat diameter
+                                                # Last updated: Nov 15th, 2026 by Arvin Peng
+    
+    IPA_venturi_throat_area = Q_(0.0001, 'm^2')     # Venturi throat area
+                                                    # Last updated: Nov 15th, 2026 by Arvin Peng
+
+    IPA_venturi_inlet_area = Q_(0.0001, 'm^2')   # Venturi inlet area
+                                                # Last updated: Nov 15th, 2026 by Arvin Peng
+
+
     # Stator Parameters
     Stator_Area = Q_(98, 'mm^2')    # Assumed to be the same as the throat area
                                     # Last updated: Sept 27th, 2026 by Miles Cohen
-
-    Stator_throat_num = Q_(4, 'dimensionless')  # Number of nozzles in the stator
-                                                # Last updated: May 25th, 2026 by Miles Cohen
 
     Stator_eff_combustion_volume = Q_(0, 'm^3') # Volume of the HGM that is effectivly used for combustion.
                                                 # Last updated: May 25th, 2026 by Miles Cohen
