@@ -1,78 +1,78 @@
 import numpy as np
 from pint import Quantity as Q_
 from pathlib import Path
+from scipy.interpolate import RegularGridInterpolator
 from GG_Tenkara_Function_single import GasGen_state_single
 
-# ---- Global field parameters ----
-FIELD_MIN_PRESSURE = Q_(100.0, 'psi')
-FIELD_MAX_PRESSURE = Q_(1000.0, 'psi')
-NUM_POINTS = 200
+# Global field parameters
+P_MIN = Q_(100.0, 'psi')
+P_MAX = Q_(1000.0, 'psi')
+NUM_POINTS = 91
+SPACING = (P_MAX - P_MIN).m / (NUM_POINTS - 1)
+P_AXIS = np.linspace(P_MIN, P_MAX, NUM_POINTS)
 
 VALID_INSERTS = ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%"]
 
-_P_MIN = FIELD_MIN_PRESSURE.to('psi').m
-_P_MAX = FIELD_MAX_PRESSURE.to('psi').m
-_SPACING = (_P_MAX - _P_MIN) / (NUM_POINTS - 1)
+field_cache = {}
 
-_field_cache = {}
-
-def _check_insert(insert_id: str):
+def check_insert(insert_id: str):
     if insert_id not in VALID_INSERTS:
         raise ValueError(f"Invalid insert_id. Must be one of: {VALID_INSERTS}")
 
-def _csv_path(insert_id: str) -> Path:
-    name = f"Gas_Generator_Field_{insert_id.replace('%', 'pct')}.csv"
+def field_path(insert_id: str) -> Path:
+    name = f"GasGenerator_Field_{insert_id.replace('%', 'pct')}.npy"
     return Path(__file__).with_name(name)
 
-def _get_field(insert_id: str) -> np.ndarray:
-    """Return the field for an insert: memory cache -> CSV -> generate and save."""
-    if insert_id in _field_cache:
-        return _field_cache[insert_id]
-
-    path = _csv_path(insert_id)
+def get_field(insert_id: str) -> np.ndarray:
+    """Return the field for an insert: memory cache -> npy -> generate and save."""
+    if insert_id in field_cache:
+        return field_cache[insert_id]
+    path = field_path(insert_id)
     field = None
     if path.exists():
-        field = np.loadtxt(path, delimiter=",", ndmin=2)
-        if field.shape != (NUM_POINTS, NUM_POINTS):  # stale file, rebuild
-            field = None
+        field = np.load(path)
     if field is None:
-        field = generate_GasGen_field(insert_id)
-        np.savetxt(path, field, delimiter=",")
+        field = generate_field(insert_id)
+        np.save(path, field)
 
-    _field_cache[insert_id] = field
+    field_cache[insert_id] = field
     return field
 
-def _snap_index(p_in: Q_) -> int:
-    idx = round((p_in.to('psi').m - _P_MIN) / _SPACING)
-    return max(0, min(NUM_POINTS - 1, idx))
-
-def generate_GasGen_field(insert_id: str) -> np.ndarray:
-    """Build the NUM_POINTS x NUM_POINTS mdot field (lb/s) for one insert.
-    field[row, col]: row = fuel pressure index, col = ox pressure index."""
-    _check_insert(insert_id)
-    p_axis = np.linspace(_P_MIN, _P_MAX, NUM_POINTS)  # same axis for ox and fuel
-    field = np.full((NUM_POINTS, NUM_POINTS), np.nan)
-    for row, p_fu in enumerate(p_axis):
-        print(f"{row}")
-        for col, p_ox in enumerate(p_axis):
-            Mdot, P_c, OF = GasGen_state_single(Q_(float(p_ox), 'psi'), Q_(float(p_fu), 'psi'), insert_id)
-            field[row, col] = Mdot.to('lb/s').m
+def generate_field(insert_id: str) -> np.ndarray:
+    """Builds NxN field for Mdot, Pc and OF for one insert.
+    field[name, row, col]: name = OX or FU Mdot, row = fuel pressure index, col = ox pressure index."""
+    check_insert(insert_id)
+    field = np.full((2, NUM_POINTS, NUM_POINTS), np.nan)
+    for row, p_fu in enumerate(P_AXIS):
+        print(f"Row {row+1}/{NUM_POINTS}")
+        for col, p_ox in enumerate(P_AXIS):
+            if col % 10 == 0:
+                print(f"Column {col+1}/{NUM_POINTS}")
+            state = GasGen_state_single(Q_(p_ox, 'psi'), Q_(p_fu, 'psi'), insert_id)
+            field[:, row, col] = (state["OX Mdot"].to('lb/s').m, state["FU Mdot"].to('lb/s').m)
     return field
 
-def get_GasGen_mdot(P_ox: Q_, P_fu: Q_, insert_id: str) -> Q_:
-    """Look up mdot for the given pressures and insert by snapping to the nearest grid point.
+def get_GasGen_mdot(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_]:
+    """Look up mass flow rates for the given pressures and insert.
     Returns a pint Quantity in lb/s."""
-    _check_insert(insert_id)
-    if not (FIELD_MIN_PRESSURE <= P_ox <= FIELD_MAX_PRESSURE
-            and FIELD_MIN_PRESSURE <= P_fu <= FIELD_MAX_PRESSURE):
-        raise ValueError("Gas Generator feed pressure values are out of bounds")
+    check_insert(insert_id)
+    if not (P_MIN <= P_ox <= P_MAX and P_MIN <= P_fu <= P_MAX):
+        raise ValueError("Gas Generator feed pressure values are out of bounds.")
 
-    field = _get_field(insert_id)
-    return Q_(field[_snap_index(P_fu), _snap_index(P_ox)], 'lb/s')
+    field = get_field(insert_id)
+    interp_ox_mdot = RegularGridInterpolator((P_AXIS.m, P_AXIS.m), field[0], method='linear', bounds_error=False, fill_value=np.nan)
+    interp_fu_mdot = RegularGridInterpolator((P_AXIS.m, P_AXIS.m), field[1], method='linear', bounds_error=False, fill_value=np.nan)
+
+    mdot_ox = Q_(interp_ox_mdot([P_ox.m, P_fu.m]).item(), 'lb/s')
+    mdot_fu = Q_(interp_fu_mdot([P_ox.m, P_fu.m]).item(), 'lb/s')
+
+    return {"OX Mdot": mdot_ox, "FU Mdot": mdot_fu}
 
 def main():
     out = get_GasGen_mdot(Q_(557, 'psi'), Q_(575, 'psi'), '10%')
-    print(f"Result: {out.to('kg/s'):.4f~P}")
+    # out2 = GasGen_state_single(Q_(557, 'psi'), Q_(575, 'psi'), '10%')
+    print(f"OX Mdot: {out["OX Mdot"].to('lb/s'):.4f~P}")
+    print(f"FU Mdot: {out["FU Mdot"].to('lb/s'):.4f~P}")
 
 if __name__ == "__main__":
     main()
