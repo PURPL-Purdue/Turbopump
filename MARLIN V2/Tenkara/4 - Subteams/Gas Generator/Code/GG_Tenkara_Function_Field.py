@@ -139,12 +139,17 @@ def get_GasGen_Mdot_separate(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_
     return {"OX Mdot": mdot_ox, "FU Mdot": mdot_fu}
 
 def main():
-    for insert in VALID_INSERTS:
-        print(f"Generating field for insert: {insert}")
-        out = get_GasGen_state(Q_(550, 'psi'), Q_(550, 'psi'), insert)
-        print(f"Total Mdot: {out["Mdot"].to('lb/s'):.4f~P}")
-        print(f"Chamber Pressure: {out["Pc"].to('psi'):.4f~P}")
-        print(f"OF Ratio: {out["OF"]:.4f~P}")
+    # for insert in VALID_INSERTS:
+    #     print(f"Generating field for insert: {insert}")
+    #     out = get_GasGen_state(Q_(550, 'psi'), Q_(550, 'psi'), insert)
+    #     print(f"Total Mdot: {out["Mdot"].to('lb/s'):.4f~P}")
+    #     print(f"Chamber Pressure: {out["Pc"].to('psi'):.4f~P}")
+    #     print(f"OF Ratio: {out["OF"]:.4f~P}")
+
+    out = get_GasGen_state(Q_(557, 'psi'), Q_(575, 'psi'), '10%')
+    print(f"Total Mdot: {out["Mdot"].to('lb/s'):.4f~P}")
+    print(f"Chamber Pressure: {out["Pc"].to('psi'):.4f~P}")
+    print(f"OF Ratio: {out["OF"]:.4f~P}")
 
 if __name__ == "__main__":
     main()
