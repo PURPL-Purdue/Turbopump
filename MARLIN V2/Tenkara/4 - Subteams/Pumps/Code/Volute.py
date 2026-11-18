@@ -107,6 +107,14 @@ def calcPressureGradient(pump: Pump, avg_V: Q_) -> Q_:
     pressureGradient = impellerStaticPressure - voluteStaticPressure
     return pressureGradient
 
+def calcCp(P_o: Q_[float], P_i: Q_[float], P_t_in: Q_[float]) -> Q_[float]: # Static pressure recovery coefficient (0.5-0.6 according to PDR notes)
+    Cp = (P_o - P_i) / (P_t_in - P_i)
+    return Cp
+
+def calcLc(P_t_in: Q_[float], P_t_out: Q_[float], P_i: Q_[float]) -> Q_[float]: # Total pressure loss coefficient (0.2-0.3 according to PDR notes)
+    Lc = (P_t_in - P_t_out) / (P_t_in - P_i)
+    return Lc
+
 class Volute:
     def __init__(self, geometry: VoluteGeometry, design_point: VoluteDesignPoint):
         self.K_v = getKv(self.N_s)
@@ -152,7 +160,10 @@ if __name__ == "__main__":
     lox_staticP2 = calcDiffuserPressures(lox_stagnationP1, lox_throatA, lox_targetA, lox_avg_V, lox_rho)
     lox_Vout = Q_(np.sqrt((lox_stagnationP1 - lox_staticP2) * 2 / lox_rho), "m/s")
     lox_diffuserL = sizeDiffuserLength(lox_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
+    lox_stagnationP2 = lox_staticP2 + (1/2) * lox_rho * lox_Vout**2
     lox_pressureGradient = calcPressureGradient(lox_pump, lox_avg_V)
+    lox_Cp = calcCp(lox_staticP2, lox_staticP1, lox_stagnationP1)
+    lox_Lc = calcLc(lox_stagnationP1, lox_stagnationP2, lox_staticP1)
 
     #stagnationP1 = lox_H.to("m") * lox_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * lox_rho.to("kg/m^3") * avg_V.to("m/s")**2
@@ -183,6 +194,8 @@ if __name__ == "__main__":
     print(f"Velocity at LOX diffuser exit: {lox_Vout.to('m/s'):.4f}")
     print(f"Diffuser length: {lox_diffuserL.to('millimeters'):.4f}")
     print(f"LOX Pressure Gradient (imp. - vol.): {lox_pressureGradient.to('bar'):.4f}")
+    print(f"LOX Cp: {lox_Cp:.4f}")
+    print(f"LOX Lc: {lox_Lc:.4f}")
 
     ipa_pump = Main.MakeDesign(Main.Propellant.IPA)
     ipa_feed_P = ipa_pump.DP.feed_pressure
@@ -215,7 +228,11 @@ if __name__ == "__main__":
     ipa_staticP2 = calcDiffuserPressures(ipa_stagnationP1, ipa_throatA, ipa_targetA, ipa_avg_V, ipa_rho)
     ipa_Vout = Q_(np.sqrt((ipa_stagnationP1 - ipa_staticP2) * 2 / ipa_rho), "m/s")
     ipa_diffuserL = sizeDiffuserLength(ipa_throatA, Q_(12/16, "inches"), Q_(7.5, "degrees")) # Placeholder diffuser length
+    ipa_stagnationP2 = ipa_staticP2 + (1/2) * ipa_rho * ipa_Vout**2
     ipa_pressureGradient = calcPressureGradient(ipa_pump, ipa_avg_V)
+    ipa_Cp = calcCp(ipa_staticP2, ipa_staticP1, ipa_stagnationP1)
+    ipa_Lc = calcLc(ipa_stagnationP1, ipa_stagnationP2, ipa_staticP1)
+    
 
     #stagnationP1 = ipa_H.to("m") * ipa_rho.to("kg/m^3") * g.to("m/s^2")
     #staticP1 = stagnationP1 - 1/2 * ipa_rho.to("kg/m^3") * avg_V.to("m/s")**2
@@ -246,6 +263,8 @@ if __name__ == "__main__":
     print(f"Velocity at IPA diffuser exit: {ipa_Vout.to('m/s'):.4f}")
     print(f"Diffuser length: {ipa_diffuserL.to('millimeters'):.4f}")
     print(f"IPA Pressure Gradient (imp. - vol.): {ipa_pressureGradient.to('bar'):.4f}")
+    print(f"IPA Cp: {ipa_Cp:.4f}")
+    print(f"IPA Lc: {ipa_Lc:.4f}")
 
     #radial_thrust = calcRadialThrust(
     #    lox_pump.DesignHeadRise,
