@@ -37,11 +37,11 @@ def orifice_mdot(cda: Q_, P_up: Q_, P_c: Q_, rho: Q_) -> Q_:
     dp = max(P_up - P_c, Q_(0.0, 'psi'))
     return (cda * np.sqrt(2 * rho * dp)).to('lb/s')
 
-def GasGen_state_single(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_]:
+def solve_GasGen_state(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_]:
     """Calculates Gas Generator Total State
  
     Inputs: OX and FU feed pressures (pint), insert id (str).
-    Outputs: OX Mdot and FU Mdot dictionary (str) (pint).
+    Outputs: Total Mdot, Pc, OF (str) (pint).
  
     Method:
       Guess a chamber pressure, compute the mass flows that result from that dP,
@@ -66,15 +66,15 @@ def GasGen_state_single(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_]:
             total_OF = Q_(0.0, 'dimensionless')
         cstar = get_cstar(Pc_guess, total_OF)
         Pc_calc = (cstar * total_mdot / GG.Stator_Area).to('psi')
-        return Pc_calc, mdot_ox, mdot_fuel_total
+        return total_mdot, Pc_calc, total_OF
 
     Pc_guess = Pc_initial(P_ox, P_fu)
     for _ in range(LOOP_LIMIT):
-        Pc_calc, mdot_ox, mdot_fu = solve(Pc_guess)
+        total_mdot, Pc_calc, total_OF = solve(Pc_guess)
         if abs(Pc_calc.to('psi').m - Pc_guess.to('psi').m) < TOLERANCE:
             if Pc_calc.to('psi').m < min(P_ox.to('psi').m, P_fu.to('psi').m):
-                return {"OX Mdot": mdot_ox.to('lb/s'), "FU Mdot": mdot_fu.to('lb/s')}
+                return {"Mdot": total_mdot.to('lb/s'), "Pc": Pc_calc.to('psi'), "OF": total_OF.to('dimensionless')}
             else:
-                return {"OX Mdot": Q_(np.nan, 'lb/s'), "FU Mdot": Q_(np.nan, 'lb/s')}
+                return {"Mdot": Q_(np.nan, 'lb/s'), "Pc": Q_(np.nan, 'psi'), "OF": Q_(np.nan, 'dimensionless')}
         Pc_guess = Pc_guess + WEIGHT * (Pc_calc - Pc_guess)
-    return {"OX Mdot": Q_(np.nan, 'lb/s'), "FU Mdot": Q_(np.nan, 'lb/s')}
+    return {"Mdot": Q_(np.nan, 'lb/s'), "Pc": Q_(np.nan, 'psi'), "OF": Q_(np.nan, 'dimensionless')}
