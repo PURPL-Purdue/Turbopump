@@ -10,8 +10,7 @@ from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 Inducer CAD generation, moved out of RadialEquilibrium.py
 """
 
-# TODO: these should be attributes instantiated in constructor
-WEDGE_ANGLE = np.deg2rad(6) # radians
+# TODO: this should be an attribute instantiated in constructor
 END_WEDGE_ANGLE = np.deg2rad(5) # radians
 
 def _archimedian_spiral(r_0: float, r_max: float, wrap_angle: float) -> float:
@@ -43,21 +42,6 @@ def _Arclength(points_zrt: np.ndarray) -> np.ndarray:
 	z, r, theta = points_zrt.T
 	return np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
 
-def _bruhfadfafds(thickness: float) -> tuple[float, float]:
-	"""Camber arclength (m) of the leading edge wedge (one-sided, WEDGE_ANGLE) and the trailing edge taper (both sides at END_WEDGE_ANGLE to the camber), for a blade thickness in m."""
-	return thickness / np.tan(WEDGE_ANGLE), thickness / (2 * np.tan(END_WEDGE_ANGLE))
-
-def _Offsets(arclength: np.ndarray, thickness: float) -> tuple[np.ndarray, np.ndarray]:
-	"""
-	Axial offsets (m) of the suction and pressure sides from the camber, along camber arclength, for a blade thickness t in m:
-	- leading edge: one-sided wedge, the suction side flat at +t/2 and the pressure side opening from +t/2 at WEDGE_ANGLE, thickness = tan(WEDGE_ANGLE) * s;
-	- middle: +-t/2;
-	- trailing edge: symmetric taper, both sides closing onto the camber at END_WEDGE_ANGLE, half thickness = tan(END_WEDGE_ANGLE) * distance from the trailing edge.
-	"""
-	t_LE = np.minimum(arclength * np.tan(WEDGE_ANGLE), thickness)
-	half_TE = np.minimum((arclength[-1] - arclength) * np.tan(END_WEDGE_ANGLE), thickness / 2)
-	return half_TE, np.maximum(thickness / 2 - t_LE, -half_TE)
-
 def _EdgeBetween(face: cadquery.Shape, a: cadquery.Vector, b: cadquery.Vector, tol: float=1e-4) -> cadquery.Edge:
 	"""The edge of face that runs between points a and b (mm), in either direction."""
 	near = lambda v, w: (v - w).Length < tol
@@ -72,7 +56,7 @@ class InducerCAD:
 
 		"""Return SP-8052's blade wedge angle in radians (eqs. 69-70)."""
 		self._le_wedge_angle = radial_equilibrium.beta1b - np.arctan(1.10 * radial_equilibrium.inducer.FlowCoefficient)
-
+		print(f'Inducer wedge angle: {np.rad2deg(self._le_wedge_angle):.1f} deg')
 	def _MoveAxially(self, points_zrt: np.ndarray, dz: np.ndarray) -> np.ndarray:
 		"""Points moved by dz along z at the same span fraction, so hub points stay on the tapered hub."""
 		eq = self.RadialEquilibrium
@@ -155,7 +139,13 @@ class InducerCAD:
 			s = np.concatenate((s_LE_wedge, s_middle[1:], s_TE_taper[1:]))		# shared ends counted once
 			camber_points = np.column_stack([np.interp(s, camber_arclen, c) for c in camber_points.T])
 
-			dz_ss, dz_ps = _Offsets(s, eq.blade_thick)
+			# axial offsets of the suction and pressure sides from the camber:
+			# - leading edge: one-sided wedge, the suction side flat at +t/2 and the pressure side opening from +t/2 at the wedge angle;
+			# - middle: +-t/2;
+			# - trailing edge: symmetric taper, both sides closing onto the camber at END_WEDGE_ANGLE.
+			t_LE = np.minimum(s * np.tan(self._le_wedge_angle), eq.blade_thick)
+			half_TE = np.minimum((length - s) * np.tan(END_WEDGE_ANGLE), eq.blade_thick / 2)
+			dz_ss, dz_ps = half_TE, np.maximum(eq.blade_thick / 2 - t_LE, -half_TE)
 			ss_points_zrt.append(self._MoveAxially(camber_points, dz_ss))
 			ps_points_zrt.append(self._MoveAxially(camber_points, dz_ps))
 

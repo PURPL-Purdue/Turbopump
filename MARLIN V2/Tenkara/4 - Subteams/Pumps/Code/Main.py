@@ -87,7 +87,7 @@ impeller_blade_params = {
 		use_cubic = False,
 		le_ratio=2,
 		le_ratio_splitter = 4,
-		resolution=500,
+		resolution=300,
 		splitter_length_ratio=0.5
 	),
 
@@ -98,7 +98,7 @@ impeller_blade_params = {
 		use_cubic = False,
 		le_ratio=2,
 		le_ratio_splitter = 4,
-		resolution=500,
+		resolution=300,
 		splitter_length_ratio=0.6
 	)
 }
