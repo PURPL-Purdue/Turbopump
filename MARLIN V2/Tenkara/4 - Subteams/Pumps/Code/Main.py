@@ -178,6 +178,8 @@ def MakeDesign(propellant: Propellant):
 		print(f"Min blade angle {beta_min:.2f} deg at z = {z[beta_tip.argmin()].to('mm'):.2f}")
 		min_spacing = np.pi * 0.44 * np.sin(beta_min) / 2
 		print(f"Min blade spacing {min_spacing:.2f} in")
+
+		print(f"Inducer solidity: {inducer_eq.solidity:.3f}")
 		#print(inducer_eq.GetOutletAngularMomentum())
 		# ----------------- INDUCER CAD ------------------
 		from Inducer.InducerCAD import InducerCAD

@@ -3,7 +3,7 @@ from scipy import integrate
 import cadquery.func
 from cadquery.vis import show
 from Helpers import CAD
-from Inducer.RadialEquilibrium import InducerRadialEquilibrium, leading_edge_theta
+from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 
 """
 @Charlie Zhu
@@ -14,12 +14,36 @@ Inducer CAD generation, moved out of RadialEquilibrium.py
 WEDGE_ANGLE = np.deg2rad(6) # radians
 END_WEDGE_ANGLE = np.deg2rad(5) # radians
 
+def _archimedian_spiral(r_0: float, r_max: float, wrap_angle: float) -> float:
+	"""
+	@Charlie Zhu
+	geninuely don't know what i did here
+	use Desmos for visualization
+	"""
+	# r = a*theta - r0
+
+	# r = r0 = a * theta1 - r0
+	# r = r_max = a * theta2 - r0
+	# wrap = theta2 - theta1
+
+	# theta2 * a = r_max + r0
+	# theta1 * a = 2 * r0
+	# a * (theta2 - theta1) = a * wrap = r_max - r0
+
+	a = (r_max - r_0) / wrap_angle
+	theta_1 = 2 * r_0 / a
+
+	def func(r: float) -> float:
+		return (r + r_0) / a - theta_1
+
+	return func
+
 def _Arclength(points_zrt: np.ndarray) -> np.ndarray:
 	"""Cumulative arclength (m) along a (z, r, theta) line, dl^2 = dz^2 + dr^2 + (r dtheta)^2."""
 	z, r, theta = points_zrt.T
 	return np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
 
-def _WedgeLengths(thickness: float) -> tuple[float, float]:
+def _bruhfadfafds(thickness: float) -> tuple[float, float]:
 	"""Camber arclength (m) of the leading edge wedge (one-sided, WEDGE_ANGLE) and the trailing edge taper (both sides at END_WEDGE_ANGLE to the camber), for a blade thickness in m."""
 	return thickness / np.tan(WEDGE_ANGLE), thickness / (2 * np.tan(END_WEDGE_ANGLE))
 
@@ -45,6 +69,9 @@ class InducerCAD:
 	def __init__(self, radial_equilibrium: InducerRadialEquilibrium):
 		self.RadialEquilibrium = radial_equilibrium
 		self._cad = None
+
+		"""Return SP-8052's blade wedge angle in radians (eqs. 69-70)."""
+		self._le_wedge_angle = radial_equilibrium.beta1b - np.arctan(1.10 * radial_equilibrium.inducer.FlowCoefficient)
 
 	def _MoveAxially(self, points_zrt: np.ndarray, dz: np.ndarray) -> np.ndarray:
 		"""Points moved by dz along z at the same span fraction, so hub points stay on the tapered hub."""
@@ -75,7 +102,7 @@ class InducerCAD:
 		# radii clustered toward the tip
 		radii_LE = eq.R_h1 + (eq.R_t - eq.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
 
-		get_LE_theta = leading_edge_theta(eq.R_h1, eq.R_t, wrap_angle=eq.sweepback)
+		get_LE_theta = _archimedian_spiral(eq.R_h1, eq.R_t, wrap_angle=eq.sweepback)
 		theta_LE = get_LE_theta(radii_LE)
 		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
 		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
@@ -121,14 +148,14 @@ class InducerCAD:
 
 			# resample at the sections: the leading edge wedge, the middle and the trailing edge taper
 			length = camber_arclen[-1]
-			LE_length, TE_length = _WedgeLengths(eq.t)
+			LE_length, TE_length = eq.blade_thick / np.tan(self._le_wedge_angle), eq.blade_thick / (2 * np.tan(END_WEDGE_ANGLE))
 			s_LE_wedge = np.linspace(0, LE_length, num_wedge_sections)
 			s_middle = np.linspace(LE_length, length - TE_length, num_sections)
 			s_TE_taper = np.linspace(length - TE_length, length, num_wedge_sections)
 			s = np.concatenate((s_LE_wedge, s_middle[1:], s_TE_taper[1:]))		# shared ends counted once
 			camber_points = np.column_stack([np.interp(s, camber_arclen, c) for c in camber_points.T])
 
-			dz_ss, dz_ps = _Offsets(s, eq.t)
+			dz_ss, dz_ps = _Offsets(s, eq.blade_thick)
 			ss_points_zrt.append(self._MoveAxially(camber_points, dz_ss))
 			ps_points_zrt.append(self._MoveAxially(camber_points, dz_ps))
 

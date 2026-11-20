@@ -28,30 +28,6 @@ Modified by @Charlie Zhu:
 - outlet slip and hydraulic efficiency (Gulich) implementation
 """
 
-def _archimedian_spiral(r_0: float, r_max: float, wrap_angle: float) -> float:
-	"""
-	@Charlie Zhu
-	geninuely don't know what i did here
-	use Desmos for visualization
-	"""
-	# r = a*theta - r0
-
-	# r = r0 = a * theta1 - r0
-	# r = r_max = a * theta2 - r0
-	# wrap = theta2 - theta1
-
-	# theta2 * a = r_max + r0
-	# theta1 * a = 2 * r0
-	# a * (theta2 - theta1) = a * wrap = r_max - r0
-
-	a = (r_max - r_0) / wrap_angle
-	theta_1 = 2 * r_0 / a
-
-	def func(r: float) -> float:
-		return (r + r_0) / a - theta_1
-
-	return func
-
 def _tangent_transition_spiral(r_0: float, r_max: float, wrap_angle: float, n: float = 2):
 	"""
 	Leading edge theta(r) from theta = 0 at r_0 to theta = wrap_angle at r_max, where it is tangent to the circle r_max (n > 1)
@@ -65,16 +41,6 @@ def _tangent_transition_spiral(r_0: float, r_max: float, wrap_angle: float, n: f
 
 	return func
 
-def leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
-	"""theta = wrap_angle * t^p, t = (r - r_0) / (r_max - r_0). Radial at r_0 for p > 1.
-	Sweep from radial at r_max: tan(sweep) = p * wrap_angle * r_max / (r_max - r_0)."""
-	def func(r):
-		t = np.clip((r - r_0) / (r_max - r_0), 0, 1)
-		return wrap_angle * t**p
-	return func
-
-leading_edge_theta = _archimedian_spiral
-
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
 
@@ -86,11 +52,11 @@ class InducerRadialEquilibrium:
 	Incidence is an angle quantity, following MeanlineTriangle: gamma1 = beta1b - incidence.
 	It defaults to MeanlineTriangle.py's INCIDENCE value and blends linearly into the deviation at the outlet.
 
-	eta_bl = 1 - 0.11 L/t  # Hydraulic efficiency, Gülich eq. 7.6.13, see _eta_bl
+	eta_bl = 1 - 0.11 L/t  # Hydraulic efficiency, Gülich eq. 7.6.13, with the tip solidity L/t (solidity), see _eta_hyd
 	"""
 
 	def __init__(self, inducer: Inducer, incidence: Q_ | None = None, blade_thickness: Q_=Q_(1, 'mm'),
-				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
+		hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
 		self.sweepback = np.deg2rad(60)
@@ -106,7 +72,7 @@ class InducerRadialEquilibrium:
 			self.meanline = MeanlineTriangle(inducer, incidence=incidence)
 		self.incidence = self.meanline.incidence
 		self.Z_blade = self.inducer.Z_blade
-		self.t: float = blade_thickness.to('m').m
+		self.blade_thick: float = blade_thickness.to('m').m
 
 		self.R_t = inducer.R_tip.to('m').magnitude
 		self.R_h1 = inducer.R_hub_1.to('m').magnitude
@@ -121,6 +87,7 @@ class InducerRadialEquilibrium:
 		self.beta1b = gamma1 + self.incidence
 		self.beta2b = self._solve_beta2b()
 		self.delta2 = self._deviation(self.beta2b)		# outlet deviation at the rms radius, the flow leaves at beta2b - delta2
+		self.solidity = self._solidity(self.beta2b)		# blade length over pitch at the tip
 		self.eta_hyd = self._eta_hyd(self.beta2b)
 
 	# ---- SI-float geometry (public, used by InducerCAD) ----------------------
@@ -138,30 +105,28 @@ class InducerRadialEquilibrium:
 	# ---- SI-float internals -------------------------------------------------
 	def _deviation(self, beta2b):
 		# Outlet deviation on the rms line (Gülich, inducer design table), angles in degrees:
-		# delta_2 = (2 + (beta_2B - beta_1B) / 3) (t / L)^(1/3), with the outlet pitch t and the blade length L from the swept leading edge
+		# delta_2 = (2 + (beta_2B - beta_1B) / 3) (t / L)^(1/3), with the tip solidity L/t
+		return np.radians((2 + np.degrees(beta2b - self.beta1b) / 3) / self._solidity(beta2b)**(1 / 3))
+
+	def _solidity(self, beta2b):
+		# Solidity L/t at the tip (SP-8052 sec. 2.1.15: chord over blade spacing): blade length from the swept leading edge,
+		# which reaches the tip at theta = sweepback, to the outlet, over the tip pitch 2 pi R_t / Z
 		z = np.linspace(0, self.L, 200)
-		r = self.r_ms(z)
-		tan_beta = np.tan(self.beta(z, beta2b))
-		theta = integrate.cumulative_trapezoid(1 / (r * tan_beta), z, initial=0)		# wrap, as in InducerCAD.GetBladeLines
-		get_LE_theta = leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self.sweepback)
-		z_LE = np.interp(0, theta - get_LE_theta(r), z)
-		# blade arclength: dl^2 = dz^2 + dr^2 + (r dtheta)^2, with r dtheta = dz / tan(beta)
-		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + np.gradient(r, z)**2 + 1 / tan_beta**2), z, initial=0)
-		length = arclength[-1] - np.interp(z_LE, z, arclength)
-		pitch = 2 * np.pi * r[-1] / self.Z_blade
-		return np.radians((2 + np.degrees(beta2b - self.beta1b) / 3) * (pitch / length)**(1 / 3))
+		lead = self.r_ms(z) * np.tan(self.beta(z, beta2b))		# the same lead at every radius, as in InducerCAD.GetBladeLines
+		theta = integrate.cumulative_trapezoid(1 / lead, z, initial=0)
+		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + (self.R_t / lead)**2), z, initial=0)		# dl^2 = dz^2 + (R_t dtheta)^2
+		length = arclength[-1] - np.interp(self.sweepback, theta, arclength)
+		return length / (2 * np.pi * self.R_t / self.Z_blade)
 
 	def _eta_hyd(self, beta2b):
-		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t. Initial estimate: L = r * wrap and t = 2 pi r / Z, so r cancels; no leading edge sweep
-		z = np.linspace(0, self.L, 200)
-		wrap = np.trapezoid(1 / (self.r_ms(z) * np.tan(self.beta(z, beta2b))), z)		# as in InducerCAD.GetBladeLines
-		return 1 - 0.11 * self.Z_blade * wrap / (2 * np.pi)
+		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t, with the tip solidity L/t
+		return 1 - 0.11 * self._solidity(beta2b)
 
 	def _dA(self, r, lam, strict=True):
 		# Open area per dr: 2 pi r minus N blades of tangential width t/sin(beta), with sin(beta) = lam/sqrt(r^2 + lam^2)
 		dA = 2.0 * np.pi * r
-		if self.t is not None:# Assumed constant thickness for now
-			dA = dA - self.Z_blade * self.t * np.sqrt(r**2 + lam**2) / lam
+		if self.blade_thick is not None:# Assumed constant thickness for now
+			dA = dA - self.Z_blade * self.blade_thick * np.sqrt(r**2 + lam**2) / lam
 			if strict and np.any(dA <= 0.0):
 				raise ValueError("Blade blockage closes the passage; reduce thickness or blade number.")
 		return dA
