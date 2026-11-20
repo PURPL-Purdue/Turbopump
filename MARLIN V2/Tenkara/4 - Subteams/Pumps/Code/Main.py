@@ -183,7 +183,7 @@ def MakeDesign(propellant: Propellant):
 		from Inducer.InducerCAD import InducerCAD
 		inducer_cad = InducerCAD(inducer_eq)
 		inducer_assm = inducer_cad.CreateCAD()
-		#inducer_cad.ShowCAD()
+		inducer_cad.ShowCAD()
 		#exit()
 	else:
 		inducer_eq = None

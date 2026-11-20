@@ -89,7 +89,7 @@ class InducerRadialEquilibrium:
 	eta_bl = 1 - 0.11 L/t  # Hydraulic efficiency, Gülich eq. 7.6.13, see _eta_bl
 	"""
 
-	def __init__(self, inducer: Inducer, incidence: Q_ | None = None, blade_thickness: Q_ | None = None,
+	def __init__(self, inducer: Inducer, incidence: Q_ | None = None, blade_thickness: Q_=Q_(1, 'mm'),
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
@@ -106,7 +106,7 @@ class InducerRadialEquilibrium:
 			self.meanline = MeanlineTriangle(inducer, incidence=incidence)
 		self.incidence = self.meanline.incidence
 		self.Z_blade = self.inducer.Z_blade
-		self.t: float = None if blade_thickness is None else blade_thickness.to('m').magnitude
+		self.t: float = blade_thickness.to('m').m
 
 		self.R_t = inducer.R_tip.to('m').magnitude
 		self.R_h1 = inducer.R_hub_1.to('m').magnitude

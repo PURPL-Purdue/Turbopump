@@ -122,8 +122,15 @@ Top level:
   - `FlowCoefficient` and `N_ss` depend only on `lambda_w`, `lambda_c` and `hub_tip_ratio`, not on the actual tip diameter. `1DPerformance.py` has the same relations for a `Sizing.InletSizing`.
 - `RadialEquilibrium.py`: `InducerRadialEquilibrium`, which gives c_θ(r, z) and c_axial(r, z) behind the tapered-hub inducer. `GetOutletAngularMomentum()` gives the impeller inlet preswirl. `hub_radius`, `mean_radius` and `blade_angle` take z as a Quantity but return SI floats (m, m, rad). `r_hub`, `r_ms`, `beta(z, beta2b)` and `sweepback` (SI floats), and the module function `leading_edge_theta`, are public for `InducerCAD`; `_deviation` also uses the swept leading edge.
 - `InducerCAD.py`: `InducerCAD(radial_equilibrium)`.
-  - `GetBladeLines` gives (z, r, θ) blade lines from hub to tip: the parabolic rms camber with the same lead at every radius, starting at the leading edge `leading_edge_theta` (an Archimedean spiral to `sweepback` at the tip).
-  - `CreateCAD` lofts them into one camber surface per blade (no thickness yet), adds the revolved tapered hub surface, and returns a `cadquery.Assembly`. `ShowCAD` opens it in the viewer.
+  - `GetBladeLines` returns the suction and pressure lines, (z, r, θ) from hub to tip. The camber is the parabolic rms camber with the same lead at every radius, starting at the leading edge `leading_edge_theta` (an Archimedean spiral to `sweepback` at the tip).
+    - Each camber line is resampled at the sections: three stretches of camber arclength (leading-edge wedge, middle, trailing-edge taper, with lengths from `_WedgeLengths`), so point j of every line is on section j and the wedge ends are points of every line.
+    - The sides are the camber moved axially by `_Offsets`, from the radial equilibrium's blade thickness `t` and the module constants `WEDGE_ANGLE` and `END_WEDGE_ANGLE`. `_MoveAxially` keeps each point's span fraction between hub and tip, so the hub line stays on the tapered hub.
+    - The leading edge is a one-sided wedge: the suction side stays flat, and the pressure side opens at `WEDGE_ANGLE`.
+    - The trailing edge is a symmetric taper, both sides closing onto the camber at `END_WEDGE_ANGLE` each.
+  - `CreateCAD` builds each blade as a solid and adds the revolved tapered hub surface, returning a `cadquery.Assembly`.
+    - Each stretch of each side is lofted with `continuity='C1'`, between shared boundary edges; the sides share the leading and trailing edges.
+    - The hub and tip ends are ruled faces, and everything is sewn into a solid.
+  - `ShowCAD(debug=True)` also shows the blade-line and wedge-end edges.
 - `MeanlineTriangle.py`: `MeanlineTriangle`, the zero-blockage inlet triangle on the rms radius. It passes the incidence ratio to `InducerRadialEquilibrium`.
 - `Sizing.py`: sizes the inducer inlet to match the impeller inlet.
   - `SizeInletForImpeller` takes the tip and exit hub diameters from the impeller's `d_1` and `d_hub`. It solves the inlet hub diameter from the hub taper, and the cavitation parameter from the Gülich tip diameter;
