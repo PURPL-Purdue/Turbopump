@@ -122,7 +122,7 @@ fluid_props = {
 
 color = {Propellant.LOX: 'blue', Propellant.IPA: 'green'}
 
-inducer_head_rise = {Propellant.LOX:Q_(49, 'm'), Propellant.IPA: Q_(0, 'm')}#Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
+inducer_head_rise = {Propellant.LOX:Q_(40, 'm'), Propellant.IPA: Q_(0, 'm')}#Propellant.IPA: Q_(68, 'm')}  # sized for atmospheric feed pressure
 
 def CreatePump(propellant: Propellant):
 	return Pump.Pump(

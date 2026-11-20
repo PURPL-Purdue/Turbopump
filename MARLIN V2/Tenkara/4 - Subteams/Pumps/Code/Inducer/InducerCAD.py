@@ -2,6 +2,7 @@ import numpy as np
 from scipy import integrate
 import cadquery.func
 from cadquery.vis import show
+from pint import Quantity as Q_
 from Helpers import CAD
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 
@@ -42,6 +43,21 @@ def _Arclength(points_zrt: np.ndarray) -> np.ndarray:
 	z, r, theta = points_zrt.T
 	return np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z)**2 + np.diff(r)**2 + (r[1:] * np.diff(theta))**2))))
 
+def _RoundedWedge(d: np.ndarray, angle: float, radius: float) -> np.ndarray:
+	"""
+	Distance (m) of a blade side from the centre line of an edge round, at camber arclength d (m) from the edge: the arc of the round up to
+	where the side is tangent to it, at d = radius (1 - sin(angle)), then the straight side at angle (rad) to the centre line.
+	angle = 0 gives a side parallel to the centre line, at radius from it.
+	"""
+	d_tangent = radius * (1 - np.sin(angle))
+	arc = np.sqrt(radius**2 - (radius - np.minimum(d, d_tangent))**2)
+	line = radius * np.cos(angle) + (d - d_tangent) * np.tan(angle)
+	return np.where(d < d_tangent, arc, line)
+
+def _WedgeLength(depth: float, angle: float, radius: float) -> float:
+	"""Camber arclength (m) from the edge to where _RoundedWedge reaches depth (m) from the centre line; depth / tan(angle) for a sharp edge (radius 0)."""
+	return radius * (1 - np.sin(angle)) + (depth - radius * np.cos(angle)) / np.tan(angle)
+
 def _EdgeBetween(face: cadquery.Shape, a: cadquery.Vector, b: cadquery.Vector, tol: float=1e-4) -> cadquery.Edge:
 	"""The edge of face that runs between points a and b (mm), in either direction."""
 	near = lambda v, w: (v - w).Length < tol
@@ -50,9 +66,12 @@ def _EdgeBetween(face: cadquery.Shape, a: cadquery.Vector, b: cadquery.Vector, t
 
 class InducerCAD:
 
-	def __init__(self, radial_equilibrium: InducerRadialEquilibrium):
+	def __init__(self, radial_equilibrium: InducerRadialEquilibrium, edge_radius: Q_ = Q_(0.2, 'mm')):
 		self.RadialEquilibrium = radial_equilibrium
 		self._cad = None
+
+		self._edge_radius: float = edge_radius.to('m').m		# radius of the leading and trailing edge rounds
+		assert 0 < self._edge_radius < radial_equilibrium.blade_thick / 2, 'The edge radius must be positive and below half the blade thickness'
 
 		"""Return SP-8052's blade wedge angle in radians (eqs. 69-70)."""
 		self._le_wedge_angle = radial_equilibrium.beta1b - np.arctan(1.10 * radial_equilibrium.inducer.FlowCoefficient)
@@ -66,7 +85,7 @@ class InducerCAD:
 		r_new = eq.r_hub(z_new) + span_fraction * (eq.R_t - eq.r_hub(z_new))
 		return np.column_stack((z_new, r_new, theta))
 
-	def GetBladeLines(self, num_lines: int=7, resolution: int = 200, num_sections: int=60, num_wedge_sections: int=10) -> tuple[list[np.ndarray], list[np.ndarray]]:
+	def _GetBladeLines(self, num_lines: int=7, resolution: int = 200, num_sections: int=60, num_wedge_sections: int=10) -> tuple[list[np.ndarray], list[np.ndarray]]:
 		"""
 		@Charlie zhu
 		Suction and pressure lines from hub to tip, lists of (n, 3) arrays of (z, r, theta) in m, m and rad. Point j of every line is on section j.
@@ -130,22 +149,28 @@ class InducerCAD:
 			#points_zrt.append(np.vstack((leading_edge, points[i:])))
 			camber_arclen = _Arclength(camber_points)
 
-			# resample at the sections: the leading edge wedge, the middle and the trailing edge taper
+			# resample at the sections: the leading edge round and wedge, the middle, and the trailing edge taper and round
 			length = camber_arclen[-1]
-			LE_length, TE_length = eq.blade_thick / np.tan(self._le_wedge_angle), eq.blade_thick / (2 * np.tan(END_WEDGE_ANGLE))
-			s_LE_wedge = np.linspace(0, LE_length, num_wedge_sections)
+			edge_radius = self._edge_radius
+			LE_length = _WedgeLength(eq.blade_thick - edge_radius, self._le_wedge_angle, edge_radius)		# pressure side, from the round's centre line at t/2 - edge_radius to -t/2
+			TE_length = _WedgeLength(eq.blade_thick / 2, END_WEDGE_ANGLE, edge_radius)		# each side, from the camber to +-t/2
+			s_round = edge_radius * (1 - np.cos(np.linspace(0, np.pi / 2, num_wedge_sections)))		# even steps in angle around the round
+			s_LE_wedge = np.linspace(edge_radius, LE_length, num_wedge_sections)
 			s_middle = np.linspace(LE_length, length - TE_length, num_sections)
-			s_TE_taper = np.linspace(length - TE_length, length, num_wedge_sections)
-			s = np.concatenate((s_LE_wedge, s_middle[1:], s_TE_taper[1:]))		# shared ends counted once
+			s_TE_taper = np.linspace(length - TE_length, length - edge_radius, num_wedge_sections)
+			s_TE_round = length - s_round[::-1]
+			s = np.concatenate((s_round, s_LE_wedge[1:], s_middle[1:], s_TE_taper[1:], s_TE_round[1:]))		# shared ends counted once
 			camber_points = np.column_stack([np.interp(s, camber_arclen, c) for c in camber_points.T])
 
 			# axial offsets of the suction and pressure sides from the camber:
-			# - leading edge: one-sided wedge, the suction side flat at +t/2 and the pressure side opening from +t/2 at the wedge angle;
+			# - leading edge: one-sided wedge with a round centred at t/2 - edge_radius, the suction side flat at +t/2 and the pressure side opening at the wedge angle;
 			# - middle: +-t/2;
-			# - trailing edge: symmetric taper, both sides closing onto the camber at END_WEDGE_ANGLE.
-			t_LE = np.minimum(s * np.tan(self._le_wedge_angle), eq.blade_thick)
-			half_TE = np.minimum((length - s) * np.tan(END_WEDGE_ANGLE), eq.blade_thick / 2)
-			dz_ss, dz_ps = half_TE, np.maximum(eq.blade_thick / 2 - t_LE, -half_TE)
+			# - trailing edge: symmetric taper with a round centred on the camber, both sides closing at END_WEDGE_ANGLE.
+			# The rounds are tangent to the sides (_RoundedWedge).
+			LE_centre = eq.blade_thick / 2 - edge_radius
+			half_TE = np.minimum(_RoundedWedge(length - s, END_WEDGE_ANGLE, edge_radius), eq.blade_thick / 2)
+			dz_ss = np.minimum(LE_centre + _RoundedWedge(s, 0, edge_radius), half_TE)
+			dz_ps = np.maximum(LE_centre - _RoundedWedge(s, self._le_wedge_angle, edge_radius), -half_TE)
 			ss_points_zrt.append(self._MoveAxially(camber_points, dz_ss))
 			ps_points_zrt.append(self._MoveAxially(camber_points, dz_ps))
 
@@ -155,25 +180,27 @@ class InducerCAD:
 				  num_wedge_sections: int=10) -> cadquery.Assembly:
 		"""
 		@Charlie Zhu
-		Blade solids and the revolved hub (x = r cos theta, y = r sin theta, z, in mm). Each side is lofted in three stretches between shared spanwise edges,
-		the two sides share the leading and trailing edges, and the hub and tip ends are ruled faces."""
+		Blade solids and the revolved hub (x = r cos theta, y = r sin theta, z, in mm). Each side is lofted in five stretches between shared spanwise edges
+		(leading edge round, leading edge wedge, middle, trailing edge taper, trailing edge round), the two sides share the leading and trailing edges,
+		and the hub and tip ends are ruled faces."""
 		eq = self.RadialEquilibrium
-		suction_bladelines, pressure_bladelines = self.GetBladeLines(num_lines, resolution, num_sections, num_wedge_sections)
+		suction_bladelines, pressure_bladelines = self._GetBladeLines(num_lines, resolution, num_sections, num_wedge_sections)
 		ToCQ = lambda points_zrt: CAD.CylindricalToCartesian(points_zrt, flip_z, flip_theta)
 
 		S, P = np.array(suction_bladelines), np.array(pressure_bladelines)		# (num_lines, number of sections, 3)
 		assert np.allclose(S[:, [0, -1]], P[:, [0, -1]]), 'Suction and pressure lines should share their leading and trailing edge points'
-		# section index of the leading edge, the wedge ends and the trailing edge, as laid out in GetBladeLines
-		breaks = [0, num_wedge_sections - 1, num_wedge_sections + num_sections - 2, S.shape[1] - 1]
+		# section index of the leading edge, the ends of the stretches and the trailing edge, as laid out in GetBladeLines
+		nw, ns = num_wedge_sections, num_sections
+		breaks = [0, nw - 1, 2 * nw - 2, 2 * nw + ns - 3, 3 * nw + ns - 4, S.shape[1] - 1]
 
 		# boundary edges of the stretches, the leading and trailing edges shared by both sides
 		Spanwise = lambda points, j: cadquery.Edge.makeSpline(ToCQ(points[:, j]))
 		leading_edge, trailing_edge = Spanwise(S, 0), Spanwise(S, -1)
-		suction_boundaries = [leading_edge, Spanwise(S, breaks[1]), Spanwise(S, breaks[2]), trailing_edge]
-		pressure_boundaries = [leading_edge, Spanwise(P, breaks[1]), Spanwise(P, breaks[2]), trailing_edge]
+		suction_boundaries = [leading_edge, *[Spanwise(S, j) for j in breaks[1:-1]], trailing_edge]
+		pressure_boundaries = [leading_edge, *[Spanwise(P, j) for j in breaks[1:-1]], trailing_edge]
 
 		faces = []
-		for k in range(3):
+		for k in range(len(breaks) - 1):
 			a, b = breaks[k], breaks[k + 1]
 			# C1: the default C2 loft overshoots between sections near the leading edge (one face bulged ~5 mm out, 50 % too much volume)
 			Side = lambda points, boundaries: cadquery.func.loft([boundaries[k], *[Spanwise(points, j) for j in range(a + 1, b)], boundaries[k + 1]], continuity='C1')
@@ -190,15 +217,15 @@ class InducerCAD:
 		# suction and pressure blade lines of the first blade, as splines through the points of GetBladeLines
 		blade_line_edges = [cadquery.Edge.makeSpline(ToCQ(line)) for line in (*suction_bladelines, *pressure_bladelines)]
 		# wedge ends, hub to tip: the boundary edges between the stretches where a side has a corner, the leading edge wedge on the pressure side and
-		# the start of the trailing edge taper on both sides
-		wedge_end_edges = [pressure_boundaries[1], suction_boundaries[2], pressure_boundaries[2]]
+		# the start of the trailing edge taper on both sides (the rounds are tangent to the sides)
+		wedge_end_edges = [pressure_boundaries[2], suction_boundaries[3], pressure_boundaries[3]]
 
 		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
 		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, eq.R_h1, 0], [eq.L, eq.R_h2, 0]]), flip_z, flip_theta))
 		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
 		assm = (cadquery.Assembly()
 			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
-			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7, a=0.5))
+			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
 		)
 		self._cad = [assm, *blade_line_edges, *wedge_end_edges]		# the blade line and wedge end edges are shown with debug
 		return assm

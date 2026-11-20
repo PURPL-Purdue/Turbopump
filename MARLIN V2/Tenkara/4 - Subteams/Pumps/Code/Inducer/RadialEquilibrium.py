@@ -112,7 +112,7 @@ class InducerRadialEquilibrium:
 		# Solidity L/t at the tip (SP-8052 sec. 2.1.15: chord over blade spacing): blade length from the swept leading edge,
 		# which reaches the tip at theta = sweepback, to the outlet, over the tip pitch 2 pi R_t / Z
 		z = np.linspace(0, self.L, 200)
-		lead = self.r_ms(z) * np.tan(self.beta(z, beta2b))		# the same lead at every radius, as in InducerCAD.GetBladeLines
+		lead = self.r_ms(z) * np.tan(self.beta(z, beta2b))		# the same lead at every radius, as in InducerCAD._GetBladeLines
 		theta = integrate.cumulative_trapezoid(1 / lead, z, initial=0)
 		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + (self.R_t / lead)**2), z, initial=0)		# dl^2 = dz^2 + (R_t dtheta)^2
 		length = arclength[-1] - np.interp(self.sweepback, theta, arclength)
