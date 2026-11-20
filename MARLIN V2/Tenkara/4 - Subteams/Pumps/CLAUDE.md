@@ -19,7 +19,7 @@ The git repository root is `Turbopump/`, and this folder is `MARLIN V2/Tenkara/4
 - `MakeDesign` runs the pipeline in this order:
   1. `CreatePump` (overall efficiency 0.50), `pump.Impeller.PlotOutletVelocities` and `Pump1D.PlotHQ`. It prints the torque and the inducerless NPSH_r;
   2. `Pump1D.GetInducerHeadRequirement`, then `pump.AddInducer`. The impeller's `H_rise` becomes the total head rise minus the inducer head;
-  3. `InducerRadialEquilibrium(pump.Inducer)` with its defaults;
+  3. when the inducer head is above 5 m: `InducerRadialEquilibrium(pump.Inducer, blade_thickness=1 mm)`, then `InducerCAD(inducer_eq).CreateCAD()` for the inducer assembly;
   4. `MeridionalDesign`, which includes the FEM potential-flow solve, then `PotentialFlow.Plot` and `PlotMeridional`;
   5. `ImpellerBladeDesign` with Main.py's `blade_params`, then `PlotInletTriangles` and `PlotBladeLines`;
   6. `ImpellerCAD`, which builds the CadQuery model and opens it in the cadquery viewer, then the impeller with the inducer's CAD (when there is an inducer) in a second viewer, then asks `Save STEP? (y)` with `input()`; 'y' writes `<propellant>_impeller` (and `_inducer`) with `Helpers.CAD.ExportPart`.
@@ -120,7 +120,10 @@ Top level:
   - The geometry names match the radius properties of `Sizing.InletSizing`.
   - The suction metrics are `FlowCoefficient`, `N_ss` and `NPSH_3`, from the sheet relations with `lambda_c` = 1.1 and `lambda_w` = 0.03 (constructor arguments; they are K and σ). `NPSH_3` is backed out of `N_ss`.
   - `FlowCoefficient` and `N_ss` depend only on `lambda_w`, `lambda_c` and `hub_tip_ratio`, not on the actual tip diameter. `1DPerformance.py` has the same relations for a `Sizing.InletSizing`.
-- `RadialEquilibrium.py`: `InducerRadialEquilibrium`, which gives c_θ(r, z) and c_axial(r, z) behind the tapered-hub inducer. `GetOutletAngularMomentum()` gives the impeller inlet preswirl.
+- `RadialEquilibrium.py`: `InducerRadialEquilibrium`, which gives c_θ(r, z) and c_axial(r, z) behind the tapered-hub inducer. `GetOutletAngularMomentum()` gives the impeller inlet preswirl. `hub_radius`, `mean_radius` and `blade_angle` take z as a Quantity but return SI floats (m, m, rad). `r_hub`, `r_ms`, `beta(z, beta2b)` and `sweepback` (SI floats), and the module function `leading_edge_theta`, are public for `InducerCAD`; `_deviation` also uses the swept leading edge.
+- `InducerCAD.py`: `InducerCAD(radial_equilibrium)`.
+  - `GetBladeLines` gives (z, r, θ) blade lines from hub to tip: the parabolic rms camber with the same lead at every radius, starting at the leading edge `leading_edge_theta` (an Archimedean spiral to `sweepback` at the tip).
+  - `CreateCAD` lofts them into one camber surface per blade (no thickness yet), adds the revolved tapered hub surface, and returns a `cadquery.Assembly`. `ShowCAD` opens it in the viewer.
 - `MeanlineTriangle.py`: `MeanlineTriangle`, the zero-blockage inlet triangle on the rms radius. It passes the incidence ratio to `InducerRadialEquilibrium`.
 - `Sizing.py`: sizes the inducer inlet to match the impeller inlet.
   - `SizeInletForImpeller` takes the tip and exit hub diameters from the impeller's `d_1` and `d_hub`. It solves the inlet hub diameter from the hub taper, and the cavitation parameter from the Gülich tip diameter;
@@ -150,7 +153,7 @@ Outside `Code/`: `Inputs/` holds `Inputs.yaml`, and `Serialize.py`, which turns 
   - `PotentialFlow` deliberately keeps `v_z`, `v_r`, `v_m`.
 - Blade and flow angles β are measured from the tangential direction, as in `VelocityTriangle`: tan β = c_m / (u − c_u). Some references measure them from the meridional direction instead, such as NASA TN D-1562.
 - Style:
-  - match the file's indentation. Most of `Code/` uses tabs. These files use spaces: `EmpiricalRelations.py`, `Volute.py`, `VolutePlot.py`, `Impeller/Bezier.py`, `Old/`, and `Inducer.py`, `RadialEquilibrium.py`, `MeanlineTriangle.py` and `BladeThickness.py` in `Inducer/`. The other two files in `Inducer/`, `Sizing.py` and `1DPerformance.py`, use tabs;
+  - match the file's indentation. Most of `Code/` uses tabs. These files use spaces: `EmpiricalRelations.py`, `Volute.py`, `VolutePlot.py`, `Impeller/Bezier.py`, `Old/`, and `MeanlineTriangle.py` and `BladeThickness.py` in `Inducer/`. The other files in `Inducer/` use tabs;
   - CamelCase method names (`GetX`, `PlotX`) and object attributes (`HubContour`). The inducer files and `Volute.py` also have snake_case and camelCase names (`c_theta`, `hub_radius`, `getKv`); follow the file;
   - cite the source equation or page in docstrings.
 - Plots use plotly, mostly with `template='plotly_white'`; `PlotInletTriangles` uses `'simple_white'`. A length-unit argument `l` defaults to `'in'`; `PlotBladeLines` calls it `unit`, and the `Inducer/Sizing.py` plots default to `'mm'`. Meridional and plan views use equal axis scaling.

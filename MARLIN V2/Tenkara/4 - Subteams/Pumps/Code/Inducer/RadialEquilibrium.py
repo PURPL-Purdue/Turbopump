@@ -10,10 +10,6 @@ from scipy.optimize import brentq
 from scipy import integrate
 from warnings import warn
 
-# temporary, will move later
-import cadquery.func
-from cadquery.vis import show
-
 if not __package__:
 	# Run directly as a script: put Code/ first and drop this folder so the Inducer package (not Inducer.py) is imported
 	_here = Path(__file__).resolve().parent
@@ -28,7 +24,7 @@ from VelocityTriangle import PlotTriangles, VelocityTriangle
 @Andrew Fontanetta:
 - core functionality/radial equilibrium implementation
 Modified by @Charlie Zhu:
-- to expose more API and for CAD generation
+- to expose more API and for CAD generation (InducerCAD.py)
 - outlet slip and hydraulic efficiency (Gulich) implementation
 """
 
@@ -69,7 +65,7 @@ def _tangent_transition_spiral(r_0: float, r_max: float, wrap_angle: float, n: f
 
 	return func
 
-def _leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
+def leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
 	"""theta = wrap_angle * t^p, t = (r - r_0) / (r_max - r_0). Radial at r_0 for p > 1.
 	Sweep from radial at r_max: tan(sweep) = p * wrap_angle * r_max / (r_max - r_0)."""
 	def func(r):
@@ -77,7 +73,7 @@ def _leading_edge_theta(r_0, r_max, wrap_angle, p=2.0):
 		return wrap_angle * t**p
 	return func
 
-_leading_edge_theta = _archimedian_spiral
+leading_edge_theta = _archimedian_spiral
 
 class InducerRadialEquilibrium:
 	"""Swirl and axial velocity fields behind a constant-tip, linearly tapered-hub inducer.
@@ -97,7 +93,7 @@ class InducerRadialEquilibrium:
 				 hub_thickness_ratio: float = 1.0, meanline: MeanlineTriangle | None = None):
 		self.inducer = inducer
 
-		self._sweepback = np.deg2rad(60)
+		self.sweepback = np.deg2rad(60)
 
 		self.hub_thickness_ratio = hub_thickness_ratio
 		if meanline is not None and incidence is not None:
@@ -121,32 +117,33 @@ class InducerRadialEquilibrium:
 		self._g_dh = 9.81 * inducer.DP.H_rise.to('m').magnitude  # SP-8052 eq. 47: g*dH_net = eta_bl * d(u*c_u)
 
 		# Flow angle from the flow lead at z = 0, including blade blockage (eq. 39 with psi = 0).
-		gamma1 = np.arctan(self._lam_flow(0.0) / self._r_ms(0.0))
+		gamma1 = np.arctan(self._lam_flow(0.0) / self.r_ms(0.0))
 		self.beta1b = gamma1 + self.incidence
 		self.beta2b = self._solve_beta2b()
 		self.delta2 = self._deviation(self.beta2b)		# outlet deviation at the rms radius, the flow leaves at beta2b - delta2
 		self.eta_hyd = self._eta_hyd(self.beta2b)
 
-	# ---- SI-float internals -------------------------------------------------
-	def _r_hub(self, z):
+	# ---- SI-float geometry (public, used by InducerCAD) ----------------------
+	def r_hub(self, z):
 		return self.R_h1 + (self.R_h2 - self.R_h1) * z / self.L
 
-	def _r_ms(self, z):
+	def r_ms(self, z):
 		# rms = root-mean-square radius sqrt((r_tip^2 + r_hub^2)/2), the radius splitting the annulus into equal areas (Glossary)
-		return np.sqrt((self.R_t**2 + self._r_hub(z) ** 2) / 2.0)
+		return np.sqrt((self.R_t**2 + self.r_hub(z) ** 2) / 2.0)
 
-	def _beta(self, z, beta2b):
+	def beta(self, z, beta2b):
 		# Parabolic camber distribution, SP-8052 eq. 74 (specified at the rms radius, sec. 3.1.12)
 		return self.beta1b + (beta2b - self.beta1b) * (z / self.L) ** 2
 
+	# ---- SI-float internals -------------------------------------------------
 	def _deviation(self, beta2b):
 		# Outlet deviation on the rms line (Gülich, inducer design table), angles in degrees:
 		# delta_2 = (2 + (beta_2B - beta_1B) / 3) (t / L)^(1/3), with the outlet pitch t and the blade length L from the swept leading edge
 		z = np.linspace(0, self.L, 200)
-		r = self._r_ms(z)
-		tan_beta = np.tan(self._beta(z, beta2b))
-		theta = integrate.cumulative_trapezoid(1 / (r * tan_beta), z, initial=0)		# wrap, as in GetBladeLines
-		get_LE_theta = _leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self._sweepback)
+		r = self.r_ms(z)
+		tan_beta = np.tan(self.beta(z, beta2b))
+		theta = integrate.cumulative_trapezoid(1 / (r * tan_beta), z, initial=0)		# wrap, as in InducerCAD.GetBladeLines
+		get_LE_theta = leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self.sweepback)
 		z_LE = np.interp(0, theta - get_LE_theta(r), z)
 		# blade arclength: dl^2 = dz^2 + dr^2 + (r dtheta)^2, with r dtheta = dz / tan(beta)
 		arclength = integrate.cumulative_trapezoid(np.sqrt(1 + np.gradient(r, z)**2 + 1 / tan_beta**2), z, initial=0)
@@ -157,7 +154,7 @@ class InducerRadialEquilibrium:
 	def _eta_hyd(self, beta2b):
 		# Hydraulic efficiency, Gülich eq. 7.6.13: eta = 1 - 0.11 L/t. Initial estimate: L = r * wrap and t = 2 pi r / Z, so r cancels; no leading edge sweep
 		z = np.linspace(0, self.L, 200)
-		wrap = np.trapezoid(1 / (self._r_ms(z) * np.tan(self._beta(z, beta2b))), z)		# as in GetBladeLines
+		wrap = np.trapezoid(1 / (self.r_ms(z) * np.tan(self.beta(z, beta2b))), z)		# as in InducerCAD.GetBladeLines
 		return 1 - 0.11 * self.Z_blade * wrap / (2 * np.pi)
 
 	def _dA(self, r, lam, strict=True):
@@ -171,8 +168,8 @@ class InducerRadialEquilibrium:
 
 	def _lam_flow(self, z):
 		# Zero-swirl (psi = 0) lead: fixed point of Q = omega * lam * int dA dr
-		r = np.linspace(self._r_hub(z), self.R_t, 400)
-		lam = self.Q / (np.pi * self.omega * (self.R_t**2 - self._r_hub(z) ** 2))
+		r = np.linspace(self.r_hub(z), self.R_t, 400)
+		lam = self.Q / (np.pi * self.omega * (self.R_t**2 - self.r_hub(z) ** 2))
 		for _ in range(30):
 			area = np.trapezoid(self._dA(r, lam, strict=False), r)
 			if area <= 0.0:
@@ -183,13 +180,13 @@ class InducerRadialEquilibrium:
 
 	def _lead(self, z, beta2b):
 		# Flow angle: the blade angle less the incidence at the inlet and the deviation at the outlet, linearly in between (own choice)
-		gamma = self._beta(z, beta2b) - self.incidence * (1.0 - z / self.L) - self._deviation(beta2b) * z / self.L
-		lam_sched = self._r_ms(z) * np.tan(gamma)  # eq. 33: lambda = r tan(beta)
+		gamma = self.beta(z, beta2b) - self.incidence * (1.0 - z / self.L) - self._deviation(beta2b) * z / self.L
+		lam_sched = self.r_ms(z) * np.tan(gamma)  # eq. 33: lambda = r tan(beta)
 		return max(lam_sched, self._lam_flow(z))  # lam below the zero-swirl lead would give negative swirl
 
 	def _C(self, z, beta2b):
 		lam = self._lead(z, beta2b)
-		r = np.linspace(self._r_hub(z), self.R_t, 400)
+		r = np.linspace(self.r_hub(z), self.R_t, 400)
 		dA = self._dA(r, lam)
 		# Own derivation: Q = omega*lam*(A0 - C*A1) from eqs. 38-39; SP-8052 eq. 43 is the closed form for a linearly tapered blade
 		A0 = np.trapezoid(dA, r)
@@ -202,7 +199,7 @@ class InducerRadialEquilibrium:
 
 	def _avg_angular_momentum(self, beta2b):
 		# Mass-averaged r c_u at the outlet = angular momentum flux / mass flux; conserved across a torque-free gap
-		r = np.linspace(self._r_hub(self.L), self.R_t, 400)
+		r = np.linspace(self.r_hub(self.L), self.R_t, 400)
 		lam = self._lead(self.L, beta2b)
 		psi = self._psi(r, self.L, beta2b)
 		dA = self._dA(r, lam)
@@ -226,20 +223,22 @@ class InducerRadialEquilibrium:
 	def _check(self, r, z):
 		if not 0.0 <= z <= self.L:
 			raise ValueError("z must lie in [0, L_ax].")
-		rh = self._r_hub(z)
+		rh = self.r_hub(z)
 		if np.any(np.asarray(r) < rh - 1e-9) or np.any(np.asarray(r) > self.R_t + 1e-9):
 			raise ValueError("r must lie in [r_hub(z), r_tip].")
 
-	# ---- Public API (pint in / pint out; z is scalar, r may be an array) -----
-	def hub_radius(self, z: Q_) -> Q_:
-		return Q_(self._r_hub(z.to('m').magnitude), 'm')
+	# ---- Public API (pint in / pint out, except the SI floats of hub_radius, mean_radius and blade_angle; z is scalar, r may be an array) -----
+	def hub_radius(self, z: Q_) -> float:
+		"""Hub radius in m."""
+		return self.r_hub(z.to('m').magnitude)
 
-	def mean_radius(self, z: Q_) -> Q_:
-		"""Root-mean-square radius, which splits the annulus into equal areas."""
-		return Q_(self._r_ms(z.to('m').magnitude), 'm')
+	def mean_radius(self, z: Q_) -> float:
+		"""Root-mean-square radius in m, which splits the annulus into equal areas."""
+		return self.r_ms(z.to('m').magnitude)
 
-	def blade_angle(self, z: Q_) -> Q_:
-		return Q_(np.degrees(self._beta(z.to('m').magnitude, self.beta2b)), 'deg')
+	def blade_angle(self, z: Q_) -> float:
+		"""Blade angle at the rms radius in rad, from tangential."""
+		return self.beta(z.to('m').magnitude, self.beta2b)
 
 	def psi(self, r: Q_, z: Q_) -> np.ndarray:
 		r_m, z_m = r.to('m').magnitude, z.to('m').magnitude
@@ -270,7 +269,7 @@ class InducerRadialEquilibrium:
 
 	def MeanlineTriangle(self, z: Q_, notation: str = '') -> VelocityTriangle:
 		"""Absolute-frame velocity triangle on the rms-radius meanline at axial position z."""
-		r_mean = self.mean_radius(z)
+		r_mean = Q_(self.mean_radius(z), 'm')
 		return VelocityTriangle(
 			u=Q_(self.omega, 'rad/s') * r_mean,
 			c_m=self.c_axial(r_mean, z),
@@ -303,7 +302,7 @@ class InducerRadialEquilibrium:
 	def BladeAngle(self, r: Q_, z: Q_) -> Q_:
 		"""Blade angle from the parabolic camber (eq. 74, rms radius) with constant lead, r tan(beta) = lambda_blade (eq. 33)."""
 		z_m = z.to('m').magnitude
-		lam_blade = self._r_ms(z_m) * np.tan(self._beta(z_m, self.beta2b))
+		lam_blade = self.r_ms(z_m) * np.tan(self.beta(z_m, self.beta2b))
 		return Q_(np.degrees(np.arctan(lam_blade / r.to('m').magnitude)), 'deg')
 
 	def PlotBetaDistribution(self, z_fracs=(0.0, 0.25, 0.5, 0.75, 1.0), n: int = 50, l: str = 'mm',
@@ -313,7 +312,7 @@ class InducerRadialEquilibrium:
 		colors = [f'hsl({int(240 * (1 - f))},70%,45%)' for f in z_fracs]
 		for frac, color in zip(z_fracs, colors):
 			z = Q_(self.L * frac, 'm')
-			r = Q_(np.linspace(self._r_hub(z.magnitude), self.R_t, n), 'm')
+			r = Q_(np.linspace(self.r_hub(z.magnitude), self.R_t, n), 'm')
 			x = r.to(l).magnitude
 			fig.add_trace(go.Scatter(x=x, y=self.FlowAngle(r, z).magnitude, mode='lines', line=dict(color=color),
 									 name=f'z/L = {frac:.2f} flow', legendgroup=f'{frac}'))
@@ -329,94 +328,6 @@ class InducerRadialEquilibrium:
 			self.MeanlineTriangle(Q_(self.L, 'm'), '<sub>2</sub>'),
 		]
 		return PlotTriangles(triangles, names=['Inlet', 'Outlet'], title=title)
-
-	def GetBladeLines(self, num_lines: int=7, resolution: int = 200) -> list[np.ndarray]:
-		"""
-		@Charlie zhu
-		Blade lines from hub to tip, a list of (resolution, 3) arrays of (z, r, theta) in m, m and rad, from the inlet.
-		"""
-		z_ref = np.linspace(0, self.L, resolution)
-
-		r_hub: np.ndarray[float] = self._r_hub(z_ref)
-		r_tip: np.ndarray[float] = np.full(resolution, self.R_t)
-		r_diff: np.ndarray[float] = r_tip - r_hub
-
-		points_zrt = []
-		
-		radial_lead = self._r_ms(z_ref) * np.tan(self._beta(z_ref, self.beta2b))
-		theta_ref = integrate.cumulative_trapezoid(y=1 / radial_lead, x=z_ref, initial=0)
-
-		# radii clustered toward the tip
-		radii_LE = self.R_h1 + (self.R_t - self.R_h1) * np.sin(np.linspace(0, np.pi / 2, resolution))
-
-		get_LE_theta = _leading_edge_theta(self.R_h1, self.R_t, wrap_angle=self._sweepback)
-		theta_LE = get_LE_theta(radii_LE)
-		assert theta_LE[-1] <= theta_ref[-1], 'The leading edge wraps further than the blade'
-		z_LE_ref = np.interp(theta_LE, theta_ref, z_ref)		# theta_ref increases with z_ref
-		
-		hub_taper_slope = (self.R_h2 - self.R_h1) / self.L
-		z_LE_canted = z_LE_ref - (radii_LE - self._r_hub(z_LE_ref)) * hub_taper_slope
-
-		arclength_LE = np.concatenate(([0], np.cumsum(np.sqrt(np.diff(z_LE_canted)**2 + np.diff(radii_LE)**2 + (radii_LE[1:] * np.diff(theta_LE))**2))))
-		s = np.linspace(0, arclength_LE[-1], num_lines)
-		# keep z and r values at the arclengths specified s (linearly interpolated)
-		z_LE_ref, radii_LE = np.interp(s, arclength_LE, z_LE_ref), np.interp(s, arclength_LE, radii_LE)
-
-		LE_span_fractions: np.ndarray[float] = (radii_LE - self._r_hub(z_LE_ref)) / (self.R_t - self._r_hub(z_LE_ref))
-
-		for alpha in LE_span_fractions:
-			
-			r_offset = alpha * r_diff
-			r = r_hub + r_offset
-
-			tan_beta = radial_lead/r # more necessary than you think lol
-			
-			theta = integrate.cumulative_trapezoid(
-				y=1 / (r * tan_beta), x=z_ref, initial=0
-				)
-			# adjust z such that meridional sweep is perpendicular to hub
-			z = z_ref - r_offset * hub_taper_slope
-
-			points = np.column_stack((z, r, theta)) # (resolution, 3)
-
-			# Angle past the leading edge curve, at each point's own radius: the blade line and the leading edge,
-			# projected on the polar (r, theta) plane, cross where it is zero
-			past_LE = theta - get_LE_theta(r)
-			i = np.argmax(past_LE > 0)		# first point behind the leading edge
-			# linear interpolation to the crossing
-			t = past_LE[i-1] / (past_LE[i-1] - past_LE[i])
-			leading_edge = points[i-1] + t * (points[i] - points[i-1])
-
-			points_zrt.append(np.vstack((leading_edge, points[i:])))
-
-		return points_zrt
-
-	def CreateCAD(self, num_lines: int=7, resolution: int=300, flip_z: bool=True, flip_theta: bool=True) -> cadquery.Assembly:
-		"""
-		@Charlie Zhu
-		Temporarily borrowing from impeller CAD API
-		Blade lines from hub to tip as cadquery splines (x = r cos theta, y = r sin theta, z, in mm) and the revolved hub, in the cadquery viewer."""
-		from Helpers import CAD
-		blade_lines = self.GetBladeLines(num_lines=num_lines, resolution=resolution)
-		blade_edges = [cadquery.Edge.makeSpline(CAD.CylindricalToCartesian(p, flip_z, flip_theta)) for p in blade_lines]
-		camber = cadquery.func.loft(blade_edges)
-		blade_locations = [cadquery.Location((0, 0, 0), (0, 0, 1),  360 * n / self.Z_blade) for n in range(self.Z_blade)]
-		blades = camber.moved(*blade_locations)
-
-		# Linearly tapered hub: a line from (z, r) = (0, R_h1) to (L, R_h2) at theta = 0, revolved about the z axis
-		hub_edge = cadquery.Edge.makeLine(*CAD.CylindricalToCartesian(np.array([[0, self.R_h1, 0], [self.L, self.R_h2, 0]]), flip_z, flip_theta))
-		hub_surface = cadquery.func.revolve(hub_edge, (0, 0, 0), (0, 0, 1))
-		assm = (cadquery.Assembly()
-			.add(hub_surface, name='hub', color=cadquery.Color(0.6, 0.6, 0.6))
-			.add(blades, name='blades', color=cadquery.Color(0.2, 0.3, 0.7))
-			#.add(blade_edges, name='blade_edges', color=cadquery.Color(0.9, 0.1, 0.1))
-		)
-		self._cad = [assm, blade_edges]
-		return assm
-
-	def ShowCAD(self):
-		if self._cad is None: self.CreateCAD()
-		show(*self._cad)
 
 
 if __name__ == "__main__":
@@ -436,7 +347,7 @@ if __name__ == "__main__":
 		print(f"{propellant}: beta1b = {np.degrees(eq.beta1b):.2f} deg, beta2b = {np.degrees(eq.beta2b):.2f} deg, delta2 = {np.degrees(eq.delta2):.2f} deg")
 		for frac in (0.0, 0.25, 0.5, 0.75, 1.0):
 			z = inducer.L_ax * frac
-			r = np.linspace(eq.hub_radius(z).to('m').magnitude, eq.R_t, 50)
+			r = np.linspace(eq.hub_radius(z), eq.R_t, 50)
 			col[0].plot(r * 1e3, eq.c_theta(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
 			col[1].plot(r * 1e3, eq.c_axial(Q_(r, 'm'), z).magnitude, label=f"z/L = {frac:.2f}")
 		col[0].set_title(f"{propellant} inducer")
@@ -446,13 +357,13 @@ if __name__ == "__main__":
 			ax.legend()
 
 		z_in = Q_(0, 'm')
-		r_in = Q_(np.array([eq.R_h1, eq._r_ms(0.0), eq.R_t]), 'm')
+		r_in = Q_(np.array([eq.R_h1, eq.r_ms(0.0), eq.R_t]), 'm')
 		print(f"{propellant} inlet beta (hub, rms, tip) = {np.round(eq.FlowAngle(r_in, z_in).magnitude, 2)} deg")
 		eq.PlotBetaDistribution(title=f"{propellant} inducer relative flow and blade angle").show()
 		PlotMeanlineTriangles = eq.PlotMeanlineTriangles(
 				f"{propellant} inducer meanline velocity triangles"
 			).show()
-		# eq.GetBladeLines()  # blocks until the viewer is closed
+		# InducerCAD(eq).ShowCAD()  # blocks until the viewer is closed
 
 	axes[0, 0].set_ylabel("$c_\\theta$ [m/s]")
 	axes[1, 0].set_ylabel("$c_a$ [m/s]")
