@@ -7,8 +7,7 @@ from GG_Tenkara_Function_single import solve_GasGen_state
 # Global field parameters
 P_MIN = Q_(100.0, 'psi')
 P_MAX = Q_(1000.0, 'psi')
-NUM_POINTS = 181
-SPACING = (P_MAX - P_MIN).m / (NUM_POINTS - 1)
+NUM_POINTS = 91
 P_AXIS = np.linspace(P_MIN, P_MAX, NUM_POINTS)
 VALID_INSERTS = ["0%", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%"]
 
@@ -32,9 +31,9 @@ def get_field(insert_id: str) -> np.ndarray:
     
     path = field_path(insert_id)
     field = None
+
     if path.exists():
         field = np.load(path)
-
     if field is None:
         field = generate_field(insert_id)
         np.save(path, field)
@@ -44,14 +43,14 @@ def get_field(insert_id: str) -> np.ndarray:
 
 def generate_field(insert_id: str) -> np.ndarray:
     """Builds NxN field for Mdot, Pc and OF for one insert.
-    field[name, row, col]: name = Mdot, Pc, OF ; row = P_fu index ; col = P_ox index."""
+    field[name, row, col]: name = Mdot, Pc, OF ; row = P_ox index ; col = P_fu index."""
 
     check_insert(insert_id)
     field = np.full((3, NUM_POINTS, NUM_POINTS), np.nan)
 
-    for row, p_fu in enumerate(P_AXIS):
+    for row, p_ox in enumerate(P_AXIS):
         print(f"Row {row+1}/{NUM_POINTS}")
-        for col, p_ox in enumerate(P_AXIS):
+        for col, p_fu in enumerate(P_AXIS):
             if col % 10 == 0:
                 print(f"Column {col+1}/{NUM_POINTS}")
             state = solve_GasGen_state(Q_(p_ox, 'psi'), Q_(p_fu, 'psi'), insert_id)
@@ -139,17 +138,28 @@ def get_GasGen_Mdot_separate(P_ox: Q_, P_fu: Q_, insert_id: str) -> dict[str, Q_
     return {"OX Mdot": mdot_ox, "FU Mdot": mdot_fu}
 
 def main():
+    # # Generate field for all inserts
     # for insert in VALID_INSERTS:
     #     print(f"Generating field for insert: {insert}")
-    #     out = get_GasGen_state(Q_(550, 'psi'), Q_(550, 'psi'), insert)
+    #     out = get_GasGen_state(Q_(557, 'psi'), Q_(577, 'psi'), insert)
     #     print(f"Total Mdot: {out["Mdot"].to('lb/s'):.4f~P}")
     #     print(f"Chamber Pressure: {out["Pc"].to('psi'):.4f~P}")
     #     print(f"OF Ratio: {out["OF"]:.4f~P}")
 
-    out = get_GasGen_state(Q_(557, 'psi'), Q_(575, 'psi'), '10%')
-    print(f"Total Mdot: {out["Mdot"].to('lb/s'):.4f~P}")
-    print(f"Chamber Pressure: {out["Pc"].to('psi'):.4f~P}")
+    # Test Case
+    P_ox = Q_(341, 'psi')
+    P_fu = Q_(334, 'psi')
+    insert_id = '40%'
+
+    out = get_GasGen_state(P_ox, P_fu, insert_id)
+    print(f"Total Mdot: {out["Mdot"].to('kg/s'):.4f~P}")
+    print(f"Chamber Pressure: {out["Pc"].to('psi'):.2f~P}")
     print(f"OF Ratio: {out["OF"]:.4f~P}")
+
+    out2 = solve_GasGen_state(P_ox, P_fu, insert_id)
+    print(f"Total Mdot: {out2["Mdot"].to('kg/s'):.4f~P}")
+    print(f"Chamber Pressure: {out2["Pc"].to('psi'):.2f~P}")
+    print(f"OF Ratio: {out2["OF"]:.4f~P}")
 
 if __name__ == "__main__":
     main()

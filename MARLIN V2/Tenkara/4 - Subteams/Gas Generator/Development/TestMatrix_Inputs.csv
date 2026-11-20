@@ -1,4 +1,4 @@
-mdot_total_kg_s,OF_core,insert_id,P_purge,P_c_torch,of_torch,Notes,Notes,Notes
+mdot_total_kg_s,OF_core,insert_id,P_N2_purge_psi,P_c_torch_psi,OF_torch,Notes,Notes,Notes
 0.1902,0.5,10%,800,200,1.4,SECTION 1,Throttle Sweep,60% throttle
 0.2536,0.5,10%,800,200,1.4,,,80% throttle
 0.317,0.5,10%,800,200,1.4,,,100% throttle

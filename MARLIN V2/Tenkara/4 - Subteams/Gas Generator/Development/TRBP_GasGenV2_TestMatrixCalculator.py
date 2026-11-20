@@ -144,12 +144,12 @@ def solve_GG(mdot_total: Q_, of_core: Q_, insert_id: str) -> dict:
     p_ox = pc + dp_ox
     p_fuel = pc + dp_fuel
 
-    p_ox = add_venturi_dp(p_ox)
-    p_fuel = add_venturi_dp(p_fuel)
-
-    stiff_ox = stiffness(dp_ox, p_ox)
+    stiff_ox = stiffness(dp_ox, pc)
     stiff_fuel = stiffness(dp_fuel, pc)
     stiff_film = stiffness(dp_film, pc)
+
+    p_ox = add_venturi_dp(p_ox)
+    p_fuel = add_venturi_dp(p_fuel)
 
     temp = Q_(film_core_mixed_temp(p_ox.to('Pa').m, p_fuel.to('Pa').m, insert_id), 'K')
 
@@ -180,16 +180,16 @@ def solve_GG(mdot_total: Q_, of_core: Q_, insert_id: str) -> dict:
 # CSV I/O
 # --------------------------------------------------------------------------
 
-IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id", "P_purge", "P_c_torch", "of_torch"]
+IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id", "P_N2_purge_psi", "P_c_torch_psi", "OF_torch"]
 
 OUT_COLS = [
-    "P_fuel_psia", "P_ox_psia", "P_N2_purge_psia", "P_torch_CH4_psia", "P_torch_GOx_psia",
-    "P_c_psia", "temp", "OF_core", "OF_overall", "mdot_total_kg_s", 
-    "mdot_torch", "P_c_torch", "OF_torch",
+    "P_IPA_psi", "P_LOx_psi", "P_N2_purge_psi", "P_CH4_psi", "P_GOx_psi",
+    "P_c_psi", "temp_K", "OF_core", "OF_overall", "mdot_total_kg_s", 
+    "mdot_torch_kg_s", "P_c_torch_psi", "OF_torch",
     "insert_id", "cooling_pct",
-    "mdot_fuel_kg_s", "mdot_ox_kg_s", "mdot_film_kg_s",
-    "mdot_ch4", "mdot_gox",
-    "stiff_fuel", "stiff_ox", "stiff_film", "cstar_ms", "warnings"
+    "mdot_IPA_kg_s", "mdot_LOx_kg_s", "mdot_film_kg_s",
+    "mdot_CH4_kg_s", "mdot_GOx_kg_s",
+    "stiff_fuel", "stiff_ox", "stiff_film", "cstar_m_s", "warnings"
 ]
 
 def resolve_script_path(raw_path: str, script_dir: Path) -> str:
@@ -207,36 +207,36 @@ def read_cases(path: str):
         for i, row in enumerate(reader, start=2):
             try:
                 yield (Q_(row["mdot_total_kg_s"], 'kg/s'), Q_(row["OF_core"], 'dimensionless'), row["insert_id"].strip(), 
-                       Q_(row["P_purge"], 'psi'), Q_(row["P_c_torch"], 'psi'), Q_(row["of_torch"], 'dimensionless'))
+                       Q_(row["P_N2_purge_psi"], 'psi'), Q_(row["P_c_torch_psi"], 'psi'), Q_(row["OF_torch"], 'dimensionless'))
             except ValueError:
                 sys.exit(f"Bad number in input CSV on line {i}: {row}")
 
 def to_row(mdot: Q_, of_core: Q_, insert_id: str, P_purge: Q_, P_c_torch: Q_, of_torch: Q_, r_GG: dict, r_torch: dict) -> dict:
     return {
-        "P_c_psia": r_GG["P_c"].to('psi').m,
-        "P_fuel_psia": r_GG["P_fuel"].to('psi').m,
-        "P_ox_psia": r_GG["P_ox"].to('psi').m,
-        "P_N2_purge_psia": P_purge.to('psi').m,
+        "P_c_psi": r_GG["P_c"].to('psi').m,
+        "P_IPA_psi": r_GG["P_fuel"].to('psi').m,
+        "P_LOx_psi": r_GG["P_ox"].to('psi').m,
+        "P_N2_purge_psi": P_purge.to('psi').m,
         "mdot_total_kg_s": mdot.to('kg/s').m,
         "OF_core": of_core.to('dimensionless').m,
         "OF_overall": r_GG["of_overall"].to('dimensionless').m,
         "insert_id": insert_id,
         "cooling_pct": r_GG["cooling_pct"],
-        "temp": r_GG["temp"].to('K').m,
-        "cstar_ms": r_GG["cstar"].to('m/s').m,
-        "mdot_fuel_kg_s": r_GG["mdot_fuel"].to('kg/s').m,
-        "mdot_ox_kg_s": r_GG["mdot_ox"].to('kg/s').m,
+        "temp_K": r_GG["temp"].to('K').m,
+        "cstar_m_s": r_GG["cstar"].to('m/s').m,
+        "mdot_IPA_kg_s": r_GG["mdot_fuel"].to('kg/s').m,
+        "mdot_LOx_kg_s": r_GG["mdot_ox"].to('kg/s').m,
         "mdot_film_kg_s": r_GG["mdot_film"].to('kg/s').m,
         "stiff_fuel": r_GG["stiff_fuel"],
         "stiff_ox": r_GG["stiff_ox"],
         "stiff_film": r_GG["stiff_film"],
-        "P_c_torch": P_c_torch.to('psi').m,
-        "P_torch_CH4_psia": r_torch["P_CH4"].to('psi').m,
-        "P_torch_GOx_psia": r_torch["P_GOx"].to('psi').m,
-        "mdot_torch": r_torch["mdot_torch"].to('kg/s').m,
+        "P_c_torch_psi": P_c_torch.to('psi').m,
+        "P_CH4_psi": r_torch["P_CH4"].to('psi').m,
+        "P_GOx_psi": r_torch["P_GOx"].to('psi').m,
+        "mdot_torch_kg_s": r_torch["mdot_torch"].to('kg/s').m,
         "OF_torch": of_torch.to('dimensionless').m,
-        "mdot_ch4": r_torch["mdot_ch4"].to('kg/s').m,
-        "mdot_gox": r_torch["mdot_gox"].to('kg/s').m,
+        "mdot_CH4_kg_s": r_torch["mdot_ch4"].to('kg/s').m,
+        "mdot_GOx_kg_s": r_torch["mdot_gox"].to('kg/s').m,
         "warnings": r_GG["warnings"],
     }
 
