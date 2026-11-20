@@ -41,7 +41,7 @@ IPA_MM = 60.1                    # g/mol
 # Film cooling insert label
 insert_id = '5%'
 if insert_id != '0%': 
-    film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
+    film_total_cda = (1.0 / config['Film_Cda'] **2 + 1.0 / config['Insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
 else:
     film_total_cda = 0.00000000001 # m^2
 
@@ -70,7 +70,7 @@ def CEA_init_state(mdot_ox, mdot_ipa, Pc):
     #print(f'Initial state - OF: {OF}, Cp: {Cp}')
     h = -2.326 * cea.get_Enthalpies(Pc/psi2pa, OF, 1, 0, 0)[0]
     # T = 0.555555 * cea.get_Tcomb(Pc/psi2pa, OF)
-    T = tc.get_temp_at_eta(config['CSTAR_eff'], OF, Pc/psi2pa)
+    T = tc.get_temp_at_eta(config['Cstar_eff'], OF, Pc/psi2pa)
     mass = mdot_ipa + mdot_ox
     
     H = mass * h
@@ -90,12 +90,12 @@ def equilibrium(state1, state2):
 def Pc(LOx_feed, IPA_feed, Pc_in, pcA):
     #Recursivly solves for chamber pressure
     mdot_ox = mdot(config['LOx_Cda'],  LOx_feed, Pc_in, config['LOx_rho'])
-    mdot_ipa = mdot(config['fuel_Cda'], IPA_feed, Pc_in, config['IPA_rho'])
+    mdot_ipa = mdot(config['IPA_Cda'], IPA_feed, Pc_in, config['IPA_rho'])
     mdot_film = mdot(film_total_cda, IPA_feed, Pc_in, config['IPA_rho'])
     OF = mdot_ox/max(mdot_ipa+mdot_film, 0.000000000001)
     #print(f'mdots {mdot_ox} and {mdot_ipa}')
-    cstar = 0.3048 * config['CSTAR_eff'] * cea.get_Cstar(Pc_in/psi2pa, OF)
-    Pc_f = cstar * (mdot_ox+mdot_ipa+mdot_film) / config['stator_throat_area']
+    cstar = 0.3048 * config['Cstar_eff'] * cea.get_Cstar(Pc_in/psi2pa, OF)
+    Pc_f = cstar * (mdot_ox+mdot_ipa+mdot_film) / config['Stator_area']
     pcA.append(Pc_f)
     #print(len(pcA))
     #if len(pcA) == 500:
@@ -157,7 +157,7 @@ def main():
     # Film cooling insert label
     insert_id = '5%'
     if insert_id != '0%': 
-        film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
+        film_total_cda = (1.0 / config['Film_Cda'] **2 + 1.0 / config['Insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
     else:
         film_total_cda = 0.00000000001 # m^2
     # IPA inlet temp
@@ -178,7 +178,7 @@ def main():
     Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
     # Solve for mass flows into the chamber
     mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
-    mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+    mdot_IPA = mdot(config['IPA_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
     mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
     print(f'IPA core mdot: {mdot_IPA:.3f}    Ox mdot: {mdot_ox:.3f}     film mdot: {mdot_film:.3f}')
     print(f'core OF Ratio: {(mdot_ox/mdot_IPA):.3f}')
@@ -243,7 +243,7 @@ def main():
 def film_core_mixed_temp(LOx_feed_pressure: float, IPA_feed_pressure: float, insert_id: str):
     # Film cooling insert label
     if insert_id != '0%': 
-        film_total_cda = (1.0 / config['film_Cda'] **2 + 1.0 / config['film_insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
+        film_total_cda = (1.0 / config['Film_Cda'] **2 + 1.0 / config['Insert_Cda'][insert_id] **2 ) ** -0.5 # m^2
     else:
         film_total_cda = 0.00000000001 # m^2
 
@@ -257,7 +257,7 @@ def film_core_mixed_temp(LOx_feed_pressure: float, IPA_feed_pressure: float, ins
     Pc_in = Pc(LOx_feed_pressure, IPA_feed_pressure, Pc_guess, Pc_array)
     # Solve for mass flows into the chamber
     mdot_ox = mdot(config['LOx_Cda'], LOx_feed_pressure, Pc_in, config['LOx_rho'])
-    mdot_IPA = mdot(config['fuel_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
+    mdot_IPA = mdot(config['IPA_Cda'], IPA_feed_pressure, Pc_in, config['IPA_rho'])
     mdot_film = mdot(film_total_cda, IPA_feed_pressure, Pc_in, config['IPA_rho'])
     
     # Get combustion gas properties

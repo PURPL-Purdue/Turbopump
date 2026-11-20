@@ -7,108 +7,54 @@ Outputs: LOX and IPA feed pressures, chamber pressure, overall OF, film cooling 
             torch GOx and CH4 feed pressures, torch mass flow, and diagnostics
 
 Usage : python TRBP_GasGenV2_TestMatrixCalculator.py
---config GG_hardware_definition.yaml --input TestMatrix_Inputs.csv --output TestMatrix_Outputs.csv
+--input TestMatrix_Inputs.csv --output TestMatrix_Outputs.csv
 """
 
 import sys
 import csv
 import argparse
+from pint import Quantity as Q_
 from math import sqrt
-from dataclasses import dataclass
-import yaml
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from Inputs.Gas_Generator_DataClass import hardware as GG
 
 from GG_filmcooling import film_core_mixed_temp
+
+from rocketcea.cea_obj import CEA_Obj
+ceaGG = CEA_Obj(oxName=GG.GG_ox_type, fuelName=GG.GG_fuel_type)
+ceaTorch = CEA_Obj(oxName=GG.torch_ox_type, fuelName=GG.torch_fuel_type)
 
 # --------------------------------------------------------------------------
 # Settings
 # --------------------------------------------------------------------------
 
-# Warning thresholds
 MIN_STIFF = 0.20     # feed-system decoupling rule of thumb
-
-# Unit conversions
-PA_PER_PSI = 6894.757
-FT_TO_M = 0.3048
+VENTURI_DP = Q_(30, 'psi')  # Venturi pressure drop
 
 # --------------------------------------------------------------------------
-# Hardware definition
+# Helper functions
 # --------------------------------------------------------------------------
-@dataclass
-class Hardware:
-    cda_ox: float                 # m^2
-    cda_fuel: float               # m^2 (core fuel orifices)
-    cda_film: float               # m^2 (total Cda of film orifices + insert)
-    insert_id: str                  # identifier for the film insert
-    rho_ox: float                 # kg/m^3
-    rho_fuel: float               # kg/m^3
-    throat_cda: float             # m^2 (total CdA of the stator nozzles)
-    cstar_eff: float              # dimensionless (0 < eff <= 1)
-    cea_ox: str                   # RocketCEA oxidizer name
-    cea_fuel: str                 # RocketCEA fuel name
-    cea_torch_fuel: str           # RocketCEA methane name
-    cea_torch_ox: str             # RocketCEA GOx name
-    torch_throat_area: float      # Effective torch throat area
-    CdA_torch_ox: float           # m^2
-    CdA_torch_fuel: float         # m^2
-    torch_cstar_eff: float        # dimensionless
-    GOx_gamma: float
-    CH4_gamma: float
-    GOx_R: float
-    CH4_R: float
 
-def series_cda(*cdas: float) -> float:
-    """Effective CdA of orifices in series (same mdot and rho): [sum 1/CdA^2]^-1/2.
-    If any orifice is fully blocked (CdA = 0), nothing flows, so the result is 0."""
-    if any(c <= 0.0 for c in cdas):
-        return 0.0
-    else:
-        return sum(1.0 / c**2 for c in cdas) ** -0.5
+def series_cda(*cdas: Q_) -> Q_:
+    """Effective Cda of orifices in series: (sum(1/c^2))^-1/2.
+    Returns a zero with area units if any Cda is zero."""
+    if any(c == 0 for c in cdas):
+        return 0.0 * cdas[0]
+    return Q_(sum(1.0 / c**2 for c in cdas) ** -0.5, cdas[0].units)
 
-def load_hardware(path: str, insert_id: str) -> Hardware:
-    """Load the YAML and select the film insert named by insert_id."""
-    with open(path) as f:
-        cfg = yaml.safe_load(f)
-
-    cda_film_insert = cfg["film_insert_Cda"][insert_id]
-    cda_film_orifice = cfg["film_Cda"]
-    cda_film = series_cda(cda_film_insert, cda_film_orifice)
-
-    return Hardware(
-        cda_ox=cfg["LOx_Cda"],
-        cda_fuel=cfg["fuel_Cda"],
-        cda_film=cda_film,
-        insert_id=insert_id,
-        rho_ox=cfg["LOx_rho"],
-        rho_fuel=cfg["IPA_rho"],
-        throat_cda=cfg["stator_throat_area"],
-        cstar_eff=cfg["CSTAR_eff"],
-        cea_ox=cfg["GG_ox_type"],
-        cea_fuel=cfg["GG_fuel_type"],
-        cea_torch_fuel= cfg["torch_fuel_type"],
-        cea_torch_ox= cfg["torch_ox_type"],
-        torch_throat_area= cfg["torch_eff_throat_area"],
-        CdA_torch_ox= cfg["GOx_Cda"],
-        CdA_torch_fuel= cfg["CH4_Cda"],
-        torch_cstar_eff= cfg["torch_cstar_eff"],
-        GOx_gamma = cfg["GOx_gamma"],
-        CH4_gamma = cfg["CH4_gamma"],
-        GOx_R = cfg["GOx_R"],
-        CH4_R = cfg["CH4_R"]
-    )
-
-# --------------------------------------------------------------------------
-# Physics
-# --------------------------------------------------------------------------
-def orifice_dp(mdot: float, cda: float, rho: float) -> float:
-    """Pressure drop (Pa) needed to pass mdot through an orifice of effective area cda."""
+def orifice_dp(mdot: Q_, cda: Q_, rho: Q_) -> Q_:
+    """Pressure drop needed to pass mdot through an orifice of effective area cda."""
     if cda == 0.0:
-        return 0.0
+        return Q_(0.0, 'psi')
     else:
-        return (mdot / cda) ** 2 / (2.0 * rho)
+        return ((mdot / cda) ** 2 / (2.0 * rho)).to('psi')
 
-def mass_flow_calculation(mdot_total: float, of_core: float, hw: Hardware) -> dict:
+def mass_flow_calculation(mdot_total: Q_, of_core: Q_, insert_id: str) -> dict:
     """Closed-form mass flows. The film flow is set by geometry, not chosen."""
-    r = hw.cda_film / hw.cda_fuel                  # mdot_film / mdot_fuel
+    film_cda_total = series_cda(GG.Insert_Cda[insert_id], GG.IPA_Cda)
+    r = film_cda_total / GG.IPA_Cda                  # mdot_film / mdot_fuel
     mdot_fuel = mdot_total / (of_core + 1.0 + r)
     return {
         "mdot_ox": of_core * mdot_fuel,
@@ -116,80 +62,96 @@ def mass_flow_calculation(mdot_total: float, of_core: float, hw: Hardware) -> di
         "mdot_film": r * mdot_fuel,
     }
 
-def overall_of(mdot_ox: float, mdot_fuel: float, mdot_film: float) -> float:
+def overall_of(mdot_ox: Q_, mdot_fuel: Q_, mdot_film: Q_) -> Q_:
     """Overall OF: all LOX over all fuel (core + film)."""
-    return mdot_ox / (mdot_fuel + mdot_film)
+    return Q_(mdot_ox / (mdot_fuel + mdot_film), 'dimensionless')
 
-def cooling_percent(mdot_film: float, mdot_total: float) -> float:
+def cooling_percent(mdot_film: Q_, mdot_total: Q_) -> float:
     """Film flow as a percent of total mass flow."""
-    return 100.0 * mdot_film / mdot_total
+    return float(100.0 * mdot_film / mdot_total)
 
-def get_cstar(of: float, pc_pa: float, hw: Hardware) -> float:
+def get_GG_cstar(of: Q_, pc: Q_) -> Q_:
+    """Return c* from NASA CEA via RocketCEA)."""
+    cstar = Q_(GG.Cstar_eff.m * ceaGG.get_Cstar(Pc = pc.to('psi').m, MR=of.m), 'ft/s')
+    return cstar.to('m/s')
+
+def get_torch_cstar(of: Q_, pc: Q_) -> Q_:
     """Return c*(OF, P_c[Pa]) -> m/s (ideal, from NASA CEA via RocketCEA)."""
-    from rocketcea.cea_obj import CEA_Obj
-    cea = CEA_Obj(oxName=hw.cea_ox, fuelName=hw.cea_fuel)
-    cstar = hw.cstar_eff * cea.get_Cstar(Pc=pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
-    return cstar
+    cstar = Q_(GG.torch_cstar_eff.m * ceaTorch.get_Cstar(Pc = pc.to('psi').m, MR=of.m), 'ft/s')
+    return cstar.to('m/s')
 
-def get_torch_cstar(of: float, pc_pa: float, hw: Hardware):
-    """Return c*(OF, P_c[Pa]) -> m/s (ideal, from NASA CEA via RocketCEA)."""
-    from rocketcea.cea_obj import CEA_Obj
-    cea = CEA_Obj(oxName=hw.cea_torch_ox, fuelName=hw.cea_torch_fuel)
-    cstar = hw.torch_cstar_eff * cea.get_Cstar(Pc= pc_pa / PA_PER_PSI, MR=of) * FT_TO_M
-    return cstar
-
-def chamber_pressure(mdot_total: float, of_overall: float, hw: Hardware,
-                     tol: float = 1e-4, max_iter: int = 1000):
+def chamber_pressure(mdot_total: Q_, of_overall: Q_):
     """Fixed-point iteration on P_c = c*(OF, P_c) * eff * mdot / (Cd*A_t)."""
-    pc = 1.0e6
+    max_iter = 300
+    weight = 0.1
+    tol = 0.1
+    pc = Q_(100, 'psi')
     for _ in range(max_iter):
-        cstar = get_cstar(of_overall, pc, hw)
-        pc_new = cstar * mdot_total / hw.throat_cda
+        cstar = get_GG_cstar(of_overall, pc)
+        pc_new = cstar * mdot_total / GG.Stator_Area
         if abs(pc_new - pc) / pc_new < tol:
-            return pc_new, cstar
-        pc = pc_new
-    raise RuntimeError(f"P_c iteration did not converge (last P_c = {pc:.0f} Pa)")
+            return pc_new.to('psi'), cstar
+        pc = pc + weight * (pc_new - pc)
+    raise RuntimeError(f"P_c iteration did not converge.")
 
-def stiffness(dp: float, p_c: float) -> float:
+def stiffness(dp: Q_, p_c: Q_) -> float:
     """Stiffness: dp / p_c."""
-    return dp / p_c
+    return float(dp / p_c)
 
-def solve_torch(P_c_torch: float, of_torch: float, hw: Hardware) -> dict:
-    cstar = get_torch_cstar(of_torch, P_c_torch * PA_PER_PSI, hw)
-    mdot_torch = P_c_torch * PA_PER_PSI * hw.torch_throat_area / cstar    # mdot in kg/s
-    mdot_gox = mdot_torch * (of_torch/(1+of_torch))
-    mdot_ch4 = mdot_torch * 1/(1+of_torch)
+def add_venturi_dp(p: Q_) -> Q_:
+    """Adds venturi pressure drop to all feed pressures"""
+    return (p + VENTURI_DP)
 
-    T_up = 278   # Kelvin
+# --------------------------------------------------------------------------
+# Solver functions
+# --------------------------------------------------------------------------
+
+def solve_torch(P_c_torch: Q_, of_torch: Q_) -> dict:
+    cstar = get_torch_cstar(of_torch, P_c_torch)
+    mdot_torch = (P_c_torch.to('Pa') * GG.torch_eff_throat_area / cstar).to('kg/s')
+    mdot_gox = mdot_torch * (of_torch/(1 + of_torch))
+    mdot_ch4 = mdot_torch * 1/(1 + of_torch)
+
+    T_up = Q_(278.0, 'K')   # Kelvin
+
+    CH4_term = (2 / (1 + GG.CH4_gamma)) ** ((GG.CH4_gamma + 1) / (GG.CH4_gamma - 1))
+    GOx_term = (2 / (1 + GG.GOx_gamma)) ** ((GG.GOx_gamma + 1) / (GG.GOx_gamma - 1))
     
-    P_CH4 = (mdot_ch4 / (hw.CdA_torch_fuel)) * sqrt(hw.CH4_R * T_up/hw.CH4_gamma) * (((hw.CH4_gamma + 1) / 2) ** ((hw.CH4_gamma + 1) / (2* (hw.CH4_gamma - 1))))
-    P_GOx = (mdot_gox / (hw.CdA_torch_ox)) * sqrt(hw.GOx_R * T_up/hw.GOx_gamma) * (((hw.GOx_gamma + 1) / 2) ** ((hw.GOx_gamma + 1) / (2 * (hw.GOx_gamma - 1))))
+    P_CH4 = ( (mdot_ch4 / GG.CH4_Cda) ** 2 / GG.CH4_gamma * (GG.CH4_R * T_up) / CH4_term ) ** 0.5
+    P_GOx = ( (mdot_gox / GG.GOx_Cda) ** 2 / GG.GOx_gamma * (GG.GOx_R * T_up) / GOx_term ) ** 0.5
 
     outputs = {
         "mdot_torch": mdot_torch,
+        "mdot_gox": mdot_gox,
+        "mdot_ch4": mdot_ch4,
         "P_CH4": P_CH4,
         "P_GOx": P_GOx,
     }
     return outputs
 
-def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
-    flows = mass_flow_calculation(mdot_total, of_core, hw)
+def solve_GG(mdot_total: Q_, of_core: Q_, insert_id: str) -> dict:
+    flows = mass_flow_calculation(mdot_total, of_core, insert_id)
     of_tot = overall_of(flows["mdot_ox"], flows["mdot_fuel"], flows["mdot_film"])
     cool_pct = cooling_percent(flows["mdot_film"], mdot_total)
-    pc, cstar = chamber_pressure(mdot_total, of_tot, hw)
+    pc, cstar = chamber_pressure(mdot_total, of_tot)
 
-    dp_ox = orifice_dp(flows["mdot_ox"], hw.cda_ox, hw.rho_ox)
-    dp_fuel = orifice_dp(flows["mdot_fuel"], hw.cda_fuel, hw.rho_fuel)
-    dp_film = orifice_dp(flows["mdot_film"], hw.cda_film, hw.rho_fuel)
+    film_cda_total = series_cda(GG.Insert_Cda[insert_id], GG.IPA_Cda)
+
+    dp_ox = orifice_dp(flows["mdot_ox"], GG.LOx_Cda, GG.LOx_rho)
+    dp_fuel = orifice_dp(flows["mdot_fuel"], GG.IPA_Cda, GG.IPA_rho)
+    dp_film = orifice_dp(flows["mdot_film"], film_cda_total, GG.IPA_rho)
 
     p_ox = pc + dp_ox
-    p_fuel = pc + dp_fuel    # inlet pressure feeding both the core and film paths
+    p_fuel = pc + dp_fuel
 
-    stiff_ox = stiffness(dp_ox, p_ox)
+    stiff_ox = stiffness(dp_ox, pc)
     stiff_fuel = stiffness(dp_fuel, pc)
     stiff_film = stiffness(dp_film, pc)
 
-    temp = film_core_mixed_temp(p_ox, p_fuel, hw.insert_id)
+    p_ox = add_venturi_dp(p_ox)
+    p_fuel = add_venturi_dp(p_fuel)
+
+    temp = Q_(film_core_mixed_temp(p_ox.to('Pa').m, p_fuel.to('Pa').m, insert_id), 'K')
 
     res = {
         **flows,
@@ -217,26 +179,24 @@ def solve(mdot_total: float, of_core: float, hw: Hardware) -> dict:
 # --------------------------------------------------------------------------
 # CSV I/O
 # --------------------------------------------------------------------------
-IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id", "P_purge", "P_c_torch", "of_torch"]
 
-# # OLD ORDER, KEPT FOR REFERENCE
-# OUT_COLS = [
-#     "mdot_total_kg_s", "OF_core", "insert_id",
-#     "P_c_psia", "P_ox_psia", "P_fuel_psia",
-#     "cooling_pct", "OF_overall",
-#     "mdot_ox_kg_s", "mdot_fuel_kg_s", "mdot_film_kg_s",
-#     "stiff_ox", "stiff_fuel", "stiff_film",
-#     "cstar_ms", "temp",
-#     "warnings"
-# ]
+IN_COLS = ["mdot_total_kg_s", "OF_core", "insert_id", "P_N2_purge_psi", "P_c_torch_psi", "OF_torch"]
 
 OUT_COLS = [
-    "P_fuel_psia", "P_ox_psia", "P_N2_purge_psia", "P_torch_CH4_psia", "P_torch_GOx_psia",
-    "P_c_psia", "temp", "OF_core", "mdot_total_kg_s", "mdot_torch", "P_c_torch", "OF_torch",
+    "P_IPA_psi", "P_LOx_psi", "P_N2_purge_psi", "P_CH4_psi", "P_GOx_psi",
+    "P_c_psi", "temp_K", "OF_core", "OF_overall", "mdot_total_kg_s", 
+    "mdot_torch_kg_s", "P_c_torch_psi", "OF_torch",
     "insert_id", "cooling_pct",
-    "OF_overall", "mdot_fuel_kg_s", "mdot_ox_kg_s", "mdot_film_kg_s",
-    "stiff_fuel", "stiff_ox", "stiff_film", "cstar_ms", "warnings"
+    "mdot_IPA_kg_s", "mdot_LOx_kg_s", "mdot_film_kg_s",
+    "mdot_CH4_kg_s", "mdot_GOx_kg_s",
+    "stiff_fuel", "stiff_ox", "stiff_film", "cstar_m_s", "warnings"
 ]
+
+def resolve_script_path(raw_path: str, script_dir: Path) -> str:
+    path = Path(raw_path)
+    if path.is_absolute():
+        return str(path)
+    return str(script_dir / path)
 
 def read_cases(path: str):
     with open(path, newline="") as f:
@@ -246,56 +206,38 @@ def read_cases(path: str):
             sys.exit(f"Input CSV is missing column(s): {missing}. Expected: {IN_COLS}")
         for i, row in enumerate(reader, start=2):
             try:
-                yield (float(row["mdot_total_kg_s"]), float(row["OF_core"]),
-                       row["insert_id"].strip(), float(row["P_purge"]), float(row["P_c_torch"]), float(row["of_torch"]))
+                yield (Q_(row["mdot_total_kg_s"], 'kg/s'), Q_(row["OF_core"], 'dimensionless'), row["insert_id"].strip(), 
+                       Q_(row["P_N2_purge_psi"], 'psi'), Q_(row["P_c_torch_psi"], 'psi'), Q_(row["OF_torch"], 'dimensionless'))
             except ValueError:
                 sys.exit(f"Bad number in input CSV on line {i}: {row}")
 
-def to_row(mdot: float, of_core: float, insert_id: str, P_purge: float, P_c_torch: float, of_torch: float, r: dict, r_torch: dict) -> dict:
-    psi = lambda pa: None if pa is None else pa / PA_PER_PSI
-    # return {
-    #     "mdot_total_kg_s": mdot,
-    #     "OF_core": of_core,
-    #     "insert_id": insert_id,
-    #     "P_ox_psia": psi(r["P_ox"]),
-    #     "P_fuel_psia": psi(r["P_fuel"]),
-    #     "P_c_psia": psi(r["P_c"]),
-    #     "cooling_pct": r["cooling_pct"],
-    #     "OF_overall": r["of_overall"],
-    #     "mdot_ox_kg_s": r["mdot_ox"],
-    #     "mdot_fuel_kg_s": r["mdot_fuel"],
-    #     "mdot_film_kg_s": r["mdot_film"],
-    #     "stiff_ox": r["stiff_ox"],
-    #     "stiff_fuel": r["stiff_fuel"],
-    #     "stiff_film": r["stiff_film"],
-    #     "cstar_ms": r["cstar"],
-    #     "temp": r["temp"],
-    #     "warnings": r["warnings"],
-    # }
+def to_row(mdot: Q_, of_core: Q_, insert_id: str, P_purge: Q_, P_c_torch: Q_, of_torch: Q_, r_GG: dict, r_torch: dict) -> dict:
     return {
-        "P_fuel_psia": psi(r["P_fuel"]),
-        "P_ox_psia": psi(r["P_ox"]),
-        "P_N2_purge_psia": P_purge,
-        "P_torch_CH4_psia": psi(r_torch["P_CH4"]),
-        "P_torch_GOx_psia": psi(r_torch["P_GOx"]),
-        "P_c_psia": psi(r["P_c"]),
-        "temp": r["temp"],
-        "OF_core": of_core,
-        "mdot_total_kg_s": mdot,
-        "mdot_torch": r_torch["mdot_torch"],
-        "P_c_torch": P_c_torch,
-        "OF_torch": of_torch,
+        "P_c_psi": r_GG["P_c"].to('psi').m,
+        "P_IPA_psi": r_GG["P_fuel"].to('psi').m,
+        "P_LOx_psi": r_GG["P_ox"].to('psi').m,
+        "P_N2_purge_psi": P_purge.to('psi').m,
+        "mdot_total_kg_s": mdot.to('kg/s').m,
+        "OF_core": of_core.to('dimensionless').m,
+        "OF_overall": r_GG["of_overall"].to('dimensionless').m,
         "insert_id": insert_id,
-        "cooling_pct": r["cooling_pct"],
-        "OF_overall": r["of_overall"],
-        "mdot_fuel_kg_s": r["mdot_fuel"],
-        "mdot_ox_kg_s": r["mdot_ox"],
-        "mdot_film_kg_s": r["mdot_film"],
-        "stiff_fuel": r["stiff_fuel"],
-        "stiff_ox": r["stiff_ox"],
-        "stiff_film": r["stiff_film"],
-        "cstar_ms": r["cstar"],
-        "warnings": r["warnings"],
+        "cooling_pct": r_GG["cooling_pct"],
+        "temp_K": r_GG["temp"].to('K').m,
+        "cstar_m_s": r_GG["cstar"].to('m/s').m,
+        "mdot_IPA_kg_s": r_GG["mdot_fuel"].to('kg/s').m,
+        "mdot_LOx_kg_s": r_GG["mdot_ox"].to('kg/s').m,
+        "mdot_film_kg_s": r_GG["mdot_film"].to('kg/s').m,
+        "stiff_fuel": r_GG["stiff_fuel"],
+        "stiff_ox": r_GG["stiff_ox"],
+        "stiff_film": r_GG["stiff_film"],
+        "P_c_torch_psi": P_c_torch.to('psi').m,
+        "P_CH4_psi": r_torch["P_CH4"].to('psi').m,
+        "P_GOx_psi": r_torch["P_GOx"].to('psi').m,
+        "mdot_torch_kg_s": r_torch["mdot_torch"].to('kg/s').m,
+        "OF_torch": of_torch.to('dimensionless').m,
+        "mdot_CH4_kg_s": r_torch["mdot_ch4"].to('kg/s').m,
+        "mdot_GOx_kg_s": r_torch["mdot_gox"].to('kg/s').m,
+        "warnings": r_GG["warnings"],
     }
 
 # --------------------------------------------------------------------------
@@ -303,28 +245,24 @@ def to_row(mdot: float, of_core: float, insert_id: str, P_purge: float, P_c_torc
 # --------------------------------------------------------------------------
 
 def main():
+    script_dir = Path(__file__).resolve().parent
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", default="../Inputs/GG_hardware_definition.yaml")
     ap.add_argument("--input", default="TestMatrix_Inputs.csv")
     ap.add_argument("--output", default="TestMatrix_Outputs.csv")
     args = ap.parse_args()
 
-    hw_cache = {}        # insert_id -> Hardware (YAML is read once per insert)
-    cstar_fn = None      # built once; propellants don't depend on the insert
+    args.input = resolve_script_path(args.input, script_dir)
+    args.output = resolve_script_path(args.output, script_dir)
 
     rows = []
     for mdot, of_core, insert_id, P_purge, P_c_torch, of_torch in read_cases(args.input):
         try:
-            if insert_id not in hw_cache:
-                hw_cache[insert_id] = load_hardware(args.config, insert_id)
-            hw = hw_cache[insert_id]
-            
-            rows.append(to_row(mdot, of_core, insert_id, P_purge, P_c_torch, of_torch,
-                               solve(mdot, of_core, hw), solve_torch(P_c_torch, of_torch, hw)))
+            r_GG = solve_GG(mdot, of_core, insert_id)
+            r_torch = solve_torch(P_c_torch, of_torch)
+            rows.append(to_row(mdot, of_core, insert_id, P_purge, P_c_torch, of_torch, r_GG, r_torch))
         except Exception as e:   # keep going so one bad case doesn't kill the batch
             row = {c: None for c in OUT_COLS}
-            row.update(mdot_total_kg_s=mdot, OF_core=of_core, insert_id=insert_id,
-                       warnings=f"FAILED: {e}")
+            row.update(warnings=f"FAILED: {e}")
             rows.append(row)
 
     with open(args.output, "w", newline="") as f:
