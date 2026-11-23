@@ -206,7 +206,7 @@ def MakeDesign(propellant: Propellant):
 	imp_blade_design.PlotBladeLines()#.show()
 
 	# ---------------- IMPELLER CAD ------------------------
-	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True)
+	imp_cad = ImpellerCAD.ImpellerCAD(imp_blade_design, flip_z=True, flip_theta=True if propellant == Propellant.LOX else False)
 	imp_cad.Show()
 
 	# ---------------- PUMP CAD (INDUCER + IMPELLER) -------
