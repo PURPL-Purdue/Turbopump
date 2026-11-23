@@ -14,7 +14,7 @@ if not __package__:
     sys.path.insert(0, str(_here.parent))
 
 from Inducer.Inducer import Inducer
-from VelocityTriangle import PlotTriangles, VelocityTriangle
+from Helpers.VelocityTriangle import PlotTriangles, VelocityTriangle
 
 INCIDENCE = 3 # deg
 

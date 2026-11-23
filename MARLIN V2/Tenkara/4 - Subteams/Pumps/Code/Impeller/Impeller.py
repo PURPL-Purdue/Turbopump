@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from pint import Quantity as Q_
-from VelocityTriangle import VelocityTriangle, PlotTriangles
+from Helpers.VelocityTriangle import VelocityTriangle, PlotTriangles
 from plotly import graph_objects as go
 import numpy as np
 import EmpiricalRelations as emp

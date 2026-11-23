@@ -18,7 +18,7 @@ if not __package__:
 
 from Inducer.Inducer import Inducer
 from Inducer.MeanlineTriangle import INCIDENCE, MeanlineTriangle
-from VelocityTriangle import PlotTriangles, VelocityTriangle
+from Helpers.VelocityTriangle import PlotTriangles, VelocityTriangle
 
 """
 @Andrew Fontanetta:

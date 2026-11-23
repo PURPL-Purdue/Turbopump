@@ -3,7 +3,7 @@ from pint import Quantity as Q_
 from plotly import graph_objects as go, subplots, express
 from Inducer.RadialEquilibrium import InducerRadialEquilibrium
 from typing import Optional, Literal
-from VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
+from Helpers.VelocityTriangle import VelocityTriangle, PlotTriangles, CONVENTION_NOTES
 from dataclasses import dataclass
 from collections.abc import Callable
 from plotly import graph_objects as go
