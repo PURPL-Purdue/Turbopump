@@ -1,0 +1,3 @@
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/system_stm32h7xx.c:178:6:SystemInit	4	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/system_stm32h7xx.c:352:6:SystemCoreClockUpdate	48	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/system_stm32h7xx.c:474:6:ExitRun0Mode	0	static

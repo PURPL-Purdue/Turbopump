@@ -1,0 +1,7 @@
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:73:5:main	8	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:149:6:SystemClock_Config	120	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:204:13:MX_ADC1_Init	48	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:273:13:MX_TIM1_Init	112	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:353:13:MX_GPIO_Init	48	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:388:6:MPU_Config	24	static
+C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/Core/Src/main.c:419:6:Error_Handler	4	static,ignoring_inline_asm

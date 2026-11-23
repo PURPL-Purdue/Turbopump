@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/cmake_install.cmake",
+		"C:/Users/adity/Desktop/purplgit/Turbopump/MARLIN V2/MARLIN ECU/Software/Embedded bootcamp/PWMoutput/PWM-output-adc-input/build/Debug/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
