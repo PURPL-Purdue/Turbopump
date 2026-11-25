@@ -1,5 +1,0 @@
-# Restrict changes in the TCA folder to Louis and Parthiv
-/MARLIN\ V2/Tenkara/4\ -\ Subteams/TCA/REGEN_DEV @Louis-DeSano
-
-# Restrict edits to the CODEOWNERS file itself to the code owners
-/.github/CODEOWNERS @Louis-DeSano @Parthiv-Malipeddu

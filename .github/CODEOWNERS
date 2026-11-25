@@ -1,0 +1,5 @@
+# Changes to the regen solver need Louis or Parthiv
+REGEN_DEV/ @Louis-DeSano @Parthiv-Malipeddu
+
+# Changes to this file need Louis or Parthiv
+/.github/CODEOWNERS @Louis-DeSano @Parthiv-Malipeddu
