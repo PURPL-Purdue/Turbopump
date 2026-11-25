@@ -303,10 +303,95 @@ def chamber():
     print("Non Dimenional Properties")
     print(f"Chamber: M = {M_c:0.3f}, Re = {Re_c:0.0f}, Pr = {Pr_c:0.3f}, e/D = {e/D_c:.2e}")
     print()
+
+def HGM():
+    ## CHANGE THIS TO GG Setpoints
+    #hardware/setpoint definition
+    card_str = """
+    fuel IPA  C 3 H 8 O 1
+    h,cal=-65180.1  t(k)=298.0  wt%=100.0
+    """
+    add_new_fuel('IPA', card_str)
+
+    #chamber-throat
+    D_c = 3.826 # in
+    D_t = 1.8012 # in
+    e = 250 * 10**-6 
+    Pc = 440 # psi
+    mdot = 3.8050 #lbm/s
+    OF = 0.6 # --
+    fuel = 'IPA'
+    ox = 'LOX'
+    frozen_flag = 0
+
     
+    # convert to SI
+    Pc *= PSI2PA
+    mdot *= LBM2KG
+    D_c *= IN2M
+    D_t *= IN2M
+    e *= IN2M
+
+    
+    # run cea to get combustion product properties
+    cea = CEA_Obj(fuelName=fuel, oxName=ox)
+    [T_c, _, _] = cea.get_Temperatures(Pc=Pc/PSI2PA, MR=OF, eps=1, frozen=frozen_flag, frozenAtThroat=frozen_flag)
+    T_c *= R2K
+
+    # get transport properties # [(BTU/lbm degR), millipoise, mcal/cm-K-s, -- ] -> [J/(kg-K), Pa-s, W/(m-K), --]
+    [Cp_c, mu_c, k_c, Pr_c] = cea.get_Chamber_Transport(Pc=Pc/PSI2PA, MR=OF, frozen=frozen_flag) 
+    Cp_c *= 4186.8
+    mu_c *= 0.0001
+    k_c *= 0.4184
+
+
+    # determine reynolds number
+    
+    #flow velocity [m/s] (returned in ft/s)
+    
+    [_, gam_c] = cea.get_Chamber_MolWt_gamma(Pc=Pc/PSI2PA, MR=OF, eps=1)
+    M_c = mach_from_area_ratio((D_c/D_t)**2, gam_c)
+
+    [a_c, _, _] = cea.get_SonicVelocities(Pc=Pc/PSI2PA, MR=OF, eps=1, frozen=frozen_flag, frozenAtThroat=frozen_flag)
+    a_c *= FT2M
+
+    #densities [kg/m^3] (returned in lbm/ft^3)
+    [rho_c, _, _] = cea.get_Densities(Pc=Pc/PSI2PA, MR=OF, eps=1, frozen=frozen_flag, frozenAtThroat=frozen_flag)
+    rho_c *=  (LBM2KG / FT2M**3)
+
+    #use mdot for reynolds number since we asusme a Cd in our sizing
+    Re_c = 4 * mdot / (np.pi * D_c * mu_c)
+    
+    # friciton factor:
+    f_c = friction_factor(e, D_c, Re_c)
+
+    #nusselt number
+    Nu_c = gnielinski(f_c, Re_c, Pr_c)
+
+    #HTC
+    HTC_c = Nu_c * k_c / D_c
+
+
+    # calculate recovery temperatures
+    
+    r_c = Pr_c**(1/3)
+    
+    Tr_c = T_c * (1 + r_c*((gam_c-1)/2)*M_c**2) / (1 + ((gam_c-1)/2)*M_c**2)
+
+    print()
+    print("Main Chamber HTC")
+    print(f"Adiabatic Flame Temp: {T_c:0.0f} K")
+    print(f"Chamber: {HTC_c:0.0f} W/m^2-K @ {Tr_c:0.0f} K")
+    print()
+    print("Non Dimenional Properties")
+    print(f"Chamber: M = {M_c:0.3f}, Re = {Re_c:0.0f}, Pr = {Pr_c:0.3f}, e/D = {e/D_c:.2e}")
+    print()
+    return
+
 def main():
     torch()
     chamber()
+
 
 if __name__ == "__main__":
     main()

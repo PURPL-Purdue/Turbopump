@@ -89,8 +89,8 @@ def main():
     T_wall   = None       # wall temp [K] for property correction, or None
 
     # ---- per-propellant inputs ----
-    ox = dict(fluid="Oxygen",  P0_psi=505.1, mdot_lbm=0.0470, n_orifices=1)  # n_orifices: placeholder, set to actual
-    fu = dict(fluid="Methane", P0_psi=490.8, mdot_lbm=0.0313, n_orifices=1)  # n_orifices: placeholder, set to actual
+    ox = dict(fluid="Oxygen",  P0_psi=505.1, mdot_lbm=0.0470, n_orifices=1) 
+    fu = dict(fluid="Methane", P0_psi=490.8, mdot_lbm=0.0313, n_orifices=1) 
 
     for p in (ox, fu):
         htc(fluid=p["fluid"], P0_psi=p["P0_psi"], Pc_psi=Pc_psi,

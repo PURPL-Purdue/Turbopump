@@ -140,7 +140,7 @@ def main():
     mDot_main = p["tp_mdot"]                 # main chamber mass flow [kg/s]
     mDot_torch = mDot_main / (2* 100)    # torch mass flow [kg/s] (Huzel and Huang)
     mDot_torch = p["torch_mass_flows"]["torch_mdot"]            #[kg/s] MDOT @ 20% heat transfer efficiency, 300psi pc
-    p_c = 192.4 * psi2Pa              # torch chamber pressure [psi->Pa]
+    p_c = 200 * psi2Pa              # torch chamber pressure [psi->Pa]
 
     run_single_pc = False          #Toggle False to run one pc/dot, set as True to run multiple in array
 
@@ -154,14 +154,14 @@ def main():
     #mdot_100psi =  0.01760    #kg/s MDOT @ 20% heat transfer efficiency, 100psi pc
     #mdot =  0.00352    #kg/s MDOT @ 100% heat transfer efficiency, 100psi pc
 
-    OF = 1.5                       # OF ratio
+    OF = 1                       # OF ratio
 
     Cd = 0.9                       # Discharge Coefficient
     choked = 1
 
     # Propellant Specific
     ox_CEA = 'GOX'
-    fuel_CEA = 'CH4'
+    fuel_CEA = 'GH2'
     k_f = 1.31  # ch4 specific heat ratio
     k_ox = 1.40 # gox specific heat ratio  
 

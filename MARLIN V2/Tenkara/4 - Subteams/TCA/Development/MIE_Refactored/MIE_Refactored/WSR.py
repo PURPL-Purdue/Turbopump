@@ -77,8 +77,7 @@ def step_solution(time_history, max_sim_time, reactor, sim, prop_names, save_pat
     while t < max_sim_time:
         t = sim.step()
 
-        # We will store only every 10th value. Remember, we have 1200+ species, so there
-        # will be 1200+ columns for us to work with
+        # We will store only every 10th value
         if counter % 10 == 0:
             # Extract the state of the reactor
             time_history.append(reactor.phase.state, t=t)
