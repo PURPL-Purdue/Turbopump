@@ -1,4 +1,4 @@
-from Pump import Pump
+from Pump import Pump, Propellant
 from plotly import graph_objects as go
 import numpy as np
 from pint import Quantity as Q_
@@ -16,9 +16,15 @@ def GetSpecificWork(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]
 	u_2, _, c_u2, _ = pump.Impeller.GetOutletVelocities(Q_flow, N_speed)
 	return (u_2 * c_u2).to('kJ/kg')
 
-def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+def GetPowerConsumption(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None, rho: Optional[Q_]=None) -> Q_:
 	if Q_flow is None: Q_flow = pump.DesignFlowRate
-	return (pump.DP.rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+	if rho is None: rho = pump.DP.rho
+	return (rho * Q_flow * GetSpecificWork(pump, Q_flow, N_speed)).to('kW')
+
+def GetTempRise(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
+	heat_dissipated = GetSpecificWork(pump, Q_flow, N_speed) * (1 - pump.DP.eta_overall)
+	C_p = Q_(1.71, 'J/g/K') if pump.Propellant == Propellant.LOX else Q_(2.68, 'J/g/K')
+	return (heat_dissipated / C_p).to('K')
 
 def GetTorque(pump: Pump, Q_flow: Optional[Q_]=None, N_speed: Optional[Q_]=None) -> Q_:
 	if N_speed is None: N_speed = pump.DP.N_shaft
@@ -52,6 +58,11 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 		flow_sweep = Q_(np.linspace(0, Q_sweep_max.m), 'L/s')
 		head_sweep = GetActualHeadRise(pump, flow_sweep, rpm)
 
+		index_max_head = np.argmax(head_sweep)
+
+		flow_sweep = flow_sweep[index_max_head:]
+		head_sweep = head_sweep[index_max_head:]
+
 		fig.add_trace(go.Scatter(
 			x=flow_sweep.m, y=head_sweep.m,
 			mode='lines', name='Headrise prediction (empirical correlation)', showlegend=False
@@ -81,7 +92,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 	))
 
 	fig.update_layout(
-		title='Head Rise vs Flowrate (H-Q) Curve',
+		title=f'{pump.Propellant.name} Pump Head Rise vs Flowrate (H-Q) Curve',
 		xaxis_title='Volumetric flow rate [L/s]',
 		yaxis_title='Head [m]',
 		yaxis=dict(rangemode='tozero'),
@@ -91,7 +102,7 @@ def PlotHQ(pump: Pump, rpm_step_down: float=5000, rpm_sweeps: int=4) -> go.Figur
 
 	return fig
 
-def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0, blade_blockage_factor: float=0.7) -> Q_:
+def GetInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=0.4, blade_blockage_factor: float=0.7, Q_flow: Q_=None, N_speed: Q_=None) -> Q_:
 
 	"""
 		This method of calculating NPSH_i accounts for inlet velocity and losses.
@@ -108,14 +119,14 @@ def GuessInducerlessNPSH_r(pump: Pump, lambda_c: float=1.1, lambda_w: float=1.0,
 	impeller = pump.Impeller
 	area_1 = (impeller.d_1**2 - impeller.d_hub**2)/4 * np.pi * blade_blockage_factor
 	# assume no preswirl, c_m1 = c_1
-	c_m1 = impeller.DP.Q / area_1
-	u_1 = impeller.DP.N_shaft * impeller.d_1/2
+	c_m1 = (impeller.DP.Q if Q_flow is None else Q_flow) / area_1
+	u_1 = (impeller.DP.N_shaft if N_speed is None else N_speed) * impeller.d_1/2
 	w_1: Q_[float] = np.sqrt(c_m1**2 + u_1**2)
 
 	return (1/(2 * g) * (lambda_c * c_m1**2 + lambda_w * w_1**2)).to('m')
 
 def GetInducerHeadRequirement(pump: Pump) -> Q_:
-	no_inducer_NPSH_r: Q_[float] = GuessInducerlessNPSH_r(pump)
+	no_inducer_NPSH_r: Q_[float] = GetInducerlessNPSH_r(pump)
 	difference = (no_inducer_NPSH_r - pump.NPSH_a).to('m')
 	# round to the nearest 5 m
 	# this is to prevent the inducer requirements from changing too much with small changes in design point
@@ -123,7 +134,7 @@ def GetInducerHeadRequirement(pump: Pump) -> Q_:
 
 if __name__ == '__main__':
 	import Main
-	lox_pump = Main.CreatePump('LOX')
+	lox_pump = Main.CreatePump(Main.Propellant.LOX)
 	#VelocityTriangle.PlotTriangles([lox_pump.Impeller.OutletVelocityTriangleAtDesign, lox_pump.Impeller.OutletBladeTriangleAtDesign], names=['with slip', 'no slip']).show()
 	#PlotHQ(lox_pump).show()
-	GuessInducerlessNPSH_r(lox_pump)
+	GetInducerlessNPSH_r(lox_pump)

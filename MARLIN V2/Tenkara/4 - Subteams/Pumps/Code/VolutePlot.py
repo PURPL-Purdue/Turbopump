@@ -118,3 +118,87 @@ fig.suptitle('Constant-velocity volute geometry', color=INK, fontsize=15,
 fig.tight_layout(rect=[0, 0.02, 1, 0.93])
 fig.savefig('volute_geometry.png', dpi=170, facecolor=fig.get_facecolor())
 plt.show()
+
+r"""
+Volute cross-sections only.  White background, no axes, no grid.
+
+        apex            diamond: square on corner, side a(theta),
+         /\             lower vertex truncated at the neck width b_3
+        /  \
+       /    \           A(theta) = a^2 + b_3*h_gap - b_3^2/4
+       \    /                    = Throat_Area * theta/360
+       |    |           neck: b_3 wide (axial) x h_gap tall (radial)
+       |____|
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from matplotlib.colors import LinearSegmentedColormap
+
+# ----------------------------------------------------------------- parameters
+impeller_radius = 26.65      # mm   (d2 / 2)
+clearance       = 0.2032     # mm   (0.008 in)
+b_3             = 2.4        # mm   axial width of the gap/neck
+h_gap           = 1.0        # mm   radial height of the gap/neck
+Throat_Area     = 50.71      # mm^2 at theta = 360 deg     <- LOX: use 54.9
+
+SHOW_LABELS = False          # the theta tags on each section
+SHOW_REFS   = False          # impeller OD / neck floor reference lines
+
+# ------------------------------------------------------------- derived radii
+R0   = impeller_radius + clearance     # neck floor
+Rtop = R0 + h_gap                      # neck ceiling = where the diamond is b_3 wide
+Rbv  = Rtop - b_3 / 2                  # diamond's virtual bottom vertex (CONSTANT)
+
+theta_min = ((b_3*h_gap - b_3**2/4 + b_3**2/2) / Throat_Area) * 360.0
+
+def side_length(theta_deg):
+    """Rhombus side a as a function of wrap angle."""
+    return np.sqrt(Throat_Area*theta_deg/360.0 + b_3**2/4 - b_3*h_gap)
+
+def profile(theta_deg):
+    """Closed cross-section outline as (radial, axial) vertices."""
+    hw = side_length(theta_deg) / np.sqrt(2)      # diamond half-width (axial)
+    return np.array([
+        (R0,        -b_3/2),          # neck floor, -axial
+        (R0,         b_3/2),          # neck floor, +axial
+        (Rtop,       b_3/2),          # neck ceiling, +axial
+        (Rbv + hw,   hw),             # diamond side vertex, +axial
+        (Rbv + 2*hw, 0.0),            # apex
+        (Rbv + hw,  -hw),             # diamond side vertex, -axial
+        (Rtop,      -b_3/2),          # neck ceiling, -axial
+    ])
+
+# --------------------------------------------------------------------- plot
+shown = [theta_min, 90, 180, 270, 360]        # wrap angles to draw
+cmap  = LinearSegmentedColormap.from_list("v", ["#c3d7ef", "#2c5f8a"])
+
+fig, ax = plt.subplots(figsize=(7.5, 7), facecolor="white")
+ax.set_facecolor("white")
+
+for i, t in enumerate(shown):
+    pr = profile(t)
+    ax.add_patch(Polygon(pr, closed=True, facecolor=cmap(i/(len(shown)-1)),
+                         edgecolor="#5a6671", lw=.9, zorder=len(shown)-i))
+    if SHOW_LABELS:
+        mid = (pr[3] + pr[4]) / 2                 # outer diamond edge midpoint
+        ax.annotate(f"{t:.1f}°" if t == theta_min else f"{t:.0f}°",
+                    xy=mid, xytext=(4, 4), textcoords="offset points",
+                    fontsize=10, fontweight="bold", color=cmap(i/(len(shown)-1)),
+                    ha="left", va="bottom", zorder=50)
+
+if SHOW_REFS:
+    ax.axvline(impeller_radius, ls="--", color="#b4bcc4", lw=1.3)
+    ax.axvline(R0,              ls="-",  color="#6b7680", lw=1.3)
+
+allp = np.vstack([profile(t) for t in shown])
+ax.set_xlim(allp[:, 0].min()-1.5, allp[:, 0].max()+1.5)
+ax.set_ylim(allp[:, 1].min()-1.5, allp[:, 1].max()+1.5)
+ax.set_aspect("equal")
+ax.axis("off")                                    # no grid, no ticks, no frame
+
+plt.tight_layout(pad=0.2)
+#plt.savefig("volute_sections.png", dpi=200, facecolor="white",
+#            bbox_inches="tight", pad_inches=0.1)
+plt.show()
+print("saved volute_sections.png")

@@ -4,7 +4,7 @@ from pyfluids import Fluid, FluidsList, Input
 g_f = 1.31  # ch4 specific heat ratio
 g_ox = 1.40 # gox specific heat ratio  
 
-pc = 192.4    #psia
+pc = 200    #psia
 
 p_crit_ox = pc * ((g_ox + 1) / 2) ** (g_ox/(g_ox -1))
 
