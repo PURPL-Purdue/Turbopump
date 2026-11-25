@@ -1,0 +1,72 @@
+# Regen solver inputs: the one place to change the design.
+# Units are written in each key name and converted to SI in engine/engine_inputs.py
+# and jacket/jacket_inputs.py (util/config.py only reads this file).
+# Every value needs a source row in TRACEABILITY.md.
+
+engine:
+  # CEA species names, fuel first. Injection temperatures in the same order.
+  reactants:          ['C3H8O,2propanol', 'O2(L)']
+  T_reactant_K:       [293, 90.17]
+  fuel_weights:       [1.0, 0.0]
+  oxidant_weights:    [0.0, 1.0]
+  # CEA's library only has IPA as a gas. Its heat of vaporization is subtracted
+  # so the fuel enters as liquid. NIST WebBook (2-propanol): dHf gas -272.6,
+  # liquid -318.1 kJ/mol.
+  fuel_dH_vap_kJ_per_mol:   45.5
+  fuel_molar_mass_g_per_mol: 60.096
+
+  F_target_lbf:       1500     # sea-level thrust target (reference only for now)
+  p0_psi:             440      # chamber pressure
+  pa_psi:             18.0     # design exit pressure
+  OF:                 1.5      # oxidizer / fuel mass ratio
+  m_dot_pump_max_kg_s: 2.0     # turbopump limit, per propellant
+  c_star_eff:         0.875    # combustion / injector losses
+  c_thrust_eff:       0.97     # divergence / boundary-layer losses
+
+chamber:
+  contraction_ratio:  6        # Ac / At
+  lstar_m:            1.3      # volume injector -> throat / At
+
+contour:
+  # Profile: cylinder -> cone -> arc -> THROAT -> arc -> Rao bell (quadratic Bezier)
+  theta_conv_deg:     30.0     # convergent cone half-angle
+  R_up_over_Rt:       1.65     # upstream throat arc radius / Rt (Huzel & Huang)
+  R_down_over_Rt:     0.382    # downstream throat arc radius / Rt (Rao)
+  bell_percent:       80       # bell length as % of a 15 deg cone; 60, 80 or 90 (Rao angle tables)
+  stations:           100      # book: "at least 100 points to define the contour"
+
+jacket:
+  counterflow:        true     # coolant enters at the nozzle exit, leaves at the injector
+  p_l_in_psi:         797      # coolant pressure entering the jacket
+  T_l_in_K:           293      # coolant temperature entering the jacket
+  t_w_mm:             1.0      # hot wall thickness, gas side to channel floor
+  k_wall_W_mK:        284      # wall conductivity ; 284 is for grcop42 pulled from blongs paper
+  T_wg_allow_K:       850      # Max allowable gas-side wall temperature
+  land_min_mm:        0.8      # minimum land between channels, set by manufacturing
+  eps_rough_mm:       0.08      # wall roughness; 0 = smooth-wall fits (Eq. 6.37), >0 = Colebrook   (value of 0.08 mm is from Blongs paper for a 3d printed copper channel)
+  coolant:            ipa          # property module, coolant/__init__.py FLUIDS
+  coolant_htc:        gnielinski  # coolant-side correlation, heat_transfer/coolant_side.py CORRELATIONS
+  fin_conduction:     true    # true = lands and closeout act as fins (heat_transfer/fins.py, Blong 2024 Eqs. 21-27)
+  entrance_effects:   true    # true = h_l depends on distance from the coolant inlet (VDI G1 Eqs. 23, 28); false = fully developed
+
+# scripts/wall_temp_solver.py: you give the channels -> temperatures and pressure
+wall_temp_solver:
+  # null = constant channel from the three values below.
+  # Or a channel geometry file (x_mm, r_mm, w_mm, h_mm + '# N_channels:' line), e.g.
+  # output/channel_geometry.csv from the channel solver, copied and edited if you like.
+  # It sets N, w(x) and h(x), and must match the current contour.
+  geometry_file:      null
+  N_channels:         36
+  w_chan_mm:          2.0
+  h_chan_mm:          1.0
+
+# scripts/channel_solver.py: you give w and a target T_wg -> channel height h(x)
+# Always writes output/channel_geometry.csv (input for the wall temp solver).
+channel_solver:
+  w_chan_mm:          1.0
+  N_channels:         null     # null = as many as fit at the throat with land >= land_min
+  T_wg_target_K:      null     # null = use jacket.T_wg_allow_K
+  h_min_mm:           1.0     # height search range, manufacturing limits
+  h_max_mm:           8.0     # height search range, manufacturing limits. currently arbitrarely chosen
+  write_csv:          false    # write output/channel_heights.csv and NX point files
+  write_dxf:          false     # write output/contour.dxf: wall + channel floor (exact), channel top (spline)
